@@ -63,5 +63,18 @@ void make_jamtis_mock_keys(jamtis_mock_keys &keys_out)
     x25519_scmul_key(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_random_address_for_user(const jamtis_mock_keys &user_keys, JamtisDestinationV1 &user_address_out)
+{
+    address_index_t address_index;
+    address_index.gen();
+
+    make_jamtis_destination_v1(user_keys.K_1_base,
+        user_keys.xK_ua,
+        user_keys.xK_fr,
+        user_keys.s_ga,
+        address_index,
+        user_address_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace jamtis
 } //namespace sp

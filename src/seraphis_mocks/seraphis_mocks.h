@@ -38,6 +38,7 @@
 #include "make_mock_tx.h"
 #include "mock_ledger_context.h"
 #include "mock_offchain_context.h"
+#include "mock_send_receive.h"
 #include "mock_tx_builders_inputs.h"
 #include "mock_tx_builders_legacy_inputs.h"
 #include "mock_tx_builders_outputs.h"

@@ -32,6 +32,7 @@ set(seraphis_mocks_sources
   make_mock_tx.cpp
   mock_ledger_context.cpp
   mock_offchain_context.cpp
+  mock_send_receive.cpp
   mock_tx_builders_inputs.cpp
   mock_tx_builders_legacy_inputs.cpp
   mock_tx_builders_outputs.cpp
