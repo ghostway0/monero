@@ -421,7 +421,8 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
     try
     {
         // prepare multisig accounts (for seraphis)
-        // - use 'converted' accounts to verify that old cryptonote accounts can be converted to seraphis accounts that work
+        // - use 'converted' accounts to verify that old cryptonote accounts can be converted to seraphis accounts that
+        //   work
         std::vector<multisig::multisig_account> accounts;
         make_multisig_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
         convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
@@ -611,7 +612,11 @@ static bool legacy_multisig_input_is_ready_to_spend(const sp::LegacyMultisigInpu
     if (!input_proposal.matches_with(contextual_record.m_record))
         return false;
 
-    // 3. expect the enote is spendable within the height specified
+    // 3. expect that the enote is unspent
+    if (contextual_record.m_spent_context.m_spent_status != sp::SpEnoteSpentStatus::UNSPENT)
+        return false;
+
+    // 4. expect the enote is spendable within the height specified
     if (sp::onchain_legacy_enote_is_locked(contextual_record.m_origin_context.m_block_height,
             contextual_record.m_record.m_unlock_time,
             current_chain_height,
@@ -647,13 +652,52 @@ static bool sp_multisig_input_is_ready_to_spend(const sp::SpMultisigInputProposa
     if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
         return false;
 
-    // 5. expect the enote is spendable within the height specified (only check when only onchain enotes are permitted)
+    // 5. expect that the enote is unspent
+    if (contextual_record.m_spent_context.m_spent_status != sp::SpEnoteSpentStatus::UNSPENT)
+        return false;
+
+    // 6. expect the enote is spendable within the height specified (only check when only onchain enotes are permitted)
     if (origin_statuses.size() == 1 &&
         origin_statuses.find(sp::SpEnoteOriginStatus::ONCHAIN) != origin_statuses.end() &&
         sp::onchain_sp_enote_is_locked(contextual_record.m_origin_context.m_block_height,
             current_chain_height,
             0))  //default spendable age: configurable
         return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static bool legacy_ring_members_are_ready_to_spend(const std::vector<std::uint64_t> &reference_set,
+    const rct::ctkeyV &legacy_ring_members,
+    const sp::MockLedgerContext &ledger_context)
+{
+    // 1. 'zero ring members' are always ready to spend
+    if (reference_set.size() == 0)
+        return true;
+
+    // 2. consistency sanity check
+    if (reference_set.size() != legacy_ring_members.size())
+        return false;
+
+    // 3. try to obtain copies of the ring members from the ledger
+    // note: this should NOT succeed for ring members that are locked on-chain (the mock ledger context does not implement
+    //       that)
+    rct::ctkeyV proof_elements_recovered;
+    try { ledger_context.get_reference_set_proof_elements_v1(reference_set, proof_elements_recovered); }
+    catch (...) { return false;}
+
+    // 4. expect the recovered proof elements to match the expected ring members
+    if (legacy_ring_members.size() != proof_elements_recovered.size())
+        return false;
+
+    for (std::size_t ring_member_index{0}; ring_member_index < legacy_ring_members.size(); ++ring_member_index)
+    {
+        if (!(legacy_ring_members[ring_member_index].dest == proof_elements_recovered[ring_member_index].dest))
+            return false;
+        if (!(legacy_ring_members[ring_member_index].mask == proof_elements_recovered[ring_member_index].mask))
+            return false;
+    }
 
     return true;
 }
@@ -708,13 +752,19 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
     }
 
     // 3. check that the legacy inputs' ring members are valid references from the ledger
-    // note: a reorg can invalidate the result of this check
+    // note: a reorg can invalidate the result of these checks
+    ASSERT_TRUE(multisig_tx_proposal.m_legacy_multisig_input_proposals.size() ==
+        multisig_tx_proposal.m_legacy_input_proof_proposals.size());
 
-    // - check highest ring member index against enote store's top block height (this can be optionally offset by
-    //   the default spendable age)
-    // - try to get ring members from indices (should automatically check if the ring members are spendable;
-    //   not that the mock ledger context does NOT do that check)
-    // - compare ring members obtained against their copies in the multisig tx proposal
+    for (std::size_t legacy_input_index{0};
+        legacy_input_index < multisig_tx_proposal.m_legacy_multisig_input_proposals.size();
+        ++legacy_input_index)
+    {
+        ASSERT_TRUE(legacy_ring_members_are_ready_to_spend(
+            multisig_tx_proposal.m_legacy_multisig_input_proposals[legacy_input_index].m_reference_set,
+            multisig_tx_proposal.m_legacy_input_proof_proposals[legacy_input_index].ring_members,
+            ledger_context));
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

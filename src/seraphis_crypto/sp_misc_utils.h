@@ -61,8 +61,7 @@ struct equals_from_less final
     template <typename T>
     bool operator()(const T &a, const T &b) { return !(a < b) && !(b < a); }
 };
-
-//todo: specialize when T::value_type has an operator==
+/// note: uniqueness uses 'equals_from_less' so it matches the sorting criteria
 template <typename T>
 bool is_sorted_and_unique(const T& container)
 {
