@@ -150,6 +150,23 @@ bool LegacyMultisigInputProposalV1::matches_with(const LegacyEnoteRecord &enote_
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool SpMultisigInputProposalV1::matches_with(const SpEnoteRecordV1 &enote_record) const
+{
+    // enote
+    if (!(m_enote == enote_record.m_enote))
+        return false;
+
+    // enote ephemeral pubkey
+    if (!(m_enote_ephemeral_pubkey == enote_record.m_enote_ephemeral_pubkey))
+        return false;
+
+    // input context
+    if (!(m_input_context == enote_record.m_input_context))
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void SpMultisigInputProposalV1::get_input_proposal_v1(const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     SpInputProposalV1 &input_proposal_out) const

@@ -598,6 +598,67 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static bool legacy_multisig_input_is_ready_to_spend(const sp::LegacyMultisigInputProposalV1 &input_proposal,
+    const sp::SpEnoteStoreMockV1 &enote_store,
+    const std::uint64_t current_chain_height)
+{
+    // 1. get the legacy enote from the enote store
+    sp::LegacyContextualEnoteRecordV1 contextual_record;
+    if (!enote_store.try_get_legacy_enote_record(input_proposal.m_key_image, contextual_record))
+        return false;
+
+    // 2. expect the record obtained matches with the input proposal
+    if (!input_proposal.matches_with(contextual_record.m_record))
+        return false;
+
+    // 3. expect the enote is spendable within the height specified
+    if (sp::onchain_legacy_enote_is_locked(contextual_record.m_origin_context.m_block_height,
+            contextual_record.m_record.m_unlock_time,
+            current_chain_height,
+            0,  //default spendable age: configurable
+            0)) //current time: use system call
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static bool sp_multisig_input_is_ready_to_spend(const sp::SpMultisigInputProposalV1 &input_proposal,
+    const sp::SpEnoteStoreMockV1 &enote_store,
+    const std::unordered_set<sp::SpEnoteOriginStatus> &origin_statuses,
+    const std::uint64_t current_chain_height,
+    const rct::key &jamtis_spend_pubkey,
+    const crypto::secret_key &k_view_balance)
+{
+    // 1. convert to a normal input proposal so the key image is available
+    sp::SpInputProposalV1 normal_input_proposal;
+    input_proposal.get_input_proposal_v1(jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
+
+    // 2. get the legacy enote from the enote store
+    sp::SpContextualEnoteRecordV1 contextual_record;
+    if (!enote_store.try_get_sp_enote_record(normal_input_proposal.m_core.m_key_image, contextual_record))
+        return false;
+
+    // 3. expect the record obtained matches with the input proposal
+    if (!input_proposal.matches_with(contextual_record.m_record))
+        return false;
+
+    // 4. expect that the enote has an allowed origin
+    if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+        return false;
+
+    // 5. expect the enote is spendable within the height specified (only check when only onchain enotes are permitted)
+    if (origin_statuses.size() == 1 &&
+        origin_statuses.find(sp::SpEnoteOriginStatus::ONCHAIN) != origin_statuses.end() &&
+        sp::onchain_sp_enote_is_locked(contextual_record.m_origin_context.m_block_height,
+            current_chain_height,
+            0))  //default spendable age: configurable
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &multisig_tx_proposal,
     const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     const std::uint32_t threshold,
@@ -606,7 +667,9 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
-    const crypto::secret_key &k_view_balance)
+    const crypto::secret_key &k_view_balance,
+    const sp::SpEnoteStoreMockV1 &enote_store,
+    const sp::MockLedgerContext &ledger_context)
 {
     using namespace sp;
 
@@ -621,7 +684,6 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
         jamtis_spend_pubkey,
         k_view_balance));
 
-/*
     // 2. check that the proposal inputs are known by our enote store, are unspent, and will be unlocked by a specified
     //    block height
     // note: could also check if the proposed inputs have been confirmed up to N blocks
@@ -631,7 +693,7 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
     {
         ASSERT_TRUE(legacy_multisig_input_is_ready_to_spend(legacy_multisig_input_proposal,
             enote_store,
-            enote_store.top_legacy_fullscanned_block_height()));
+            enote_store.top_block_height()));
     }
 
     for (const SpMultisigInputProposalV1 &sp_multisig_input_proposal :
@@ -640,11 +702,19 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
         ASSERT_TRUE(sp_multisig_input_is_ready_to_spend(sp_multisig_input_proposal,
             enote_store,
             {SpEnoteOriginStatus::ONCHAIN, SpEnoteOriginStatus::UNCONFIRMED, SpEnoteOriginStatus::OFFCHAIN},
-            enote_store.top_sp_scanned_block_height()));
+            enote_store.top_block_height(),
+            jamtis_spend_pubkey,
+            k_view_balance));
     }
-*/
+
     // 3. check that the legacy inputs' ring members are valid references from the ledger
     // note: a reorg can invalidate the result of this check
+
+    // - check highest ring member index against enote store's top block height (this can be optionally offset by
+    //   the default spendable age)
+    // - try to get ring members from indices (should automatically check if the ring members are spendable;
+    //   not that the mock ledger context does NOT do that check)
+    // - compare ring members obtained against their copies in the multisig tx proposal
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -899,7 +969,9 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         legacy_subaddress_map,
         legacy_accounts[0].get_common_privkey(),
         shared_sp_keys.K_1_base,
-        shared_sp_keys.k_vb);
+        shared_sp_keys.k_vb,
+        enote_store,
+        ledger_context);
 
 
     /// 4) get seraphis input proof inits from all requested signers

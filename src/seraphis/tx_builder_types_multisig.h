@@ -47,6 +47,7 @@
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
+#include "tx_enote_record_types.h"
 #include "tx_extra.h"
 
 //third party headers
@@ -140,6 +141,13 @@ struct SpMultisigInputProposalV1 final
     void get_input_proposal_v1(const rct::key &jamtis_spend_pubkey,
         const crypto::secret_key &k_view_balance,
         SpInputProposalV1 &input_proposal_out) const;
+
+    /**
+    * brief: matches_with - check if this input proposal matches against other data types
+    * ...
+    * return: true if all alignment checks pass
+    */
+    bool matches_with(const SpEnoteRecordV1 &enote_record) const;
 };
 
 ////

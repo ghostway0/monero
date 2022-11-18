@@ -51,6 +51,14 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteV1::operator==(const SpEnoteV1 &other_enote) const
+{
+    return m_core        == other_enote.m_core &&
+        m_encoded_amount == other_enote.m_encoded_amount &&
+        m_addr_tag_enc   == other_enote.m_addr_tag_enc &&
+        m_view_tag       == other_enote.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteV1::gen()
 {
     // generate a dummy enote: random pieces, completely unspendable

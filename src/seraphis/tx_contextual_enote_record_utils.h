@@ -53,6 +53,16 @@ namespace sp
 {
 
 //todo
+bool onchain_legacy_enote_is_locked(const std::uint64_t enote_origin_height,
+    const std::uint64_t enote_unlock_time,
+    const std::uint64_t chain_height,
+    const std::uint64_t default_spendable_age,
+    const std::uint64_t current_time);
+bool onchain_sp_enote_is_locked(const std::uint64_t enote_origin_height,
+    const std::uint64_t chain_height,
+    const std::uint64_t default_spendable_age);
+
+//todo
 bool legacy_enote_has_highest_amount_amoung_duplicates(const rct::key &searched_for_record_identifier,
     const rct::xmr_amount &searched_for_record_amount,
     const std::unordered_set<SpEnoteOriginStatus> &requested_origin_statuses,

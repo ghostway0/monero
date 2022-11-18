@@ -65,6 +65,12 @@ struct SpEnote final
     {
         return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
     }
+    /// comparison operator for equivalence testing
+    bool operator==(const SpEnote &other_enote) const
+    {
+        return m_onetime_address == other_enote.m_onetime_address &&
+            m_amount_commitment  == other_enote.m_amount_commitment;
+    }
 
     /**
     * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)

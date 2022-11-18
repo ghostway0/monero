@@ -75,6 +75,8 @@ struct SpEnoteV1 final
 
     /// less-than operator for sorting
     bool operator<(const SpEnoteV1 &other_enote) const { return m_core < other_enote.m_core; }
+    /// comparison operator for equivalence testing
+    bool operator==(const SpEnoteV1 &other_enote) const;
 
     /// generate a dummy v1 enote (all random; completely unspendable)
     void gen();

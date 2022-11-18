@@ -33,6 +33,7 @@
 
 //local headers
 #include "crypto/crypto.h"
+#include "cryptonote_config.h"
 #include "ringct/rctTypes.h"
 #include "tx_contextual_enote_record_types.h"
 #include "tx_input_selection.h"
@@ -51,6 +52,32 @@
 
 namespace sp
 {
+//-------------------------------------------------------------------------------------------------------------------
+bool onchain_legacy_enote_is_locked(const std::uint64_t enote_origin_height,
+    const std::uint64_t enote_unlock_time,
+    const std::uint64_t chain_height,
+    const std::uint64_t default_spendable_age,
+    const std::uint64_t current_time)
+{
+    // check default spendable age
+    if (chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age))
+        return true;
+
+    // check unlock time: height encoding
+    if (enote_unlock_time < CRYPTONOTE_MAX_BLOCK_NUMBER &&
+        chain_height + 1 < enote_unlock_time)
+        return true;
+
+    // check unlock time: UNIX encoding
+    return current_time < enote_unlock_time;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool onchain_sp_enote_is_locked(const std::uint64_t enote_origin_height,
+    const std::uint64_t chain_height,
+    const std::uint64_t default_spendable_age)
+{
+    return chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age);
+}
 //-------------------------------------------------------------------------------------------------------------------
 bool legacy_enote_has_highest_amount_amoung_duplicates(const rct::key &searched_for_record_identifier,
     const rct::xmr_amount &searched_for_record_amount,

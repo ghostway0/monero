@@ -63,12 +63,7 @@
 namespace sp
 {
 
-/**
-* brief: gen_mock_sp_input_proposals_v1 - create random mock inputs
-* param: sp_spend_privkey -
-* param: in_amounts -
-* return: set of transaction inputs ready to spend
-*/
+//todo
 void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
     const jamtis::JamtisDestinationV1 &destination,
     const TxExtra &partial_memo_for_destination,
@@ -83,7 +78,7 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
 void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_amount>> &coinbase_amounts_per_user,
     const std::vector<jamtis::JamtisDestinationV1> &user_addresses,
     MockLedgerContext &ledger_context_inout);
-
+//todo
 void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_keys,
     const jamtis::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
@@ -119,19 +114,19 @@ void transfer_funds_single_mock_v1_unconfirmed(const legacy_mock_keys &local_use
     const std::size_t ref_set_decomp_m,
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
-void transfer_funds_single_mock_v1(const sp::legacy_mock_keys &local_user_legacy_keys,
-    const sp::jamtis::jamtis_mock_keys &local_user_sp_keys,
-    const sp::InputSelectorV1 &local_user_input_selector,
-    const sp::FeeCalculator &tx_fee_calculator,
+void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_keys,
+    const jamtis::jamtis_mock_keys &local_user_sp_keys,
+    const InputSelectorV1 &local_user_input_selector,
+    const FeeCalculator &tx_fee_calculator,
     const rct::xmr_amount fee_per_tx_weight,
     const std::size_t max_inputs,
-    const std::vector<std::tuple<rct::xmr_amount, sp::jamtis::JamtisDestinationV1, sp::TxExtra>> &outlays,
+    const std::vector<std::tuple<rct::xmr_amount, jamtis::JamtisDestinationV1, TxExtra>> &outlays,
     const std::size_t legacy_ring_size,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
-    const sp::SpBinnedReferenceSetConfigV1 &bin_config,
-    sp::MockLedgerContext &ledger_context_inout);
-
+    const SpBinnedReferenceSetConfigV1 &bin_config,
+    MockLedgerContext &ledger_context_inout);
+//todo
 void refresh_user_enote_store(const jamtis::jamtis_mock_keys &user_keys,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,

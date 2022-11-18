@@ -57,35 +57,6 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static bool onchain_legacy_enote_is_locked(const std::uint64_t enote_origin_height,
-    const std::uint64_t enote_unlock_time,
-    const std::uint64_t chain_height,
-    const std::uint64_t default_spendable_age,
-    const std::uint64_t current_time)
-{
-    // check default spendable age
-    if (chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age))
-        return true;
-
-    // check unlock time: height encoding
-    if (enote_unlock_time < CRYPTONOTE_MAX_BLOCK_NUMBER &&
-        chain_height + 1 < enote_unlock_time)
-        return true;
-
-    // check unlock time: UNIX encoding
-    return current_time < enote_unlock_time;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static bool onchain_sp_enote_is_locked(const std::uint64_t enote_origin_height,
-    const std::uint64_t chain_height,
-    const std::uint64_t default_spendable_age)
-{
-    return chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockSimpleV1::add_record(const LegacyContextualEnoteRecordV1 &new_record)
 {
     m_legacy_contextual_enote_records.emplace_back(new_record);
@@ -551,6 +522,71 @@ bool SpEnoteStoreMockV1::try_get_block_id_for_scan_mode(const std::uint64_t bloc
 
     block_id_out = m_block_ids[block_height - m_refresh_height];
 
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_legacy_enote_record(const crypto::key_image &key_image,
+    LegacyContextualEnoteRecordV1 &contextual_record_out) const
+{
+    // drill into the legacy maps searching for at least one matching legacy enote record
+    if (m_legacy_key_images.find(key_image) == m_legacy_key_images.end())
+        return false;
+
+    const rct::key &onetime_address{m_legacy_key_images.at(key_image)};
+
+    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address) ==
+            m_tracked_legacy_onetime_address_duplicates.end())
+        return false;
+
+    const std::unordered_set<rct::key> &identifiers_of_duplicates{
+            m_tracked_legacy_onetime_address_duplicates.at(onetime_address)
+        };
+
+    if (identifiers_of_duplicates.size() == 0)
+        return false;
+
+    // search for the highest-amount enote amoung the duplicates
+    rct::key best_identifier{rct::zero()};
+    rct::xmr_amount best_amount{0};
+    rct::xmr_amount temp_record_amount;
+
+    for (const rct::key &identifier : identifiers_of_duplicates)
+    {
+        if (m_mapped_legacy_intermediate_contextual_enote_records.find(identifier) !=
+            m_mapped_legacy_intermediate_contextual_enote_records.end())
+        {
+            temp_record_amount = m_mapped_legacy_intermediate_contextual_enote_records.at(identifier).m_record.m_amount;
+        }
+        else if (m_mapped_legacy_contextual_enote_records.find(identifier) !=
+            m_mapped_legacy_contextual_enote_records.end())
+        {
+            temp_record_amount = m_mapped_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
+        }
+        else
+            continue;
+
+        if (best_amount < temp_record_amount)
+        {
+            best_identifier = identifier;
+            best_amount = temp_record_amount;
+        }
+    }
+
+    // if the highest-amount enote is not amoung the full enote records, then we failed
+    if (m_mapped_legacy_contextual_enote_records.find(best_identifier) == m_mapped_legacy_contextual_enote_records.end())
+        return false;
+
+    contextual_record_out = m_mapped_legacy_contextual_enote_records.at(best_identifier);
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_sp_enote_record(const crypto::key_image &key_image,
+    SpContextualEnoteRecordV1 &contextual_record_out) const
+{
+    if (m_mapped_sp_contextual_enote_records.find(key_image) == m_mapped_sp_contextual_enote_records.end())
+        return false;
+
+    contextual_record_out = m_mapped_sp_contextual_enote_records.at(key_image);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------

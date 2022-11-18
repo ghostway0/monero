@@ -169,6 +169,14 @@ public:
     /// get the legacy intermediate records (e.g. to collect their onetime addresses for key image recovery)
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>& legacy_intermediate_records() const
     { return m_mapped_legacy_intermediate_contextual_enote_records; }
+    /// try to get a legacy enote with a specified key image
+    /// - will only return the highest-amount legacy enote among duplicates, and will return false if the
+    ///   highest-amount legacy enote is currently in the intermediate records map
+    bool try_get_legacy_enote_record(const crypto::key_image &key_image,
+        LegacyContextualEnoteRecordV1 &contextual_record_out) const;
+    /// try to get a seraphis enote with a specified key image
+    bool try_get_sp_enote_record(const crypto::key_image &key_image,
+        SpContextualEnoteRecordV1 &contextual_record_out) const;
 
     /// get height of first block the enote store cares about
     std::uint64_t refresh_height() const { return m_refresh_height; }
