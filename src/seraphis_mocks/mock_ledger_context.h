@@ -187,11 +187,21 @@ public:
     */
     bool try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx);
     /**
+    * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new
+    *      coinbase tx
+    *   - throws if the coinbase tx's block height does not equal the ledger's next block height
+    *   - clears the unconfirmed tx cache
+    *   - note: currently does NOT validate the coinbase tx
+    *   - note2: currently does nothing with the block reward
+    * param: coinbase_tx -
+    * return: block height of newly added block
+    */
+    std::uint64_t commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx);
+    /**
     * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new mock coinbase tx
     *   - clears the unconfirmed tx cache
     *   - note: currently does NOT validate if coinbase enotes are sorted properly
     *   - note2: permits seraphis enotes of any type (coinbase or regular enotes) for convenience in mockups
-    *   - todo: use a real coinbase tx instead, with height that is expected to match the next block height (try commit)
     * param: mock_coinbase_input_context -
     * param: mock_coinbase_tx_supplement -
     * param: mock_coinbase_output_enotes -
@@ -249,6 +259,7 @@ private:
         SpTxSupplementV1 tx_supplement,
         std::vector<SpEnoteVariant> output_enotes);
     bool try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx);
+    std::uint64_t commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx);
     std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,
         SpTxSupplementV1 mock_coinbase_tx_supplement,
         std::vector<SpEnoteVariant> mock_coinbase_output_enotes);

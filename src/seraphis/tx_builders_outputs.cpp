@@ -278,9 +278,6 @@ void check_v1_output_proposal_semantics_v1(const SpOutputProposalV1 &output_prop
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals)
 {
-    CHECK_AND_ASSERT_THROW_MES(output_proposals.size() >= 1,
-        "Semantics check coinbase output proposals v1: insufficient outputs.");
-
     // individual output proposals should be internally valid
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
         check_v1_coinbase_output_proposal_semantics_v1(output_proposal);
@@ -337,26 +334,27 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs)
+void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement,
+    const std::size_t num_outputs,
+    const bool ephemeral_pubkey_optimization)
 {
     // there may be either 1 or 3+ enote pubkeys
-    if (num_outputs <= 2)
+    if (num_outputs <= 2 && ephemeral_pubkey_optimization)
     {
         CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 1,
-            "Semantics check tx supplement v1: there must be 1 enote pubkey if there are 2 outputs.");
+            "Semantics check tx supplement v1: there must be 1 enote pubkey if there are 2 outputs and the ephemeral "
+            "pubkey optimization is being used.");
     }
-    else if (num_outputs >= 3)
+    else
     {
         CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
-            "Semantics check tx supplement v1: there must be one enote pubkey for each output when there are 3+ outputs.");
+            "Semantics check tx supplement v1: there must be one enote pubkey for each output when there is no ephemeral "
+            "pubkey optimization.");
     }
 
-    // if 3+ enote pubkeys, all should be unique
-    if (tx_supplement.m_output_enote_ephemeral_pubkeys.size() >= 3)
-    {
-        CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
-            "Semantics check tx supplement v1: enote pubkeys must be unique.");
-    }
+    // all enote pubkeys should be unique
+    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
+        "Semantics check tx supplement v1: enote pubkeys must be unique.");
 
     // enote ephemeral pubkeys should not be zero
     // note: these are easy checks to do, but in no way guarantee the enote ephemeral pubkeys are valid/usable

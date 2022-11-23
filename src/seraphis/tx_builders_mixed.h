@@ -163,6 +163,7 @@ bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinat
 *   - outputs should have unique and canonical onetime addresses
 *   - the tx supplement should have valid semantics
 *   - output amounts should balance the block reward
+*   - NOTE: zero coinbase enotes are permitted by the semantics check
 * param: tx_proposal -
 * param: legacy_spend_pubkey -
 * param: jamtis_spend_pubkey -

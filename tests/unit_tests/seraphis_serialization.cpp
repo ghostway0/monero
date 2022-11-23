@@ -38,7 +38,6 @@
 
 #include "gtest/gtest.h"
 
-
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_coinbase_empty)
 {

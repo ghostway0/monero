@@ -212,6 +212,13 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx)
     return this->try_add_unconfirmed_tx_v1_impl(tx);
 }
 //-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx)
+{
+    boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->commit_unconfirmed_txs_v1_impl(coinbase_tx);
+}
+//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const rct::key &mock_coinbase_input_context,
     SpTxSupplementV1 mock_coinbase_tx_supplement,
     std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
@@ -776,6 +783,32 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
     m_unconfirmed_tx_output_contents[tx_id] = {input_context, tx.m_tx_supplement, output_enote_variants};
 
     return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx)
+{
+    /// checks
+    CHECK_AND_ASSERT_THROW_MES(coinbase_tx.m_block_height == this->chain_height() + 1,
+        "mock tx ledger (committing a coinbase tx): coinbase tx's block height does not match chain height.");
+
+
+    /// commit a new block
+
+    // 1. convert output enotes to type-erased enote variants
+    std::vector<SpEnoteVariant> coinbase_output_enotes;
+    coinbase_output_enotes.reserve(coinbase_tx.m_outputs.size());
+
+    for (const SpCoinbaseEnoteV1 &coinbase_enote : coinbase_tx.m_outputs)
+        coinbase_output_enotes.emplace_back(coinbase_enote);
+
+    // 2. compute coinbase input context
+    rct::key coinbase_input_context;
+    jamtis::make_jamtis_input_context_coinbase(coinbase_tx.m_block_height, coinbase_input_context);
+
+    // 3. punt to mock commit function
+    return this->commit_unconfirmed_txs_v1_impl(coinbase_input_context,
+        coinbase_tx.m_tx_supplement,
+        std::move(coinbase_output_enotes));
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,

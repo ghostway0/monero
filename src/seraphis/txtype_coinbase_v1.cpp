@@ -192,7 +192,7 @@ SemanticConfigCoinbaseComponentCountsV1 semantic_config_coinbase_component_count
 
     if (tx_semantic_rules_version == SpTxCoinbaseV1::SemanticRulesVersion::MOCK)
     {
-        config.m_min_outputs = 1;
+        config.m_min_outputs = 0;
         config.m_max_outputs = 100000;
     }
     else if (tx_semantic_rules_version == SpTxCoinbaseV1::SemanticRulesVersion::ONE)

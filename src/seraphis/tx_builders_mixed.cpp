@@ -671,25 +671,22 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.m_output_enote_ephemeral_pubkeys);
     finalize_tx_extra_v1(tx_proposal.m_partial_memo, output_proposals, tx_supplement.m_tx_extra);
 
-    // 3. at least one output is expected
-    CHECK_AND_ASSERT_THROW_MES(output_enotes.size() >= 1,
-        "Semantics check coinbase tx proposal v1: there are no outputs.");
-
-    // 4. outputs should be sorted and unique
+    // 3. outputs should be sorted and unique
     CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_enotes),
         "Semantics check coinbase tx proposal v1: output onetime addresses are not sorted and unique.");
 
-    // 5. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
+    // 4. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
     for (const SpCoinbaseEnoteV1 &output_enote : output_enotes)
     {
         CHECK_AND_ASSERT_THROW_MES(output_enote.m_core.onetime_address_is_canonical(),
             "Semantics check coinbase tx proposal v1: an output onetime address is not in the prime subgroup.");
     }
 
-    // 6. check tx supplement (especially enote ephemeral pubkeys)
-    check_v1_tx_supplement_semantics_v1(tx_supplement, output_enotes.size());
+    // 5. check tx supplement (especially enote ephemeral pubkeys)
+    // note: no ephemeral pubkey optimization for coinbase txs
+    check_v1_tx_supplement_semantics_v1(tx_supplement, output_enotes.size(), false);
 
-    // 7. check balance
+    // 6. check balance
     CHECK_AND_ASSERT_THROW_MES(validate_sp_coinbase_amount_balance_v1(tx_proposal.m_block_reward, output_enotes),
         "Semantics check coinbase tx proposal v1: outputs do not balance the block reward.");
 }
@@ -781,7 +778,8 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
     }
 
     // 7. check tx supplement (especially enote ephemeral pubkeys)
-    check_v1_tx_supplement_semantics_v1(tx_supplement, output_enotes.size());
+    // note: require ephemeral pubkey optimization for normal txs
+    check_v1_tx_supplement_semantics_v1(tx_supplement, output_enotes.size(), true);
 
 
     /// input checks
