@@ -57,6 +57,7 @@
 //forward declarations
 namespace sp
 {
+    struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
     struct EnoteScanningChunkLedgerV1;
     struct EnoteScanningChunkNonLedgerV1;
@@ -354,6 +355,7 @@ private:
     > m_block_infos;
 };
 
+bool try_add_tx_to_ledger(const SpTxCoinbaseV1 &tx_to_add, MockLedgerContext &ledger_context_inout);
 bool try_add_tx_to_ledger(const SpTxSquashedV1 &tx_to_add, MockLedgerContext &ledger_context_inout);
 
 } //namespace sp

@@ -44,6 +44,7 @@
 #include "seraphis/tx_component_types.h"
 #include "seraphis/tx_enote_scanning.h"
 #include "seraphis/tx_enote_scanning_utils.h"
+#include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 
@@ -992,6 +993,11 @@ std::uint64_t MockLedgerContext::pop_blocks_impl(const std::size_t num_blocks)
 }
 //-------------------------------------------------------------------------------------------------------------------
 // free functions
+//-------------------------------------------------------------------------------------------------------------------
+bool try_add_tx_to_ledger(const SpTxCoinbaseV1 &tx_to_add, MockLedgerContext &ledger_context_inout)
+{
+    return false;
+}
 //-------------------------------------------------------------------------------------------------------------------
 bool try_add_tx_to_ledger(const SpTxSquashedV1 &tx_to_add, MockLedgerContext &ledger_context_inout)
 {

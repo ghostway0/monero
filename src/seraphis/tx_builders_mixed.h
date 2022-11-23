@@ -244,6 +244,14 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
     const std::vector<crypto::secret_key> &output_amount_commitment_blinding_factors,
     SpBalanceProofV1 &balance_proof_out);
 /**
+* brief: balance_check_in_out_amnts_v1 - verify that block reward equals output amounts (coinbase txs)
+* param: block_reward -
+* param: output_proposals -
+* return: true if amounts balance between block reward and outputs
+*/
+bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
+    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals);
+/**
 * brief: balance_check_in_out_amnts_v1 - verify that input amounts equal output amounts + fee
 * param: legacy_input_proposals -
 * param: sp_input_proposals -
@@ -251,7 +259,7 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
 * param: discretized_transaction_fee -
 * return: true if amounts balance between inputs and outputs (plus fee)
 */
-bool balance_check_in_out_amnts_v1(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
+bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &discretized_transaction_fee);

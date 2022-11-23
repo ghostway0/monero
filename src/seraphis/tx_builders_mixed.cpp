@@ -947,7 +947,21 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
     balance_proof_out.m_remainder_blinding_factor = rct::sk2rct(remainder_blinding_factor);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool balance_check_in_out_amnts_v1(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
+bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
+    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals)
+{
+    // output amounts
+    std::vector<rct::xmr_amount> out_amounts;
+    out_amounts.reserve(output_proposals.size());
+
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+        out_amounts.emplace_back(output_proposal.amount());
+
+    // balance check
+    return balance_check_in_out_amnts({block_reward}, out_amounts, 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &discretized_transaction_fee)

@@ -31,6 +31,7 @@
 #include "ringct/rctTypes.h"
 #include "seraphis/tx_base.h"
 #include "seraphis/tx_binned_reference_set.h"
+#include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
 #include "seraphis_crypto/sp_misc_utils.h"
 #include "seraphis_mocks/seraphis_mocks.h"
@@ -62,6 +63,8 @@ struct SpTxGenData
     bool test_double_spend{false};
 };
 
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 template <typename SpTxType>
 static void run_mock_tx_test(const std::size_t legacy_ring_size,
     const std::size_t ref_set_decomp_n,
@@ -115,7 +118,8 @@ static void run_mock_tx_test(const std::size_t legacy_ring_size,
         EXPECT_TRUE(expected_result == TestType::ExpectAnyThrow);
     }
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 template <typename SpTxType>
 static void run_mock_tx_tests(const std::vector<SpTxGenData> &gen_data)
 {
@@ -147,7 +151,8 @@ static void run_mock_tx_tests(const std::vector<SpTxGenData> &gen_data)
         }
     }
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 template <typename SpTxType>
 static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
 {
@@ -213,7 +218,8 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
         EXPECT_TRUE(expected_result == TestType::ExpectAnyThrow);
     }
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double_spend)
 {
     /// success cases
@@ -376,7 +382,8 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
 
     return gen_data;
 }
-
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
 {
     /// a batch of 3 tx
@@ -398,22 +405,49 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
 
     return gen_data;
 }
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+TEST(seraphis_tx, seraphis_coinbase)
+{
+    sp::MockLedgerContext ledger_context{0, 10000};
 
+    // 1 output
+    run_mock_tx_test<sp::SpTxCoinbaseV1>(0,
+        0,
+        0,
+        sp::SpBinnedReferenceSetConfigV1{},
+        {1},
+        {},
+        {1},
+        sp::DiscretizedFee{0},
+        TestType::ExpectTrue,
+        false,
+        ledger_context);
 
-/////////////////////////////////////////////////////////////////////
-////////////////////////// Seraphis Squash //////////////////////////
-/////////////////////////////////////////////////////////////////////
-
+    // 2 outputs
+    run_mock_tx_test<sp::SpTxCoinbaseV1>(0,
+        0,
+        0,
+        sp::SpBinnedReferenceSetConfigV1{},
+        {2},
+        {},
+        {1, 1},
+        sp::DiscretizedFee{0},
+        TestType::ExpectTrue,
+        false,
+        ledger_context);
+}
+//-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx, seraphis_squashed)
 {
     run_mock_tx_tests<sp::SpTxSquashedV1>(get_mock_tx_gen_data_misc(true));
 }
-
+//-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx_batching, seraphis_squashed)
 {
     run_mock_tx_test_batch<sp::SpTxSquashedV1>(get_mock_tx_gen_data_batching());
 }
-
+//-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx, seraphis_squashed_multi_input_type)
 {
     sp::MockLedgerContext ledger_context{0, 10000};
@@ -430,3 +464,4 @@ TEST(seraphis_tx, seraphis_squashed_multi_input_type)
         true,
         ledger_context);
 }
+//-------------------------------------------------------------------------------------------------------------------
