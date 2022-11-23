@@ -215,7 +215,7 @@ static void sp_enote_records_to_input_proposals(const std::list<SpContextualEnot
 //-------------------------------------------------------------------------------------------------------------------
 static void prepare_sp_membership_proof_prep_for_tx_simulation(const rct::keyV &reference_enotes_squashed,
     const std::size_t real_reference_index,
-    const SpEnote &real_reference_enote,
+    const SpEnoteCoreVariant &real_reference_enote,
     const crypto::secret_key &address_mask,
     const crypto::secret_key &commitment_mask,
     const std::size_t ref_set_decomp_n,
@@ -243,8 +243,8 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation(const rct::keyV &
 
     // 2. generator seed
     rct::key generator_seed;
-    make_binned_ref_set_generator_seed_v1(real_reference_enote.m_onetime_address,
-        real_reference_enote.m_amount_commitment,
+    make_binned_ref_set_generator_seed_v1(onetime_address_ref(real_reference_enote),
+        amount_commitment_ref(real_reference_enote),
         address_mask,
         commitment_mask,
         generator_seed);
@@ -283,7 +283,8 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation(const rct::keyV &
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void prepare_sp_membership_proof_preps_for_tx_simulation(const std::vector<SpEnote> &real_reference_enotes,
+static void prepare_sp_membership_proof_preps_for_tx_simulation(
+    const std::vector<SpEnoteCoreVariant> &real_reference_enotes,
     const std::vector<crypto::secret_key> &address_masks,
     const std::vector<crypto::secret_key> &commitment_masks,
     const std::size_t ref_set_decomp_n,
@@ -311,8 +312,8 @@ static void prepare_sp_membership_proof_preps_for_tx_simulation(const std::vecto
 
     for (std::size_t proof_index{0}; proof_index < real_reference_enotes.size(); ++proof_index)
     {
-        make_seraphis_squashed_enote_Q(real_reference_enotes[proof_index].m_onetime_address,
-            real_reference_enotes[proof_index].m_amount_commitment,
+        make_seraphis_squashed_enote_Q(onetime_address_ref(real_reference_enotes[proof_index]),
+            amount_commitment_ref(real_reference_enotes[proof_index]),
             add_element(reference_enotes_squashed));
 
         // save the [ index : squashed enote ] mapping

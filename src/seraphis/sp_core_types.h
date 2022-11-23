@@ -36,6 +36,7 @@
 //local headers
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/sp_variant.h"
 
 //third party headers
 #include <boost/utility/string_ref.hpp>
@@ -51,9 +52,9 @@ namespace sp
 {
 
 ////
-// SpCoinbaseEnote
+// SpCoinbaseEnoteCore
 ///
-struct SpCoinbaseEnote final
+struct SpCoinbaseEnoteCore final
 {
     /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
     rct::key m_onetime_address;
@@ -61,12 +62,12 @@ struct SpCoinbaseEnote final
     rct::xmr_amount m_amount;
 
     /// less-than operator for sorting
-    bool operator<(const SpCoinbaseEnote &other_enote) const
+    bool operator<(const SpCoinbaseEnoteCore &other_enote) const
     {
         return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
     }
     /// comparison operator for equivalence testing
-    bool operator==(const SpCoinbaseEnote &other_enote) const
+    bool operator==(const SpCoinbaseEnoteCore &other_enote) const
     {
         return m_onetime_address == other_enote.m_onetime_address &&
             m_amount == other_enote.m_amount;
@@ -84,13 +85,13 @@ struct SpCoinbaseEnote final
     */
     void gen();
 };
-inline const boost::string_ref container_name(const SpCoinbaseEnote&) { return "SpCoinbaseEnote"; }
-void append_to_transcript(const SpCoinbaseEnote &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const SpCoinbaseEnoteCore&) { return "SpCoinbaseEnoteCore"; }
+void append_to_transcript(const SpCoinbaseEnoteCore &container, SpTranscriptBuilder &transcript_inout);
 
 ////
-// SpEnote
+// SpEnoteCore
 ///
-struct SpEnote final
+struct SpEnoteCore final
 {
     /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
     rct::key m_onetime_address;
@@ -98,12 +99,12 @@ struct SpEnote final
     rct::key m_amount_commitment;
 
     /// less-than operator for sorting
-    bool operator<(const SpEnote &other_enote) const
+    bool operator<(const SpEnoteCore &other_enote) const
     {
         return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
     }
     /// comparison operator for equivalence testing
-    bool operator==(const SpEnote &other_enote) const
+    bool operator==(const SpEnoteCore &other_enote) const
     {
         return m_onetime_address == other_enote.m_onetime_address &&
             m_amount_commitment  == other_enote.m_amount_commitment;
@@ -121,13 +122,27 @@ struct SpEnote final
     */
     void gen();
 };
-inline const boost::string_ref container_name(const SpEnote&) { return "SpEnote"; }
-void append_to_transcript(const SpEnote &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const SpEnoteCore&) { return "SpEnoteCore"; }
+void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &transcript_inout);
 
 ////
-// SpEnoteImage
+// SpEnoteCoreVariant
+// - variant of all seraphis core enote types
+//
+// onetime_address_ref(): get the enote's onetime address
+// amount_commitment_ref(): get the enote's amount commitment (this is a copy because coinbase enotes need to
+//                          compute the commitment)
+// operator==(): test equalify of two enote cores
 ///
-struct SpEnoteImage final
+using SpEnoteCoreVariant = SpVariant<SpCoinbaseEnoteCore, SpEnoteCore>;
+const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant);
+rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant);
+bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2);
+
+////
+// SpEnoteImageCore
+///
+struct SpEnoteImageCore final
 {
     /// K" = t_k G + H_n(Ko,C)*Ko   (in the squashed enote model)
     rct::key m_masked_address;
@@ -137,24 +152,24 @@ struct SpEnoteImage final
     crypto::key_image m_key_image;
 
     /// less-than operator for sorting
-    bool operator<(const SpEnoteImage &other_image) const
+    bool operator<(const SpEnoteImageCore &other_image) const
     {
         return m_key_image < other_image.m_key_image;
     }
 
     static std::size_t size_bytes() { return 32*3; }
 };
-inline const boost::string_ref container_name(const SpEnoteImage&) { return "SpEnoteImage"; }
-void append_to_transcript(const SpEnoteImage &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const SpEnoteImageCore&) { return "SpEnoteImageCore"; }
+void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder &transcript_inout);
 
 ////
-// SpInputProposal
+// SpInputProposalCore
 // - for spending an enote
 ///
-struct SpInputProposal final
+struct SpInputProposalCore final
 {
     /// core of the original enote
-    SpEnote m_enote_core;
+    SpEnoteCoreVariant m_enote_core;
     /// the enote's key image
     crypto::key_image m_key_image;
 
@@ -175,7 +190,7 @@ struct SpInputProposal final
     crypto::secret_key m_commitment_mask;
 
     /// less-than operator for sorting
-    bool operator<(const SpInputProposal &other_proposal) const { return m_key_image < other_proposal.m_key_image; }
+    bool operator<(const SpInputProposalCore &other_proposal) const { return m_key_image < other_proposal.m_key_image; }
 
     /**
     * brief: key_image - get this input's key image
@@ -187,7 +202,7 @@ struct SpInputProposal final
     * brief: enote_core - get the enote this input proposal represents
     * outparam: enote_out -
     */
-    const SpEnote& enote_core() const { return m_enote_core; }
+    const SpEnoteCoreVariant& enote_core() const { return m_enote_core; }
 
     /**
     * brief: get_squash_prefix - get this input's enote's squash prefix
@@ -199,7 +214,7 @@ struct SpInputProposal final
     * brief: get_enote_image_core - get this input's enote image in the squashed enote model
     * outparam: image_out -
     */
-    void get_enote_image_core(SpEnoteImage &image_out) const;
+    void get_enote_image_core(SpEnoteImageCore &image_out) const;
 
     /**
     * brief: gen - generate random enote keys
@@ -210,10 +225,10 @@ struct SpInputProposal final
 };
 
 ////
-// SpOutputProposal
+// SpOutputProposalCore
 // - for creating an enote to send an amount to someone
 ///
-struct SpOutputProposal final
+struct SpOutputProposalCore final
 {
     /// Ko
     rct::key m_onetime_address;
@@ -223,7 +238,7 @@ struct SpOutputProposal final
     rct::xmr_amount m_amount;
 
     /// less-than operator for sorting
-    bool operator<(const SpOutputProposal &other_proposal) const
+    bool operator<(const SpOutputProposalCore &other_proposal) const
     {
         return memcmp(&m_onetime_address, &other_proposal.m_onetime_address, sizeof(rct::key)) < 0;
     }
@@ -237,7 +252,7 @@ struct SpOutputProposal final
     * brief: get_enote_core - get the enote this input proposal represents
     * outparam: enote_out -
     */
-    void get_enote_core(SpEnote &enote_out) const;
+    void get_enote_core(SpEnoteCore &enote_out) const;
 
     /**
     * brief: gen - generate a random proposal

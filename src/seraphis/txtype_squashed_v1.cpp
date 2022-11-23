@@ -642,7 +642,7 @@ bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashed
     const TxValidationContext &tx_validation_context)
 {
     std::vector<const SpMembershipProofV1*> sp_membership_proof_ptrs;
-    std::vector<const SpEnoteImage*> sp_input_image_ptrs;
+    std::vector<const SpEnoteImageCore*> sp_input_image_ptrs;
     std::vector<const BulletproofPlus2*> range_proof_ptrs;
     sp_membership_proof_ptrs.reserve(txs.size()*20);  //heuristic... (most tx have 1-2 seraphis inputs)
     sp_input_image_ptrs.reserve(txs.size()*20);

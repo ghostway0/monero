@@ -190,6 +190,7 @@ public:
     * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new mock coinbase tx
     *   - clears the unconfirmed tx cache
     *   - note: currently does NOT validate if coinbase enotes are sorted properly
+    *   - note2: permits seraphis enotes of any type (coinbase or regular enotes) for convenience in mockups
     *   - todo: use a real coinbase tx instead, with height that is expected to match the next block height (try commit)
     * param: mock_coinbase_input_context -
     * param: mock_coinbase_tx_supplement -
@@ -198,7 +199,7 @@ public:
     */
     std::uint64_t commit_unconfirmed_txs_v1(const rct::key &mock_coinbase_input_context,
         SpTxSupplementV1 mock_coinbase_tx_supplement,
-        std::vector<SpEnoteV1> mock_coinbase_output_enotes);
+        std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
     /**
     * brief: remove_tx_from_unconfirmed_cache - remove a tx from the unconfirmed cache
     * param: tx_id - tx id of tx to remove
@@ -246,11 +247,11 @@ private:
     bool try_add_unconfirmed_coinbase_v1_impl(const rct::key &tx_id,
         const rct::key &input_context,
         SpTxSupplementV1 tx_supplement,
-        std::vector<SpEnoteV1> output_enotes);
+        std::vector<SpEnoteVariant> output_enotes);
     bool try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx);
     std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,
         SpTxSupplementV1 mock_coinbase_tx_supplement,
-        std::vector<SpEnoteV1> mock_coinbase_output_enotes);
+        std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
     void remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id);
     void clear_unconfirmed_cache_impl();
     std::uint64_t pop_chain_at_height_impl(const std::uint64_t pop_height);
@@ -285,7 +286,7 @@ private:
         std::tuple<       // tx output contents
             rct::key,                // input context
             SpTxSupplementV1,        // tx supplement
-            std::vector<SpEnoteV1>   // output enotes
+            std::vector<SpEnoteVariant>   // output enotes
         >
     > m_unconfirmed_tx_output_contents;
 
@@ -341,7 +342,7 @@ private:
             std::tuple<       // tx output contents
                 rct::key,                // input context
                 SpTxSupplementV1,        // tx supplement
-                std::vector<SpEnoteV1>   // output enotes
+                std::vector<SpEnoteVariant>   // output enotes
             >
         >
     > m_blocks_of_sp_tx_output_contents;

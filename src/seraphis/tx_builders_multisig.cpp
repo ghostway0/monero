@@ -559,7 +559,7 @@ void make_v1_legacy_multisig_input_proposal_v1(const LegacyEnoteRecord &enote_re
         proposal_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_v1_sp_multisig_input_proposal_v1(const SpEnoteV1 &enote,
+void make_v1_sp_multisig_input_proposal_v1(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
     const crypto::secret_key &address_mask,
@@ -865,6 +865,10 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
         for (SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
         {
+            // save the amount commitment in a new temporary enote core shuttle variable
+            SpEnoteCore temp_enote_core;
+            temp_enote_core.m_amount_commitment = amount_commitment_ref(sp_input_proposal.m_core.m_enote_core);
+
             // new onetime address
             seraphis_extended_spendkey_temp = rct::pk2rct(sp_spend_pubkey_mock);
             extend_seraphis_spendkey_u(sp_input_proposal.m_core.m_enote_view_privkey_u, seraphis_extended_spendkey_temp);
@@ -872,7 +876,10 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
             extend_seraphis_spendkey_x(sp_input_proposal.m_core.m_enote_view_privkey_x, seraphis_onetime_address_temp);
             mask_key(sp_input_proposal.m_core.m_enote_view_privkey_g,
                 seraphis_onetime_address_temp,
-                sp_input_proposal.m_core.m_enote_core.m_onetime_address);
+                temp_enote_core.m_onetime_address);
+
+            // reset the proposal's enote core
+            sp_input_proposal.m_core.m_enote_core = temp_enote_core;
 
             // update key image for new onetime address
             make_seraphis_key_image(sp_input_proposal.m_core.m_enote_view_privkey_x,

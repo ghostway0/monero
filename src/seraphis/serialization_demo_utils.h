@@ -99,8 +99,10 @@ void make_serializable_clsag(const rct::clsag &clsag, ser_clsag_PARTIAL &seriali
 void make_serializable_grootle_proof(const GrootleProof &grootle, ser_GrootleProof &serializable_grootle_out);
 void make_serializable_sp_composition_proof(const SpCompositionProof &proof,
     ser_SpCompositionProof &serializable_proof_out);
-void make_serializable_sp_enote(const SpEnote &enote, ser_SpEnote &serializable_enote_out);
-void make_serializable_sp_enote_image(const SpEnoteImage &image, ser_SpEnoteImage &serializable_image_out);
+void make_serializable_sp_coinbase_enote_core(const SpCoinbaseEnoteCore &enote,
+    ser_SpCoinbaseEnoteCore &serializable_enote_out);
+void make_serializable_sp_enote_core(const SpEnoteCore &enote, ser_SpEnoteCore &serializable_enote_out);
+void make_serializable_sp_enote_image_core(const SpEnoteImageCore &image, ser_SpEnoteImageCore &serializable_image_out);
 void make_serializable_sp_binned_reference_set_v1(const SpBinnedReferenceSetV1 &refset,
     ser_SpBinnedReferenceSetV1_PARTIAL &serializable_refset_out);
 void make_serializable_legacy_enote_image_v2(const LegacyEnoteImageV2 &image,
@@ -128,8 +130,9 @@ void recover_bpp2(ser_BulletproofPlus2_PARTIAL &serializable_bpp2_in,
 void recover_clsag(ser_clsag_PARTIAL &serializable_clsag_in, const crypto::key_image &key_image, rct::clsag &clsag_out);
 void recover_grootle_proof(ser_GrootleProof &serializable_grootle_in, GrootleProof &grootle_out);
 void recover_sp_composition_proof(const ser_SpCompositionProof &serializable_proof, SpCompositionProof &proof_out);
-void recover_sp_enote(const ser_SpEnote &serializable_enote, SpEnote &enote_out);
-void recover_sp_enote_image(const ser_SpEnoteImage &serializable_image, SpEnoteImage &image_out);
+void recover_sp_coinbase_enote_core(const ser_SpCoinbaseEnoteCore &serializable_enote, SpCoinbaseEnoteCore &enote_out);
+void recover_sp_enote_core(const ser_SpEnoteCore &serializable_enote, SpEnoteCore &enote_out);
+void recover_sp_enote_image_core(const ser_SpEnoteImageCore &serializable_image, SpEnoteImageCore &image_out);
 void recover_sp_binned_reference_set_v1(ser_SpBinnedReferenceSetV1_PARTIAL &serializable_refset_in,
     const SpBinnedReferenceSetConfigV1 &bin_config,
     const rct::key &generator_seed,

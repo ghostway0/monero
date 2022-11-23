@@ -122,12 +122,12 @@ bool LegacyContextualEnoteRecordV1::has_spent_status(const SpEnoteSpentStatus te
 bool SpContextualBasicEnoteRecordV1::have_same_destination(const SpContextualBasicEnoteRecordV1 &record1,
     const SpContextualBasicEnoteRecordV1 &record2)
 {
-    return record1.m_record.m_enote.m_core.m_onetime_address == record2.m_record.m_enote.m_core.m_onetime_address;
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpContextualIntermediateEnoteRecordV1::get_onetime_address(rct::key &onetime_address_out) const
 {
-    onetime_address_out = m_record.m_enote.m_core.m_onetime_address;
+    onetime_address_out = onetime_address_ref(m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool SpContextualIntermediateEnoteRecordV1::have_same_destination(const SpContextualIntermediateEnoteRecordV1 &record1,
@@ -144,7 +144,7 @@ bool SpContextualIntermediateEnoteRecordV1::have_same_destination(const SpContex
 bool SpContextualEnoteRecordV1::have_same_destination(const SpContextualEnoteRecordV1 &record1,
     const SpContextualEnoteRecordV1 &record2)
 {
-    return record1.m_record.m_enote.m_core.m_onetime_address == record2.m_record.m_enote.m_core.m_onetime_address;
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool SpContextualEnoteRecordV1::has_origin_status(const SpEnoteOriginStatus test_status) const

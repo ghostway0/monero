@@ -44,8 +44,8 @@
 //forward declarations
 namespace sp
 {
-    struct SpCoinbaseEnote;
-    struct SpEnote;
+    struct SpCoinbaseEnoteCore;
+    struct SpEnoteCore;
 }
 
 namespace sp
@@ -170,7 +170,7 @@ void make_seraphis_squashed_enote_Q(const rct::key &onetime_address,
 void make_seraphis_enote_core(const rct::key &onetime_address,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out);
+    SpEnoteCore &enote_core_out);
 /**
 * brief: make_seraphis_enote_core - make a seraphis enote by extending an existing address
 * param: extension_privkey_g -
@@ -187,7 +187,7 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     const rct::key &initial_address,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out);
+    SpEnoteCore &enote_core_out);
 /**
 * brief: make_seraphis_enote_core - make a seraphis enote when all secrets are known
 * param: enote_view_privkey_g -
@@ -204,7 +204,7 @@ void make_seraphis_enote_core(const crypto::secret_key &enote_view_privkey_g,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out);
+    SpEnoteCore &enote_core_out);
 /**
 * brief: make_seraphis_enote_image_masked_keys - make the masked keys for a seraphis enote image
 * param: onetime_address -

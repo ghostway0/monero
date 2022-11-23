@@ -196,7 +196,7 @@ void make_seraphis_squashed_enote_Q(const rct::key &onetime_address,
 void make_seraphis_enote_core(const rct::key &onetime_address,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out)
+    SpEnoteCore &enote_core_out)
 {
     // Ko
     enote_core_out.m_onetime_address = onetime_address;
@@ -211,7 +211,7 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     const rct::key &initial_address,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out)
+    SpEnoteCore &enote_core_out)
 {
     // Ko = k_sender_extension_g G + k_sender_extension_x X + k_sender_extension_u U + K
     enote_core_out.m_onetime_address = initial_address;
@@ -229,7 +229,7 @@ void make_seraphis_enote_core(const crypto::secret_key &enote_view_privkey_g,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
-    SpEnote &enote_core_out)
+    SpEnoteCore &enote_core_out)
 {
     // spendbase = k_{b, recipient} U
     rct::key spendbase;

@@ -229,13 +229,19 @@ void make_serializable_sp_composition_proof(const SpCompositionProof &proof, ser
     serializable_proof_out.K_t1 = proof.K_t1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_sp_enote(const SpEnote &enote, ser_SpEnote &serializable_enote_out)
+void make_serializable_sp_coinbase_enote_core(const SpCoinbaseEnoteCore &enote, ser_SpCoinbaseEnoteCore &serializable_enote_out)
+{
+    serializable_enote_out.m_onetime_address = enote.m_onetime_address;
+    serializable_enote_out.m_amount          = enote.m_amount;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_serializable_sp_enote_core(const SpEnoteCore &enote, ser_SpEnoteCore &serializable_enote_out)
 {
     serializable_enote_out.m_onetime_address   = enote.m_onetime_address;
     serializable_enote_out.m_amount_commitment = enote.m_amount_commitment;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_sp_enote_image(const SpEnoteImage &image, ser_SpEnoteImage &serializable_image_out)
+void make_serializable_sp_enote_image_core(const SpEnoteImageCore &image, ser_SpEnoteImageCore &serializable_image_out)
 {
     serializable_image_out.m_masked_address    = image.m_masked_address;
     serializable_image_out.m_masked_commitment = image.m_masked_commitment;
@@ -257,9 +263,18 @@ void make_serializable_legacy_enote_image_v2(const LegacyEnoteImageV2 &image,
     serializable_image_out.m_key_image         = image.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_serializable_sp_coinbase_enote_v1(const SpCoinbaseEnoteV1 &enote, ser_SpCoinbaseEnoteV1 &serializable_enote_out)
+{
+    make_serializable_sp_coinbase_enote_core(enote.m_core, serializable_enote_out.m_core);
+    memcpy(serializable_enote_out.m_addr_tag_enc.bytes,
+        enote.m_addr_tag_enc.bytes,
+        sizeof(enote.m_addr_tag_enc.bytes));
+    serializable_enote_out.m_view_tag = enote.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_enote_v1(const SpEnoteV1 &enote, ser_SpEnoteV1 &serializable_enote_out)
 {
-    make_serializable_sp_enote(enote.m_core, serializable_enote_out.m_core);
+    make_serializable_sp_enote_core(enote.m_core, serializable_enote_out.m_core);
     serializable_enote_out.m_encoded_amount = enote.m_encoded_amount;
     memcpy(serializable_enote_out.m_addr_tag_enc.bytes,
         enote.m_addr_tag_enc.bytes,
@@ -269,7 +284,7 @@ void make_serializable_sp_enote_v1(const SpEnoteV1 &enote, ser_SpEnoteV1 &serial
 //-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_enote_image_v1(const SpEnoteImageV1 &image, ser_SpEnoteImageV1 &serializable_image_out)
 {
-    make_serializable_sp_enote_image(image.m_core, serializable_image_out.m_core);
+    make_serializable_sp_enote_image_core(image.m_core, serializable_image_out.m_core);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_balance_proof_v1(const SpBalanceProofV1 &proof,
@@ -393,13 +408,19 @@ void recover_sp_composition_proof(const ser_SpCompositionProof &serializable_pro
     proof_out.K_t1 = serializable_proof.K_t1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void recover_sp_enote(const ser_SpEnote &serializable_enote, SpEnote &enote_out)
+void recover_sp_coinbase_enote_core(const ser_SpCoinbaseEnoteCore &serializable_enote, SpCoinbaseEnoteCore &enote_out)
+{
+    enote_out.m_onetime_address   = serializable_enote.m_onetime_address;
+    enote_out.m_amount = serializable_enote.m_amount;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void recover_sp_enote_core(const ser_SpEnoteCore &serializable_enote, SpEnoteCore &enote_out)
 {
     enote_out.m_onetime_address   = serializable_enote.m_onetime_address;
     enote_out.m_amount_commitment = serializable_enote.m_amount_commitment;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void recover_sp_enote_image(const ser_SpEnoteImage &serializable_image, SpEnoteImage &image_out)
+void recover_sp_enote_image_core(const ser_SpEnoteImageCore &serializable_image, SpEnoteImageCore &image_out)
 {
     image_out.m_masked_address    = serializable_image.m_masked_address;
     image_out.m_masked_commitment = serializable_image.m_masked_commitment;
@@ -433,7 +454,7 @@ void recover_legacy_enote_image_v2(const ser_LegacyEnoteImageV2 &serializable_im
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_enote_v1(const ser_SpEnoteV1 &serializable_enote, SpEnoteV1 &enote_out)
 {
-    recover_sp_enote(serializable_enote.m_core, enote_out.m_core);
+    recover_sp_enote_core(serializable_enote.m_core, enote_out.m_core);
     enote_out.m_encoded_amount     = serializable_enote.m_encoded_amount;
     memcpy(enote_out.m_addr_tag_enc.bytes,
         serializable_enote.m_addr_tag_enc.bytes,
@@ -443,7 +464,7 @@ void recover_sp_enote_v1(const ser_SpEnoteV1 &serializable_enote, SpEnoteV1 &eno
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_enote_image_v1(const ser_SpEnoteImageV1 &serializable_image, SpEnoteImageV1 &image_out)
 {
-    recover_sp_enote_image(serializable_image.m_core, image_out.m_core);
+    recover_sp_enote_image_core(serializable_image.m_core, image_out.m_core);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_balance_proof_v1(ser_SpBalanceProofV1_PARTIAL &serializable_proof_in,

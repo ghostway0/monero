@@ -109,6 +109,88 @@ void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &trans
     transcript_inout.append("view_tag", container.m_view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
+SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
+{
+    struct visitor : public SpVariantStaticVisitor<SpEnoteCoreVariant>
+    {
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        SpEnoteCoreVariant operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core; }
+        SpEnoteCoreVariant operator()(const SpEnoteV1 &enote) const { return enote.m_core; }
+    };
+
+    return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+const rct::key& onetime_address_ref(const SpEnoteVariant &variant)
+{
+    struct visitor : public SpVariantStaticVisitor<const rct::key&>
+    {
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        const rct::key& operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core.m_onetime_address; }
+        const rct::key& operator()(const SpEnoteV1 &enote) const { return enote.m_core.m_onetime_address; }
+    };
+
+    return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+rct::key amount_commitment_ref(const SpEnoteVariant &variant)
+{
+    struct visitor : public SpVariantStaticVisitor<rct::key>
+    {
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        rct::key operator()(const SpCoinbaseEnoteV1 &enote) const { return rct::zeroCommit(enote.m_core.m_amount); }
+        rct::key operator()(const SpEnoteV1 &enote) const { return enote.m_core.m_amount_commitment; }
+    };
+
+    return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &variant)
+{
+    struct visitor : public SpVariantStaticVisitor<const jamtis::encrypted_address_tag_t&>
+    {
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        const jamtis::encrypted_address_tag_t& operator()(const SpCoinbaseEnoteV1 &enote) const
+        { return enote.m_addr_tag_enc; }
+        const jamtis::encrypted_address_tag_t& operator()(const SpEnoteV1 &enote) const
+        { return enote.m_addr_tag_enc; }
+    };
+
+    return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant)
+{
+    struct visitor : public SpVariantStaticVisitor<jamtis::view_tag_t>
+    {
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        jamtis::view_tag_t operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_view_tag; }
+        jamtis::view_tag_t operator()(const SpEnoteV1 &enote) const { return enote.m_view_tag; }
+    };
+
+    return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2)
+{
+    // check they have the same type
+    if (!SpEnoteVariant::same_type(variant1, variant2))
+        return false;
+
+    // use a visitor to test equality with variant2
+    struct visitor : public SpVariantStaticVisitor<bool>
+    {
+        visitor(const SpEnoteVariant &other_ref) : other{other_ref} {}
+        const SpEnoteVariant &other;
+
+        using SpVariantStaticVisitor::operator();  //for blank overload
+        bool operator()(const SpCoinbaseEnoteV1 &enote) const { return enote == other.unwrap<SpCoinbaseEnoteV1>(); }
+        bool operator()(const SpEnoteV1 &enote) const { return enote == other.unwrap<SpEnoteV1>(); }
+    };
+
+    return variant1.visit(visitor{variant2});
+}
+//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("core", container.m_core);

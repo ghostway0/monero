@@ -214,7 +214,7 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx)
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const rct::key &mock_coinbase_input_context,
     SpTxSupplementV1 mock_coinbase_tx_supplement,
-    std::vector<SpEnoteV1> mock_coinbase_output_enotes)
+    std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
 {
     boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
 
@@ -552,7 +552,7 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
                         total_output_count_before_tx,
                         std::get<rct::key>(tx_with_output_contents.second),
                         std::get<SpTxSupplementV1>(tx_with_output_contents.second),
-                        std::get<std::vector<SpEnoteV1>>(tx_with_output_contents.second),
+                        std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
                         SpEnoteOriginStatus::ONCHAIN,
                         chunk_out.m_basic_records_per_tx))
                     {
@@ -577,7 +577,8 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
                     }
 
                     // add this tx's number of outputs to the total output count
-                    total_output_count_before_tx += std::get<std::vector<SpEnoteV1>>(tx_with_output_contents.second).size();
+                    total_output_count_before_tx +=
+                        std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second).size();
                 }
             }
         );
@@ -604,7 +605,7 @@ bool MockLedgerContext::try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_s
             0,
             std::get<rct::key>(tx_with_output_contents.second),
             std::get<SpTxSupplementV1>(tx_with_output_contents.second),
-            std::get<std::vector<SpEnoteV1>>(tx_with_output_contents.second),
+            std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
             SpEnoteOriginStatus::UNCONFIRMED,
             chunk_out.m_basic_records_per_tx))
         {
@@ -693,7 +694,7 @@ std::uint64_t MockLedgerContext::add_legacy_coinbase_impl(const rct::key &tx_id,
 bool MockLedgerContext::try_add_unconfirmed_coinbase_v1_impl(const rct::key &tx_id,
     const rct::key &input_context,
     SpTxSupplementV1 tx_supplement,
-    std::vector<SpEnoteV1> output_enotes)
+    std::vector<SpEnoteVariant> output_enotes)
 {
     /// check failure modes
 
@@ -766,14 +767,20 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
     m_unconfirmed_tx_key_images[tx_id] = {std::move(legacy_key_images_collected), std::move(sp_key_images_collected)};
 
     // 2. add tx outputs
-    m_unconfirmed_tx_output_contents[tx_id] = {input_context, tx.m_tx_supplement, tx.m_outputs};
+    std::vector<SpEnoteVariant> output_enote_variants;
+    output_enote_variants.reserve(tx.m_outputs.size());
+
+    for (const SpEnoteV1 &enote : tx.m_outputs)
+        output_enote_variants.emplace_back(enote);
+
+    m_unconfirmed_tx_output_contents[tx_id] = {input_context, tx.m_tx_supplement, output_enote_variants};
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,
     SpTxSupplementV1 mock_coinbase_tx_supplement,
-    std::vector<SpEnoteV1> mock_coinbase_output_enotes)
+    std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
 {
     /// sanity checks: check unconfirmed key images and txids
     for (const auto &tx_key_images : m_unconfirmed_tx_key_images)
@@ -855,11 +862,11 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &
     // b. insert all squashed enotes to the reference set
     for (const auto &tx_info : m_unconfirmed_tx_output_contents)
     {
-        const auto &tx_enotes = std::get<std::vector<SpEnoteV1>>(tx_info.second);
-        for (const SpEnoteV1 &enote : tx_enotes)
+        const auto &tx_enotes = std::get<std::vector<SpEnoteVariant>>(tx_info.second);
+        for (const SpEnoteVariant &enote : tx_enotes)
         {
-            make_seraphis_squashed_enote_Q(enote.m_core.m_onetime_address,
-                enote.m_core.m_amount_commitment,
+            make_seraphis_squashed_enote_Q(onetime_address_ref(enote),
+                amount_commitment_ref(enote),
                 m_sp_squashed_enotes[total_sp_output_count]);
 
             ++total_sp_output_count;
@@ -1004,7 +1011,7 @@ bool try_add_tx_to_ledger(const SpTxSquashedV1 &tx_to_add, MockLedgerContext &le
     if (!ledger_context_inout.try_add_unconfirmed_tx_v1(tx_to_add))
         return false;
 
-    ledger_context_inout.commit_unconfirmed_txs_v1(rct::pkGen(), SpTxSupplementV1{}, std::vector<SpEnoteV1>{});
+    ledger_context_inout.commit_unconfirmed_txs_v1(rct::pkGen(), SpTxSupplementV1{}, std::vector<SpEnoteVariant>{});
 
     return true;
 }

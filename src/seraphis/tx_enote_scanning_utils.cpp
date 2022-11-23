@@ -92,7 +92,7 @@ static void process_chunk_new_intermediate_record_update_sp(const SpIntermediate
     std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records_inout)
 {
     // 1. add new record to found enotes (or refresh if already there)
-    const rct::key &new_record_onetime_address{new_enote_record.m_enote.m_core.m_onetime_address};
+    const rct::key &new_record_onetime_address{onetime_address_ref(new_enote_record.m_enote)};
 
     found_enote_records_inout[new_record_onetime_address].m_record = new_enote_record;
 
@@ -387,7 +387,7 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     const std::uint64_t total_enotes_before_tx,
     const rct::key &input_context,
     const SpTxSupplementV1 &tx_supplement,
-    const std::vector<SpEnoteV1> &enotes_in_tx,
+    const std::vector<SpEnoteVariant> &enotes_in_tx,
     const SpEnoteOriginStatus origin_status,
     std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout)
 {

@@ -68,7 +68,7 @@ namespace sp
 struct SpInputProposalV1 final
 {
     /// core of the proposal
-    SpInputProposal m_core;
+    SpInputProposalCore m_core;
 
     /// less-than operator for sorting
     bool operator<(const SpInputProposalV1 &other_proposal) const { return m_core < other_proposal.m_core; }
@@ -128,7 +128,7 @@ struct SpCoinbaseOutputProposalV1 final
 struct SpOutputProposalV1 final
 {
     /// core of the proposal
-    SpOutputProposal m_core;
+    SpOutputProposalCore m_core;
 
     /// xK_e: enote ephemeral pubkey
     crypto::x25519_pubkey m_enote_ephemeral_pubkey;
@@ -174,7 +174,7 @@ struct SpMembershipProofPrepV1 final
     /// the referenced enotes (squashed representation)
     std::vector<rct::key> m_referenced_enotes_squashed;
     /// the real enote being referenced (plain enote representation)
-    SpEnote m_real_reference_enote;
+    SpEnoteCoreVariant m_real_reference_enote;
     /// image masks for the real reference
     crypto::secret_key m_address_mask;
     crypto::secret_key m_commitment_mask;
@@ -263,7 +263,7 @@ struct SpPartialInputV1 final
     rct::key m_proposal_prefix;
 
     /// the input enote's core; used for making a membership proof
-    SpEnote m_input_enote_core;
+    SpEnoteCoreVariant m_input_enote_core;
     /// input amount
     rct::xmr_amount m_input_amount;
     /// input amount commitment's blinding factor; used for making the balance proof
@@ -299,7 +299,7 @@ struct SpPartialTxV1 final
     std::vector<rct::ctkeyV> m_legacy_ring_signature_rings;
 
     /// seraphis input enotes; for creating seraphis input membership proofs (ALIGNED TO SERAPHIS INPUTS)
-    std::vector<SpEnote> m_sp_input_enotes;
+    std::vector<SpEnoteCoreVariant> m_sp_input_enotes;
     /// seraphis image masks; for creating seraphis input membership proofs (ALIGNED TO SERAPHIS INPUTS)
     std::vector<crypto::secret_key> m_sp_address_masks;
     std::vector<crypto::secret_key> m_sp_commitment_masks;

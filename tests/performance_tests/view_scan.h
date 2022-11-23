@@ -304,8 +304,6 @@ public:
 
         // make a pile of basic records
         // - only the last basic record should succeed
-        sp::SpEnoteRecordV1 enote_record_dummy;
-
         for (std::size_t record_index{0}; record_index < num_records; ++record_index)
         {
             m_basic_records.emplace_back(basic_record);
@@ -319,7 +317,9 @@ public:
             if (m_mode == ScannerClientModes::ONE_FAKE_TAG_MATCH &&
                 record_index == num_records - 1)
             {
-                m_basic_records.back().m_enote.m_core.m_onetime_address = rct::pkGen();
+                sp::SpEnoteV1 temp_enote{m_basic_records.back().m_enote.unwrap<sp::SpEnoteV1>()};
+                temp_enote.m_core.m_onetime_address = rct::pkGen();
+                m_basic_records.back().m_enote = temp_enote;
                 continue;
             }
 

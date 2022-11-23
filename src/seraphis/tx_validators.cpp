@@ -486,7 +486,7 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpMembershipProofV1*> &sp_membership_proofs,
-    const std::vector<const SpEnoteImage*> &sp_input_images,
+    const std::vector<const SpEnoteImageCore*> &sp_input_images,
     const TxValidationContext &tx_validation_context,
     std::list<SpMultiexpBuilder> &validation_data_out)
 {

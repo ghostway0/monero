@@ -63,8 +63,22 @@ struct ser_encrypted_address_tag_t final
     unsigned char bytes[sizeof(jamtis::encrypted_address_tag_t)];
 };
 
-/// serializable SpEnote
-struct ser_SpEnote final
+/// serializable SpCoinbaseEnoteCore
+struct ser_SpCoinbaseEnoteCore final
+{
+    /// Ko
+    rct::key m_onetime_address;
+    /// a
+    rct::xmr_amount m_amount;
+
+    BEGIN_SERIALIZE()
+        FIELD(m_onetime_address)
+        FIELD(m_amount)
+    END_SERIALIZE()
+};
+
+/// serializable SpEnoteCore
+struct ser_SpEnoteCore final
 {
     /// Ko
     rct::key m_onetime_address;
@@ -77,8 +91,8 @@ struct ser_SpEnote final
     END_SERIALIZE()
 };
 
-/// serializable SpEnoteImage
-struct ser_SpEnoteImage final
+/// serializable SpEnoteImageCore
+struct ser_SpEnoteImageCore final
 {
     /// K"
     rct::key m_masked_address;
@@ -204,10 +218,28 @@ struct ser_LegacyEnoteImageV2 final
 struct ser_SpEnoteImageV1 final
 {
     /// enote image core
-    ser_SpEnoteImage m_core;
+    ser_SpEnoteImageCore m_core;
 
     BEGIN_SERIALIZE()
         FIELD(m_core)
+    END_SERIALIZE()
+};
+
+/// serializable SpCoinbaseEnoteV1
+struct ser_SpCoinbaseEnoteV1 final
+{
+    /// enote core (one-time address, amount commitment)
+    ser_SpCoinbaseEnoteCore m_core;
+
+    /// addr_tag_enc
+    ser_encrypted_address_tag_t m_addr_tag_enc;
+    /// view_tag
+    unsigned char m_view_tag;
+
+    BEGIN_SERIALIZE()
+        FIELD(m_core)
+        FIELD(m_addr_tag_enc)    static_assert(sizeof(m_addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
+        VARINT_FIELD(m_view_tag) static_assert(sizeof(m_view_tag) == sizeof(jamtis::view_tag_t), "");
     END_SERIALIZE()
 };
 
@@ -215,13 +247,12 @@ struct ser_SpEnoteImageV1 final
 struct ser_SpEnoteV1 final
 {
     /// enote core (one-time address, amount commitment)
-    ser_SpEnote m_core;
+    ser_SpEnoteCore m_core;
 
     /// enc(a)
     rct::xmr_amount m_encoded_amount;
     /// addr_tag_enc
     ser_encrypted_address_tag_t m_addr_tag_enc;
-
     /// view_tag
     unsigned char m_view_tag;
 

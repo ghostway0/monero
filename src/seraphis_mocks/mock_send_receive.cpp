@@ -75,7 +75,7 @@ namespace sp
 static void add_sp_coinbase_enotes_for_user(const rct::key &mock_input_context,
     const std::vector<rct::xmr_amount> &coinbase_amounts,
     const jamtis::JamtisDestinationV1 &user_address,
-    std::vector<SpEnoteV1> &coinbase_enotes_inout,
+    std::vector<SpEnoteVariant> &coinbase_enotes_inout,
     SpTxSupplementV1 &tx_supplement_inout)
 {
     // prepare mock coinbase enotes
@@ -94,7 +94,9 @@ static void add_sp_coinbase_enotes_for_user(const rct::key &mock_input_context,
         payment_proposal_temp.get_output_proposal_v1(mock_input_context, output_proposal);
 
         // save enote and ephemeral pubkey
-        output_proposal.get_enote_v1(add_element(coinbase_enotes_inout));
+        SpEnoteV1 temp_enote;
+        output_proposal.get_enote_v1(temp_enote);
+        coinbase_enotes_inout.emplace_back(temp_enote);
         tx_supplement_inout.m_output_enote_ephemeral_pubkeys.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
     }
 }
@@ -160,7 +162,7 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
     MockLedgerContext &ledger_context_inout)
 {
     // prepare mock coinbase enotes
-    std::vector<SpEnoteV1> coinbase_enotes;
+    std::vector<SpEnoteVariant> coinbase_enotes;
     SpTxSupplementV1 tx_supplement;
     jamtis::JamtisPaymentProposalV1 payment_proposal_temp;
     const rct::key mock_input_context{rct::pkGen()};
@@ -177,7 +179,9 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
         payment_proposal_temp.get_output_proposal_v1(mock_input_context, output_proposal);
 
         // save enote and ephemeral pubkey
-        output_proposal.get_enote_v1(add_element(coinbase_enotes));
+        SpEnoteV1 temp_enote;
+        output_proposal.get_enote_v1(temp_enote);
+        coinbase_enotes.emplace_back(temp_enote);
         tx_supplement.m_output_enote_ephemeral_pubkeys.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
     }
 
@@ -196,7 +200,7 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
 
     // prepare mock coinbase enotes
     const rct::key mock_input_context{rct::pkGen()};
-    std::vector<SpEnoteV1> coinbase_enotes;
+    std::vector<SpEnoteVariant> coinbase_enotes;
     SpTxSupplementV1 tx_supplement;
 
     for (std::size_t user_index{0}; user_index < user_addresses.size(); ++user_index)
