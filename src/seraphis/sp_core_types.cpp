@@ -54,15 +54,27 @@ extern "C"
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnote::onetime_address_is_canonical() const
+bool SpCoinbaseEnote::onetime_address_is_canonical() const
 {
     return key_domain_is_prime_subgroup(m_onetime_address);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void append_to_transcript(const SpEnote &container, SpTranscriptBuilder &transcript_inout)
+void SpCoinbaseEnote::gen()
+{
+    // all random
+    m_onetime_address = rct::pkGen();
+    crypto::rand(8, reinterpret_cast<unsigned char*>(&m_amount));
+}
+//-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const SpCoinbaseEnote &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("Ko", container.m_onetime_address);
-    transcript_inout.append("C", container.m_amount_commitment);
+    transcript_inout.append("a", container.m_amount);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnote::onetime_address_is_canonical() const
+{
+    return key_domain_is_prime_subgroup(m_onetime_address);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnote::gen()
@@ -70,6 +82,12 @@ void SpEnote::gen()
     // all random
     m_onetime_address = rct::pkGen();
     m_amount_commitment = rct::pkGen();
+}
+//-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const SpEnote &container, SpTranscriptBuilder &transcript_inout)
+{
+    transcript_inout.append("Ko", container.m_onetime_address);
+    transcript_inout.append("C", container.m_amount_commitment);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteImage &container, SpTranscriptBuilder &transcript_inout)

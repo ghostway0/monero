@@ -63,6 +63,18 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 // check that all enote ephemeral pubkeys in an output proposal set are unique
 //-------------------------------------------------------------------------------------------------------------------
+static bool ephemeral_pubkeys_are_unique(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals)
+{
+    std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
+
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+        enote_ephemeral_pubkeys.insert(output_proposal.m_enote_ephemeral_pubkey);
+
+    return enote_ephemeral_pubkeys.size() == output_proposals.size();
+}
+//-------------------------------------------------------------------------------------------------------------------
+// check that all enote ephemeral pubkeys in an output proposal set are unique
+//-------------------------------------------------------------------------------------------------------------------
 static bool ephemeral_pubkeys_are_unique(const std::vector<SpOutputProposalV1> &output_proposals)
 {
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
@@ -248,12 +260,45 @@ static void make_additional_output_selfsend_v1(const OutputProposalSetExtraTypes
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+void check_v1_coinbase_output_proposal_semantics_v1(const SpCoinbaseOutputProposalV1 &output_proposal)
+{
+    std::vector<ExtraFieldElement> additional_memo_elements;
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.m_partial_memo,
+            additional_memo_elements),
+        "coinbase output proposal semantics (v1): invalid partial memo.");
+}
+//-------------------------------------------------------------------------------------------------------------------
 void check_v1_output_proposal_semantics_v1(const SpOutputProposalV1 &output_proposal)
 {
     std::vector<ExtraFieldElement> additional_memo_elements;
     CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.m_partial_memo,
             additional_memo_elements),
         "output proposal semantics (v1): invalid partial memo.");
+}
+//-------------------------------------------------------------------------------------------------------------------
+void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals)
+{
+    CHECK_AND_ASSERT_THROW_MES(output_proposals.size() >= 1,
+        "Semantics check coinbase output proposals v1: insufficient outputs.");
+
+    // individual output proposals should be internally valid
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+        check_v1_coinbase_output_proposal_semantics_v1(output_proposal);
+
+    // all enote ephemeral pubkeys should be unique
+    CHECK_AND_ASSERT_THROW_MES(ephemeral_pubkeys_are_unique(output_proposals),
+        "Semantics check coinbase output proposals v1: enote ephemeral pubkeys aren't all unique.");
+
+    // proposals should be sorted and unique
+    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_proposals),
+        "Semantics check output proposals v1: output onetime addresses are not sorted and unique.");
+
+    // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+    {
+        CHECK_AND_ASSERT_THROW_MES(output_proposal.m_enote.m_core.onetime_address_is_canonical(),
+            "Semantics check output proposals v1: an output onetime address is not in the prime subgroup.");
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposalV1> &output_proposals)
@@ -331,6 +376,32 @@ void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, 
         "Semantics check tx supplement v1: extra field elements are not sorted.");
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_v1_coinbase_outputs_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,
+    std::vector<SpCoinbaseEnoteV1> &outputs_out,
+    std::vector<crypto::x25519_pubkey> &output_enote_ephemeral_pubkeys_out)
+{
+    // output proposal set should be valid
+    check_v1_coinbase_output_proposal_set_semantics_v1(output_proposals);
+
+    // extract tx output information from output proposals
+    outputs_out.clear();
+    outputs_out.reserve(output_proposals.size());
+    output_enote_ephemeral_pubkeys_out.clear();
+    output_enote_ephemeral_pubkeys_out.reserve(output_proposals.size());
+
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+    {
+        // convert to enote
+        outputs_out.emplace_back(output_proposal.m_enote);
+
+        // copy non-duplicate enote pubkeys to tx supplement (note: the semantics checker should prevent duplicates)
+        if (std::find(output_enote_ephemeral_pubkeys_out.begin(),
+                output_enote_ephemeral_pubkeys_out.end(),
+                output_proposal.m_enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
+            output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
     std::vector<SpEnoteV1> &outputs_out,
     std::vector<rct::xmr_amount> &output_amounts_out,
@@ -370,6 +441,21 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
                 output_proposal.m_enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
             output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
     }
+}
+//-------------------------------------------------------------------------------------------------------------------
+void finalize_tx_extra_v1(const TxExtra &partial_memo,
+    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,
+    TxExtra &tx_extra_out)
+{
+    // collect all memo elements
+    std::vector<ExtraFieldElement> collected_memo_elements;
+    accumulate_extra_field_elements(partial_memo, collected_memo_elements);
+
+    for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
+        accumulate_extra_field_elements(output_proposal.m_partial_memo, collected_memo_elements);
+
+    // finalize the extra field
+    make_tx_extra(std::move(collected_memo_elements), tx_extra_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void finalize_tx_extra_v1(const TxExtra &partial_memo,

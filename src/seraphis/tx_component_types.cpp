@@ -51,6 +51,32 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
+bool SpCoinbaseEnoteV1::operator==(const SpCoinbaseEnoteV1 &other_enote) const
+{
+    return m_core      == other_enote.m_core &&
+        m_addr_tag_enc == other_enote.m_addr_tag_enc &&
+        m_view_tag     == other_enote.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void SpCoinbaseEnoteV1::gen()
+{
+    // generate a dummy enote: random pieces, completely unspendable
+
+    // gen base of enote
+    m_core.gen();
+
+    // memo
+    m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
+    crypto::rand(sizeof(jamtis::encrypted_address_tag_t), m_addr_tag_enc.bytes);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilder &transcript_inout)
+{
+    transcript_inout.append("core", container.m_core);
+    transcript_inout.append("addr_tag_enc", container.m_addr_tag_enc.bytes);
+    transcript_inout.append("view_tag", container.m_view_tag);
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool SpEnoteV1::operator==(const SpEnoteV1 &other_enote) const
 {
     return m_core        == other_enote.m_core &&
@@ -164,12 +190,14 @@ void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder
     transcript_inout.append("remainder_blinding_factor", container.m_remainder_blinding_factor);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSupplementV1::size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra)
+std::size_t SpTxSupplementV1::size_bytes(const std::size_t num_outputs,
+    const TxExtra &tx_extra,
+    const bool use_shared_ephemeral_key_assumption)
 {
     std::size_t size{0};
 
-    // enote ephemeral pubkeys (need to refactor if assumption about output count : enote ephemeral pubkey mapping changes)
-    if (num_outputs == 2)
+    // enote ephemeral pubkeys
+    if (use_shared_ephemeral_key_assumption && num_outputs == 2)
         size += 32;
     else
         size += 32 * num_outputs;

@@ -51,11 +51,48 @@ namespace sp
 {
 
 ////
+// SpCoinbaseEnote
+///
+struct SpCoinbaseEnote final
+{
+    /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
+    rct::key m_onetime_address;
+    /// a
+    rct::xmr_amount m_amount;
+
+    /// less-than operator for sorting
+    bool operator<(const SpCoinbaseEnote &other_enote) const
+    {
+        return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
+    }
+    /// comparison operator for equivalence testing
+    bool operator==(const SpCoinbaseEnote &other_enote) const
+    {
+        return m_onetime_address == other_enote.m_onetime_address &&
+            m_amount == other_enote.m_amount;
+    }
+
+    /**
+    * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
+    */
+    bool onetime_address_is_canonical() const;
+
+    static std::size_t size_bytes() { return 32 + 8; }
+
+    /**
+    * brief: gen() - generate a seraphis coinbase enote (all random)
+    */
+    void gen();
+};
+inline const boost::string_ref container_name(const SpCoinbaseEnote&) { return "SpCoinbaseEnote"; }
+void append_to_transcript(const SpCoinbaseEnote &container, SpTranscriptBuilder &transcript_inout);
+
+////
 // SpEnote
 ///
 struct SpEnote final
 {
-    /// Ko = (k_{a, sender} + k_{a, recipient}) X + k_{b, recipient} U
+    /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
     rct::key m_onetime_address;
     /// C = x G + a H
     rct::key m_amount_commitment;
@@ -92,7 +129,7 @@ void append_to_transcript(const SpEnote &container, SpTranscriptBuilder &transcr
 ///
 struct SpEnoteImage final
 {
-    /// K" = t_k G + H_n(Ko,C)*[(k_{a, sender} + k_{a, recipient}) X + k_{b, recipient} U]   (in the squashed enote model)
+    /// K" = t_k G + H_n(Ko,C)*Ko   (in the squashed enote model)
     rct::key m_masked_address;
     /// C" = (t_c + x) G + a H
     rct::key m_masked_commitment;

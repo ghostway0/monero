@@ -227,6 +227,7 @@ namespace config
   uint32_t const GENESIS_NONCE = 10000;
 
   // misc config
+  const constexpr uint16_t SP_MAX_COINBASE_OUTPUTS_V1 = 60000;  //todo: what to set this to?
   const constexpr uint16_t SP_MAX_INPUTS_V1 = 128 - BULLETPROOF_MAX_OUTPUTS;
   const constexpr uint16_t SP_MAX_OUTPUTS_V1 = BULLETPROOF_MAX_OUTPUTS;
   const constexpr uint16_t SP_GROOTLE_N_V1 = 2;
@@ -275,6 +276,7 @@ namespace config
   const constexpr char HASH_KEY_SERAPHIS_MEMBERSHIP_PROOF_MESSAGE_V1[] = "sp_membership_proof_message_v1";
   const constexpr char HASH_KEY_SERAPHIS_INPUT_IMAGES_PREFIX_V1[] = "sp_input_images_prefix_v1";
   const constexpr char HASH_KEY_SERAPHIS_TRANSACTION_PROOFS_PREFIX_V1[] = "sp_transaction_proofs_prefix_v1";
+  const constexpr char HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1[] = "sp_transaction_type_coinbase_v1";
   const constexpr char HASH_KEY_SERAPHIS_TRANSACTION_TYPE_SQUASHED_V1[] = "sp_transaction_type_squashed_v1";
 
   const constexpr char HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT[] = "bpp2_transcript";

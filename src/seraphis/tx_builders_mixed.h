@@ -157,6 +157,19 @@ bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinat
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &final_selfsend_payment_proposals_out,
     DiscretizedFee &discretized_transaction_fee_out);
 /**
+* brief: check_v1_coinbase_tx_proposal_semantics_v1 - check semantics of a coinbase tx proposal
+*   - throws if a check fails
+*   - outputs should be sorted and unique
+*   - outputs should have unique and canonical onetime addresses
+*   - the tx supplement should have valid semantics
+*   - output amounts should balance the block reward
+* param: tx_proposal -
+* param: legacy_spend_pubkey -
+* param: jamtis_spend_pubkey -
+* param: k_view_balance -
+*/
+void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx_proposal);
+/**
 * brief: check_v1_tx_proposal_semantics_v1 - check semantics of a tx proposal
 *   - throws if a check fails
 *   - outputs should have unique and canonical onetime addresses
@@ -173,6 +186,19 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
     const rct::key &legacy_spend_pubkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance);
+/**
+* brief: make_v1_coinbase_tx_proposal_v1 - make v1 coinbase tx proposal
+* param: block_height -
+* param: block_reward -
+* param: normal_payment_proposals -
+* param: additional_memo_elements -
+* outparam: tx_proposal_out -
+*/
+void make_v1_coinbase_tx_proposal_v1(const std::uint64_t block_height,
+    const rct::xmr_amount block_reward,
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
+    std::vector<ExtraFieldElement> additional_memo_elements,
+    SpCoinbaseTxProposalV1 &tx_proposal_out);
 /**
 * brief: make_v1_tx_proposal_v1 - make v1 tx proposal
 * param: normal_payment_proposals -

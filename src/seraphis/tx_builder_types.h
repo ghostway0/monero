@@ -96,6 +96,33 @@ struct SpInputProposalV1 final
 };
 
 ////
+// SpCoinbaseOutputProposalV1
+///
+struct SpCoinbaseOutputProposalV1 final
+{
+    /// proposed enote
+    SpCoinbaseEnoteV1 m_enote;
+
+    /// xK_e: enote ephemeral pubkey
+    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    /// memo elements to add to the tx memo
+    TxExtra m_partial_memo;
+
+    /// less-than operator for sorting
+    bool operator<(const SpCoinbaseOutputProposalV1 &other_proposal) const { return m_enote < other_proposal.m_enote; }
+
+    /// get the amount of this proposal
+    rct::xmr_amount amount() const { return m_enote.m_core.m_amount; }
+
+    /**
+    * brief: gen - generate a V1 Destination (random)
+    * param: amount -
+    * param: num_random_memo_elements -
+    */
+    void gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements);
+};
+
+////
 // SpOutputProposalV1
 ///
 struct SpOutputProposalV1 final
@@ -168,6 +195,24 @@ struct SpAlignableMembershipProofV1 final
     /// overloaded operator for aligning
     bool operator==(const SpAlignableMembershipProofV1 &other) const { return m_masked_address == other.m_masked_address; }
     bool operator==(const rct::key &other_masked_address) const { return m_masked_address == other_masked_address; }
+};
+
+////
+// SpCoinbaseTxProposalV1: the proposed block height, reward, outputs, and miscellaneous memos
+///
+struct SpCoinbaseTxProposalV1 final
+{
+    /// block height
+    std::uint64_t m_block_height;
+    /// block reward
+    rct::xmr_amount m_block_reward;
+    /// outputs (SORTED)
+    std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
+    /// partial memo
+    TxExtra m_partial_memo;
+
+    /// convert the tx proposal's payment proposals into coinbase output proposals
+    void get_coinbase_output_proposals_v1(std::vector<SpCoinbaseOutputProposalV1> &output_proposals_out) const;
 };
 
 ////

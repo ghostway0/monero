@@ -33,6 +33,7 @@
 
 //local headers
 #include "cryptonote_config.h"
+#include "jamtis_payment_proposal.h"
 #include "misc_log_ex.h"
 #include "ringct/bulletproofs_plus.h"
 #include "ringct/multiexp.h"
@@ -106,7 +107,7 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     size += num_sp_inputs * SpMembershipProofV1::size_bytes(ref_set_decomp_n, ref_set_decomp_m, num_bin_members);
 
     // extra data in tx
-    size += SpTxSupplementV1::size_bytes(num_outputs, tx_extra);
+    size += SpTxSupplementV1::size_bytes(num_outputs, tx_extra, true);  //with shared ephemeral pubkey assumption
 
     // tx fee
     size += DiscretizedFee::size_bytes();
@@ -553,7 +554,7 @@ bool validate_tx_semantics<SpTxSquashedV1>(const SpTxSquashedV1 &tx)
         return false;
 
     // validate output serialization semantics
-    if (!validate_sp_semantics_output_serialization_v1(tx.m_outputs, tx.m_tx_supplement))
+    if (!validate_sp_semantics_output_serialization_v2(tx.m_outputs))
         return false;
 
     // validate input image semantics
@@ -578,10 +579,10 @@ bool validate_tx_semantics<SpTxSquashedV1>(const SpTxSquashedV1 &tx)
 }
 //-------------------------------------------------------------------------------------------------------------------
 template <>
-bool validate_tx_linking_tags<SpTxSquashedV1>(const SpTxSquashedV1 &tx, const TxValidationContext &tx_validation_context)
+bool validate_tx_key_images<SpTxSquashedV1>(const SpTxSquashedV1 &tx, const TxValidationContext &tx_validation_context)
 {
     // unspentness proof (key images not in ledger)
-    if (!validate_sp_linking_tags_v1(tx.m_legacy_input_images, tx.m_sp_input_images, tx_validation_context))
+    if (!validate_sp_key_images_v1(tx.m_legacy_input_images, tx.m_sp_input_images, tx_validation_context))
         return false;
 
     return true;

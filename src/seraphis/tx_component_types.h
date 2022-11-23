@@ -59,6 +59,37 @@ namespace sp
 {
 
 ////
+// SpCoinbaseEnoteV1
+///
+struct SpCoinbaseEnoteV1 final
+{
+    /// enote core (one-time address, amount)
+    SpCoinbaseEnote m_core;
+
+    /// addr_tag_enc
+    jamtis::encrypted_address_tag_t m_addr_tag_enc;
+    /// view_tag
+    jamtis::view_tag_t m_view_tag;
+
+    /// less-than operator for sorting
+    bool operator<(const SpCoinbaseEnoteV1 &other_enote) const { return m_core < other_enote.m_core; }
+    /// comparison operator for equivalence testing
+    bool operator==(const SpCoinbaseEnoteV1 &other_enote) const;
+
+    /// generate a dummy v1 coinbase enote (all random; completely unspendable)
+    void gen();
+
+    static std::size_t size_bytes()
+    {
+        return SpCoinbaseEnote::size_bytes() +
+            sizeof(jamtis::encrypted_address_tag_t) +
+            sizeof(jamtis::view_tag_t);
+    }
+};
+inline const boost::string_ref container_name(const SpCoinbaseEnoteV1&) { return "SpCoinbaseEnoteV1"; }
+void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilder &transcript_inout);
+
+////
 // SpEnoteV1
 ///
 struct SpEnoteV1 final
@@ -182,7 +213,9 @@ struct SpTxSupplementV1 final
     /// tx memo
     TxExtra m_tx_extra;
 
-    static std::size_t size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra);
+    static std::size_t size_bytes(const std::size_t num_outputs,
+        const TxExtra &tx_extra,
+        const bool use_shared_ephemeral_key_assumption);
     std::size_t size_bytes() const;
 };
 inline const boost::string_ref container_name(const SpTxSupplementV1&) { return "SpTxSupplementV1"; }
