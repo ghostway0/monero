@@ -121,6 +121,7 @@ void make_serializable_sp_tx_supplement_v1(const SpTxSupplementV1 &supplement,
     ser_SpTxSupplementV1 &serializable_supplement_out);
 void make_serializable_discretized_fee(const DiscretizedFee &discretized_fee,
     unsigned char &serializable_discretized_fee_out);
+void make_serializable_sp_tx_coinbase_v1(const SpTxCoinbaseV1 &tx, ser_SpTxCoinbaseV1 &serializable_tx_out);
 void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquashedV1 &serializable_tx_out);
 
 //todo
@@ -138,6 +139,7 @@ void recover_sp_binned_reference_set_v1(ser_SpBinnedReferenceSetV1_PARTIAL &seri
     const rct::key &generator_seed,
     SpBinnedReferenceSetV1 &refset_out);
 void recover_legacy_enote_image_v2(const ser_LegacyEnoteImageV2 &serializable_image, LegacyEnoteImageV2 &image_out);
+void recover_sp_coinbase_enote_v1(const ser_SpCoinbaseEnoteV1 &serializable_enote, SpCoinbaseEnoteV1 &enote_out);
 void recover_sp_enote_v1(const ser_SpEnoteV1 &serializable_enote, SpEnoteV1 &enote_out);
 void recover_sp_enote_image_v1(const ser_SpEnoteImageV1 &serializable_image, SpEnoteImageV1 &image_out);
 void recover_sp_balance_proof_v1(ser_SpBalanceProofV1_PARTIAL &serializable_proof_in,
@@ -155,6 +157,7 @@ void recover_sp_membership_proof_v1(ser_SpMembershipProofV1_PARTIAL &serializabl
 void recover_sp_image_proof_v1(const ser_SpImageProofV1 &serializable_image_proof, SpImageProofV1 &image_proof_out);
 void recover_sp_tx_supplement_v1(ser_SpTxSupplementV1 &serializable_supplement_in, SpTxSupplementV1 &supplement_out);
 void recover_discretized_fee(const unsigned char serializable_discretized_fee, DiscretizedFee &discretized_fee_out);
+void recover_sp_tx_coinbase_v1(ser_SpTxCoinbaseV1 &serializable_tx_in, SpTxCoinbaseV1 &tx_out);
 void recover_sp_tx_squashed_v1(ser_SpTxSquashedV1 &serializable_tx_in,
     const SpBinnedReferenceSetConfigV1 &sp_refset_bin_config,
     const std::size_t sp_ref_set_decomp_n,

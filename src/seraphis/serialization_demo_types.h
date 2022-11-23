@@ -43,6 +43,7 @@
 #include "serialization/serialization.h"
 #include "tx_binned_reference_set.h"
 #include "tx_discretized_fee.h"
+#include "txtype_coinbase_v1.h"
 #include "txtype_squashed_v1.h"
 
 //third party headers
@@ -331,6 +332,30 @@ struct ser_SpTxSupplementV1 final
     BEGIN_SERIALIZE()
         FIELD(m_output_enote_ephemeral_pubkeys)
         FIELD(m_tx_extra)
+    END_SERIALIZE()
+};
+
+/// serializable SpTxCoinbaseV1
+struct ser_SpTxCoinbaseV1 final
+{
+    /// semantic rules version
+    SpTxCoinbaseV1::SemanticRulesVersion m_tx_semantic_rules_version;
+
+    /// height of the block whose block reward this coinbase tx disperses
+    std::uint64_t m_block_height;
+    /// block reward dispersed by this coinbase tx
+    rct::xmr_amount m_block_reward;
+    /// tx outputs (new enotes)
+    std::vector<ser_SpCoinbaseEnoteV1> m_outputs;
+    /// supplemental data for tx
+    ser_SpTxSupplementV1 m_tx_supplement;
+
+    BEGIN_SERIALIZE()
+        VARINT_FIELD(m_tx_semantic_rules_version)
+        VARINT_FIELD(m_block_height)
+        VARINT_FIELD(m_block_reward)
+        FIELD(m_outputs)
+        FIELD(m_tx_supplement)
     END_SERIALIZE()
 };
 

@@ -45,6 +45,7 @@
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
 #include "tx_discretized_fee.h"
+#include "txtype_coinbase_v1.h"
 #include "txtype_squashed_v1.h"
 
 //third party headers
@@ -330,6 +331,24 @@ void make_serializable_discretized_fee(const DiscretizedFee &discretized_fee,
     serializable_discretized_fee_out = discretized_fee.m_fee_level;
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_serializable_sp_tx_coinbase_v1(const SpTxCoinbaseV1 &tx, ser_SpTxCoinbaseV1 &serializable_tx_out)
+{
+    // semantic rules version
+    serializable_tx_out.m_tx_semantic_rules_version = tx.m_tx_semantic_rules_version;
+
+    // block height
+    serializable_tx_out.m_block_height = tx.m_block_height;
+
+    // block reward
+    serializable_tx_out.m_block_reward = tx.m_block_reward;
+
+    // tx outputs (new enotes)
+    copy_array(&make_serializable_sp_coinbase_enote_v1, tx.m_outputs, serializable_tx_out.m_outputs);
+
+    // supplemental data for tx
+    make_serializable_sp_tx_supplement_v1(tx.m_tx_supplement, serializable_tx_out.m_tx_supplement);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquashedV1 &serializable_tx_out)
 {
     // semantic rules version
@@ -452,6 +471,15 @@ void recover_legacy_enote_image_v2(const ser_LegacyEnoteImageV2 &serializable_im
     image_out.m_key_image         = serializable_image.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
+void recover_sp_coinbase_enote_v1(const ser_SpCoinbaseEnoteV1 &serializable_enote, SpCoinbaseEnoteV1 &enote_out)
+{
+    recover_sp_coinbase_enote_core(serializable_enote.m_core, enote_out.m_core);
+    memcpy(enote_out.m_addr_tag_enc.bytes,
+        serializable_enote.m_addr_tag_enc.bytes,
+        sizeof(serializable_enote.m_addr_tag_enc));
+    enote_out.m_view_tag           = serializable_enote.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void recover_sp_enote_v1(const ser_SpEnoteV1 &serializable_enote, SpEnoteV1 &enote_out)
 {
     recover_sp_enote_core(serializable_enote.m_core, enote_out.m_core);
@@ -525,6 +553,24 @@ void recover_sp_tx_supplement_v1(ser_SpTxSupplementV1 &serializable_supplement_i
 void recover_discretized_fee(const unsigned char serializable_discretized_fee, DiscretizedFee &discretized_fee_out)
 {
     discretized_fee_out.m_fee_level = serializable_discretized_fee;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void recover_sp_tx_coinbase_v1(ser_SpTxCoinbaseV1 &serializable_tx_in, SpTxCoinbaseV1 &tx_out)
+{
+    // semantic rules version
+    tx_out.m_tx_semantic_rules_version = serializable_tx_in.m_tx_semantic_rules_version;
+
+    // block height
+    tx_out.m_block_height = serializable_tx_in.m_block_height;
+
+    // block reward
+    tx_out.m_block_reward = serializable_tx_in.m_block_reward;
+
+    // tx outputs (new enotes)
+    relay_array(&recover_sp_coinbase_enote_v1, serializable_tx_in.m_outputs, tx_out.m_outputs);
+
+    // supplemental data for tx
+    recover_sp_tx_supplement_v1(serializable_tx_in.m_tx_supplement, tx_out.m_tx_supplement);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_tx_squashed_v1(ser_SpTxSquashedV1 &serializable_tx_in,
