@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Miscellaneous crypto utils for Seraphis.
-
+// Miscellaneous crypto utils for seraphis.
 
 #pragma once
 
@@ -54,23 +51,12 @@ struct sortable_key
     unsigned char bytes[32];
 
     sortable_key() = default;
-    sortable_key(const rct::key &rct_key)
-    {
-        memcpy(bytes, rct_key.bytes, 32);
-    }
-
-    bool operator<(const sortable_key &other) const
-    {
-        return memcmp(bytes, other.bytes, 32) < 0;
-    }
+    sortable_key(const rct::key &rct_key) { memcpy(bytes, rct_key.bytes, 32); }
+    bool operator<(const sortable_key &other) const { return memcmp(bytes, other.bytes, 32) < 0; }
 };
 static inline const rct::key& sortable2rct(const sortable_key &sortable)
 {
     return reinterpret_cast<const rct::key&>(sortable);
-}
-static inline const rct::key sortable2rct(const sortable_key &&sortable)
-{
-    return reinterpret_cast<const rct::key&&>(sortable);
 }
 
 /**
@@ -89,6 +75,8 @@ rct::key invert(const rct::key &x);
 *   val -> [_, _, ... ,_]
 *   - num slots = 'size'
 *   - numeric base = 'base'
+*   - PRECONDITION: 'size' must be large enough to accomodate all digits of the decomposed value; if it is too small then
+*     the last digit will not be mod the base
 *   e.g. if base = 2 then convert val to binary, if base = 10 then put its decimal digits into the return vector
 * param: val - value to decompose
 * param: base - numeric base for decomposing the value
@@ -146,7 +134,7 @@ void subtract_secret_key_vectors(const std::vector<crypto::secret_key> &keys_A,
 */
 void mask_key(const crypto::secret_key &mask, const rct::key &key, rct::key &masked_key_out);
 /**
-* brief: key_domain_is_prime_subgroup - check that input key is in prime order EC subgroup
+* brief: key_domain_is_prime_subgroup - check that input key is in the prime order EC subgroup
 *   l*K ?= identity
 * param: check_key - key to check
 * result: true if input key is in prime order EC subgroup

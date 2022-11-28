@@ -258,7 +258,7 @@ struct ParamsShuttleScannerClient final : public ParamsShuttle
 class test_remote_scanner_client_scan_sp
 {
 public:
-    static const size_t num_records = sp::ref_set_size_from_decomp(2, sp::jamtis::ADDRESS_TAG_MAC_BYTES * 8);
+    static const size_t num_records = sp::size_from_decomposition(2, sp::jamtis::ADDRESS_TAG_MAC_BYTES * 8);
     static const size_t loop_count = 256000 / num_records + 20;
 
     bool init(const ParamsShuttleScannerClient &params)

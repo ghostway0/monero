@@ -223,7 +223,7 @@ bool validate_sp_semantics_sp_reference_sets_v1(const SemanticConfigSpRefSetV1 &
     for (const SpMembershipProofV1 &sp_proof : sp_membership_proofs)
     {
         // proof ref set decomposition (n^m) should match number of referenced enotes
-        const std::size_t ref_set_size{ref_set_size_from_decomp(sp_proof.m_ref_set_decomp_n, sp_proof.m_ref_set_decomp_m)};
+        const std::size_t ref_set_size{size_from_decomposition(sp_proof.m_ref_set_decomp_n, sp_proof.m_ref_set_decomp_m)};
 
         if (ref_set_size != sp_proof.m_binned_reference_set.reference_set_size())
             return false;

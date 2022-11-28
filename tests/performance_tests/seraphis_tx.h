@@ -317,10 +317,10 @@ public:
                 tx_params.bin_config =
                     sp::SpBinnedReferenceSetConfigV1{
                         .m_bin_radius = static_cast<sp::ref_set_bin_dimension_v1_t>(
-                                sp::ref_set_size_from_decomp(params.n, params.m) / 2
+                                sp::size_from_decomposition(params.n, params.m) / 2
                             ),
                         .m_num_bin_members = static_cast<sp::ref_set_bin_dimension_v1_t>(
-                                sp::ref_set_size_from_decomp(params.n, params.m / 2)
+                                sp::size_from_decomposition(params.n, params.m / 2)
                             )
                     };  //bin config must be compatible with n^m
 
@@ -352,7 +352,7 @@ public:
         report += std::string{"outputs: "} + std::to_string(params.out_count) + " || ";
         report += std::string{"legacy ring size: "} + std::to_string(params.legacy_ring_size) + " || ";
         report += std::string{"sp ref set size ("} + std::to_string(params.n) + "^" + std::to_string(params.m) + "): ";
-        report += std::to_string(sp::ref_set_size_from_decomp(params.n, params.m));
+        report += std::to_string(sp::size_from_decomposition(params.n, params.m));
 
         std::cout << report << '\n';
 
@@ -373,7 +373,7 @@ public:
             report_csv += std::to_string(params.legacy_ring_size) + separator;
             report_csv += std::to_string(params.n) + separator;
             report_csv += std::to_string(params.m) + separator;
-            report_csv += std::to_string(sp::ref_set_size_from_decomp(params.n, params.m));
+            report_csv += std::to_string(sp::size_from_decomposition(params.n, params.m));
 
             params.core_params.td->add(report_csv.c_str(), null_instance);
         }

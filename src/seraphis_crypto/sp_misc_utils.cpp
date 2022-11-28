@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "sp_misc_utils.h"
 
@@ -51,19 +49,13 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys)
-{
-    for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it)
-    {
-        if (std::find(keys.begin(), key_it, *key_it) != key_it)
-            return false;
-    }
-
-    return true;
-}
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t round_up_to_power_of_2(const std::size_t num)
+static std::size_t round_up_to_power_of_2(const std::size_t num)
 {
+    // error case: can't round up
+    if (num > ~(static_cast<std::size_t>(-1) >> 1))
+        return -1;
+
     // next power of 2 >= num
     std::size_t result{1};
     while (result < num)
@@ -72,7 +64,8 @@ std::size_t round_up_to_power_of_2(const std::size_t num)
     return result;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t highest_bit_position(std::size_t num)
+//-------------------------------------------------------------------------------------------------------------------
+static std::size_t highest_bit_position(std::size_t num)
 {
     // floor(log2(num))
     std::size_t bit_position{static_cast<std::size_t>(-1)};
@@ -83,6 +76,18 @@ std::size_t highest_bit_position(std::size_t num)
     }
 
     return bit_position;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys)
+{
+    for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it)
+    {
+        if (std::find(keys.begin(), key_it, *key_it) != key_it)
+            return false;
+    }
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_clsag_to_transcript(const rct::clsag &clsag_proof, SpTranscriptBuilder &transcript_inout)
@@ -105,7 +110,7 @@ void make_bpp2_rangeproofs(const std::vector<rct::xmr_amount> &amounts,
     /// range proofs
     // - for output amount commitments
     CHECK_AND_ASSERT_THROW_MES(amounts.size() == amount_commitment_blinding_factors.size(),
-        "Mismatching amounts and blinding factors.");
+        "make bp+2 rangeproofs: mismatching amounts and blinding factors.");
 
     // make the range proofs
     range_proofs_out = bulletproof_plus2_PROVE(amounts, amount_commitment_blinding_factors);
@@ -141,15 +146,17 @@ std::size_t bpp_weight(const std::size_t num_range_proofs, const bool include_co
     // BP+ size: 32 * (2*ceil(log2(64 * num range proofs)) + 6)
     // BP+ size (2 range proofs): 32 * 20
     // weight = size(proof) + 0.8 * (32*20*(num range proofs + num dummy range proofs)/2) - size(proof))
+    // explanation: 'claw back' 80% of the size of this BP+ if it were split into proofs of pairs of range proofs
     // note: the weight can optionally include the commitments that are range proofed
 
-    // two aggregate range proofs: BP+ size
+    // BP+ size of an aggregate proof with two range proofs
     const std::size_t size_two_agg_proof{32 * 20};
 
-    // (number of range proofs + dummy range proofs) / 2
+    // number of BP+ proofs if this BP+ were split into proofs of pairs of range proofs
+    // num = (range proofs + dummy range proofs) / 2
     const std::size_t num_two_agg_groups{round_up_to_power_of_2(num_range_proofs) / 2};
 
-    // proof size
+    // the proof size
     const std::size_t proof_size{bpp_size_bytes(num_range_proofs, false)};  //don't include commitments here
 
     // size of commitments that are range proofed (if requested)
@@ -173,9 +180,8 @@ bool balance_check_in_out_amnts(const std::vector<rct::xmr_amount> &input_amount
     const std::vector<rct::xmr_amount> &output_amounts,
     const rct::xmr_amount transaction_fee)
 {
-    using boost::multiprecision::uint128_t;
-    uint128_t input_sum{0};
-    uint128_t output_sum{0};
+    boost::multiprecision::uint128_t input_sum{0};
+    boost::multiprecision::uint128_t output_sum{0};
 
     for (const auto amnt : input_amounts)
         input_sum += amnt;

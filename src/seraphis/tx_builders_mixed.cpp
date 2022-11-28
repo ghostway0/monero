@@ -224,7 +224,7 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation(const rct::keyV &
     SpMembershipProofPrepV1 &prep_out)
 {
     /// checks and initialization
-    const std::size_t ref_set_size{ref_set_size_from_decomp(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
+    const std::size_t ref_set_size{size_from_decomposition(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
 
     CHECK_AND_ASSERT_THROW_MES(reference_enotes_squashed.size() > 0,
         "prepare sp membership proof prep (tx simulation): insufficient reference elements.");

@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Miscellaneous utility functions.
-
 
 #pragma once
 
@@ -43,7 +40,6 @@
 
 //standard headers
 #include <algorithm>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -60,7 +56,7 @@ struct equals_from_less final
     template <typename T>
     bool operator()(const T &a, const T &b) { return !(a < b) && !(b < a); }
 };
-/// note: uniqueness uses 'equals_from_less' so it matches the sorting criteria
+/// note: uniqueness uses 'equals_from_less' to match the use of operator< when testing if sorted
 template <typename T>
 bool is_sorted_and_unique(const T& container)
 {
@@ -110,32 +106,32 @@ void for_all_in_map_erase_if(std::unordered_map<KeyT, ValueT> &map_inout,
 }
 
 /**
-* brief: ref_set_size_from_decomp - compute n^m from decomposition of a reference set
-* param: ref_set_decomp_n -
-* param: ref_set_decomp_m -
+* brief: size_from_decomposition - compute n^m
+* param: n - base
+* param: m - power
 * return: n^m
 * 
 * note: use this instead of std::pow() for better control over error states
 */
-constexpr std::size_t ref_set_size_from_decomp(const std::size_t ref_set_decomp_n, const std::size_t ref_set_decomp_m)
+constexpr std::size_t size_from_decomposition(const std::size_t n, const std::size_t m) noexcept
 {
-    // ref set size = n^m
-    std::size_t ref_set_size{ref_set_decomp_n};
+    // n^m
+    std::size_t size{n};
 
-    if (ref_set_decomp_n == 0 || ref_set_decomp_m == 0)
-        ref_set_size = 1;
+    if (n == 0 || m == 0)
+        size = 1;
     else
     {
-        for (std::size_t mul{1}; mul < ref_set_decomp_m; ++mul)
+        for (std::size_t mul{1}; mul < m; ++mul)
         {
-            if (ref_set_size*ref_set_decomp_n < ref_set_size)  //overflow
+            if (size*n < size)  //overflow
                 return -1;
             else
-                ref_set_size *= ref_set_decomp_n;
+                size *= n;
         }
     }
 
-    return ref_set_size;
+    return size;
 }
 /**
 * brief: keys_are_unique - check if keys in a vector are unique
@@ -143,20 +139,6 @@ constexpr std::size_t ref_set_size_from_decomp(const std::size_t ref_set_decomp_
 * return: true if keys are unique
 */
 bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys);
-/**
-* brief: round_up_to_power_of_2 - next power of 2 >= the input number
-*   TODO: move to better file?
-* param: num -
-* return: the next power of 2 >= the input num
-*/
-std::size_t round_up_to_power_of_2(const std::size_t num);
-/**
-* brief: highest_bit_position - equivalent to floor(log2(num))
-*   TODO: move to better file?
-* param: num -
-* return: floor(log2(num))
-*/
-std::size_t highest_bit_position(const std::size_t num);
 /**
 * brief: append_clsag_to_transcript - append CLSAG proof to a transcript
 *   transcript += {s} || c1 || I || D

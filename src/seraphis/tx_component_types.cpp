@@ -198,7 +198,7 @@ void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t SpMembershipProofV1::size_bytes(const std::size_t n, const std::size_t m, const std::size_t num_bin_members)
 {
-    const std::size_t ref_set_size{ref_set_size_from_decomp(n, m)};
+    const std::size_t ref_set_size{size_from_decomposition(n, m)};
 
     return sp::GrootleProof::size_bytes(n, m) +
         (num_bin_members > 0

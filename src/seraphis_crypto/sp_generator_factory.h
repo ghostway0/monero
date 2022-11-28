@@ -27,10 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-// NOT FOR PRODUCTION
-
 // A generator factory.
-
 
 #pragma once
 

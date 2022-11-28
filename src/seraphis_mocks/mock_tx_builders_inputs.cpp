@@ -86,7 +86,7 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1
     // generate a mock membership proof prep
 
     /// checks and initialization
-    const std::size_t ref_set_size{ref_set_size_from_decomp(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
+    const std::size_t ref_set_size{size_from_decomposition(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
 
     CHECK_AND_ASSERT_THROW_MES(validate_bin_config_v1(ref_set_size, bin_config),
         "gen mock membership proof prep: invalid binned reference set config.");
@@ -148,7 +148,7 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_v1(
     /// add fake enotes to the ledger (2x the ref set size), with the real one at a random location
 
     // 1. make fake enotes
-    const std::size_t ref_set_size{ref_set_size_from_decomp(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
+    const std::size_t ref_set_size{size_from_decomposition(ref_set_decomp_n, ref_set_decomp_m)};  // n^m
     const std::size_t num_enotes_to_add{ref_set_size * 2};
     const std::size_t add_real_at_pos{crypto::rand_idx(num_enotes_to_add)};
     std::vector<SpEnoteVariant> mock_enotes;
