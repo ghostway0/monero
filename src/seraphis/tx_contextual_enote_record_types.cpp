@@ -57,6 +57,8 @@ bool SpEnoteOriginContextV1::is_older_than(const SpEnoteOriginContextV1 &other_c
     if (m_block_height < other_context.m_block_height)
         return true;
 
+    // note: don't assess the tx output index
+
     // 3. enote ledger index
     if (m_enote_ledger_index < other_context.m_enote_ledger_index)
         return true;

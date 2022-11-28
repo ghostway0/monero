@@ -101,6 +101,8 @@ struct SpEnoteOriginContextV1 final
     std::uint64_t m_block_timestamp{static_cast<std::uint64_t>(-1)};
     /// tx id (0 if tx is unknown)
     rct::key m_transaction_id{rct::zero()};
+    /// index of the enote in the tx's output set (-1 if index is unknown)
+    std::uint64_t m_enote_tx_index{static_cast<std::uint16_t>(-1)};
     /// ledger index of the enote (-1 if index is unknown)
     std::uint64_t m_enote_ledger_index{static_cast<std::uint64_t>(-1)};
     /// origin status (off chain by default)
