@@ -135,15 +135,16 @@ void make_sp_composition_multisig_partial_sig(const SpCompositionProofMultisigPr
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(proposal.signature_nonce_K_t2)) == 0,
         "make sp composition multisig partial sig: bad private key (proposal nonce K_t2)!");
 
-    // x == 0 is allowed
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(x)),
+        "make sp composition multisig partial sig: bad private key (x zero)!");
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(x)) == 0,
         "make sp composition multisig partial sig: bad private key (x)!");
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(y)),
-    "make sp composition multisig partial sig: bad private key (y zero)!");
+        "make sp composition multisig partial sig: bad private key (y zero)!");
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(y)) == 0,
         "make sp composition multisig partial sig: bad private key (y)!");
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(z_e)),
-    "make sp composition multisig partial sig: bad private key (z_e zero)!");
+        "make sp composition multisig partial sig: bad private key (z_e zero)!");
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(z_e)) == 0,
         "make sp composition multisig partial sig: bad private key (z)!");
 

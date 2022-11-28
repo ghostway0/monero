@@ -138,7 +138,7 @@ void decompose(const std::size_t val, const std::size_t base, const std::size_t 
 {
     CHECK_AND_ASSERT_THROW_MES(base > 1, "Bad decomposition parameters!");
     CHECK_AND_ASSERT_THROW_MES(size > 0, "Bad decomposition parameters!");
-    CHECK_AND_ASSERT_THROW_MES(r_out.size() >= size, "Bad decomposition result vector size!");
+    CHECK_AND_ASSERT_THROW_MES(r_out.size() == size, "Bad decomposition result vector size!");
 
     std::size_t temp = val;
 

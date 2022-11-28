@@ -50,7 +50,6 @@
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
 
-
 namespace sp
 {
 

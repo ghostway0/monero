@@ -40,6 +40,7 @@ extern "C"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/sp_crypto_utils.h"
 
 //third party headers
 
@@ -56,23 +57,6 @@ namespace config  //todo: move to config file
 
 namespace crypto
 {
-//-------------------------------------------------------------------------------------------------------------------
-// return: [scalar^0], [scalar^1], ..., [scalar^{num_pows - 1}]
-//-------------------------------------------------------------------------------------------------------------------
-static rct::keyV powers_of_scalar(const rct::key &scalar, const std::size_t num_pows)
-{
-    if (num_pows == 0)
-        return rct::keyV{};
-
-    rct::keyV pows;
-    pows.resize(num_pows);
-    pows[0] = rct::identity();
-
-    for (std::size_t i = 1; i < num_pows; ++i)
-        sc_mul(pows[i].bytes, pows[i - 1].bytes, scalar.bytes);
-
-    return pows;
-}
 //-------------------------------------------------------------------------------------------------------------------
 // compute: A_inout += k * P
 //-------------------------------------------------------------------------------------------------------------------
@@ -253,7 +237,7 @@ DualBaseVectorProof dual_base_vector_prove(const rct::key &message,
 
     /// challenge message and aggregation coefficient
     const rct::key mu{compute_base_aggregation_coefficient(proof.m, G_1, G_2, V_1_mul8, V_2_mul8)};
-    const rct::keyV mu_pows{powers_of_scalar(mu, num_keys)};
+    const rct::keyV mu_pows{sp::powers_of_scalar(mu, num_keys)};
 
     const rct::key m{compute_challenge_message(mu)};
 
@@ -298,7 +282,7 @@ bool dual_base_vector_verify(const DualBaseVectorProof &proof,
 
     /// challenge message and aggregation coefficient
     const rct::key mu{compute_base_aggregation_coefficient(proof.m, G_1, G_2, V_1_mul8, V_2_mul8)};
-    const rct::keyV mu_pows{powers_of_scalar(mu, num_keys)};
+    const rct::keyV mu_pows{sp::powers_of_scalar(mu, num_keys)};
 
     const rct::key m{compute_challenge_message(mu)};
 

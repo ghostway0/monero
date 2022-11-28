@@ -468,13 +468,13 @@ void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
 
 
     /// make grootle proof
-    make_grootle_proof(referenced_enotes_squashed,
+    make_grootle_proof(message,
+        referenced_enotes_squashed,
         real_spend_index_in_set,
         image_offset,
         image_mask,
         ref_set_decomp_n,
         ref_set_decomp_m,
-        message,
         membership_proof_out.m_grootle_proof);
 
 

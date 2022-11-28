@@ -138,26 +138,6 @@ TEST(seraphis_crypto, composition_proof)
     {
         EXPECT_TRUE(false);
     }
-
-    // check: works even if x = 0
-    try
-    {
-        make_fake_sp_masked_address(x, y, z, K);
-
-        rct::key xG;
-        rct::scalarmultBase(xG, rct::sk2rct(x));
-        rct::subKeys(K, K, xG);   // kludge: remove x part manually
-        x = rct::rct2sk(rct::zero());
-
-        sp::make_sp_composition_proof(message, K, x, y, z, proof);
-
-        sp::make_seraphis_key_image(y, z, KI);
-        EXPECT_TRUE(sp::verify_sp_composition_proof(proof, message, K, KI));
-    }
-    catch (...)
-    {
-        EXPECT_TRUE(false);
-    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_crypto, multiexp_utility)

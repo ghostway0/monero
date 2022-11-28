@@ -51,7 +51,6 @@ extern "C"
 
 //forward declarations
 
-
 namespace sp
 {
 

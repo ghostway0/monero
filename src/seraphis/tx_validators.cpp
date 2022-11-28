@@ -551,11 +551,11 @@ bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpM
 
     // get verification data
     sp::get_grootle_verification_data(proofs,
+        messages,
         membership_proof_keys,
         offsets,
         sp_membership_proofs[0]->m_ref_set_decomp_n,
         sp_membership_proofs[0]->m_ref_set_decomp_m,
-        messages,
         validation_data_out);
 
     return true;

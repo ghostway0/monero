@@ -100,13 +100,13 @@ class test_grootle
                 for (std::size_t proof_i = 0; proof_i < N_proofs; proof_i++)
                 {
                     proofs.emplace_back();
-                    sp::make_grootle_proof(M[proof_i],
+                    sp::make_grootle_proof(proof_messages[proof_i],
+                        M[proof_i],
                         proof_i,
                         proof_offsets[proof_i],
                         proof_privkeys[proof_i],
                         n,
                         m,
-                        proof_messages[proof_i],
                         proofs.back());
                 }
             }
@@ -123,7 +123,7 @@ class test_grootle
             // Verify batch
             try
             {
-                if (!sp::verify_grootle_proofs(proof_ptrs, M, proof_offsets, n, m, proof_messages))
+                if (!sp::verify_grootle_proofs(proof_ptrs, proof_messages, M, proof_offsets, n, m))
                     return false;
             }
             catch (...) { return false; }

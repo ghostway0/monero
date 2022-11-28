@@ -1277,10 +1277,6 @@ TEST(seraphis_multisig, composition_proof_multisig)
     EXPECT_TRUE(composition_proof_multisig_test(2, 3, make_secret_key()));
     EXPECT_TRUE(composition_proof_multisig_test(3, 3, make_secret_key()));
     EXPECT_TRUE(composition_proof_multisig_test(2, 4, make_secret_key()));
-
-    // test that setting x to zero works
-    EXPECT_TRUE(composition_proof_multisig_test(2, 2, rct::rct2sk(rct::zero())));
-    EXPECT_TRUE(composition_proof_multisig_test(2, 3, rct::rct2sk(rct::zero())));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_multisig, txtype_squashed_v1)

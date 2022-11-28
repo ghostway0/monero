@@ -477,6 +477,8 @@ static bool test_info_recovery_addressindex(const sp::jamtis::address_index_t j)
     address_index_t j_recovered;
     if (!try_get_address_index(raw_address_tag, j_recovered))
         return false;
+    if (j != j_recovered)
+        return false;
 
     // cipher and decipher the index
     crypto::secret_key cipher_key;

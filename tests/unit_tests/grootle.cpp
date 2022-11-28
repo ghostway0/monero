@@ -40,12 +40,12 @@
 using namespace rct;
 
 bool test_grootle(const std::size_t N_proofs,
+    const keyV &proof_messages,
     const std::size_t n,
     const std::size_t m,
     const std::vector<keyV> &M,
     const keyV &proof_offsets,
-    const std::vector<crypto::secret_key> &proof_privkeys,
-    const keyV &proof_messages)
+    const std::vector<crypto::secret_key> &proof_privkeys)
 {
     std::vector<sp::GrootleProof> proofs;
     proofs.reserve(N_proofs);
@@ -55,20 +55,20 @@ bool test_grootle(const std::size_t N_proofs,
     for (std::size_t proof_i = 0; proof_i < N_proofs; proof_i++)
     {
         proofs.emplace_back();
-        sp::make_grootle_proof(M[proof_i],
+        sp::make_grootle_proof(proof_messages[proof_i],
+            M[proof_i],
             proof_i,
             proof_offsets[proof_i],
             proof_privkeys[proof_i],
             n,
             m,
-            proof_messages[proof_i],
             proofs.back());
     }
     for (sp::GrootleProof &proof: proofs)
         proof_ptrs.push_back(&proof);
 
     // Verify batch
-    if (!sp::verify_grootle_proofs(proof_ptrs, M, proof_offsets, n, m, proof_messages))
+    if (!sp::verify_grootle_proofs(proof_ptrs, proof_messages, M, proof_offsets, n, m))
         return false;
 
     return true;
@@ -125,7 +125,7 @@ bool test_grootle_proof(const std::size_t n,  // size base: N = n^m
         // make and test proofs
         try
         {
-            if (!test_grootle(N_proofs, n, m, M, proof_offsets, proof_privkeys, proof_messages))
+            if (!test_grootle(N_proofs, proof_messages, n, m, M, proof_offsets, proof_privkeys))
                 return false;
         }
         catch (...) { return false; }
