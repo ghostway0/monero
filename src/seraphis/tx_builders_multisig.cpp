@@ -309,7 +309,7 @@ static bool try_make_v1_legacy_input_v1(const rct::key &tx_proposal_prefix,
 static bool try_make_v1_sp_partial_input_v1(const rct::key &expected_proposal_prefix,
     const SpInputProposalV1 &input_proposal,
     const std::vector<multisig::SpCompositionProofMultisigPartial> &input_proof_partial_sigs,
-    const rct::key &sp_spend_pubkey,
+    const rct::key &sp_core_spend_pubkey,
     SpPartialInputV1 &partial_input_out)
 {
     try
@@ -329,7 +329,7 @@ static bool try_make_v1_sp_partial_input_v1(const rct::key &expected_proposal_pr
         make_v1_partial_input_v1(input_proposal,
             expected_proposal_prefix,
             std::move(sp_image_proof),
-            sp_spend_pubkey,
+            sp_core_spend_pubkey,
             partial_input_out);
 
         // validate semantics to minimize failure modes
@@ -441,7 +441,7 @@ static bool try_make_sp_partial_inputs_for_multisig_v1(const rct::key &tx_propos
     const std::vector<crypto::public_key> &multisig_signers,
     const std::unordered_map<crypto::public_key, std::vector<multisig::MultisigPartialSigSetV1>>
         &sp_input_partial_sigs_per_signer,
-    const rct::key &sp_spend_pubkey,
+    const rct::key &sp_core_spend_pubkey,
     std::list<multisig::MultisigSigningErrorVariant> &multisig_errors_inout,
     std::vector<SpPartialInputV1> &sp_partial_inputs_out)
 {
@@ -486,7 +486,7 @@ static bool try_make_sp_partial_inputs_for_multisig_v1(const rct::key &tx_propos
                     return try_make_v1_sp_partial_input_v1(tx_proposal_prefix,
                         mapped_sp_input_proposals.at(proof_key),
                         partial_sigs,
-                        sp_spend_pubkey,
+                        sp_core_spend_pubkey,
                         sp_partial_input_out);
                 },
                 multisig_errors_inout,
@@ -768,7 +768,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
         // make mock legacy and jamtis spend private keys
         const crypto::secret_key legacy_spend_privkey_mock{rct::rct2sk(rct::skGen())};  //k^s (legacy)
         const crypto::secret_key sp_spend_privkey_mock{rct::rct2sk(rct::skGen())};  //k_m (seraphis)
-        const crypto::public_key sp_spend_pubkey_mock{
+        const crypto::public_key sp_core_spend_pubkey_mock{
                 rct::rct2pk(rct::scalarmultKey(rct::pk2rct(crypto::get_U()), rct::sk2rct(sp_spend_privkey_mock)))
             };  //k_m U
 
@@ -870,7 +870,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
             temp_enote_core.m_amount_commitment = amount_commitment_ref(sp_input_proposal.m_core.m_enote_core);
 
             // new onetime address
-            seraphis_extended_spendkey_temp = rct::pk2rct(sp_spend_pubkey_mock);
+            seraphis_extended_spendkey_temp = rct::pk2rct(sp_core_spend_pubkey_mock);
             extend_seraphis_spendkey_u(sp_input_proposal.m_core.m_enote_view_privkey_u, seraphis_extended_spendkey_temp);
             seraphis_onetime_address_temp = seraphis_extended_spendkey_temp;
             extend_seraphis_spendkey_x(sp_input_proposal.m_core.m_enote_view_privkey_x, seraphis_onetime_address_temp);
@@ -1485,14 +1485,14 @@ bool try_make_inputs_for_multisig_v1(const SpMultisigTxProposalV1 &multisig_tx_p
         return false;
 
     // 4. try to make seraphis partial inputs
-    rct::key sp_spend_pubkey{jamtis_spend_pubkey};
-    reduce_seraphis_spendkey_x(k_view_balance, sp_spend_pubkey);
+    rct::key sp_core_spend_pubkey{jamtis_spend_pubkey};
+    reduce_seraphis_spendkey_x(k_view_balance, sp_core_spend_pubkey);
 
     if (!try_make_sp_partial_inputs_for_multisig_v1(tx_proposal_prefix,
             tx_proposal.m_sp_input_proposals,
             multisig_signers,
             sp_input_partial_sigs_per_signer,
-            sp_spend_pubkey,
+            sp_core_spend_pubkey,
             multisig_errors_inout,
             sp_partial_inputs_out))
         return false;

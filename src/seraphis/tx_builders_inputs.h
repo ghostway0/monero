@@ -111,7 +111,7 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     const std::vector<SpEnoteImageV1> &sp_enote_images,
     rct::key &input_images_prefix_out);
 //todo
-void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_spend_pubkey);
+void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_core_spend_pubkey);
 /**
 * brief: make_input_proposal - make the core of an input proposal
 * param: enote_core -
@@ -231,13 +231,13 @@ void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input);
 * param: input_proposal -
 * param: proposal_prefix -
 * param: sp_image_proof -
-* param: sp_spend_pubkey -
+* param: sp_core_spend_pubkey -
 * outparam: partial_input_out -
 */
 void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &proposal_prefix,
     SpImageProofV1 sp_image_proof,
-    const rct::key &sp_spend_pubkey,
+    const rct::key &sp_core_spend_pubkey,
     SpPartialInputV1 &partial_input_out);
 void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &proposal_prefix,

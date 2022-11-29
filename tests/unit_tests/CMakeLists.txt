@@ -110,6 +110,7 @@ set(unit_tests_sources
   is_hdd.cpp
   aligned.cpp
   rpc_version_str.cpp
+  x25519.cpp
   zmq_rpc.cpp)
 
 set(unit_tests_headers
@@ -127,6 +128,7 @@ target_link_libraries(unit_tests
     daemon_rpc_server
     blockchain_db
     lmdb_lib
+    mx25519_static
     rpc
     net
     serialization
@@ -139,6 +141,7 @@ target_link_libraries(unit_tests
     ${Boost_CHRONO_LIBRARY}
     ${Boost_THREAD_LIBRARY}
     ${GTEST_LIBRARIES}
+    ${MX25519_INCLUDE}
     ${CMAKE_THREAD_LIBS_INIT}
     ${EXTRA_LIBRARIES}
     ${ZMQ_LIB})

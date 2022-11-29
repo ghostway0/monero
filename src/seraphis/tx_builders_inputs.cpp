@@ -215,10 +215,10 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     sp_hash_to_32(transcript, input_images_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_spend_pubkey)
+void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_core_spend_pubkey)
 {
     // 1. the onetime address must be reproducible
-    rct::key extended_spendkey{sp_spend_pubkey};
+    rct::key extended_spendkey{sp_core_spend_pubkey};
     extend_seraphis_spendkey_u(input_proposal.m_core.m_enote_view_privkey_u, extended_spendkey);
 
     rct::key onetime_address_reproduced{extended_spendkey};
@@ -374,7 +374,12 @@ void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     sc_mul(to_bytes(z), squash_prefix.bytes, to_bytes(z));
 
     // 4. make seraphis composition proof
-    make_sp_composition_proof(message, input_enote_image_core.m_masked_address, x, y, z, image_proof_out.m_composition_proof);
+    make_sp_composition_proof(message,
+        input_enote_image_core.m_masked_address,
+        x,
+        y,
+        z,
+        image_proof_out.m_composition_proof);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposals,
@@ -574,11 +579,11 @@ void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input)
 void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &proposal_prefix,
     SpImageProofV1 sp_image_proof,
-    const rct::key &sp_spend_pubkey,
+    const rct::key &sp_core_spend_pubkey,
     SpPartialInputV1 &partial_input_out)
 {
     // 1. check input proposal semantics
-    check_v1_input_proposal_semantics_v1(input_proposal, sp_spend_pubkey);
+    check_v1_input_proposal_semantics_v1(input_proposal, sp_core_spend_pubkey);
 
     // 2. prepare input image
     input_proposal.get_enote_image_v1(partial_input_out.m_input_image);
@@ -599,8 +604,8 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     SpPartialInputV1 &partial_input_out)
 {
     // 1. initialization
-    rct::key sp_spend_pubkey;
-    make_seraphis_spendbase(sp_spend_privkey, sp_spend_pubkey);
+    rct::key sp_core_spend_pubkey;
+    make_seraphis_spendbase(sp_spend_privkey, sp_core_spend_pubkey);
 
     // 2. construct image proof
     SpImageProofV1 sp_image_proof;
@@ -613,7 +618,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     make_v1_partial_input_v1(input_proposal,
         proposal_prefix,
         std::move(sp_image_proof),
-        sp_spend_pubkey,
+        sp_core_spend_pubkey,
         partial_input_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
