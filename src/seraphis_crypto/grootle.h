@@ -46,7 +46,6 @@
 // - MatRiCT (Esgin et. al; section 1.3 for A/B optimization): https://eprint.iacr.org/2019/1287.pdf
 ///
 
-
 #pragma once
 
 //local headers

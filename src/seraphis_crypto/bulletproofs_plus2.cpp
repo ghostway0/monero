@@ -32,10 +32,10 @@
 //
 // NOTE ON NOTATION:
 //  In the signature constructions used in Monero, commitments to zero are treated as
-//      public keys against the curve group generator `G`. This means that amount
-//      commitments must use another generator `H` for values in order to show balance.
-//  The result is that the roles of `g` and `h` in the preprint are effectively swapped
-//      in this code, taking on the roles of `H` and `G`, respectively. Read carefully!
+//      public keys against the curve group generator G. This means that amount
+//      commitments must use another generator H for values in order to show balance.
+//  The result is that the roles of g and h in the preprint are effectively swapped
+//      in this code, taking on the roles of H and G, respectively. Read carefully!
 
 #include "bulletproofs_plus2.h"
 
