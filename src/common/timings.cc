@@ -156,7 +156,6 @@ bool TimingsDatabase::save(const bool save_current_time /*=true*/)
 std::vector<TimingsDatabase::instance> TimingsDatabase::get(const char *name) const
 {
   std::vector<instance> ret;
-  auto range = instances.equal_range(name);
   for (const auto &i: instances)
   {
     if (i.first != name)
