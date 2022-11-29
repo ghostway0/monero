@@ -84,8 +84,6 @@ class DataSource final
 
 public:
 //constructors
-    /// default constructor: disabled
-    DataSource() = delete;
     /// normal constructor: wrap a data source object
     template<typename SourceT>
     DataSource(const SourceT &source)

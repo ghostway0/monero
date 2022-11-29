@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Variant wrapper class.
-
 
 #pragma once
 
@@ -58,11 +55,11 @@ namespace sp
 // - the value may be assigned to but is otherwise read-only
 // - the variant is 'optional' - an empty variant will evaluate to 'false' and an initialized variant will be 'true'
 ///
-template<typename ResultT>
+template <typename ResultT>
 struct SpVariantStaticVisitor : public boost::static_visitor<ResultT>
 {
     /// provide visitation for empty variants
-    /// - add to your visitor with: using SpVariantStaticVisitor::operator();
+    /// - add this to your visitor with: using SpVariantStaticVisitor::operator();
     ResultT operator()(const boost::blank) const
     {
         throw std::runtime_error("SpVariant: tried to visit an empty variant.");
@@ -71,7 +68,7 @@ struct SpVariantStaticVisitor : public boost::static_visitor<ResultT>
     }
 };
 
-template<typename... Types>
+template <typename... Types>
 class SpVariant final
 {
     using VType = boost::variant<boost::blank, Types...>;
