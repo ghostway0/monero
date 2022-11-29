@@ -64,13 +64,13 @@ TEST(seraphis_serialization_demo, seraphis_coinbase_empty)
     EXPECT_NO_THROW(sp::serialization::recover_sp_tx_coinbase_v1(serializable_tx_recovered, recovered_tx));
 
     // check that the original tx was recovered
-    rct::key original_tx_hash;
-    rct::key recovered_tx_hash;
+    rct::key original_tx_id;
+    rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_hash(original_tx_hash));
-    EXPECT_NO_THROW(recovered_tx.get_hash(recovered_tx_hash));
+    EXPECT_NO_THROW(tx.get_id(original_tx_id));
+    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
 
-    EXPECT_TRUE(original_tx_hash == recovered_tx_hash);
+    EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -99,13 +99,13 @@ TEST(seraphis_serialization_demo, seraphis_squashed_empty)
     EXPECT_NO_THROW(sp::serialization::recover_sp_tx_squashed_v1(serializable_tx_recovered, {}, 0, 0, recovered_tx));
 
     // check that the original tx was recovered
-    rct::key original_tx_hash;
-    rct::key recovered_tx_hash;
+    rct::key original_tx_id;
+    rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_hash(original_tx_hash));
-    EXPECT_NO_THROW(recovered_tx.get_hash(recovered_tx_hash));
+    EXPECT_NO_THROW(tx.get_id(original_tx_id));
+    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
 
-    EXPECT_TRUE(original_tx_hash == recovered_tx_hash);
+    EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -139,13 +139,13 @@ TEST(seraphis_serialization_demo, seraphis_coinbase_standard)
     EXPECT_NO_THROW(sp::serialization::recover_sp_tx_coinbase_v1(serializable_tx_recovered, recovered_tx));
 
     // check the tx was recovered
-    rct::key original_tx_hash;
-    rct::key recovered_tx_hash;
+    rct::key original_tx_id;
+    rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_hash(original_tx_hash));
-    EXPECT_NO_THROW(recovered_tx.get_hash(recovered_tx_hash));
+    EXPECT_NO_THROW(tx.get_id(original_tx_id));
+    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
 
-    EXPECT_TRUE(original_tx_hash == recovered_tx_hash);
+    EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
     EXPECT_TRUE(validate_tx(tx, tx_validation_context));
     EXPECT_TRUE(validate_tx(recovered_tx, tx_validation_context));
@@ -203,13 +203,13 @@ TEST(seraphis_serialization_demo, seraphis_squashed_standard)
         recovered_tx));
 
     // check the tx was recovered
-    rct::key original_tx_hash;
-    rct::key recovered_tx_hash;
+    rct::key original_tx_id;
+    rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_hash(original_tx_hash));
-    EXPECT_NO_THROW(recovered_tx.get_hash(recovered_tx_hash));
+    EXPECT_NO_THROW(tx.get_id(original_tx_id));
+    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
 
-    EXPECT_TRUE(original_tx_hash == recovered_tx_hash);
+    EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
     EXPECT_TRUE(validate_tx(tx, tx_validation_context));
     EXPECT_TRUE(validate_tx(recovered_tx, tx_validation_context));

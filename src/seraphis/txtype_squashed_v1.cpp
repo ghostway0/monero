@@ -71,6 +71,50 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
+void SpTxSquashedV1::get_id(rct::key &tx_id_out) const
+{
+    // tx_id = H_32(tx_proposal_prefix, input images, proofs)
+
+    // 1. tx proposal
+    // H_32(crypto project name, version string, legacy input key images, sp input key images, output enotes,
+    //        tx supplement, fee)
+    std::string version_string;
+    version_string.reserve(3);
+    make_versioning_string(m_tx_semantic_rules_version, version_string);
+
+    rct::key tx_proposal_prefix;
+    make_tx_proposal_prefix_v1(version_string,
+        m_legacy_input_images,
+        m_sp_input_images,
+        m_outputs,
+        m_tx_supplement,
+        m_tx_fee,
+        tx_proposal_prefix);
+
+    // 2. input images (note: key images are represented in the tx hash twice (image proofs message and input images))
+    // H_32({C", KI}((legacy)), {K", C", KI}((seraphis)))
+    rct::key input_images_prefix;
+    make_input_images_prefix_v1(m_legacy_input_images, m_sp_input_images, input_images_prefix);
+
+    // 3. proofs
+    // H_32(balance proof, legacy ring signatures, image proofs, seraphis membership proofs)
+    rct::key tx_proofs_prefix;
+    make_tx_proofs_prefix_v1(m_balance_proof,
+        m_legacy_ring_signatures,
+        m_sp_image_proofs,
+        m_sp_membership_proofs,
+        tx_proofs_prefix);
+
+    // 4. tx hash
+    // tx_hash = H_32(tx_proposal_prefix, input images, proofs)
+    SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_SQUASHED_V1, 3*sizeof(rct::key)};
+    transcript.append("tx_proposal_prefix", tx_proposal_prefix);
+    transcript.append("input_images_prefix", input_images_prefix);
+    transcript.append("tx_proofs_prefix", tx_proofs_prefix);
+
+    sp_hash_to_32(transcript, tx_id_out.bytes);
+}
+//-------------------------------------------------------------------------------------------------------------------
 std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t num_sp_inputs,
     const std::size_t num_outputs,
@@ -207,50 +251,6 @@ std::size_t SpTxSquashedV1::weight() const
         ref_set_decomp_m,
         num_bin_members,
         m_tx_supplement.m_tx_extra);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpTxSquashedV1::get_hash(rct::key &tx_hash_out) const
-{
-    // tx_hash = H_32(tx_proposal_prefix, input images, proofs)
-
-    // 1. tx proposal
-    // H_32(crypto project name, version string, legacy input key images, sp input key images, output enotes,
-    //        tx supplement, fee)
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(m_tx_semantic_rules_version, version_string);
-
-    rct::key tx_proposal_prefix;
-    make_tx_proposal_prefix_v1(version_string,
-        m_legacy_input_images,
-        m_sp_input_images,
-        m_outputs,
-        m_tx_supplement,
-        m_tx_fee,
-        tx_proposal_prefix);
-
-    // 2. input images (note: key images are represented in the tx hash twice (image proofs message and input images))
-    // H_32({C", KI}((legacy)), {K", C", KI}((seraphis)))
-    rct::key input_images_prefix;
-    make_input_images_prefix_v1(m_legacy_input_images, m_sp_input_images, input_images_prefix);
-
-    // 3. proofs
-    // H_32(balance proof, legacy ring signatures, image proofs, seraphis membership proofs)
-    rct::key tx_proofs_prefix;
-    make_tx_proofs_prefix_v1(m_balance_proof,
-        m_legacy_ring_signatures,
-        m_sp_image_proofs,
-        m_sp_membership_proofs,
-        tx_proofs_prefix);
-
-    // 4. tx hash
-    // tx_hash = H_32(tx_proposal_prefix, input images, proofs)
-    SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_SQUASHED_V1, 3*sizeof(rct::key)};
-    transcript.append("tx_proposal_prefix", tx_proposal_prefix);
-    transcript.append("input_images_prefix", input_images_prefix);
-    transcript.append("tx_proofs_prefix", tx_proofs_prefix);
-
-    sp_hash_to_32(transcript, tx_hash_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,

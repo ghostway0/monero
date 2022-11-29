@@ -225,7 +225,8 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const rct::key &mock_
 {
     boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->commit_unconfirmed_txs_v1_impl(mock_coinbase_input_context,
+    return this->commit_unconfirmed_txs_v1_impl(rct::pkGen(),
+        mock_coinbase_input_context,
         std::move(mock_coinbase_tx_supplement),
         std::move(mock_coinbase_output_enotes));
 }
@@ -698,27 +699,33 @@ std::uint64_t MockLedgerContext::add_legacy_coinbase_impl(const rct::key &tx_id,
     return new_height;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_add_unconfirmed_coinbase_v1_impl(const rct::key &tx_id,
+bool MockLedgerContext::try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
     const rct::key &input_context,
     SpTxSupplementV1 tx_supplement,
     std::vector<SpEnoteVariant> output_enotes)
 {
     /// check failure modes
 
-    // 1. fail if tx id is duplicated (bug since key image check should prevent this)
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_id) == m_unconfirmed_tx_key_images.end(),
+    // 1. fail if tx id is duplicated (bug since coinbase block height check should prevent this)
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(coinbase_tx_id) == m_unconfirmed_tx_key_images.end(),
         "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in key image map (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_id) == m_unconfirmed_tx_output_contents.end(),
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(coinbase_tx_id) ==
+            m_unconfirmed_tx_output_contents.end(),
         "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in output contents map (bug).");
 
 
     /// update state
 
     // 1. add key images (there are none, but we want an entry in the map)
-    m_unconfirmed_tx_key_images[tx_id];
+    m_unconfirmed_tx_key_images[coinbase_tx_id];
 
     // 2. add tx outputs
-    m_unconfirmed_tx_output_contents[tx_id] = {input_context, std::move(tx_supplement), std::move(output_enotes)};
+    m_unconfirmed_tx_output_contents[coinbase_tx_id] =
+        {
+            input_context,
+            std::move(tx_supplement),
+            std::move(output_enotes)
+        };
 
     return true;
 }
@@ -754,7 +761,7 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
 
     // 2. fail if tx id is duplicated (bug since key image check should prevent this)
     rct::key tx_id;
-    tx.get_hash(tx_id);
+    tx.get_id(tx_id);
 
     CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_id) == m_unconfirmed_tx_key_images.end(),
         "mock tx ledger (adding unconfirmed tx): tx id already exists in key image map (bug).");
@@ -805,13 +812,19 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const SpTxCoinba
     rct::key coinbase_input_context;
     jamtis::make_jamtis_input_context_coinbase(coinbase_tx.m_block_height, coinbase_input_context);
 
+    // 3. coinbase tx id
+    rct::key tx_id;
+    coinbase_tx.get_id(tx_id);
+
     // 3. punt to mock commit function
-    return this->commit_unconfirmed_txs_v1_impl(coinbase_input_context,
+    return this->commit_unconfirmed_txs_v1_impl(tx_id,
+        coinbase_input_context,
         coinbase_tx.m_tx_supplement,
         std::move(coinbase_output_enotes));
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
+    const rct::key &mock_coinbase_input_context,
     SpTxSupplementV1 mock_coinbase_tx_supplement,
     std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
 {
@@ -872,7 +885,7 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &
 
     /// add mock coinbase tx to unconfirmed cache
     // note: this should not invalidate the result of any of the prior checks
-    CHECK_AND_ASSERT_THROW_MES(this->try_add_unconfirmed_coinbase_v1_impl(rct::pkGen(),
+    CHECK_AND_ASSERT_THROW_MES(this->try_add_unconfirmed_coinbase_v1_impl(coinbase_tx_id,
             mock_coinbase_input_context,
             std::move(mock_coinbase_tx_supplement),
             std::move(mock_coinbase_output_enotes)),

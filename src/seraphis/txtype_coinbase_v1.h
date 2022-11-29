@@ -83,8 +83,8 @@ struct SpTxCoinbaseV1 final
     /// supplemental data for tx
     SpTxSupplementV1 m_tx_supplement;
 
-    /// get the tx hash
-    void get_hash(rct::key &tx_hash_out) const;
+    /// get the tx id
+    void get_id(rct::key &tx_id_out) const;
 
     /// get size of a possible tx
     static std::size_t size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra);

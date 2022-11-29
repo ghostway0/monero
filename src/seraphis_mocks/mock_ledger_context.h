@@ -254,13 +254,14 @@ private:
         TxExtra memo,
         std::vector<crypto::key_image> legacy_key_images_for_block,
         std::vector<LegacyEnoteVariant> output_enotes);
-    bool try_add_unconfirmed_coinbase_v1_impl(const rct::key &tx_id,
+    bool try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
         const rct::key &input_context,
         SpTxSupplementV1 tx_supplement,
         std::vector<SpEnoteVariant> output_enotes);
     bool try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx);
     std::uint64_t commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx);
-    std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &mock_coinbase_input_context,
+    std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
+        const rct::key &mock_coinbase_input_context,
         SpTxSupplementV1 mock_coinbase_tx_supplement,
         std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
     void remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id);

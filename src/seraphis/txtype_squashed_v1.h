@@ -101,8 +101,8 @@ struct SpTxSquashedV1 final
     /// the transaction fee (discretized representation)
     DiscretizedFee m_tx_fee;
 
-    /// get the tx hash
-    void get_hash(rct::key &tx_hash_out) const;
+    /// get the tx id
+    void get_id(rct::key &tx_id_out) const;
 
     /// get size of a possible tx
     static std::size_t size_bytes(const std::size_t num_legacy_inputs,
