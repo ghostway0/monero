@@ -119,12 +119,12 @@ int main(int argc, char** argv)
 
 
   // test deciphering address tags
-  ParamsShuttleAddressTagDecrypt p_address_tag_decrypt;
-  p_address_tag_decrypt.core_params = p.core_params;
-  p_address_tag_decrypt.mode = AddressTagDecryptModes::ALL_SUCCESSFUL_DECRYPT;
-  TEST_PERFORMANCE0(filter, p_address_tag_decrypt, test_jamtis_address_tag_decrypt_sp);
-  p_address_tag_decrypt.mode = AddressTagDecryptModes::NO_SUCCESSFUL_DECRYPT;
-  TEST_PERFORMANCE0(filter, p_address_tag_decrypt, test_jamtis_address_tag_decrypt_sp);
+  ParamsShuttleAddressTagDecipher p_address_tag_decipher;
+  p_address_tag_decipher.core_params = p.core_params;
+  p_address_tag_decipher.mode = AddressTagDecipherModes::ALL_SUCCESSFUL_DECIPHER;
+  TEST_PERFORMANCE0(filter, p_address_tag_decipher, test_jamtis_address_tag_decipher_sp);
+  p_address_tag_decipher.mode = AddressTagDecipherModes::NO_SUCCESSFUL_DECIPHER;
+  TEST_PERFORMANCE0(filter, p_address_tag_decipher, test_jamtis_address_tag_decipher_sp);
 
   // test client-side scanning in a seraphis remote-scanning workflow
   ParamsShuttleScannerClient p_client_scan;
@@ -146,11 +146,11 @@ int main(int argc, char** argv)
   p_view_scan.core_params = p.core_params;
 
   TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn);
-  TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn_opt);
+  TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn_optimized);
   TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_sp);
   p_view_scan.test_view_tag_check = true;
   TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn);
-  TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn_opt);
+  TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_cn_optimized);
   TEST_PERFORMANCE0(filter, p_view_scan, test_view_scan_sp);
 
   // test done, save results
