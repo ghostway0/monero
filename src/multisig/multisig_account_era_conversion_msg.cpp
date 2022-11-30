@@ -36,10 +36,10 @@ extern "C"
 #include "crypto/crypto-ops.h"
 }
 #include "cryptonote_basic/account_generators.h"
-#include "dual_base_vector_proof.h"
 #include "include_base_utils.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/dual_base_vector_proof.h"
 #include "serialization/binary_archive.h"
 #include "serialization/serialization.h"
 
@@ -121,7 +121,7 @@ namespace multisig
   //----------------------------------------------------------------------------------------------------------------------
   // INTERNAL
   //----------------------------------------------------------------------------------------------------------------------
-  static crypto::hash get_signature_msg(const crypto::DualBaseVectorProof &dualbase_proof)
+  static crypto::hash get_signature_msg(const sp::DualBaseVectorProof &dualbase_proof)
   {
     // signature_msg = dualbase_proof_challenge || dualbase_proof_response
     std::string data;
@@ -156,8 +156,8 @@ namespace multisig
     // make dual base vector proof
     rct::key proof_msg;
     get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, proof_msg);
-    const crypto::DualBaseVectorProof proof{
-        crypto::dual_base_vector_prove(proof_msg, rct::rct2pk(G_1), rct::rct2pk(G_2), keyshare_privkeys)
+    const sp::DualBaseVectorProof proof{
+        sp::dual_base_vector_prove(proof_msg, rct::rct2pk(G_1), rct::rct2pk(G_2), keyshare_privkeys)
       };
 
     // sets message and signing pub key
@@ -178,7 +178,7 @@ namespace multisig
   // multisig_account_era_conversion_msg: INTERNAL
   //----------------------------------------------------------------------------------------------------------------------
   void multisig_account_era_conversion_msg::construct_msg(const crypto::secret_key &signing_privkey,
-    const crypto::DualBaseVectorProof &dualbase_proof)
+    const sp::DualBaseVectorProof &dualbase_proof)
   {
     ////
     // msg_to_sign = dualbase_proof_challenge || dualbase_proof_response
@@ -232,7 +232,7 @@ namespace multisig
     binary_archive<false> archived_msg{epee::strspan<std::uint8_t>(msg_no_magic)};
 
     // extract data from the message
-    crypto::DualBaseVectorProof dualbase_proof;
+    sp::DualBaseVectorProof dualbase_proof;
     crypto::signature msg_signature;
 
     multisig_conversion_msg_serializable deserialized_msg;
@@ -264,7 +264,7 @@ namespace multisig
 
     // validate dualbase proof
     get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, dualbase_proof.m);
-    CHECK_AND_ASSERT_THROW_MES(crypto::dual_base_vector_verify(dualbase_proof, rct::rct2pk(G_1), rct::rct2pk(G_2)),
+    CHECK_AND_ASSERT_THROW_MES(sp::dual_base_vector_verify(dualbase_proof, rct::rct2pk(G_1), rct::rct2pk(G_2)),
       "Conversion message dualbase proof invalid.");
 
     // validate signature

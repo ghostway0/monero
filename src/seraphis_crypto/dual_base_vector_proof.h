@@ -78,7 +78,7 @@
 //forward declarations
 
 
-namespace crypto
+namespace sp
 {
 
 struct DualBaseVectorProof
@@ -117,4 +117,4 @@ bool dual_base_vector_verify(const DualBaseVectorProof &proof,
     const crypto::public_key &G_1,
     const crypto::public_key &G_2);
 
-} //namespace crypto
+} //namespace sp

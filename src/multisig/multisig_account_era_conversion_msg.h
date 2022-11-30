@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 
-namespace crypto { struct DualBaseVectorProof; }
+namespace sp { struct DualBaseVectorProof; }
 
 
 namespace multisig
@@ -95,7 +95,7 @@ namespace multisig
 
   private:
     // set: msg string based on msg contents, with signing pubkey defined from input privkey
-    void construct_msg(const crypto::secret_key &signing_privkey, const crypto::DualBaseVectorProof &dualbase_proof);
+    void construct_msg(const crypto::secret_key &signing_privkey, const sp::DualBaseVectorProof &dualbase_proof);
     // parse msg string into parts, validate contents and signature
     void parse_and_validate_msg();
 

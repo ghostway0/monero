@@ -281,6 +281,9 @@ namespace config
 
   const constexpr char HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT[] = "bpp2_transcript";
   const constexpr char HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT_UPDATE[] = "bpp2_tupdate";
+  const constexpr char HASH_KEY_DUAL_BASE_VECTOR_PROOF_AGGREGATION_COEFF[] = "dual_base_vector_proof_aggregation_coeff";
+  const constexpr char HASH_KEY_DUAL_BASE_VECTOR_PROOF_CHALLENGE_MSG[] = "dual_base_vector_proof_challenge_msg";
+  const constexpr char HASH_KEY_DUAL_BASE_VECTOR_PROOF_CHALLENGE[] = "dual_base_vector_proof_challenge";
   const constexpr char HASH_KEY_GROOTLE_Hi_A[] = "grootle_Hi_A";
   const constexpr char HASH_KEY_GROOTLE_Hi_B[] = "grootle_Hi_B";
   const constexpr char HASH_KEY_GROOTLE_CHALLENGE[] = "grootle_challenge";

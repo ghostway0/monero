@@ -28,6 +28,7 @@
 
 set(seraphis_crypto_sources
   bulletproofs_plus2.cpp
+  dual_base_vector_proof.cpp
   grootle.cpp
   sp_composition_proof.cpp
   sp_crypto_utils.cpp

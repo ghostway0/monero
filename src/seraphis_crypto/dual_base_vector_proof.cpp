@@ -40,22 +40,19 @@ extern "C"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_crypto_utils.h"
+#include "sp_crypto_utils.h"
+#include "sp_hash_functions.h"
+#include "sp_transcript.h"
 
 //third party headers
 
 //standard headers
 #include <vector>
 
-namespace config  //todo: move to config file
-{
-    const char HASH_KEY_CRYPTO_DUAL_BASE_VECTOR_PROOF[] = "dual_base_vector_proof";
-}
-
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "crypto"
+#define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
 
-namespace crypto
+namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
 // compute: A_inout += k * P
@@ -73,17 +70,9 @@ static void mul_add(const rct::key &k, const crypto::public_key &P, ge_p3 &A_ino
     ge_p1p1_to_p3(&A_inout, &temp_p1p1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// Initialize transcript
-//-------------------------------------------------------------------------------------------------------------------
-static void transcript_init(rct::key &transcript)
-{
-    const std::string salt{config::HASH_KEY_CRYPTO_DUAL_BASE_VECTOR_PROOF};
-    rct::cn_fast_hash(transcript, salt.data(), salt.size());
-}
-//-------------------------------------------------------------------------------------------------------------------
 // Aggregation coefficient 'mu' for concise structure
 //
-// mu = H_n(H("domain-sep"), message, G_1, G_2, {V_1}, {V_2})
+// mu = H_n(message, G_1, G_2, {V_1}, {V_2})
 //-------------------------------------------------------------------------------------------------------------------
 static rct::key compute_base_aggregation_coefficient(const rct::key &message,
     const crypto::public_key &G_1,
@@ -91,69 +80,63 @@ static rct::key compute_base_aggregation_coefficient(const rct::key &message,
     const std::vector<crypto::public_key> &V_1,
     const std::vector<crypto::public_key> &V_2)
 {
-    CHECK_AND_ASSERT_THROW_MES(V_1.size() == V_2.size(), "Transcript challenge inputs have incorrect size!");
+    CHECK_AND_ASSERT_THROW_MES(V_1.size() == V_2.size(), "Aggregation coefficient pubkeys have mismatching size!");
 
-    // initialize transcript message
-    rct::key challenge;
-    transcript_init(challenge);
+    // collect aggregation coefficient hash data
+    SpFSTranscript transcript{
+            config::HASH_KEY_DUAL_BASE_VECTOR_PROOF_AGGREGATION_COEFF,
+            (3 + 2*V_1.size())*sizeof(rct::key)
+        };
+    transcript.append("message", message);
+    transcript.append("G_1", G_1);
+    transcript.append("G_2", G_2);
+    transcript.append("V_1", V_1);
+    transcript.append("V_2", V_2);
 
-    // collect challenge string
-    std::string hash;
-    hash.reserve((2 + 2*(V_1.size() + 1))*sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(challenge.bytes), sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(message.bytes), sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(G_1.data), sizeof(crypto::public_key));
-    hash.append(reinterpret_cast<const char*>(G_2.data), sizeof(crypto::public_key));
-    for (const crypto::public_key &V : V_1)
-        hash.append(reinterpret_cast<const char*>(V.data), sizeof(crypto::public_key));
-    for (const crypto::public_key &V : V_2)
-        hash.append(reinterpret_cast<const char*>(V.data), sizeof(crypto::public_key));
-    CHECK_AND_ASSERT_THROW_MES(hash.size() > 1, "Bad hash input size!");
+    // mu
+    rct::key aggregation_coefficient;
+    sp_hash_to_scalar(transcript, aggregation_coefficient.bytes);
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(aggregation_coefficient.bytes),
+        "Aggregation_coefficient must be nonzero!");
 
-    // challenge
-    rct::hash_to_scalar(challenge, hash.data(), hash.size());
-
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes), "Transcript challenge must be nonzero!");
-
-    return challenge;
+    return aggregation_coefficient;
 }
 //-------------------------------------------------------------------------------------------------------------------
 // Fiat-Shamir challenge message
-// challenge_message = H(message)
+// challenge_message = H_32(message)
 //
 // note: in practice, this extends the aggregation coefficient (i.e. message = mu)
-// challenge_message = H(H_n(H("domain-sep"), message, {V_1}, {V_2}))
+// challenge_message = H_32(mu) = H_32(H_n(message, G_1, G_2, {V_1}, {V_2}))
 //-------------------------------------------------------------------------------------------------------------------
 static rct::key compute_challenge_message(const rct::key &message)
 {
-    rct::key challenge;
-    std::string hash;
-    hash.append(reinterpret_cast<const char*>(message.bytes), sizeof(rct::key));
-    CHECK_AND_ASSERT_THROW_MES(hash.size() > 1, "Bad hash input size!");
-    rct::cn_fast_hash(challenge, hash.data(), hash.size());
+    // collect challenge message hash data
+    SpFSTranscript transcript{config::HASH_KEY_DUAL_BASE_VECTOR_PROOF_CHALLENGE_MSG, sizeof(rct::key)};
+    transcript.append("message", message);
 
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes), "Transcript challenge must be nonzero!");
+    // m
+    rct::key challenge_message;
+    sp_hash_to_32(transcript, challenge_message.bytes);
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge_message.bytes), "challenge_message must be nonzero!");
 
-    return challenge;
+    return challenge_message;
 }
 //-------------------------------------------------------------------------------------------------------------------
 // Fiat-Shamir challenge
 // c = H_n(challenge_message, [V_1 proof key], [V_2 proof key])
 //-------------------------------------------------------------------------------------------------------------------
-static rct::key compute_challenge(const rct::key &message,
-    const rct::key &V_1_proofkey,
-    const rct::key &V_2_proofkey)
+static rct::key compute_challenge(const rct::key &message, const rct::key &V_1_proofkey, const rct::key &V_2_proofkey)
 {
-    rct::key challenge;
-    std::string hash;
-    hash.reserve(3*sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(message.bytes), sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(V_1_proofkey.bytes), sizeof(rct::key));
-    hash.append(reinterpret_cast<const char*>(V_2_proofkey.bytes), sizeof(rct::key));
-    CHECK_AND_ASSERT_THROW_MES(hash.size() > 1, "Bad hash input size!");
-    rct::hash_to_scalar(challenge, hash.data(), hash.size());
+    // collect challenge hash data
+    SpFSTranscript transcript{config::HASH_KEY_DUAL_BASE_VECTOR_PROOF_CHALLENGE, 3*sizeof(rct::key)};
+    transcript.append("message", message);
+    transcript.append("V_1_proofkey", V_1_proofkey);
+    transcript.append("V_2_proofkey", V_2_proofkey);
 
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes), "Transcript challenge must be nonzero!");
+    // c
+    rct::key challenge;
+    sp_hash_to_scalar(transcript, challenge.bytes);
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes), "challenge must be nonzero!");
 
     return challenge;
 }
@@ -181,10 +164,10 @@ static void compute_response(const std::vector<crypto::secret_key> &k,
 
     for (std::size_t i{0}; i < k.size(); ++i)
     {
-        sc_mul(r_temp.bytes, mu_pows[i].bytes, to_bytes(k[i]));  // mu^i * k_i
-        sc_add(r_sum_temp.bytes, r_sum_temp.bytes, r_temp.bytes);  // sum_i(...)
+        sc_mul(r_temp.bytes, mu_pows[i].bytes, to_bytes(k[i]));    //mu^i * k_i
+        sc_add(r_sum_temp.bytes, r_sum_temp.bytes, r_temp.bytes);  //sum_i(...)
     }
-    sc_mulsub(r_out.bytes, challenge.bytes, r_sum_temp.bytes, alpha.bytes);  // alpha - c * sum_i(...)
+    sc_mulsub(r_out.bytes, challenge.bytes, r_sum_temp.bytes, alpha.bytes);  //alpha - c * sum_i(...)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -246,7 +229,7 @@ DualBaseVectorProof dual_base_vector_prove(const rct::key &message,
     proof.c = compute_challenge(m, alpha_1_pub, alpha_2_pub);
 
 
-    /// responses
+    /// response
     compute_response(k, mu_pows, rct::sk2rct(alpha), proof.c, proof.r);
 
 
@@ -265,7 +248,7 @@ bool dual_base_vector_verify(const DualBaseVectorProof &proof,
     CHECK_AND_ASSERT_THROW_MES(num_keys == proof.V_2.size(), "Input key sets not the same size (V_2)!");
 
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(proof.r.bytes), "Bad response (r zero)!");
-    CHECK_AND_ASSERT_THROW_MES(sc_check(proof.r.bytes) == 0, "Bad resonse (r)!");
+    CHECK_AND_ASSERT_THROW_MES(sc_check(proof.r.bytes) == 0, "Bad response (r)!");
 
     // recover the proof keys
     std::vector<crypto::public_key> V_1_mul8;
@@ -327,4 +310,4 @@ bool dual_base_vector_verify(const DualBaseVectorProof &proof,
     return compute_challenge(m, V_1_part, V_2_part) == proof.c;
 }
 //-------------------------------------------------------------------------------------------------------------------
-} //namespace crypto
+} //namespace sp
