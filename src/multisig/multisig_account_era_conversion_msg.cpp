@@ -35,6 +35,7 @@ extern "C"
 {
 #include "crypto/crypto-ops.h"
 }
+#include "cryptonote_basic/account_generators.h"
 #include "dual_base_vector_proof.h"
 #include "include_base_utils.h"
 #include "ringct/rctOps.h"
@@ -142,8 +143,8 @@ namespace multisig
   {
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(signing_privkey)) == 0 &&
       signing_privkey != crypto::null_skey, "Invalid msg signing key.");
-    const rct::key G_1{get_primary_generator(m_old_era)};
-    const rct::key G_2{get_primary_generator(m_new_era)};
+    const rct::key G_1{rct::pk2rct(cryptonote::get_primary_generator(m_old_era))};
+    const rct::key G_2{rct::pk2rct(cryptonote::get_primary_generator(m_new_era))};
     CHECK_AND_ASSERT_THROW_MES(!(G_1 == rct::Z), "Unknown conversion msg old era.");
     CHECK_AND_ASSERT_THROW_MES(!(G_2 == rct::Z), "Unknown conversion msg new era.");
     CHECK_AND_ASSERT_THROW_MES(keyshare_privkeys.size() > 0, "Can't make conversion message with no keys to convert.");
@@ -249,8 +250,8 @@ namespace multisig
     else CHECK_AND_ASSERT_THROW_MES(false, "Deserializing conversion msg failed.");
 
     // checks
-    const rct::key G_1{get_primary_generator(m_old_era)};
-    const rct::key G_2{get_primary_generator(m_new_era)};
+    const rct::key G_1{rct::pk2rct(cryptonote::get_primary_generator(m_old_era))};
+    const rct::key G_2{rct::pk2rct(cryptonote::get_primary_generator(m_new_era))};
     CHECK_AND_ASSERT_THROW_MES(!(G_1 == rct::Z), "Unknown conversion msg old era.");
     CHECK_AND_ASSERT_THROW_MES(!(G_2 == rct::Z), "Unknown conversion msg new era.");
     CHECK_AND_ASSERT_THROW_MES(dualbase_proof.V_1.size() > 0, "Conversion message has no conversion keys.");

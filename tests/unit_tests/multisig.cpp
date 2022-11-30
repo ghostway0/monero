@@ -28,7 +28,7 @@
 
 #include "crypto/crypto.h"
 #include "crypto/generators.h"
-#include "multisig/account_generator_era.h"
+#include "cryptonote_basic/account_generators.h"
 #include "multisig/dual_base_vector_proof.h"
 #include "multisig/multisig.h"
 #include "multisig/multisig_account.h"
@@ -806,10 +806,10 @@ TEST(multisig, multisig_conversion_msg)
     for (const crypto::secret_key &privkey : privkeys)
     {
       expected_old_keyshares.emplace_back(
-          rct::rct2pk(rct::scalarmultKey(cryptonote::get_primary_generator(old_era), rct::sk2rct(privkey)))
+          rct::rct2pk(rct::scalarmultKey(rct::pk2rct(cryptonote::get_primary_generator(old_era)), rct::sk2rct(privkey)))
         );
       expected_new_keyshares.emplace_back(
-          rct::rct2pk(rct::scalarmultKey(cryptonote::get_primary_generator(new_era), rct::sk2rct(privkey)))
+          rct::rct2pk(rct::scalarmultKey(rct::pk2rct(cryptonote::get_primary_generator(new_era)), rct::sk2rct(privkey)))
         );
     }
 
