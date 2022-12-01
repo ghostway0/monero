@@ -120,33 +120,33 @@ TEST(seraphis_crypto, dual_base_vector_proof)
     const crypto::public_key gen_U{crypto::get_U()};
 
     // G, G, 0 keys
-    EXPECT_ANY_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_G, gen_G, make_keys(0)));
+    EXPECT_ANY_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(0), proof));
 
     // G, G, 1 key
-    EXPECT_NO_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_G, gen_G, make_keys(1)));
-    EXPECT_TRUE(sp::dual_base_vector_verify(proof, gen_G, gen_G));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_G, gen_U));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_U, gen_G));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_U, gen_U));
+    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(1), proof));
+    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_G));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
 
     // G, G, 2 keys
-    EXPECT_NO_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_G, gen_G, make_keys(2)));
-    EXPECT_TRUE(sp::dual_base_vector_verify(proof, gen_G, gen_G));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_G, gen_U));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_U, gen_G));
-    EXPECT_FALSE(sp::dual_base_vector_verify(proof, gen_U, gen_U));
+    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(2), proof));
+    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_G));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
+    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
 
     // G, U, 2 keys
-    EXPECT_NO_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_G, gen_U, make_keys(2)));
-    EXPECT_TRUE(sp::dual_base_vector_verify(proof, gen_G, gen_U));
+    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_U, make_keys(2), proof));
+    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
 
     // U, G, 3 keys
-    EXPECT_NO_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_U, gen_G, make_keys(3)));
-    EXPECT_TRUE(sp::dual_base_vector_verify(proof, gen_U, gen_G));
+    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_U, gen_G, make_keys(3), proof));
+    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
 
     // U, U, 3 keys
-    EXPECT_NO_THROW(proof = sp::dual_base_vector_prove(rct::zero(), gen_U, gen_U, make_keys(3)));
-    EXPECT_TRUE(sp::dual_base_vector_verify(proof, gen_U, gen_U));
+    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_U, gen_U, make_keys(3), proof));
+    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_crypto, multiexp_utility)

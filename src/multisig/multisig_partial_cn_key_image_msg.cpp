@@ -153,12 +153,12 @@ namespace multisig
     // make dual base vector proof
     rct::key proof_msg;
     get_dualbase_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address, proof_msg);
-    const sp::DualBaseVectorProof proof{
-        sp::dual_base_vector_prove(proof_msg,
-          crypto::get_G(),
-          rct::rct2pk(rct::ki2rct(key_image_base)),
-          keyshare_privkeys)
-      };
+    sp::DualBaseVectorProof proof;
+    sp::make_dual_base_vector_proof(proof_msg,
+      crypto::get_G(),
+      rct::rct2pk(rct::ki2rct(key_image_base)),
+      keyshare_privkeys,
+      proof);
 
     // sets message and signing pub key
     this->construct_msg(signing_privkey, proof);
@@ -267,7 +267,7 @@ namespace multisig
 
     // validate dualbase proof
     get_dualbase_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address, dualbase_proof.m);
-    CHECK_AND_ASSERT_THROW_MES(sp::dual_base_vector_verify(dualbase_proof,
+    CHECK_AND_ASSERT_THROW_MES(sp::verify_dual_base_vector_proof(dualbase_proof,
         crypto::get_G(),
         rct::rct2pk(rct::ki2rct(key_image_base))),
       "cn key image message dualbase proof invalid.");

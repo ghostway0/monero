@@ -156,9 +156,8 @@ namespace multisig
     // make dual base vector proof
     rct::key proof_msg;
     get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, proof_msg);
-    const sp::DualBaseVectorProof proof{
-        sp::dual_base_vector_prove(proof_msg, rct::rct2pk(G_1), rct::rct2pk(G_2), keyshare_privkeys)
-      };
+    sp::DualBaseVectorProof proof;
+    sp::make_dual_base_vector_proof(proof_msg, rct::rct2pk(G_1), rct::rct2pk(G_2), keyshare_privkeys, proof);
 
     // sets message and signing pub key
     this->construct_msg(signing_privkey, proof);
@@ -264,7 +263,7 @@ namespace multisig
 
     // validate dualbase proof
     get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, dualbase_proof.m);
-    CHECK_AND_ASSERT_THROW_MES(sp::dual_base_vector_verify(dualbase_proof, rct::rct2pk(G_1), rct::rct2pk(G_2)),
+    CHECK_AND_ASSERT_THROW_MES(sp::verify_dual_base_vector_proof(dualbase_proof, rct::rct2pk(G_1), rct::rct2pk(G_2)),
       "Conversion message dualbase proof invalid.");
 
     // validate signature

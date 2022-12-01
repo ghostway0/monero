@@ -34,8 +34,8 @@
 //
 // proof outline
 // 0. preliminaries
-//    hash to 32 bytes:       H_32(...) = blake2b(...) -> 32 bytes
-//    hash to ed25519 scalar: H_n(...)  = H_64(...) mod l
+//    hash to 32 bytes (domain separated):       H_32(...) = blake2b(...) -> 32 bytes
+//    hash to ed25519 scalar (domain separated): H_n(...)  = H_64(...) mod l
 //    ed25519 generators: G, X, U
 // 1. pubkeys
 //    K    = x*G + y*X + z*U
@@ -131,6 +131,7 @@ void make_sp_composition_proof(const rct::key &message,
     SpCompositionProof &proof_out);
 /**
 * brief: verify_sp_composition_proof - verify a seraphis composition proof
+*   - PRECONDITION: KI is not identity and contains no torsion elements (the caller must perform those tests)
 * param: proof - proof to verify
 * param: message - message to insert in Fiat-Shamir transform hash
 * param: K - main proof key = x G + y X + z U
