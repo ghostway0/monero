@@ -54,7 +54,6 @@
 #include "seraphis/tx_enote_scanning_context_simple.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "tx_enote_store_updater_mocks.h"
 #include "tx_enote_finding_context_mocks.h"
 #include "tx_validation_context_mock.h"

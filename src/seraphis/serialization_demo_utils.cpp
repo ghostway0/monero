@@ -39,7 +39,6 @@
 #include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "serialization_demo_types.h"
 #include "tx_binned_reference_set.h"
 #include "tx_builders_inputs.h"

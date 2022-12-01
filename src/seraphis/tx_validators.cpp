@@ -41,7 +41,6 @@
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "tx_binned_reference_set_utils.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_legacy_inputs.h"

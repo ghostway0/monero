@@ -43,7 +43,6 @@ extern "C"
 #include "ringct/rctTypes.h"
 #include "sp_crypto_utils.h"
 #include "sp_hash_functions.h"
-#include "sp_misc_utils.h"
 #include "sp_transcript.h"
 
 //third party headers

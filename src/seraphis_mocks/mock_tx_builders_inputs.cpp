@@ -45,7 +45,6 @@
 #include "seraphis/tx_builders_inputs.h"
 #include "seraphis/tx_component_types.h"
 #include "seraphis/tx_ref_set_index_mapper_flat.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 
 
 //third party headers

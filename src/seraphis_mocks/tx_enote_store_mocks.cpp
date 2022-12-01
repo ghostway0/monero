@@ -38,7 +38,6 @@
 #include "seraphis/tx_contextual_enote_record_types.h"
 #include "seraphis/tx_contextual_enote_record_utils.h"
 #include "seraphis/tx_enote_record_utils_legacy.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 
 //third party headers
 

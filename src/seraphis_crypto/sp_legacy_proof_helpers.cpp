@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "sp_misc_utils.h"
+#include "sp_legacy_proof_helpers.h"
 
 //local headers
 #include "bulletproofs_plus2.h"

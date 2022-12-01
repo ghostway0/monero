@@ -43,7 +43,6 @@ extern "C"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_generator_factory.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "seraphis_crypto/sp_multiexp.h"
 
 #include "gtest/gtest.h"

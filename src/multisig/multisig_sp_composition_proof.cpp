@@ -48,7 +48,6 @@ extern "C"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "seraphis_crypto/sp_transcript.h"
 
 //third party headers

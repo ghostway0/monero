@@ -43,7 +43,7 @@
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_misc_utils.h"
+#include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"
 #include "tx_extra.h"

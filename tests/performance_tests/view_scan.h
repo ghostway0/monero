@@ -47,7 +47,6 @@
 #include "seraphis/tx_enote_record_types.h"
 #include "seraphis/tx_enote_record_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
 //---------------------------------------------------------------------------------------------------------------------

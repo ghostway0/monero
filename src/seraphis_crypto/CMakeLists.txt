@@ -34,7 +34,7 @@ set(seraphis_crypto_sources
   sp_crypto_utils.cpp
   sp_generator_factory.cpp
   sp_hash_functions.cpp
-  sp_misc_utils.cpp
+  sp_legacy_proof_helpers.cpp
   sp_multiexp.cpp)
 
 monero_find_all_headers(seraphis_crypto_headers, "${CMAKE_CURRENT_SOURCE_DIR}")

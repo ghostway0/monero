@@ -44,7 +44,7 @@
 #include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
-#include "seraphis_crypto/sp_misc_utils.h"
+#include "seraphis_crypto/sp_legacy_proof_helpers.h"
 #include "seraphis_crypto/sp_transcript.h"
 #include "sp_core_enote_utils.h"
 #include "tx_binned_reference_set_utils.h"

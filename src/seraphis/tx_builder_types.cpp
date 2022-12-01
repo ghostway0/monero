@@ -38,7 +38,6 @@
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"

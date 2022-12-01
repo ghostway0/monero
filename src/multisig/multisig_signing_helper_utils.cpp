@@ -44,7 +44,6 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "seraphis_crypto/sp_misc_utils.h"
 
 //third party headers
 #include <boost/math/special_functions/binomial.hpp>
