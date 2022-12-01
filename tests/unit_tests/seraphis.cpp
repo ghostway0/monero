@@ -484,7 +484,6 @@ static bool test_info_recovery_addressindex(const sp::jamtis::address_index_t j)
     crypto::secret_key cipher_key;
     make_secret_key(cipher_key);
     const address_tag_t ciphered_tag{cipher_address_index(rct::sk2rct(cipher_key), j)};
-    address_tag_MAC_t decipher_mac;
     address_index_t decipher_j;
     if (!try_decipher_address_index(rct::sk2rct(cipher_key), ciphered_tag, decipher_j))
         return false;

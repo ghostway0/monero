@@ -252,7 +252,7 @@ static bool try_handle_basic_record_info_v1_helper(const SpEnoteVariant &enote,
     jamtis::address_index_t &nominal_address_index_out,
     rct::key &nominal_sender_receiver_secret_out)
 {
-    // j (fails if mac is 0)
+    // j (fails if deciphered address tag hint is not 0)
     if (!jamtis::try_decipher_address_index(cipher_context, nominal_address_tag, nominal_address_index_out))
         return false;
 
@@ -751,7 +751,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
             decrypt_address_tag(q, onetime_address_ref(enote), addr_tag_enc_ref(enote))
         };
 
-    // try to get the address index (includes MAC check)
+    // try to get the address index
     if (!try_get_address_index(decrypted_addr_tag, record_out.m_address_index))
         return false;
 
