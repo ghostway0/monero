@@ -262,8 +262,8 @@ namespace config
   const unsigned char HASH_KEY_MM_SLOT = 'm';
   const constexpr char HASH_KEY_MULTISIG_TX_PRIVKEYS_SEED[] = "multisig_tx_privkeys_seed";
   const constexpr char HASH_KEY_MULTISIG_TX_PRIVKEYS[] = "multisig_tx_privkeys";
-  const constexpr char HASH_KEY_SERAPHIS_U[] = "seraphis_U";
   const constexpr char HASH_KEY_SERAPHIS_X[] = "seraphis_X";
+  const constexpr char HASH_KEY_SERAPHIS_U[] = "seraphis_U";
 
   const constexpr char SERAPHIS_FS_TRANSCRIPT_PREFIX[] = "sp_FS_transcript";
 
