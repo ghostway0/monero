@@ -34,6 +34,7 @@
 #pragma once
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "jamtis_support_types.h"
@@ -41,7 +42,6 @@
 #include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
-#include "seraphis_crypto/sp_variant.h"
 #include "sp_core_types.h"
 #include "tx_binned_reference_set.h"
 #include "tx_extra.h"
@@ -136,7 +136,7 @@ void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &trans
 // view_tag_ref(): get the enote's view tag
 // operator==(): check if two enotes are equal
 ///
-using SpEnoteVariant = SpVariant<SpCoinbaseEnoteV1, SpEnoteV1>;
+using SpEnoteVariant = tools::variant<SpCoinbaseEnoteV1, SpEnoteV1>;
 SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant);
 const rct::key& onetime_address_ref(const SpEnoteVariant &variant);
 rct::key amount_commitment_ref(const SpEnoteVariant &variant);

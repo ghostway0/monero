@@ -34,11 +34,11 @@
 #pragma once
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_variant.h"
 #include "sp_core_types.h"
 #include "tx_component_types.h"
 #include "tx_enote_record_types.h"
@@ -287,7 +287,7 @@ struct SpContextualEnoteRecordV1 final
 //
 // origin_context_ref(): get the record's origin context
 ///
-using ContextualBasicRecordVariant = SpVariant<LegacyContextualBasicEnoteRecordV1, SpContextualBasicEnoteRecordV1>;
+using ContextualBasicRecordVariant = tools::variant<LegacyContextualBasicEnoteRecordV1, SpContextualBasicEnoteRecordV1>;
 const SpEnoteOriginContextV1& origin_context_ref(const ContextualBasicRecordVariant &variant);
 
 ////
@@ -298,7 +298,7 @@ const SpEnoteOriginContextV1& origin_context_ref(const ContextualBasicRecordVari
 // origin_context_ref(): get the record's origin context
 // spent_context_ref(): get the record's spent context
 ///
-using ContextualRecordVariant = SpVariant<LegacyContextualEnoteRecordV1, SpContextualEnoteRecordV1>;
+using ContextualRecordVariant = tools::variant<LegacyContextualEnoteRecordV1, SpContextualEnoteRecordV1>;
 rct::xmr_amount amount_ref(const ContextualRecordVariant &variant);
 const SpEnoteOriginContextV1& origin_context_ref(const ContextualRecordVariant &variant);
 const SpEnoteSpentContextV1& spent_context_ref(const ContextualRecordVariant &variant);

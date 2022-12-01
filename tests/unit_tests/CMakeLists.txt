@@ -141,10 +141,12 @@ target_link_libraries(unit_tests
     ${Boost_CHRONO_LIBRARY}
     ${Boost_THREAD_LIBRARY}
     ${GTEST_LIBRARIES}
-    ${MX25519_INCLUDE}
     ${CMAKE_THREAD_LIBS_INIT}
     ${EXTRA_LIBRARIES}
     ${ZMQ_LIB})
+target_include_directories(unit_tests
+  PRIVATE
+    ${MX25519_INCLUDE})
 set_property(TARGET unit_tests
   PROPERTY
     FOLDER "tests")

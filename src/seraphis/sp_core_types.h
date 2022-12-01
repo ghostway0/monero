@@ -34,9 +34,9 @@
 #pragma once
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_variant.h"
 
 //third party headers
 #include <boost/utility/string_ref.hpp>
@@ -134,7 +134,7 @@ void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &tra
 //                          compute the commitment)
 // operator==(): test equalify of two enote cores
 ///
-using SpEnoteCoreVariant = SpVariant<SpCoinbaseEnoteCore, SpEnoteCore>;
+using SpEnoteCoreVariant = tools::variant<SpCoinbaseEnoteCore, SpEnoteCore>;
 const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant);
 rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant);
 bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2);

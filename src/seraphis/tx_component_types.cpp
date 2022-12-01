@@ -32,6 +32,7 @@
 #include "tx_component_types.h"
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 #include "int-util.h"
 #include "jamtis_support_types.h"
@@ -111,9 +112,9 @@ void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &trans
 //-------------------------------------------------------------------------------------------------------------------
 SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<SpEnoteCoreVariant>
+    struct visitor : public tools::variant_static_visitor<SpEnoteCoreVariant>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         SpEnoteCoreVariant operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core; }
         SpEnoteCoreVariant operator()(const SpEnoteV1 &enote) const { return enote.m_core; }
     };
@@ -123,9 +124,9 @@ SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const rct::key& onetime_address_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<const rct::key&>
+    struct visitor : public tools::variant_static_visitor<const rct::key&>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         const rct::key& operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core.m_onetime_address; }
         const rct::key& operator()(const SpEnoteV1 &enote) const { return enote.m_core.m_onetime_address; }
     };
@@ -135,9 +136,9 @@ const rct::key& onetime_address_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 rct::key amount_commitment_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<rct::key>
+    struct visitor : public tools::variant_static_visitor<rct::key>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         rct::key operator()(const SpCoinbaseEnoteV1 &enote) const { return rct::zeroCommit(enote.m_core.m_amount); }
         rct::key operator()(const SpEnoteV1 &enote) const { return enote.m_core.m_amount_commitment; }
     };
@@ -147,9 +148,9 @@ rct::key amount_commitment_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<const jamtis::encrypted_address_tag_t&>
+    struct visitor : public tools::variant_static_visitor<const jamtis::encrypted_address_tag_t&>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         const jamtis::encrypted_address_tag_t& operator()(const SpCoinbaseEnoteV1 &enote) const
         { return enote.m_addr_tag_enc; }
         const jamtis::encrypted_address_tag_t& operator()(const SpEnoteV1 &enote) const
@@ -161,9 +162,9 @@ const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &va
 //-------------------------------------------------------------------------------------------------------------------
 jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<jamtis::view_tag_t>
+    struct visitor : public tools::variant_static_visitor<jamtis::view_tag_t>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         jamtis::view_tag_t operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_view_tag; }
         jamtis::view_tag_t operator()(const SpEnoteV1 &enote) const { return enote.m_view_tag; }
     };
@@ -178,12 +179,12 @@ bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2)
         return false;
 
     // use a visitor to test equality with variant2
-    struct visitor : public SpVariantStaticVisitor<bool>
+    struct visitor : public tools::variant_static_visitor<bool>
     {
         visitor(const SpEnoteVariant &other_ref) : other{other_ref} {}
         const SpEnoteVariant &other;
 
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         bool operator()(const SpCoinbaseEnoteV1 &enote) const { return enote == other.unwrap<SpCoinbaseEnoteV1>(); }
         bool operator()(const SpEnoteV1 &enote) const { return enote == other.unwrap<SpEnoteV1>(); }
     };

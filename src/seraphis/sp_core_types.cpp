@@ -92,9 +92,9 @@ void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &tra
 //-------------------------------------------------------------------------------------------------------------------
 const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<const rct::key&>
+    struct visitor : public tools::variant_static_visitor<const rct::key&>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         const rct::key& operator()(const SpCoinbaseEnoteCore &enote) const { return enote.m_onetime_address; }
         const rct::key& operator()(const SpEnoteCore &enote) const { return enote.m_onetime_address; }
     };
@@ -104,9 +104,9 @@ const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant)
 {
-    struct visitor : public SpVariantStaticVisitor<rct::key>
+    struct visitor : public tools::variant_static_visitor<rct::key>
     {
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         rct::key operator()(const SpCoinbaseEnoteCore &enote) const { return rct::zeroCommit(enote.m_amount); }
         rct::key operator()(const SpEnoteCore &enote) const { return enote.m_amount_commitment; }
     };
@@ -121,12 +121,12 @@ bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &va
         return false;
 
     // use a visitor to test equality with variant2
-    struct visitor : public SpVariantStaticVisitor<bool>
+    struct visitor : public tools::variant_static_visitor<bool>
     {
         visitor(const SpEnoteCoreVariant &other_ref) : other{other_ref} {}
         const SpEnoteCoreVariant &other;
 
-        using SpVariantStaticVisitor::operator();  //for blank overload
+        using variant_static_visitor::operator();  //for blank overload
         bool operator()(const SpCoinbaseEnoteCore &enote) const { return enote == other.unwrap<SpCoinbaseEnoteCore>(); }
         bool operator()(const SpEnoteCore &enote) const { return enote == other.unwrap<SpEnoteCore>(); }
     };
