@@ -253,7 +253,7 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
 bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
     const std::vector<SpCoinbaseOutputProposalV1> &output_proposals);
 /**
-* brief: balance_check_in_out_amnts_v1 - verify that input amounts equal output amounts + fee
+* brief: balance_check_in_out_amnts_v2 - verify that input amounts equal output amounts + fee
 * param: legacy_input_proposals -
 * param: sp_input_proposals -
 * param: output_proposals -

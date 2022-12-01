@@ -31,14 +31,12 @@
 
 //local headers
 #include "bulletproofs_plus2.h"
-#include "crypto/x25519.h"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "sp_transcript.h"
 
 //third party headers
-#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
 #include <vector>
@@ -78,17 +76,6 @@ static std::size_t highest_bit_position(std::size_t num)
     return bit_position;
 }
 //-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys)
-{
-    for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it)
-    {
-        if (std::find(keys.begin(), key_it, *key_it) != key_it)
-            return false;
-    }
-
-    return true;
-}
 //-------------------------------------------------------------------------------------------------------------------
 void append_clsag_to_transcript(const rct::clsag &clsag_proof, SpTranscriptBuilder &transcript_inout)
 {
@@ -168,29 +155,6 @@ std::size_t bpp_weight(const std::size_t num_range_proofs, const bool include_co
 
     // return the weight
     return (2 * proof_size + 8 * size_two_agg_proof * num_two_agg_groups) / 10 + commitments_size;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool balance_check_equality(const rct::keyV &commitment_set1, const rct::keyV &commitment_set2)
-{
-    // balance check method chosen from perf test: tests/performance_tests/balance_check.h
-    return rct::equalKeys(rct::addKeys(commitment_set1), rct::addKeys(commitment_set2));
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool balance_check_in_out_amnts(const std::vector<rct::xmr_amount> &input_amounts,
-    const std::vector<rct::xmr_amount> &output_amounts,
-    const rct::xmr_amount transaction_fee)
-{
-    boost::multiprecision::uint128_t input_sum{0};
-    boost::multiprecision::uint128_t output_sum{0};
-
-    for (const auto amnt : input_amounts)
-        input_sum += amnt;
-
-    for (const auto amnt : output_amounts)
-        output_sum += amnt;
-    output_sum += transaction_fee;
-
-    return input_sum == output_sum;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

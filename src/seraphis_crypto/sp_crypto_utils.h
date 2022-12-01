@@ -26,12 +26,13 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Miscellaneous crypto utils for seraphis.
+// Miscellaneous crypto utils for seraphis (also includes some more basic math utils).
 
 #pragma once
 
 //local headers
 #include "crypto/crypto.h"
+#include "crypto/x25519.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
@@ -59,6 +60,34 @@ static inline const rct::key& sortable2rct(const sortable_key &sortable)
     return reinterpret_cast<const rct::key&>(sortable);
 }
 
+/**
+* brief: size_from_decomposition - compute n^m
+* param: n - base
+* param: m - power
+* return: n^m
+* 
+* note: use this instead of std::pow() for better control over error states
+*/
+constexpr std::size_t size_from_decomposition(const std::size_t n, const std::size_t m) noexcept
+{
+    // n^m
+    std::size_t size{n};
+
+    if (n == 0 || m == 0)
+        size = 1;
+    else
+    {
+        for (std::size_t mul{1}; mul < m; ++mul)
+        {
+            if (size*n < size)  //overflow
+                return -1;
+            else
+                size *= n;
+        }
+    }
+
+    return size;
+}
 /**
 * brief: minus_one - -1 mod q
 * return: -1 mod q
@@ -140,5 +169,30 @@ void mask_key(const crypto::secret_key &mask, const rct::key &key, rct::key &mas
 * result: true if input key is in prime order EC subgroup
 */
 bool key_domain_is_prime_subgroup(const rct::key &check_key);
+/**
+* brief: keys_are_unique - check if keys in a vector are unique
+* param: keys -
+* return: true if keys are unique
+*/
+bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys);
+/**
+* brief: balance_check_equality - balance check between two commitment sets using an equality test
+*   - i.e. sum(inputs) ?= sum(outputs)
+* param: commitment_set1 -
+* param: commitment_set2 -
+* return: true/false on balance check result
+*/
+bool balance_check_equality(const rct::keyV &commitment_set1, const rct::keyV &commitment_set2);
+/**
+* brief: balance_check_in_out_amnts - balance check between two sets of amounts
+*   - i.e. sum(inputs) ?= sum(outputs) + transaction_fee
+* param: input_amounts -
+* param: output_amounts -
+* param: transaction_fee -
+* return: true/false on balance check result
+*/
+bool balance_check_in_out_amnts(const std::vector<rct::xmr_amount> &input_amounts,
+    const std::vector<rct::xmr_amount> &output_amounts,
+    const rct::xmr_amount transaction_fee);
 
 } //namespace sp

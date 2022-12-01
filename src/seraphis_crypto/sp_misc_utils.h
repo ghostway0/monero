@@ -33,7 +33,6 @@
 //local headers
 #include "bulletproofs_plus2.h"
 #include "crypto/crypto.h"
-#include "crypto/x25519.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
@@ -47,40 +46,6 @@ namespace sp { class SpTranscriptBuilder; }
 namespace sp
 {
 
-/**
-* brief: size_from_decomposition - compute n^m
-* param: n - base
-* param: m - power
-* return: n^m
-* 
-* note: use this instead of std::pow() for better control over error states
-*/
-constexpr std::size_t size_from_decomposition(const std::size_t n, const std::size_t m) noexcept
-{
-    // n^m
-    std::size_t size{n};
-
-    if (n == 0 || m == 0)
-        size = 1;
-    else
-    {
-        for (std::size_t mul{1}; mul < m; ++mul)
-        {
-            if (size*n < size)  //overflow
-                return -1;
-            else
-                size *= n;
-        }
-    }
-
-    return size;
-}
-/**
-* brief: keys_are_unique - check if keys in a vector are unique
-* param: keys -
-* return: true if keys are unique
-*/
-bool keys_are_unique(const std::vector<crypto::x25519_pubkey> &keys);
 /**
 * brief: append_clsag_to_transcript - append CLSAG proof to a transcript
 *   transcript += {s} || c1 || I || D
@@ -138,24 +103,5 @@ std::size_t bpp_size_bytes(const std::size_t num_range_proofs, const bool includ
 * return: the BP+ proof's weight
 */
 std::size_t bpp_weight(const std::size_t num_range_proofs, const bool include_commitments);
-/**
-* brief: balance_check_equality - balance check between two commitment sets using an equality test
-*   - i.e. sum(inputs) ?= sum(outputs)
-* param: commitment_set1 -
-* param: commitment_set2 -
-* return: true/false on balance check result
-*/
-bool balance_check_equality(const rct::keyV &commitment_set1, const rct::keyV &commitment_set2);
-/**
-* brief: balance_check_in_out_amnts - balance check between two sets of amounts
-*   - i.e. sum(inputs) ?= sum(outputs) + transaction_fee
-* param: input_amounts -
-* param: output_amounts -
-* param: transaction_fee -
-* return: true/false on balance check result
-*/
-bool balance_check_in_out_amnts(const std::vector<rct::xmr_amount> &input_amounts,
-    const std::vector<rct::xmr_amount> &output_amounts,
-    const rct::xmr_amount transaction_fee);
 
 } //namespace sp
