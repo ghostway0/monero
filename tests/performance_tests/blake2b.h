@@ -93,6 +93,11 @@ public:
 
       if (blake2b_init_key(&m_hash_state, hash_length, derivation_key.data, 32) < 0)
         return false;
+
+      // prepend 0 to force the hash state to be updated (probably don't want to do this in practice)
+      char c = 0;
+      if (blake2b_update(&m_hash_state, &c, sizeof(c)) < 0)
+        return false;
     }
     else
     {
