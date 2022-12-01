@@ -34,18 +34,20 @@
 
 #include <array>
 
-template<size_t bytes, bool use_derivation_key>
+template<size_t message_length, bool use_derivation_key>
 class test_blake2b
 {
 public:
-  static const size_t num_elements = (bytes < 256) ? 1000 : ((bytes < 2048) ? 100 : 10);
+  static const size_t num_elements = (message_length < 256) ? 1000 : ((message_length < 2048) ? 100 : 10);
   static const size_t loop_count = 256000 / num_elements + 20;
   static const bool derivation_key_mode = use_derivation_key;
+  static const size_t hash_length = sizeof(crypto::hash);
 
   bool init()
   {
-    crypto::rand(bytes, m_data.data());
+    crypto::rand(message_length, m_data.data());
     crypto::rand(32, reinterpret_cast<unsigned char*>(m_derivation_key.data));
+
     return true;
   }
 
@@ -57,7 +59,7 @@ public:
     for (std::size_t i{0}; i < num_elements; ++i)
     {
       crypto::hash hash;
-      if (blake2b(hash.data, 32, &m_data, bytes, key_data, key_length) != 0)
+      if (blake2b(hash.data, hash_length, &m_data, message_length, key_data, key_length) != 0)
         return false;
     }
 
@@ -65,6 +67,60 @@ public:
   }
 
 private:
-  std::array<uint8_t, bytes> m_data;
+  std::array<uint8_t, message_length> m_data;
   crypto::public_key m_derivation_key;
+};
+
+template<size_t message_length, bool use_derivation_key>
+class test_blake2b_streaming
+{
+public:
+  static const size_t num_elements = (message_length < 256) ? 1000 : ((message_length < 2048) ? 100 : 10);
+  static const size_t loop_count = 256000 / num_elements + 20;
+  static const bool derivation_key_mode = use_derivation_key;
+  static const size_t hash_length = sizeof(crypto::hash);
+
+  bool init()
+  {
+    // prepare message
+    crypto::rand(message_length, m_data.data());
+
+    // prepare blake2b internal state
+    if (derivation_key_mode)
+    {
+      crypto::public_key derivation_key;
+      crypto::rand(32, reinterpret_cast<unsigned char*>(derivation_key.data));
+
+      if (blake2b_init_key(&m_hash_state, hash_length, derivation_key.data, 32) < 0)
+        return false;
+    }
+    else
+    {
+      if (blake2b_init(&m_hash_state, hash_length) < 0)
+        return false;
+    }
+
+    return true;
+  }
+
+  bool test()
+  {
+    for (std::size_t i{0}; i < num_elements; ++i)
+    {
+      crypto::hash hash;
+      blake2b_state hash_state_copy = m_hash_state;
+
+      // hash while reusing the hash state
+      if (blake2b_update(&hash_state_copy, &m_data, message_length) < 0)
+        return false;
+      if (blake2b_final(&hash_state_copy, hash.data, hash_length) != 0)
+        return false;
+    }
+
+    return true;
+  }
+
+private:
+  blake2b_state m_hash_state;
+  std::array<uint8_t, message_length> m_data;
 };

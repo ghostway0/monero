@@ -152,6 +152,15 @@ int main(int argc, char** argv)
   TEST_PERFORMANCE2(filter, p, test_blake2b, 16384, false);
   TEST_PERFORMANCE2(filter, p, test_blake2b, 16384, true);
 
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 32, false);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 32, true);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 200, false);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 200, true);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 2000, false);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 2000, true);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 16384, false);
+  TEST_PERFORMANCE2(filter, p, test_blake2b_streaming, 16384, true);
+
   // test done, save results
   if (p.core_params.td.get())
     p.core_params.td->save(false);
