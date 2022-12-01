@@ -32,6 +32,7 @@
 #include "tx_builders_inputs.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 extern "C"
@@ -394,7 +395,7 @@ void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposa
     image_proofs_out.reserve(input_proposals.size());
 
     for (const SpInputProposalV1 &input_proposal : input_proposals)
-        make_v1_image_proof_v1(input_proposal.m_core, message, sp_spend_privkey, add_element(image_proofs_out));
+        make_v1_image_proof_v1(input_proposal.m_core, message, sp_spend_privkey, tools::add_element(image_proofs_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
@@ -529,7 +530,7 @@ void make_v1_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membershi
     membership_proofs_out.reserve(membership_proof_preps.size());
 
     for (SpMembershipProofPrepV1 &proof_prep : membership_proof_preps)
-        make_v1_membership_proof_v1(std::move(proof_prep), add_element(membership_proofs_out));
+        make_v1_membership_proof_v1(std::move(proof_prep), tools::add_element(membership_proofs_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membership_proof_preps,
@@ -540,7 +541,7 @@ void make_v1_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membershi
     alignable_membership_proofs_out.reserve(membership_proof_preps.size());
 
     for (SpMembershipProofPrepV1 &proof_prep : membership_proof_preps)
-        make_v1_membership_proof_v1(std::move(proof_prep), add_element(alignable_membership_proofs_out));
+        make_v1_membership_proof_v1(std::move(proof_prep), tools::add_element(alignable_membership_proofs_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input)
@@ -632,7 +633,12 @@ void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_propo
 
     // make all inputs
     for (const SpInputProposalV1 &input_proposal : input_proposals)
-        make_v1_partial_input_v1(input_proposal, proposal_prefix, sp_spend_privkey, add_element(partial_inputs_out));
+    {
+        make_v1_partial_input_v1(input_proposal,
+            proposal_prefix,
+            sp_spend_privkey,
+            tools::add_element(partial_inputs_out));
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

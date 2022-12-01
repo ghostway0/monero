@@ -32,6 +32,7 @@
 #include "mock_send_receive.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "misc_log_ex.h"
@@ -141,7 +142,10 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
     for (const rct::xmr_amount coinbase_amount : coinbase_amounts)
     {
         // make payment proposal
-        convert_outlay_to_payment_proposal(coinbase_amount, user_address, TxExtra{}, add_element(payment_proposals));
+        convert_outlay_to_payment_proposal(coinbase_amount,
+        user_address,
+        TxExtra{},
+        tools::add_element(payment_proposals));
 
         // accumulate the block reward
         block_reward += coinbase_amount;
@@ -185,7 +189,7 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
             convert_outlay_to_payment_proposal(user_amount,
                 user_addresses[user_index],
                 TxExtra{},
-                add_element(payment_proposals));
+                tools::add_element(payment_proposals));
 
             // accumulate the block reward
             block_reward += user_amount;
@@ -241,7 +245,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
         convert_outlay_to_payment_proposal(std::get<rct::xmr_amount>(outlay),
             std::get<jamtis::JamtisDestinationV1>(outlay),
             std::get<TxExtra>(outlay),
-            add_element(normal_payment_proposals));
+            tools::add_element(normal_payment_proposals));
     }
 
     // 3. prepare inputs and finalize outputs

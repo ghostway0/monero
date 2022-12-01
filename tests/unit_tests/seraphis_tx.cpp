@@ -26,6 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -196,7 +197,7 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
                     gen.output_amounts,
                     gen.discretized_transaction_fee,
                     ledger_context,
-                    sp::add_element(txs_to_verify));
+                    tools::add_element(txs_to_verify));
             }
             catch (...)
             {

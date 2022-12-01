@@ -32,6 +32,7 @@
 #include "tx_builders_mixed.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "cryptonote_config.h"
 #include "jamtis_core_utils.h"
@@ -191,7 +192,7 @@ static void legacy_enote_records_to_input_proposals(
         // convert legacy inputs to input proposals
         make_v1_legacy_input_proposal_v1(legacy_contextual_input.m_record,
             rct::rct2sk(rct::skGen()),
-            add_element(legacy_input_proposals_out));
+            tools::add_element(legacy_input_proposals_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -208,7 +209,7 @@ static void sp_enote_records_to_input_proposals(const std::list<SpContextualEnot
         make_v1_input_proposal_v1(sp_contextual_input.m_record,
             rct::rct2sk(rct::skGen()),
             rct::rct2sk(rct::skGen()),
-            add_element(sp_input_proposals_out));
+            tools::add_element(sp_input_proposals_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -314,7 +315,7 @@ static void prepare_sp_membership_proof_preps_for_tx_simulation(
     {
         make_seraphis_squashed_enote_Q(onetime_address_ref(real_reference_enotes[proof_index]),
             amount_commitment_ref(real_reference_enotes[proof_index]),
-            add_element(reference_enotes_squashed));
+            tools::add_element(reference_enotes_squashed));
 
         // save the [ index : squashed enote ] mapping
         sp_reference_set_proof_elements_out[proof_index] = reference_enotes_squashed.back();
@@ -343,7 +344,7 @@ static void prepare_sp_membership_proof_preps_for_tx_simulation(
             ref_set_decomp_n,
             ref_set_decomp_m,
             bin_config,
-            add_element(preps_out));
+            tools::add_element(preps_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -387,7 +388,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         "tx proposal prefix (v1): legacy input key images are not sorted.");
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(sp_input_key_images.begin(), sp_input_key_images.end()),
         "tx proposal prefix (v1): seraphis input key images are not sorted.");
-    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(), output_enotes.end(), equals_from_less{}),
+    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(), output_enotes.end(), tools::equals_from_less{}),
         "tx proposal prefix (v1): output enotes are not sorted.");
 
     // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
@@ -672,7 +673,7 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     finalize_tx_extra_v1(tx_proposal.m_partial_memo, output_proposals, tx_supplement.m_tx_extra);
 
     // 3. outputs should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_enotes),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes),
         "Semantics check coinbase tx proposal v1: output onetime addresses are not sorted and unique.");
 
     // 4. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -753,7 +754,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
         "Semantics check tx proposal v1: there are fewer than 2 outputs.");
 
     // 4. outputs should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_enotes),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes),
         "Semantics check tx proposal v1: output onetime addresses are not sorted and unique.");
 
     // 5. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -790,9 +791,9 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
         "Semantics check tx proposal v1: there are no inputs.");
 
     // 2. input proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(tx_proposal.m_legacy_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_legacy_input_proposals),
         "Semantics check tx proposal v1: legacy input proposals are not sorted and unique.");
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(tx_proposal.m_sp_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_sp_input_proposals),
         "Semantics check tx proposal v1: seraphis input proposals are not sorted and unique.");
 
     // 3. legacy input proposal semantics should be valid

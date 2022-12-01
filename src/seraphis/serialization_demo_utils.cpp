@@ -32,6 +32,7 @@
 #include "serialization_demo_utils.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -69,7 +70,7 @@ static void copy_array(const CopyFuncT &copy_func, const std::vector<Type1> &arr
     array2_out.clear();
     array2_out.reserve(array1.size());
     for (const Type1 &obj : array1)
-        copy_func(obj, add_element(array2_out));
+        copy_func(obj, tools::add_element(array2_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 // array2 consumes array1 via relay_func() on each element
@@ -80,7 +81,7 @@ static void relay_array(const RelayFuncT &relay_func, std::vector<Type1> &array1
     array2_out.clear();
     array2_out.reserve(array1_in.size());
     for (Type1 &obj_in : array1_in)
-        relay_func(obj_in, add_element(array2_out));
+        relay_func(obj_in, tools::add_element(array2_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -131,7 +132,7 @@ static void recover_legacy_ring_signatures_v3(
     {
         recover_legacy_ring_signature_v3(serializable_legacy_ring_signatures_in[legacy_input_index],
             legacy_enote_images[legacy_input_index].m_key_image,
-            add_element(legacy_ring_signatures_out));
+            tools::add_element(legacy_ring_signatures_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -162,7 +163,7 @@ static void recover_sp_membership_proofs_v1(
             generator_seed_temp,
             sp_ref_set_decomp_n,
             sp_ref_set_decomp_m,
-            add_element(membership_proofs_out));
+            tools::add_element(membership_proofs_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -176,7 +177,7 @@ static void make_serializable_legacy_ring_signatures_v3(const std::vector<Legacy
     for (const LegacyRingSignatureV3 &legacy_ring_signature : legacy_ring_signatures)
     {
         make_serializable_legacy_ring_signature_v3(legacy_ring_signature,
-            add_element(serializable_legacy_ring_signatures_out));
+            tools::add_element(serializable_legacy_ring_signatures_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -188,7 +189,7 @@ static void make_serializable_sp_membership_proofs_v1(const std::vector<SpMember
     serializable_membership_proofs_out.reserve(membership_proofs.size());
 
     for (const SpMembershipProofV1 &membership_proof : membership_proofs)
-        make_serializable_sp_membership_proof_v1(membership_proof, add_element(serializable_membership_proofs_out));
+        make_serializable_sp_membership_proof_v1(membership_proof, tools::add_element(serializable_membership_proofs_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -230,7 +231,8 @@ void make_serializable_sp_composition_proof(const SpCompositionProof &proof, ser
     serializable_proof_out.K_t1 = proof.K_t1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_sp_coinbase_enote_core(const SpCoinbaseEnoteCore &enote, ser_SpCoinbaseEnoteCore &serializable_enote_out)
+void make_serializable_sp_coinbase_enote_core(const SpCoinbaseEnoteCore &enote,
+    ser_SpCoinbaseEnoteCore &serializable_enote_out)
 {
     serializable_enote_out.m_onetime_address = enote.m_onetime_address;
     serializable_enote_out.m_amount          = enote.m_amount;

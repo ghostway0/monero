@@ -32,6 +32,7 @@
 #include "tx_validators.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctSigs.h"
@@ -313,7 +314,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
     const TxExtra &tx_extra)
 {
     // output enotes should be sorted by onetime address with byte-wise comparisons (ascending), and unique
-    if (!is_sorted_and_unique(outputs))
+    if (!tools::is_sorted_and_unique(outputs))
         return false;
 
     // enote ephemeral pubkeys should be unique (they don't need to be sorted)
@@ -341,7 +342,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     // legacy reference sets should be sorted (ascending) without duplicates
     for (const LegacyRingSignatureV3 &legacy_ring_signature : legacy_ring_signatures)
     {
-        if (!is_sorted_and_unique(legacy_ring_signature.m_reference_set))
+        if (!tools::is_sorted_and_unique(legacy_ring_signature.m_reference_set))
             return false;
     }
 
@@ -355,11 +356,11 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     }
 
     // legacy input images should be sorted by key image with byte-wise comparisons (ascending), and unique
-    if (!is_sorted_and_unique(legacy_input_images))
+    if (!tools::is_sorted_and_unique(legacy_input_images))
         return false;
 
     // seraphis input images should be sorted by key image with byte-wise comparisons (ascending), and unique
-    if (!is_sorted_and_unique(sp_input_images))
+    if (!tools::is_sorted_and_unique(sp_input_images))
         return false;
 
     // legacy and seraphis input images should not have any matching key images
@@ -374,7 +375,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     }
 
     // output enotes should be sorted by onetime address with byte-wise comparisons (ascending), and unique
-    if (!is_sorted_and_unique(outputs))
+    if (!tools::is_sorted_and_unique(outputs))
         return false;
 
     // enote ephemeral pubkeys should be unique (they don't need to be sorted)
@@ -543,7 +544,7 @@ bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpM
 
         // proof message
         make_tx_membership_proof_message_v1(sp_membership_proofs[proof_index]->m_binned_reference_set,
-            add_element(messages));
+            tools::add_element(messages));
 
         // save the proof
         proofs.emplace_back(&(sp_membership_proofs[proof_index]->m_grootle_proof));

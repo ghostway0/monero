@@ -26,6 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 extern "C"
@@ -1259,7 +1260,7 @@ TEST(seraphis, txtype_squashed_v1)
             discretized_transaction_fee,
             sp::SpTxSquashedV1::SemanticRulesVersion::MOCK,
             ledger_context,
-            add_element(txs));
+            tools::add_element(txs));
         tx_ptrs.push_back(&(txs.back()));
     }
 

@@ -32,6 +32,7 @@
 #include "tx_builders_multisig.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "crypto/generators.h"
@@ -174,7 +175,7 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
     std::vector<crypto::secret_key> &proof_privkeys_k_offset_out,
     std::vector<crypto::secret_key> &proof_privkeys_z)
 {
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(legacy_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(legacy_input_proposals),
         "collect legacy clsag privkeys for multisig: legacy input proposals aren't sorted and unique.");
 
     proof_privkeys_k_offset_out.clear();
@@ -186,8 +187,8 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
     {
         prepare_legacy_clsag_privkeys_for_multisig(legacy_input_proposal.m_enote_view_privkey,
             legacy_input_proposal.m_commitment_mask,
-            add_element(proof_privkeys_k_offset_out),
-            add_element(proof_privkeys_z));
+            tools::add_element(proof_privkeys_k_offset_out),
+            tools::add_element(proof_privkeys_z));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -226,7 +227,7 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
     std::vector<crypto::secret_key> &proof_privkeys_z_offset_out,
     std::vector<crypto::secret_key> &proof_privkeys_z_multiplier_out)
 {
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(sp_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(sp_input_proposals),
         "collect sp composition proof privkeys for multisig: sp input proposals aren't sorted and unique.");
 
     proof_privkeys_x_out.clear();
@@ -250,10 +251,10 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
             sp_input_proposal.m_core.m_enote_view_privkey_u,
             sp_input_proposal.m_core.m_address_mask,
             squash_prefix_temp,
-            add_element(proof_privkeys_x_out),
-            add_element(proof_privkeys_y_out),
-            add_element(proof_privkeys_z_offset_out),
-            add_element(proof_privkeys_z_multiplier_out));
+            tools::add_element(proof_privkeys_x_out),
+            tools::add_element(proof_privkeys_y_out),
+            tools::add_element(proof_privkeys_z_offset_out),
+            tools::add_element(proof_privkeys_z_multiplier_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -509,7 +510,7 @@ void check_v1_legacy_multisig_input_proposal_semantics_v1(const LegacyMultisigIn
                 multisig_input_proposal.m_tx_output_index) !=
             multisig_input_proposal.m_reference_set.end(),
         "legacy multisig input proposal: referenced enote index is not in the reference set.");
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(multisig_input_proposal.m_reference_set),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(multisig_input_proposal.m_reference_set),
         "legacy multisig input proposal: reference set indices are not sorted.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -614,7 +615,7 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
 
     // 1. check the multisig input proposal semantics
     // a. legacy
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(multisig_tx_proposal.m_legacy_multisig_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(multisig_tx_proposal.m_legacy_multisig_input_proposals),
         "multisig tx proposal: legacy multisig input proposals are not sorted and unique.");
 
     for (const LegacyMultisigInputProposalV1 &legacy_multisig_input_proposal :
@@ -958,7 +959,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
     const crypto::secret_key &k_view_balance,
     SpMultisigTxProposalV1 &proposal_out)
 {
-    CHECK_AND_ASSERT_THROW_MES(keys_match_internal_values(legacy_multisig_ring_signature_preps,
+    CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(legacy_multisig_ring_signature_preps,
             [](const LegacyMultisigRingSignaturePrepV1 &prep) -> const crypto::key_image&
             {
                 return prep.m_key_image;
@@ -977,7 +978,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
         legacy_multisig_input_proposal.get_input_proposal_v1(legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
-            add_element(legacy_input_proposals));
+            tools::add_element(legacy_input_proposals));
     }
 
     // 3. convert seraphis multisig input proposals to input proposals
@@ -987,7 +988,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
     {
         sp_multisig_input_proposal.get_input_proposal_v1(jamtis_spend_pubkey,
             k_view_balance,
-            add_element(sp_input_proposals));
+            tools::add_element(sp_input_proposals));
     }
 
     // 4. make a temporary normal tx proposal
@@ -1048,7 +1049,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
             legacy_enote_image_temp.m_key_image,
             auxilliary_key_image_temp,
             legacy_multisig_ring_signature_preps.at(legacy_input_proposal.m_key_image).m_real_reference_index,
-            add_element(proposal_out.m_legacy_input_proof_proposals));
+            tools::add_element(proposal_out.m_legacy_input_proof_proposals));
     }
 
     // 9. prepare composition proof proposals for each seraphis input (note: using the tx proposal ensures proof
@@ -1064,7 +1065,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
         multisig::make_sp_composition_multisig_proposal(tx_proposal_prefix,
             sp_enote_image_temp.m_core.m_masked_address,
             sp_enote_image_temp.m_core.m_key_image,
-            add_element(proposal_out.m_sp_input_proof_proposals));
+            tools::add_element(proposal_out.m_sp_input_proof_proposals));
     }
 
     // 10. add miscellaneous components
@@ -1117,7 +1118,7 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
             legacy_multisig_ring_signature_preps
                     .at(legacy_contextual_input.key_image())
                     .m_reference_set,  //don't consume, the full prep needs to be consumed later
-            add_element(legacy_multisig_input_proposals));
+            tools::add_element(legacy_multisig_input_proposals));
     }
 
     // 2. convert seraphis inputs to seraphis multisig input proposals (inputs to spend)
@@ -1130,7 +1131,7 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
         make_v1_sp_multisig_input_proposal_v1(contextual_input.m_record,
             rct::rct2sk(rct::skGen()),
             rct::rct2sk(rct::skGen()),
-            add_element(sp_multisig_input_proposals));
+            tools::add_element(sp_multisig_input_proposals));
     }
 
     // 3. get memo elements

@@ -32,6 +32,7 @@
 #include "multisig_sp_composition_proof.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 extern "C"
 {
@@ -162,7 +163,7 @@ void make_sp_composition_multisig_partial_sig(const SpCompositionProofMultisigPr
     signer_pub_nonces_mul8.reserve(num_signers);
 
     for (const MultisigPubNonces &signer_pub_nonce_pair : signer_pub_nonces)
-        signer_nonces_mul8(signer_pub_nonce_pair, sp::add_element(signer_pub_nonces_mul8));
+        signer_nonces_mul8(signer_pub_nonce_pair, tools::add_element(signer_pub_nonces_mul8));
 
     // sort participant nonces so binonce merge factor is deterministic
     std::sort(signer_pub_nonces_mul8.begin(), signer_pub_nonces_mul8.end());

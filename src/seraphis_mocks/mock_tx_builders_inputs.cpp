@@ -32,6 +32,7 @@
 #include "mock_tx_builders_inputs.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "misc_log_ex.h"
 #include "mock_ledger_context.h"
@@ -68,7 +69,7 @@ std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secr
     input_proposals.reserve(in_amounts.size());
 
     for (const rct::xmr_amount in_amount : in_amounts)
-        add_element(input_proposals).gen(sp_spend_privkey, in_amount);
+        tools::add_element(input_proposals).gen(sp_spend_privkey, in_amount);
 
     return input_proposals;
 }

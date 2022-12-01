@@ -39,8 +39,6 @@
 //third party headers
 
 //standard headers
-#include <algorithm>
-#include <utility>
 #include <vector>
 
 //forward declarations
@@ -48,62 +46,6 @@ namespace sp { class SpTranscriptBuilder; }
 
 namespace sp
 {
-
-/// use operator< to get operator==
-/// WARNING: equality is not always implied by operator<, depending on implementation
-struct equals_from_less final
-{
-    template <typename T>
-    bool operator()(const T &a, const T &b) { return !(a < b) && !(b < a); }
-};
-/// note: uniqueness uses 'equals_from_less' to match the use of operator< when testing if sorted
-template <typename T>
-bool is_sorted_and_unique(const T& container)
-{
-    if (!std::is_sorted(container.begin(), container.end()))
-        return false;
-
-    if (std::adjacent_find(container.begin(), container.end(), equals_from_less{}) != container.end())
-        return false;
-
-    return true;
-}
-/// convenience wrapper for checking if a mapped object is mapped to a key embedded in that object
-template <typename KeyT, typename ValueT>
-bool keys_match_internal_values(const std::unordered_map<KeyT, ValueT> &map,
-    const std::function<
-            const typename std::unordered_map<KeyT, ValueT>::key_type&
-            (const typename std::unordered_map<KeyT, ValueT>::mapped_type&)
-        > &get_internal_key_func)
-{
-    for (const auto &map_element : map)
-    {
-        if (!(map_element.first == get_internal_key_func(map_element.second)))
-            return false;
-    }
-
-    return true;
-}
-/// convenience wrapper for getting the last element after emplacing back
-template <typename ContainerT>
-typename ContainerT::value_type& add_element(ContainerT &container)
-{
-    container.emplace_back();
-    return container.back();
-}
-/// convenience erasor for unordered maps: std::erase_if(std::unordered_map) is C++20
-template <typename KeyT, typename ValueT>
-void for_all_in_map_erase_if(std::unordered_map<KeyT, ValueT> &map_inout,
-    const std::function<bool(const typename std::unordered_map<KeyT, ValueT>::value_type&)> &predicate)
-{
-    for (auto map_it = map_inout.begin(); map_it != map_inout.end();)
-    {
-        if (predicate(*map_it))
-            map_it = map_inout.erase(map_it);
-        else
-            ++map_it;
-    }
-}
 
 /**
 * brief: size_from_decomposition - compute n^m

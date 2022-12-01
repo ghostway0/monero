@@ -32,6 +32,7 @@
 #include "tx_builders_outputs.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_config.h"
@@ -287,7 +288,7 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
         "Semantics check coinbase output proposals v1: enote ephemeral pubkeys aren't all unique.");
 
     // proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals),
         "Semantics check output proposals v1: output onetime addresses are not sorted and unique.");
 
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -323,7 +324,7 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     }
 
     // proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(is_sorted_and_unique(output_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals),
         "Semantics check output proposals v1: output onetime addresses are not sorted and unique.");
 
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -427,7 +428,7 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
             "making v1 outputs: invalid amount blinding factor (non-canonical).");
 
         // convert to enote
-        output_proposal.get_enote_v1(add_element(outputs_out));
+        output_proposal.get_enote_v1(tools::add_element(outputs_out));
 
         // prepare for range proofs
         output_amounts_out.emplace_back(output_proposal.amount());
@@ -522,9 +523,10 @@ void get_additional_output_types_for_output_set_v1(const std::size_t num_outputs
             //         have the same onetime address if the destinations of the two outputs are the same)
 
             // two change outputs doesn't make sense, so just ban it
-            CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there is 1 change-type output already specified, "
-                "but the change amount is non-zero and a tx with just two change outputs is not allowed for privacy reasons. "
-                "If you want to make a tx with just two change outputs, avoid calling this function (not recommended).");
+            CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there is 1 change-type output already "
+                "specified, but the change amount is non-zero and a tx with just two change outputs is not allowed "
+                "for privacy reasons. If you want to make a tx with just two change outputs, avoid calling this function "
+                "(not recommended).");
         }
         else //(change_amount > 0 && single output is not a self-send change)
         {
@@ -577,9 +579,10 @@ void get_additional_output_types_for_output_set_v1(const std::size_t num_outputs
             if (self_send_output_types.size() == 2 &&
                 self_send_output_types[0] == self_send_output_types[1])
             {
-                CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there are 2 self-send outputs with the same "
-                    "type that share an enote ephemeral pubkey, but this can reduce user privacy. If you want to send "
-                    "money to yourself, make independent self-spend types, or avoid calling this function (not recommended).");
+                CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there are 2 self-send outputs with the "
+                    "same type that share an enote ephemeral pubkey, but this can reduce user privacy. If you want to "
+                    "send money to yourself, make independent self-spend types, or avoid calling this function (not "
+                    "recommended).");
             }
             else if (self_send_output_types.size() > 0)
             {
@@ -588,17 +591,18 @@ void get_additional_output_types_for_output_set_v1(const std::size_t num_outputs
             else //(no self-sends)
             {
                 CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there are 2 normal outputs that share "
-                    "an enote ephemeral pubkey, but every normally-constructed tx needs at least one self-send output (since "
-                    "the 2 outputs share an enote ephemeral pubkey, we can't add a dummy self-send). If you want to make a "
-                    "2-output tx with no self-sends, then avoid calling this function (not recommended without good reason).");
+                    "an enote ephemeral pubkey, but every normally-constructed tx needs at least one self-send output "
+                    "(since the 2 outputs share an enote ephemeral pubkey, we can't add a dummy self-send). If you want "
+                    "to make a 2-output tx with no self-sends, then avoid calling this function (not recommended without "
+                    "good reason).");
             }
         }
         else //(change_amount > 0)
         {
             CHECK_AND_ASSERT_THROW_MES(false, "Finalize output proposals: there are 2 outputs that share "
-                "an enote ephemeral pubkey, but a non-zero change amount. In >2-out txs, all enote ephemeral pubkeys should "
-                "be unique, so adding a change output isn't feasible here. You need to make independent output proposals, "
-                "or avoid calling this function (not recommended).");
+                "an enote ephemeral pubkey, but a non-zero change amount. In >2-out txs, all enote ephemeral pubkeys "
+                "should be unique, so adding a change output isn't feasible here. You need to make independent output "
+                "proposals, or avoid calling this function (not recommended).");
         }
     }
     else //(output_proposals.size() > 2)
@@ -689,7 +693,7 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
         {
             make_additional_output_dummy_v1(additional_output_type,
                 first_enote_ephemeral_pubkey,
-                add_element(normal_payment_proposals_inout));
+                tools::add_element(normal_payment_proposals_inout));
         }
         else
         {
@@ -699,7 +703,7 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
                 dummy_destination,
                 k_view_balance,
                 change_amount,
-                add_element(selfsend_payment_proposals_inout));
+                tools::add_element(selfsend_payment_proposals_inout));
         }
     }
 }

@@ -32,6 +32,7 @@
 #include "tx_builder_types.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "misc_log_ex.h"
@@ -108,7 +109,7 @@ void SpCoinbaseTxProposalV1::get_coinbase_output_proposals_v1(
     output_proposals_out.reserve(m_normal_payment_proposals.size());
 
     for (const jamtis::JamtisPaymentProposalV1 &payment_proposal : m_normal_payment_proposals)
-        payment_proposal.get_coinbase_output_proposal_v1(m_block_height, add_element(output_proposals_out));
+        payment_proposal.get_coinbase_output_proposal_v1(m_block_height, tools::add_element(output_proposals_out));
 
     // sort output proposals
     std::sort(output_proposals_out.begin(), output_proposals_out.end());
@@ -129,13 +130,13 @@ void SpTxProposalV1::get_output_proposals_v1(const crypto::secret_key &k_view_ba
     output_proposals_out.reserve(m_normal_payment_proposals.size() + m_selfsend_payment_proposals.size());
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_payment_proposal : m_normal_payment_proposals)
-        normal_payment_proposal.get_output_proposal_v1(input_context, add_element(output_proposals_out));
+        normal_payment_proposal.get_output_proposal_v1(input_context, tools::add_element(output_proposals_out));
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal : m_selfsend_payment_proposals)
     {
         selfsend_payment_proposal.get_output_proposal_v1(k_view_balance,
             input_context,
-            add_element(output_proposals_out));
+            tools::add_element(output_proposals_out));
     }
 
     // sort output proposals
