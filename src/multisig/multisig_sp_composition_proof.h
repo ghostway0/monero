@@ -29,10 +29,10 @@
 ////
 // Multisig utilities for the seraphis composition proof.
 //
-// multisig notation: alpha_{a,n,e}
-// - a: indicates which part of the proof this is for
-// - n: for MuSig2-style bi-nonce signing, alpha_{b,1,e} is nonce 'D', alpha_{b,2,e} is nonce 'E' (in their notation)
-// - e: multisig signer index
+// multisig notation: alpha_{ki,n,e}
+// - ki: indicates that multisig signing is on the key image part of the proof
+// - n: for MuSig2-style bi-nonce signing, alpha_{ki,1,e} is nonce 'D', alpha_{ki,2,e} is nonce 'E' (in their notation)
+// - e: multisig signer index in the signer group
 //
 // Multisig references:
 // - MuSig2 (Nick): https://eprint.iacr.org/2020/1261

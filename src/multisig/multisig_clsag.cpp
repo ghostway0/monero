@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "multisig_clsag.h"
 
@@ -83,9 +81,9 @@ static void signer_nonces_mul8(const MultisigPubNonces &signer_pub_nonce_pair, M
     nonce_pair_mul8_out.signature_nonce_2_pub = rct::scalarmult8(signer_pub_nonce_pair.signature_nonce_2_pub);
 
     CHECK_AND_ASSERT_THROW_MES(!(nonce_pair_mul8_out.signature_nonce_1_pub == rct::identity()),
-        "Bad signer nonce (alpha_1 identity)!");
+        "clsag multisig: bad signer nonce (alpha_1 identity)!");
     CHECK_AND_ASSERT_THROW_MES(!(nonce_pair_mul8_out.signature_nonce_2_pub == rct::identity()),
-        "Bad signer nonce (alpha_2 identity)!");
+        "clsag multisig: bad signer nonce (alpha_2 identity)!");
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -104,7 +102,7 @@ static rct::keyV sum_together_multisig_pub_nonces(const std::vector<MultisigPubN
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-const rct::key &CLSAGMultisigProposal::main_proof_key() const
+const rct::key& CLSAGMultisigProposal::main_proof_key() const
 {
     CHECK_AND_ASSERT_THROW_MES(l < ring_members.size(),
         "CLSAGMultisigProposal (get main proof key): l is out of range.");
@@ -112,7 +110,7 @@ const rct::key &CLSAGMultisigProposal::main_proof_key() const
     return ring_members[l].dest;
 }
 //-------------------------------------------------------------------------------------------------------------------
-const rct::key &CLSAGMultisigProposal::auxilliary_proof_key() const
+const rct::key& CLSAGMultisigProposal::auxilliary_proof_key() const
 {
     CHECK_AND_ASSERT_THROW_MES(l < ring_members.size(),
         "CLSAGMultisigProposal (get auxilliary proof key): l is out of range.");
@@ -184,14 +182,14 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     CHECK_AND_ASSERT_THROW_MES(signer_pub_nonces_Hp.size() == num_signers,
         "make CLSAG multisig partial sig: inconsistent signer pub nonce set sizes!");
 
-    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(local_nonce_1_priv)) == 0,
-        "make CLSAG multisig partial sig: bad private key (local_nonce_1_priv)!");
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(local_nonce_1_priv)),
         "make CLSAG multisig partial sig: bad private key (local_nonce_1_priv zero)!");
-    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(local_nonce_2_priv)) == 0,
-        "make CLSAG multisig partial sig: bad private key (local_nonce_2_priv)!");
+    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(local_nonce_1_priv)) == 0,
+        "make CLSAG multisig partial sig: bad private key (local_nonce_1_priv)!");
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(local_nonce_2_priv)),
         "make CLSAG multisig partial sig: bad private key (local_nonce_2_priv zero)!");
+    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(local_nonce_2_priv)) == 0,
+        "make CLSAG multisig partial sig: bad private key (local_nonce_2_priv)!");
 
     // prepare participant nonces
     std::vector<MultisigPubNonces> signer_pub_nonces_G_mul8;
@@ -223,7 +221,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     CHECK_AND_ASSERT_THROW_MES(
         std::find(signer_pub_nonces_G_mul8.begin(), signer_pub_nonces_G_mul8.end(), local_pub_nonces_G) !=
             signer_pub_nonces_G_mul8.end(),
-        "make CLSAG multisig partial sig: ;ocal signer's opening nonces not in input set (G)!");
+        "make CLSAG multisig partial sig: local signer's opening nonces not in input set (G)!");
     CHECK_AND_ASSERT_THROW_MES(
         std::find(signer_pub_nonces_Hp_mul8.begin(), signer_pub_nonces_Hp_mul8.end(), local_nonce_pubs_Hp) !=
             signer_pub_nonces_Hp_mul8.end(),
@@ -252,9 +250,9 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
 
 
     /// prepare CLSAG context
-    signing::CLSAG_context_t CLSAG_context;
+    signing::CLSAG_context_t multisig_CLSAG_context;
 
-    CLSAG_context.init(nominal_proof_Ks,
+    multisig_CLSAG_context.init(nominal_proof_Ks,
         nominal_pedersen_Cs,
         proposal.masked_C,
         proposal.message,
@@ -271,7 +269,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     rct::key clsag_challenge_c_0;
     rct::key signer_challenge;
 
-    CHECK_AND_ASSERT_THROW_MES(CLSAG_context.combine_alpha_and_compute_challenge(signer_nonce_pub_sum_G,
+    CHECK_AND_ASSERT_THROW_MES(multisig_CLSAG_context.combine_alpha_and_compute_challenge(signer_nonce_pub_sum_G,
             signer_nonce_pub_sum_Hp,
             {rct::sk2rct(local_nonce_1_priv), rct::sk2rct(local_nonce_2_priv)},
             combined_local_nonce_privkey,
@@ -286,10 +284,10 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     rct::key mu_K;
     rct::key mu_C;
 
-    CHECK_AND_ASSERT_THROW_MES(CLSAG_context.get_mu(mu_K, mu_C),
+    CHECK_AND_ASSERT_THROW_MES(multisig_CLSAG_context.get_mu(mu_K, mu_C),
         "make CLSAG multisig partial sig: failed to get CLSAG merge factors.");
 
-    // compute the partial response
+    // compute the local signer's partial response
     rct::key partial_response;
 
     compute_response(signer_challenge,
@@ -305,9 +303,9 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     partial_sig_out.message = proposal.message;
     partial_sig_out.main_proof_key_K = proposal.main_proof_key();
     partial_sig_out.l = proposal.l;
-    partial_sig_out.c_0 = clsag_challenge_c_0,
     partial_sig_out.responses = proposal.decoy_responses;
-    partial_sig_out.responses[proposal.l] = partial_response;
+    partial_sig_out.responses[proposal.l] = partial_response;  //inject partial response
+    partial_sig_out.c_0 = clsag_challenge_c_0,
     partial_sig_out.KI = proposal.KI;
     partial_sig_out.D = proposal.D;
 }
@@ -377,12 +375,12 @@ void finalize_clsag_multisig_proof(const std::vector<CLSAGMultisigPartial> &part
         CHECK_AND_ASSERT_THROW_MES(partial_sig.l == real_signing_index,
             "finalize clsag multisig proof: input partial sigs don't match!");;
 
-        CHECK_AND_ASSERT_THROW_MES(num_ring_members == partial_sig.responses.size(),
+        CHECK_AND_ASSERT_THROW_MES(partial_sig.responses.size() == num_ring_members,
             "finalize clsag multisig proof: input partial sigs don't match!");;
 
         for (std::size_t ring_index{0}; ring_index < num_ring_members; ++ring_index)
         {
-            // the response at the real signing index is a partial signature, which is unique per signer, so it isn't
+            // the response at the real signing index is for a partial signature, which is unique per signer, so it isn't
             //    checked here
             if (ring_index == real_signing_index)
                 continue;
@@ -399,7 +397,7 @@ void finalize_clsag_multisig_proof(const std::vector<CLSAGMultisigPartial> &part
             "finalize clsag multisig proof: input partial sigs don't match!");
     }
 
-    // ring members should line up with with partial sigs
+    // ring members should line up with the partial sigs
     CHECK_AND_ASSERT_THROW_MES(ring_members.size() == num_ring_members,
         "finalize clsag multisig proof: ring members are inconsistent with the partial sigs!");
     CHECK_AND_ASSERT_THROW_MES(ring_members[real_signing_index].dest == partial_sigs[0].main_proof_key_K,
@@ -415,7 +413,7 @@ void finalize_clsag_multisig_proof(const std::vector<CLSAGMultisigPartial> &part
     proof_out.s[real_signing_index] = rct::zero();
     for (const CLSAGMultisigPartial &partial_sig : partial_sigs)
     {
-        // sum of responses from each multisig participant
+        // sum of responses from each multisig signer
         sc_add(proof_out.s[real_signing_index].bytes,
             proof_out.s[real_signing_index].bytes,
             partial_sig.responses[real_signing_index].bytes);

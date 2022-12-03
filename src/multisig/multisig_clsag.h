@@ -26,14 +26,12 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 ////
+// Multisig utilities for CLSAG proofs.
+//
 // multisig notation: alpha_{n,e}
 // - n: for MuSig2-style bi-nonce signing, alpha_{1,e} is nonce 'D', alpha_{2,e} is nonce 'E' (in their notation)
-// - e: multisig signer index
-//
-// References:
+// - e: multisig signer index in the signer group
 //
 // Multisig references:
 // - MuSig2 (Nick): https://eprint.iacr.org/2020/1261
@@ -41,7 +39,6 @@
 // - Multisig/threshold security (Crites): https://eprint.iacr.org/2021/1375
 // - MRL-0009 (Brandon Goodell and Sarang Noether): https://web.getmonero.org/resources/research-lab/pubs/MRL-0009.pdf
 ///
-
 
 #pragma once
 
@@ -62,24 +59,10 @@ namespace multisig
 {
 
 ////
-// CLSAG (see src/ringct/rctTypes.h)
-///
-/*
-struct clsag
-{
-    keyV s; // scalars/responses
-    key c1; // challenge
-
-    key I; // signing key image
-    key D; // commitment key image
-}
-*/
-
-////
 // Multisig signature proposal for CLSAG proofs
 //
-// WARNING: must only use a 'proposal' to make ONE 'signature' (or signature attempt),
-//          after that the opening privkeys should be deleted immediately
+// WARNING: must only use a proposal to make ONE signature, after that the shared decoy responses stored here
+//          should be deleted immediately
 ///
 struct CLSAGMultisigProposal final
 {
@@ -90,6 +73,7 @@ struct CLSAGMultisigProposal final
     // masked Pedersen commitment at index l (commitment to zero: ring_members[l].mask - masked_C = z G)
     rct::key masked_C;
     // main key image KI
+    // note: KI = k * Hp(ring_members[l].dest)
     crypto::key_image KI;
     // ancillary key image D (note: D is stored as '1/8 * D' in the rct::clsag struct, but is stored unmultiplied here)
     // note: D = z * Hp(ring_members[l].dest)
@@ -98,20 +82,20 @@ struct CLSAGMultisigProposal final
     //    the real multisig aggregate response in the final proof)
     rct::keyV decoy_responses;
 
-    // real proof key's index in the ring
+    // signing key pair's index in the ring
     std::uint32_t l;
 
-    // range-checked access to the main real proof key
+    // range-checked access to the signing main proof pubkey
     const rct::key& main_proof_key() const;
-    // range-checked access to the auxilliary real proof key
+    // range-checked access to the signing auxilliary proof pubkey
     const rct::key& auxilliary_proof_key() const;
 };
 
 ////
 // Multisig partially signed CLSAG (from one multisig participant)
 // - stores multisig partial response for proof position at index l
-// note: does not store ring members because those are not included in the final rct::clsag; note that the ring members
-//       are hashed into c_0, so checking that c_0 is consistent between partial sigs is sufficient to ensure partial sigs
+// note: does not store ring members because those are not included in the final rct::clsag; ring members are hashed
+//       into c_0, so checking that c_0 is consistent between partial sigs is sufficient to ensure partial sigs
 //       are combinable
 ///
 struct CLSAGMultisigPartial final
@@ -120,7 +104,7 @@ struct CLSAGMultisigPartial final
     rct::key message;
     // main proof key K
     rct::key main_proof_key_K;
-    // real proof key's index in the ring
+    // signing key pair's index in the ring
     std::uint32_t l;
 
     // responses for each {proof key, ancillary proof key} pair 
@@ -142,7 +126,7 @@ struct CLSAGMultisigPartial final
 *                   commitment to zero: ring_members[l].mask - masked_C = z G
 * param: KI - main key image
 * param: D - auxilliary key image
-* param: l - index of the real signing keys in the key rings
+* param: l - index of the signing keys in the key ring
 * outparam: proposal_out - CLSAG multisig proposal
 */
 void make_clsag_multisig_proposal(const rct::key &message,
@@ -159,7 +143,7 @@ void make_clsag_multisig_proposal(const rct::key &message,
 *       - are the main key, ancillary key, and masked key legitimate?
 *       - is the message correct?
 *       - are all the decoy ring members valid?
-* param: proposal - proof proposal to construct proof partial signature from
+* param: proposal - proof proposal to use when constructing the partial signature
 * param: k_e - secret key of multisig signer e for main proof key at position l
 * param: z_e - secret key of multisig signer e for commitment to zero at position l (for the auxilliary component)
 * param: signer_pub_nonces_G - signature nonce pubkeys (1/8) * {alpha_{1,e}*G,  alpha_{2,e}*G} from all signers
@@ -168,7 +152,7 @@ void make_clsag_multisig_proposal(const rct::key &message,
 *                              signers (including local signer)
 * param: local_nonce_1_priv - alpha_{1,e} for local signer
 * param: local_nonce_2_priv - alpha_{2,e} for local signer
-* outparam: partial_sig_out - partially signed Seraphis composition proof
+* outparam: partial_sig_out - partially signed CLSAG
 */
 void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     const crypto::secret_key &k_e,
@@ -183,7 +167,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
 *   - caller must validate the CLSAG multisig proposal
 * param: ...(see make_clsag_multisig_partial_sig())
 * param: filter - filter representing the multisig signer group that is supposedly working on this signature
-* inoutparam: nonce_record_inout - a record of nonces for makeing partial signatures; used nonces will be cleared
+* inoutparam: nonce_record_inout - a record of nonces for making partial signatures; used nonces will be cleared
 * outparam: partial_sig_out - the partial signature
 * return: true if creating the partial signature succeeded
 */
@@ -197,9 +181,8 @@ bool try_make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     CLSAGMultisigPartial &partial_sig_out);
 /**
 * brief: finalize_clsag_multisig_proof - create a CLSAG proof from multisig partial signatures
-* param: partial_sigs - partial signatures from enough multisig participants to complete a full proof
+* param: partial_sigs - partial signatures from the multisig subgroup that collaborated on this proof
 * param: ring_members - ring member keys used by the proof (for validating the assembled proof)
-* param: nominal_pedersen_Cs - main proof ring member keys used by the proof (for validating the assembled proof)
 * param: masked_commitment - masked commitment used by the proof (for validating the assembled proof)
 * outparam: proof_out - CLSAG
 */
