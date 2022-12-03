@@ -76,10 +76,12 @@ constexpr std::size_t GROOTLE_MAX_MN{128};  //2^64, 3^42, etc.
 ///
 struct GrootleProof
 {
-    rct::key A, B;
+    rct::key A;
+    rct::key B;
     rct::keyM f;
     rct::keyV X;
-    rct::key zA, z;
+    rct::key zA;
+    rct::key z;
 
     static std::size_t size_bytes(const std::size_t n, const std::size_t m);
     std::size_t size_bytes() const;

@@ -43,7 +43,7 @@
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
+#define MONERO_DEFAULT_LOG_CATEGORY "multisig"
 
 namespace multisig
 {

@@ -151,7 +151,9 @@ struct ser_SpCompositionProof final
     // challenge
     rct::key c;
     // responses
-    rct::key r_t1, r_t2, r_ki;
+    rct::key r_t1;
+    rct::key r_t2;
+    rct::key r_ki;
     // intermediate proof key
     rct::key K_t1;
 
@@ -167,10 +169,12 @@ struct ser_SpCompositionProof final
 /// serializable GrootleProof
 struct ser_GrootleProof final
 {
-    rct::key A, B;
+    rct::key A;
+    rct::key B;
     rct::keyM f;
     rct::keyV X;
-    rct::key zA, z;
+    rct::key zA;
+    rct::key z;
 
     BEGIN_SERIALIZE()
         FIELD(A)

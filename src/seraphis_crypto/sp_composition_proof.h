@@ -101,7 +101,9 @@ struct SpCompositionProof final
     // challenge
     rct::key c;
     // responses
-    rct::key r_t1, r_t2, r_ki;
+    rct::key r_t1;
+    rct::key r_t2;
+    rct::key r_ki;
     // intermediate proof key (stored as (1/8)*K_t1)
     rct::key K_t1;
 
