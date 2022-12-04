@@ -36,6 +36,7 @@
 #include "multisig/multisig_account.h"
 #include "multisig/multisig_account_era_conversion_msg.h"
 #include "multisig/multisig_clsag.h"
+#include "multisig/multisig_mocks.h"
 #include "multisig/multisig_nonce_record.h"
 #include "multisig/multisig_partial_cn_key_image_msg.h"
 #include "multisig/multisig_signer_set_filter.h"
@@ -111,130 +112,6 @@ static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &acc
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void make_multisig_accounts(const cryptonote::account_generator_era account_era,
-    const std::uint32_t threshold,
-    const std::uint32_t num_signers,
-    std::vector<multisig::multisig_account> &accounts_out)
-{
-    std::vector<crypto::public_key> signers;
-    std::vector<multisig::multisig_kex_msg> current_round_msgs;
-    std::vector<multisig::multisig_kex_msg> next_round_msgs;
-    accounts_out.clear();
-    accounts_out.reserve(num_signers);
-    signers.reserve(num_signers);
-    next_round_msgs.reserve(accounts_out.size());
-
-    // create multisig accounts for each signer
-    for (std::size_t account_index{0}; account_index < num_signers; ++account_index)
-    {
-        // create account [[ROUND 0]]
-        accounts_out.emplace_back(account_era, make_secret_key(), make_secret_key());
-
-        // collect signer
-        signers.emplace_back(accounts_out.back().get_base_pubkey());
-
-        // collect account's first kex msg
-        next_round_msgs.emplace_back(accounts_out.back().get_next_kex_round_msg());
-    }
-
-    // perform key exchange rounds until the accounts are ready
-    while (accounts_out.size() && !accounts_out[0].multisig_is_ready())
-    {
-        current_round_msgs = std::move(next_round_msgs);
-        next_round_msgs.clear();
-        next_round_msgs.reserve(accounts_out.size());
-
-        for (multisig::multisig_account &account : accounts_out)
-        {
-            // initialize or update account
-            if (!account.account_is_active())
-                account.initialize_kex(threshold, signers, current_round_msgs);  //[[ROUND 1]]
-            else
-                account.kex_update(current_round_msgs);  //[[ROUND 2+]]
-
-            next_round_msgs.emplace_back(account.get_next_kex_round_msg());
-        }
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static void convert_multisig_accounts(const cryptonote::account_generator_era new_era,
-    std::vector<multisig::multisig_account> &accounts_inout)
-{
-    if (accounts_inout.size() == 0 || new_era == accounts_inout[0].get_era())
-        return;
-
-    // collect messages
-    std::vector<multisig::multisig_account_era_conversion_msg> conversion_msgs;
-    conversion_msgs.reserve(accounts_inout.size());
-    for (const multisig::multisig_account &account : accounts_inout)
-        conversion_msgs.emplace_back(account.get_account_era_conversion_msg(new_era));
-
-    // convert accounts to 'new_era'
-    for (multisig::multisig_account &account : accounts_inout)
-        get_multisig_account_with_new_generator_era(account, new_era, conversion_msgs, account);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static void multisig_cn_key_image_recovery(const std::vector<multisig::multisig_account> &accounts,
-    //[base key for key image : shared offset privkey material in base key]
-    const std::unordered_map<crypto::public_key, crypto::secret_key> &saved_key_components,
-    std::unordered_map<crypto::public_key, crypto::key_image> &recovered_key_images_out)
-{
-    // 1. prepare partial key image messages for the key image base keys from all multisig group members
-    std::unordered_map<crypto::public_key,
-        std::unordered_map<crypto::public_key, multisig::multisig_partial_cn_key_image_msg>> partial_ki_msgs;
-
-    for (const multisig::multisig_account &account : accounts)
-    {
-        ASSERT_TRUE(account.get_era() == cryptonote::account_generator_era::cryptonote);
-
-        for (const auto &saved_keys : saved_key_components)
-        {
-            EXPECT_NO_THROW((partial_ki_msgs[saved_keys.first][account.get_base_pubkey()] =
-                    multisig::multisig_partial_cn_key_image_msg{
-                            account.get_base_privkey(),
-                            saved_keys.first,
-                            account.get_multisig_privkeys()
-                        }
-                ));
-        }
-    }
-
-    // 2. process the messages
-    std::unordered_map<crypto::public_key, multisig::signer_set_filter> onetime_addresses_with_insufficient_partial_kis;
-    std::unordered_map<crypto::public_key, multisig::signer_set_filter> onetime_addresses_with_invalid_partial_kis;
-    std::unordered_map<crypto::public_key, crypto::public_key> recovered_key_image_cores;
-
-    EXPECT_NO_THROW(multisig::multisig_recover_cn_keyimage_cores(accounts[0].get_threshold(),
-        accounts[0].get_signers(),
-        accounts[0].get_multisig_pubkey(),
-        partial_ki_msgs,
-        onetime_addresses_with_insufficient_partial_kis,
-        onetime_addresses_with_invalid_partial_kis,
-        recovered_key_image_cores));
-
-    EXPECT_TRUE(onetime_addresses_with_insufficient_partial_kis.size() == 0);
-    EXPECT_TRUE(onetime_addresses_with_invalid_partial_kis.size() == 0);
-
-    // 3. add the shared offset component to each key image core
-    for (const auto &recovered_key_image_core : recovered_key_image_cores)
-    {
-        EXPECT_TRUE(saved_key_components.find(recovered_key_image_core.first) != saved_key_components.end());
-
-        // KI_shared_piece = shared_offset * Hp(core key)
-        crypto::key_image KI_shared_piece;
-        crypto::generate_key_image(recovered_key_image_core.first,
-            saved_key_components.at(recovered_key_image_core.first),
-            KI_shared_piece);
-
-        // KI = shared_offset * Hp(core key) + k_multisig * Hp(core key)
-        recovered_key_images_out[recovered_key_image_core.first] =
-            rct::rct2ki(rct::addKeys(rct::ki2rct(KI_shared_piece), rct::pk2rct(recovered_key_image_core.second)));
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 static bool clsag_multisig_test(const std::uint32_t threshold,
     const std::uint32_t num_signers,
     const std::uint32_t ring_size)
@@ -245,7 +122,7 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
 
         // prepare cryptonote multisig accounts
         std::vector<multisig::multisig_account> accounts;
-        make_multisig_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
+        make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
         if (accounts.size() == 0)
             return false;
 
@@ -262,7 +139,8 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
         std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images_out;
         saved_key_components[rct::rct2pk(K)] = accounts[0].get_common_privkey();
 
-        multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images_out);  //multisig KI ceremony
+        // multisig KI ceremony
+        EXPECT_NO_THROW(mock_multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images_out));
 
         EXPECT_TRUE(recovered_key_images_out.find(rct::rct2pk(K)) != recovered_key_images_out.end());
         const crypto::key_image KI{recovered_key_images_out.at(rct::rct2pk(K))};
@@ -424,8 +302,8 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
         // - use 'converted' accounts to verify that old cryptonote accounts can be converted to seraphis accounts that
         //   work
         std::vector<multisig::multisig_account> accounts;
-        make_multisig_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
-        convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
+        make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
+        mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
         if (accounts.size() == 0)
             return false;
 
@@ -571,9 +449,9 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
             intermediate_record.second.m_record.m_enote_view_privkey;
     }
 
-    // 4. recover key images
+    // 4. recover key images (multisig KI ceremony)
     std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images;
-    multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images);  //multisig KI ceremony
+    EXPECT_NO_THROW(mock_multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images));
 
     // 5. import acquired key images (will fail if the onetime addresses and key images don't line up)
     for (const auto &recovered_key_image : recovered_key_images)
@@ -828,12 +706,12 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
     // a) make accounts
     std::vector<multisig::multisig_account> legacy_accounts;
-    ASSERT_NO_THROW(make_multisig_accounts(cryptonote::account_generator_era::cryptonote,
+    ASSERT_NO_THROW(make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
         threshold,
         num_signers,
         legacy_accounts));
     std::vector<multisig::multisig_account> seraphis_accounts{legacy_accounts};
-    ASSERT_NO_THROW(convert_multisig_accounts(cryptonote::account_generator_era::seraphis, seraphis_accounts));
+    ASSERT_NO_THROW(mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, seraphis_accounts));
     ASSERT_TRUE(legacy_accounts.size() == num_signers);
     ASSERT_TRUE(seraphis_accounts.size() == num_signers);
     ASSERT_TRUE(legacy_accounts[0].get_base_pubkey() == seraphis_accounts[0].get_base_pubkey());
