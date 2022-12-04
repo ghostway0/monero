@@ -47,6 +47,8 @@
 
 namespace multisig
 {
+namespace mocks
+{
 /**
 * brief: make_multisig_mock_accounts - make accounts for a mock multisig group
 * param: account_era - account era
@@ -76,4 +78,5 @@ void mock_multisig_cn_key_image_recovery(const std::vector<multisig_account> &ac
     const std::unordered_map<crypto::public_key, crypto::secret_key> &saved_key_components,
     std::unordered_map<crypto::public_key, crypto::key_image> &recovered_key_images_out);
 
+} //namespace mocks
 } //namespace multisig

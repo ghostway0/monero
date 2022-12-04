@@ -56,6 +56,8 @@ namespace sp { enum class LegacyScanMode : unsigned char; }
 
 namespace sp
 {
+namespace mocks
+{
 
 class EnoteStoreUpdaterLedgerMockLegacy final : public EnoteStoreUpdaterLedger
 {
@@ -324,4 +326,5 @@ private:
     std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
 };
 
+} //namespace mocks
 } //namespace sp

@@ -74,6 +74,11 @@ extern "C"
 #include <memory>
 #include <vector>
 
+using namespace sp;
+using namespace jamtis;
+using namespace sp::mocks;
+using namespace jamtis::mocks;
+
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -95,17 +100,17 @@ static void make_secret_key(crypto::x25519_secret_key &skey_out)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void check_is_owned_with_intermediate_record(const sp::SpEnoteVariant &enote,
+static void check_is_owned_with_intermediate_record(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
-    const sp::jamtis::jamtis_mock_keys &keys,
-    const sp::jamtis::address_index_t j_expected,
+    const jamtis_mock_keys &keys,
+    const address_index_t j_expected,
     const rct::xmr_amount amount_expected)
 {
     // try to extract intermediate information from the enote
     // - only succeeds if enote is owned and is a plain jamtis enote
-    sp::SpIntermediateEnoteRecordV1 intermediate_enote_record;
-    EXPECT_TRUE(sp::try_get_intermediate_enote_record_v1(enote,
+    SpIntermediateEnoteRecordV1 intermediate_enote_record;
+    EXPECT_TRUE(try_get_intermediate_enote_record_v1(enote,
         enote_ephemeral_pubkey,
         input_context,
         keys.K_1_base,
@@ -119,37 +124,37 @@ static void check_is_owned_with_intermediate_record(const sp::SpEnoteVariant &en
     EXPECT_TRUE(intermediate_enote_record.m_address_index == j_expected);
 
     // get full enote record from intermediate record
-    sp::SpEnoteRecordV1 enote_record;
-    EXPECT_TRUE(sp::try_get_enote_record_v1_plain(intermediate_enote_record, keys.K_1_base, keys.k_vb, enote_record));
+    SpEnoteRecordV1 enote_record;
+    EXPECT_TRUE(try_get_enote_record_v1_plain(intermediate_enote_record, keys.K_1_base, keys.k_vb, enote_record));
 
     // check misc fields
-    EXPECT_TRUE(enote_record.m_type == sp::jamtis::JamtisEnoteType::PLAIN);
+    EXPECT_TRUE(enote_record.m_type == JamtisEnoteType::PLAIN);
     EXPECT_TRUE(enote_record.m_amount == amount_expected);
     EXPECT_TRUE(enote_record.m_address_index == j_expected);
 
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
-    sp::reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    sp::extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
+    reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    sp::make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
+    make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
     EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void check_is_owned(const sp::SpEnoteVariant &enote,
+static void check_is_owned(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
-    const sp::jamtis::jamtis_mock_keys &keys,
-    const sp::jamtis::address_index_t j_expected,
+    const jamtis_mock_keys &keys,
+    const address_index_t j_expected,
     const rct::xmr_amount amount_expected,
-    const sp::jamtis::JamtisEnoteType type_expected)
+    const JamtisEnoteType type_expected)
 {
     // try to extract information from the enote (only succeeds if enote is owned)
-    sp::SpEnoteRecordV1 enote_record;
-    EXPECT_TRUE(sp::try_get_enote_record_v1(enote,
+    SpEnoteRecordV1 enote_record;
+    EXPECT_TRUE(try_get_enote_record_v1(enote,
         enote_ephemeral_pubkey,
         input_context,
         keys.K_1_base,
@@ -163,16 +168,16 @@ static void check_is_owned(const sp::SpEnoteVariant &enote,
 
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
-    sp::reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    sp::extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
+    reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    sp::make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
+    make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
     EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
 
     // for plain enotes, double-check ownership with an intermediate record
-    if (enote_record.m_type == sp::jamtis::JamtisEnoteType::PLAIN)
+    if (enote_record.m_type == JamtisEnoteType::PLAIN)
     {
         check_is_owned_with_intermediate_record(enote,
             enote_ephemeral_pubkey,
@@ -184,16 +189,16 @@ static void check_is_owned(const sp::SpEnoteVariant &enote,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void check_is_owned(const sp::SpCoinbaseOutputProposalV1 &test_proposal,
+static void check_is_owned(const SpCoinbaseOutputProposalV1 &test_proposal,
     const std::uint64_t block_height,
-    const sp::jamtis::jamtis_mock_keys &keys,
-    const sp::jamtis::address_index_t j_expected,
+    const jamtis_mock_keys &keys,
+    const address_index_t j_expected,
     const rct::xmr_amount amount_expected,
-    const sp::jamtis::JamtisEnoteType type_expected)
+    const JamtisEnoteType type_expected)
 {
     // prepare coinbase input context
     rct::key input_context;
-    sp::jamtis::make_jamtis_input_context_coinbase(block_height, input_context);
+    make_jamtis_input_context_coinbase(block_height, input_context);
 
     // check info
     check_is_owned(test_proposal.m_enote,
@@ -206,14 +211,14 @@ static void check_is_owned(const sp::SpCoinbaseOutputProposalV1 &test_proposal,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void check_is_owned(const sp::SpOutputProposalV1 &test_proposal,
-    const sp::jamtis::jamtis_mock_keys &keys,
-    const sp::jamtis::address_index_t j_expected,
+static void check_is_owned(const SpOutputProposalV1 &test_proposal,
+    const jamtis_mock_keys &keys,
+    const address_index_t j_expected,
     const rct::xmr_amount amount_expected,
-    const sp::jamtis::JamtisEnoteType type_expected)
+    const JamtisEnoteType type_expected)
 {
     // convert to enote
-    sp::SpEnoteV1 enote;
+    SpEnoteV1 enote;
     test_proposal.get_enote_v1(enote);
 
     // check info
@@ -227,14 +232,14 @@ static void check_is_owned(const sp::SpOutputProposalV1 &test_proposal,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void check_is_owned(const sp::jamtis::JamtisPaymentProposalSelfSendV1 &test_proposal,
-    const sp::jamtis::jamtis_mock_keys &keys,
-    const sp::jamtis::address_index_t j_expected,
+static void check_is_owned(const JamtisPaymentProposalSelfSendV1 &test_proposal,
+    const jamtis_mock_keys &keys,
+    const address_index_t j_expected,
     const rct::xmr_amount amount_expected,
-    const sp::jamtis::JamtisEnoteType type_expected)
+    const JamtisEnoteType type_expected)
 {
     // convert to output proposal
-    sp::SpOutputProposalV1 output_proposal;
+    SpOutputProposalV1 output_proposal;
     test_proposal.get_output_proposal_v1(keys.k_vb, rct::zero(), output_proposal);
 
     // check ownership
@@ -244,13 +249,13 @@ static void check_is_owned(const sp::jamtis::JamtisPaymentProposalSelfSendV1 &te
 //-------------------------------------------------------------------------------------------------------------------
 static bool test_binned_reference_set(const std::uint64_t distribution_min_index,
     const std::uint64_t distribution_max_index,
-    const sp::ref_set_bin_dimension_v1_t bin_radius,
-    const sp::ref_set_bin_dimension_v1_t num_bin_members,
+    const ref_set_bin_dimension_v1_t bin_radius,
+    const ref_set_bin_dimension_v1_t num_bin_members,
     const std::uint64_t reference_set_size,
     const std::uint64_t real_reference_index)
 {
-    const sp::SpRefSetIndexMapperFlat flat_index_mapper{distribution_min_index, distribution_max_index};
-    const sp::SpBinnedReferenceSetConfigV1 bin_config{
+    const SpRefSetIndexMapperFlat flat_index_mapper{distribution_min_index, distribution_max_index};
+    const SpBinnedReferenceSetConfigV1 bin_config{
             .m_bin_radius = bin_radius,
             .m_num_bin_members = num_bin_members
         };
@@ -258,8 +263,8 @@ static bool test_binned_reference_set(const std::uint64_t distribution_min_index
     for (std::size_t i{0}; i < 50; ++i)
     {
         // make a reference set
-        sp::SpBinnedReferenceSetV1 binned_reference_set;
-        sp::make_binned_reference_set_v1(flat_index_mapper,
+        SpBinnedReferenceSetV1 binned_reference_set;
+        make_binned_reference_set_v1(flat_index_mapper,
             bin_config,
             rct::pkGen(),
             reference_set_size,
@@ -311,18 +316,17 @@ static bool test_binned_reference_set(const std::uint64_t distribution_min_index
 static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
-    const sp::SpBinnedReferenceSetConfigV1 &bin_config,
+    const SpBinnedReferenceSetConfigV1 &bin_config,
     const std::size_t num_random_memo_elements,
     const std::vector<rct::xmr_amount> &in_legacy_amounts,
     const std::vector<rct::xmr_amount> &in_sp_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const sp::DiscretizedFee &discretized_transaction_fee,
-    const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
-    sp::MockLedgerContext &ledger_context_inout,
-    sp::SpTxSquashedV1 &tx_out)
+    const DiscretizedFee &discretized_transaction_fee,
+    const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
+    MockLedgerContext &ledger_context_inout,
+    SpTxSquashedV1 &tx_out)
 {
     /// build a tx from base components
-    using namespace sp;
 
     rct::xmr_amount raw_transaction_fee;
     CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(discretized_transaction_fee, raw_transaction_fee),
@@ -467,11 +471,8 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool test_info_recovery_addressindex(const sp::jamtis::address_index_t j)
+static bool test_info_recovery_addressindex(const address_index_t j)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // convert the index to/from raw tag form
     const address_tag_t raw_address_tag{j};
     address_index_t j_recovered;
@@ -515,20 +516,20 @@ TEST(seraphis, information_recovery_keyimage)
     k_a_recipient_x = y;
     sc_add(to_bytes(y), to_bytes(y), to_bytes(y));
     make_secret_key(z);
-    sp::make_seraphis_spendbase(z, zU);
-    sp::make_seraphis_spendbase(z, k_bU);
+    make_seraphis_spendbase(z, zU);
+    make_seraphis_spendbase(z, k_bU);
 
-    sp::make_seraphis_key_image(y, z, key_image1);  // y X + y X + z U -> (z/2y) U
-    sp::make_seraphis_key_image(y, rct::rct2pk(zU), key_image2);
-    sp::make_seraphis_key_image(k_a_sender_x, k_a_recipient_x, rct::rct2pk(k_bU), key_image3);
+    make_seraphis_key_image(y, z, key_image1);  // y X + y X + z U -> (z/2y) U
+    make_seraphis_key_image(y, rct::rct2pk(zU), key_image2);
+    make_seraphis_key_image(k_a_sender_x, k_a_recipient_x, rct::rct2pk(k_bU), key_image3);
 
     rct::key jamtis_spend_pubkey{k_bU};
     crypto::secret_key k_view_balance, spendkey_extension;
     sc_add(to_bytes(k_view_balance), to_bytes(y), to_bytes(y));  // k_vb = 2*(2*y)
-    const rct::key MINUS_ONE{sp::minus_one()};
+    const rct::key MINUS_ONE{minus_one()};
     sc_mul(to_bytes(spendkey_extension), MINUS_ONE.bytes, to_bytes(k_a_sender_x));  // k^j_x = -y
-    sp::extend_seraphis_spendkey_x(k_view_balance, jamtis_spend_pubkey);  // 4*y X + z U
-    sp::jamtis::make_seraphis_key_image_jamtis_style(jamtis_spend_pubkey,
+    extend_seraphis_spendkey_x(k_view_balance, jamtis_spend_pubkey);  // 4*y X + z U
+    make_seraphis_key_image_jamtis_style(jamtis_spend_pubkey,
         k_view_balance,
         spendkey_extension,
         rct::rct2sk(rct::zero()),
@@ -543,9 +544,6 @@ TEST(seraphis, information_recovery_keyimage)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_amountencoding)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // encoding/decoding amounts
     crypto::secret_key sender_receiver_secret;
     make_secret_key(sender_receiver_secret);
@@ -571,9 +569,6 @@ TEST(seraphis, information_recovery_amountencoding)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_addressindex)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // test address indices
     EXPECT_TRUE(test_info_recovery_addressindex(0));
     EXPECT_TRUE(test_info_recovery_addressindex(address_index_t::max()));
@@ -588,9 +583,6 @@ TEST(seraphis, information_recovery_addressindex)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_jamtisdestination)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // user wallet keys
     jamtis_mock_keys keys;
     make_jamtis_mock_keys(keys);
@@ -623,9 +615,6 @@ TEST(seraphis, information_recovery_jamtisdestination)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // user wallet keys
     jamtis_mock_keys keys;
     make_jamtis_mock_keys(keys);
@@ -657,9 +646,6 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_enote_v1_plain)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // user wallet keys
     jamtis_mock_keys keys;
     make_jamtis_mock_keys(keys);
@@ -690,9 +676,6 @@ TEST(seraphis, information_recovery_enote_v1_plain)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_enote_v1_selfsend)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // user wallet keys
     jamtis_mock_keys keys;
     make_jamtis_mock_keys(keys);
@@ -740,8 +723,6 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
 TEST(seraphis, finalize_v1_output_proposal_set_v1)
 {
     /// setup
-    using namespace sp;
-    using namespace jamtis;
 
     // user wallet keys
     jamtis_mock_keys keys;
@@ -793,12 +774,12 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     /// test cases
     boost::multiprecision::uint128_t in_amount{0};
     const rct::xmr_amount fee{1};
-    std::vector<jamtis::JamtisPaymentProposalV1> normal_proposals;
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_proposals;
+    std::vector<JamtisPaymentProposalV1> normal_proposals;
+    std::vector<JamtisPaymentProposalSelfSendV1> selfsend_proposals;
 
     auto finalize_outputs_for_test =
-        [&](std::vector<jamtis::JamtisPaymentProposalV1> &normal_payment_proposals_inout,
-            std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals_inout)
+        [&](std::vector<JamtisPaymentProposalV1> &normal_payment_proposals_inout,
+            std::vector<JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals_inout)
         {
             finalize_v1_output_proposal_set_v1(in_amount,
                 fee,
@@ -1043,7 +1024,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
 TEST(seraphis, tx_extra)
 {
     /// make elements
-    std::vector<sp::ExtraFieldElement> extra_field_elements;
+    std::vector<ExtraFieldElement> extra_field_elements;
     extra_field_elements.resize(3);
 
     // rct::key
@@ -1064,8 +1045,8 @@ TEST(seraphis, tx_extra)
 
 
     /// make an extra field
-    sp::TxExtra tx_extra;
-    sp::make_tx_extra(std::move(extra_field_elements), tx_extra);
+    TxExtra tx_extra;
+    make_tx_extra(std::move(extra_field_elements), tx_extra);
 
 
     /// validate field and recover elemeents
@@ -1073,7 +1054,7 @@ TEST(seraphis, tx_extra)
         [&]()
         {
             extra_field_elements.clear();
-            EXPECT_TRUE(sp::try_get_extra_field_elements(tx_extra, extra_field_elements));
+            EXPECT_TRUE(try_get_extra_field_elements(tx_extra, extra_field_elements));
             ASSERT_TRUE(extra_field_elements.size() == 3);
             EXPECT_TRUE(extra_field_elements[0].m_type == 0);
             EXPECT_TRUE(extra_field_elements[0].m_value.size() == 8);
@@ -1096,19 +1077,19 @@ TEST(seraphis, tx_extra)
     validate_field_and_recover();
 
     // partial field to full field reconstruction
-    std::vector<sp::ExtraFieldElement> extra_field_elements2;
-    std::vector<sp::ExtraFieldElement> extra_field_elements3;
-    EXPECT_TRUE(sp::try_get_extra_field_elements(tx_extra, extra_field_elements2));
+    std::vector<ExtraFieldElement> extra_field_elements2;
+    std::vector<ExtraFieldElement> extra_field_elements3;
+    EXPECT_TRUE(try_get_extra_field_elements(tx_extra, extra_field_elements2));
     extra_field_elements3.push_back(extra_field_elements2.back());
     extra_field_elements2.pop_back();
 
-    sp::TxExtra tx_extra_partial;
-    sp::make_tx_extra(std::move(extra_field_elements2), tx_extra_partial);
+    TxExtra tx_extra_partial;
+    make_tx_extra(std::move(extra_field_elements2), tx_extra_partial);
 
     extra_field_elements.clear();
-    sp::accumulate_extra_field_elements(tx_extra_partial, extra_field_elements);        //first two elements
-    sp::accumulate_extra_field_elements(extra_field_elements3, extra_field_elements);   //last element
-    sp::make_tx_extra(std::move(extra_field_elements), tx_extra);
+    accumulate_extra_field_elements(tx_extra_partial, extra_field_elements);        //first two elements
+    accumulate_extra_field_elements(extra_field_elements3, extra_field_elements);   //last element
+    make_tx_extra(std::move(extra_field_elements), tx_extra);
 
     validate_field_and_recover();
 
@@ -1116,14 +1097,14 @@ TEST(seraphis, tx_extra)
     /// adding a byte to the end causes failure
     tx_extra.push_back(0);
     extra_field_elements.clear();
-    EXPECT_FALSE(sp::try_get_extra_field_elements(tx_extra, extra_field_elements));
+    EXPECT_FALSE(try_get_extra_field_elements(tx_extra, extra_field_elements));
 
 
     /// removing 2 bytes causes failure
     tx_extra.pop_back();
     tx_extra.pop_back();
     extra_field_elements.clear();
-    EXPECT_FALSE(sp::try_get_extra_field_elements(tx_extra, extra_field_elements));
+    EXPECT_FALSE(try_get_extra_field_elements(tx_extra, extra_field_elements));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, binned_reference_set)
@@ -1165,19 +1146,19 @@ TEST(seraphis, discretized_fees)
 {
     // test the fee discretizer
     std::uint64_t test_fee_value, fee_value;
-    sp::DiscretizedFee discretized_fee;
+    DiscretizedFee discretized_fee;
 
     // fee value 0 (should perfectly discretize)
     test_fee_value = 0;
-    discretized_fee = sp::DiscretizedFee{test_fee_value};
-    EXPECT_TRUE(sp::try_get_fee_value(discretized_fee, fee_value));
+    discretized_fee = DiscretizedFee{test_fee_value};
+    EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
     // fee value 1 (should perfectly discretize)
     test_fee_value = 1;
-    discretized_fee = sp::DiscretizedFee{test_fee_value};
-    EXPECT_TRUE(sp::try_get_fee_value(discretized_fee, fee_value));
+    discretized_fee = DiscretizedFee{test_fee_value};
+    EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
@@ -1188,21 +1169,21 @@ TEST(seraphis, discretized_fees)
         test_fee_value *= 10;
         test_fee_value += 1;
     }
-    discretized_fee = sp::DiscretizedFee{test_fee_value};
-    EXPECT_TRUE(sp::try_get_fee_value(discretized_fee, fee_value));
+    discretized_fee = DiscretizedFee{test_fee_value};
+    EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value > test_fee_value);
     EXPECT_FALSE(discretized_fee == test_fee_value);
 
     // fee value MAX (should perfectly discretize)
     test_fee_value = std::numeric_limits<std::uint64_t>::max();
-    discretized_fee = sp::DiscretizedFee{test_fee_value};
-    EXPECT_TRUE(sp::try_get_fee_value(discretized_fee, fee_value));
+    discretized_fee = DiscretizedFee{test_fee_value};
+    EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
     // unknown fee level
-    discretized_fee.m_fee_level = static_cast<sp::discretized_fee_level_t>(-1);
-    EXPECT_FALSE(sp::try_get_fee_value(discretized_fee, fee_value));
+    discretized_fee.m_fee_level = static_cast<discretized_fee_level_t>(-1);
+    EXPECT_FALSE(try_get_fee_value(discretized_fee, fee_value));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, txtype_squashed_v1)
@@ -1212,7 +1193,7 @@ TEST(seraphis, txtype_squashed_v1)
     const std::size_t num_ins_outs{11};
 
     // fake ledger context for this test
-    sp::MockLedgerContext ledger_context{0, 10000};
+    MockLedgerContext ledger_context{0, 10000};
 
     // prepare input/output amounts
     std::vector<rct::xmr_amount> in_legacy_amounts;
@@ -1227,7 +1208,7 @@ TEST(seraphis, txtype_squashed_v1)
     }
 
     // set fee
-    const sp::DiscretizedFee discretized_transaction_fee{num_ins_outs};
+    const DiscretizedFee discretized_transaction_fee{num_ins_outs};
     rct::xmr_amount real_transaction_fee;
     EXPECT_TRUE(try_get_fee_value(discretized_transaction_fee, real_transaction_fee));
 
@@ -1238,8 +1219,8 @@ TEST(seraphis, txtype_squashed_v1)
         in_sp_amounts.push_back(extra_fee_amount);
 
     // make txs
-    std::vector<sp::SpTxSquashedV1> txs;
-    std::vector<const sp::SpTxSquashedV1*> tx_ptrs;
+    std::vector<SpTxSquashedV1> txs;
+    std::vector<const SpTxSquashedV1*> tx_ptrs;
     txs.reserve(num_txs);
     tx_ptrs.reserve(num_txs);
 
@@ -1248,7 +1229,7 @@ TEST(seraphis, txtype_squashed_v1)
         make_sp_txtype_squashed_v1(2,
             2,
             2,
-            sp::SpBinnedReferenceSetConfigV1{
+            SpBinnedReferenceSetConfigV1{
                 .m_bin_radius = 1,
                 .m_num_bin_members = 2
             },
@@ -1257,21 +1238,21 @@ TEST(seraphis, txtype_squashed_v1)
             in_sp_amounts,
             out_amounts,
             discretized_transaction_fee,
-            sp::SpTxSquashedV1::SemanticRulesVersion::MOCK,
+            SpTxSquashedV1::SemanticRulesVersion::MOCK,
             ledger_context,
             tools::add_element(txs));
         tx_ptrs.push_back(&(txs.back()));
     }
 
-    const sp::TxValidationContextMock tx_validation_context{ledger_context};
+    const TxValidationContextMock tx_validation_context{ledger_context};
 
-    EXPECT_TRUE(sp::validate_txs(tx_ptrs, tx_validation_context));
+    EXPECT_TRUE(validate_txs(tx_ptrs, tx_validation_context));
 
     // insert key images to ledger
-    for (const sp::SpTxSquashedV1 &tx : txs)
-        EXPECT_TRUE(sp::try_add_tx_to_ledger(tx, ledger_context));
+    for (const SpTxSquashedV1 &tx : txs)
+        EXPECT_TRUE(try_add_tx_to_ledger(tx, ledger_context));
 
     // validation should fail due to double-spend
-    EXPECT_FALSE(sp::validate_txs(tx_ptrs, tx_validation_context));
+    EXPECT_FALSE(validate_txs(tx_ptrs, tx_validation_context));
 }
 //-------------------------------------------------------------------------------------------------------------------

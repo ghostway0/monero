@@ -60,8 +60,9 @@ namespace sp
     struct EnoteScanningChunkNonLedgerV1;
 }
 
-
 namespace sp
+{
+namespace mocks
 {
 
 class MockOffchainContext final
@@ -150,4 +151,5 @@ private:
     > m_tx_key_images;
 };
 
+} //namespace mocks
 } //namespace sp

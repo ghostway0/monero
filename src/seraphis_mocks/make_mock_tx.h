@@ -47,14 +47,19 @@ namespace rct { using xmr_amount = uint64_t; }
 namespace sp
 {
     struct DiscretizedFee;
-    class MockLedgerContext;
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
     class TxValidationContext;
+namespace mocks
+{
+    class MockLedgerContext;
+}
 }
 
 
 namespace sp
+{
+namespace mocks
 {
 
 /**
@@ -124,4 +129,5 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     MockLedgerContext &ledger_context_inout,
     SpTxSquashedV1 &tx_out);
 
+} //namespace mocks
 } //namespace sp

@@ -52,6 +52,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 //todo
 std::vector<LegacyInputProposalV1> gen_mock_legacy_input_proposals_v1(const crypto::secret_key &legacy_spend_privkey,
@@ -99,4 +101,5 @@ bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::list<LegacyConte
     const MockLedgerContext &ledger_context,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> &mapped_preps_out);
 
+} //namespace mocks
 } //namespace sp

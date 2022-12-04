@@ -50,6 +50,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 enum class EnoteStoreBalanceUpdateExclusions
 {
@@ -331,4 +333,5 @@ protected:
     std::uint64_t m_default_spendable_age{0};
 };
 
+} //namespace mocks
 } //namespace sp

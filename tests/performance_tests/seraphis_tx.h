@@ -259,7 +259,7 @@ public:
         m_tx_ptrs.reserve(params.batch_size);
 
         // fresh mock ledger context
-        m_ledger_contex = std::make_shared<sp::MockLedgerContext>(0, 1000000);
+        m_ledger_contex = std::make_shared<sp::mocks::MockLedgerContext>(0, 1000000);
 
         // divide max amount into equal-size chunks to distribute among more numerous of inputs vs outputs
         if (params.legacy_in_count + params.sp_in_count == 0 || params.out_count == 0)
@@ -302,7 +302,7 @@ public:
                 }
 
                 // mock params
-                sp::SpTxParamPackV1 tx_params;
+                sp::mocks::SpTxParamPackV1 tx_params;
 
                 tx_params.legacy_ring_size = params.legacy_ring_size;
                 tx_params.ref_set_decomp_n = params.n;
@@ -319,7 +319,7 @@ public:
 
                 // make tx
                 m_txs.emplace_back();
-                sp::make_mock_tx<SpTxType>(tx_params,
+                sp::mocks::make_mock_tx<SpTxType>(tx_params,
                     legacy_input_amounts,
                     sp_input_amounts,
                     output_amounts,
@@ -378,7 +378,7 @@ public:
     {
         try
         {
-            const sp::TxValidationContextMock tx_validation_context{*m_ledger_contex};
+            const sp::mocks::TxValidationContextMock tx_validation_context{*m_ledger_contex};
             return sp::validate_txs(m_tx_ptrs, tx_validation_context);
         }
         catch (...)
@@ -390,5 +390,5 @@ public:
 private:
     std::vector<SpTxType> m_txs;
     std::vector<const SpTxType*> m_tx_ptrs;
-    std::shared_ptr<sp::MockLedgerContext> m_ledger_contex;
+    std::shared_ptr<sp::mocks::MockLedgerContext> m_ledger_contex;
 };

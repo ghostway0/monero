@@ -56,6 +56,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockSimpleV1::add_record(const LegacyContextualEnoteRecordV1 &new_record)
 {
@@ -1289,4 +1291,5 @@ boost::multiprecision::uint128_t SpEnoteStoreMockPaymentValidatorV1::get_receive
     return received_sum;
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

@@ -49,6 +49,8 @@ namespace sp
 {
 namespace jamtis
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_mock_keys(jamtis_mock_keys &keys_out)
 {
@@ -76,5 +78,6 @@ void make_random_address_for_user(const jamtis_mock_keys &user_keys, JamtisDesti
         user_address_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace jamtis
 } //namespace sp

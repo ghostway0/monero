@@ -47,6 +47,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 ////
 // A set of legacy keys for mock-ups/unit testing
@@ -71,4 +73,5 @@ void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
 */
 void make_legacy_mock_keys(legacy_mock_keys &keys_out);
 
+} //namespace mocks
 } //namespace sp

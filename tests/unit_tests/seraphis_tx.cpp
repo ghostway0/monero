@@ -43,6 +43,8 @@
 #include <type_traits>
 #include <vector>
 
+using namespace sp;
+using namespace mocks;
 
 enum class TestType
 {
@@ -55,10 +57,10 @@ struct SpTxGenData
     std::size_t legacy_ring_size{0};
     std::size_t ref_set_decomp_n{1};
     std::size_t ref_set_decomp_m{1};
-    sp::SpBinnedReferenceSetConfigV1 bin_config{0, 0};
+    SpBinnedReferenceSetConfigV1 bin_config{0, 0};
     std::vector<rct::xmr_amount> alternate_input_amounts;  //alternate all-legacy then all-seraphis inputs
     std::vector<rct::xmr_amount> output_amounts;
-    sp::DiscretizedFee discretized_transaction_fee{0};
+    DiscretizedFee discretized_transaction_fee{0};
     TestType expected_result{TestType::ExpectTrue};
     bool test_double_spend{false};
 };
@@ -69,21 +71,21 @@ template <typename SpTxType>
 static void run_mock_tx_test(const std::size_t legacy_ring_size,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
-    const sp::SpBinnedReferenceSetConfigV1 bin_config,
+    const SpBinnedReferenceSetConfigV1 bin_config,
     const std::vector<rct::xmr_amount> legacy_input_amounts,
     const std::vector<rct::xmr_amount> sp_input_amounts,
     const std::vector<rct::xmr_amount> output_amounts,
-    const sp::DiscretizedFee discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const TestType expected_result,
     const bool test_double_spend,
-    sp::MockLedgerContext &ledger_context_inout)
+    MockLedgerContext &ledger_context_inout)
 {
-    const sp::TxValidationContextMock tx_validation_context{ledger_context_inout};
+    const TxValidationContextMock tx_validation_context{ledger_context_inout};
 
     try
     {
         // mock params
-        sp::SpTxParamPackV1 tx_params;
+        SpTxParamPackV1 tx_params;
 
         tx_params.legacy_ring_size = legacy_ring_size;
         tx_params.ref_set_decomp_n = ref_set_decomp_n;
@@ -92,7 +94,7 @@ static void run_mock_tx_test(const std::size_t legacy_ring_size,
 
         // make tx
         SpTxType tx;
-        sp::make_mock_tx<SpTxType>(tx_params,
+        make_mock_tx<SpTxType>(tx_params,
             legacy_input_amounts,
             sp_input_amounts,
             output_amounts,
@@ -101,16 +103,16 @@ static void run_mock_tx_test(const std::size_t legacy_ring_size,
             tx);
 
         // validate tx
-        EXPECT_TRUE(sp::validate_tx(tx, tx_validation_context));
+        EXPECT_TRUE(validate_tx(tx, tx_validation_context));
 
         if (test_double_spend)
         {
             // add key images once validated
-            EXPECT_TRUE(sp::try_add_tx_to_ledger(tx, ledger_context_inout));
+            EXPECT_TRUE(try_add_tx_to_ledger(tx, ledger_context_inout));
 
             // re-validate tx
             // - should fail now that key images were added to the ledger
-            EXPECT_FALSE(sp::validate_tx(tx, tx_validation_context));
+            EXPECT_FALSE(validate_tx(tx, tx_validation_context));
         }
     }
     catch (...)
@@ -123,7 +125,7 @@ static void run_mock_tx_test(const std::size_t legacy_ring_size,
 template <typename SpTxType>
 static void run_mock_tx_tests(const std::vector<SpTxGenData> &gen_data)
 {
-    sp::MockLedgerContext ledger_context{0, 10000};
+    MockLedgerContext ledger_context{0, 10000};
 
     for (const SpTxGenData &gen : gen_data)
     {
@@ -156,8 +158,8 @@ static void run_mock_tx_tests(const std::vector<SpTxGenData> &gen_data)
 template <typename SpTxType>
 static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
 {
-    sp::MockLedgerContext ledger_context{0, 10000};
-    const sp::TxValidationContextMock tx_validation_context{ledger_context};
+    MockLedgerContext ledger_context{0, 10000};
+    const TxValidationContextMock tx_validation_context{ledger_context};
     std::vector<SpTxType> txs_to_verify;
     std::vector<const SpTxType*> txs_to_verify_ptrs;
     txs_to_verify.reserve(gen_data.size() * 2);
@@ -182,7 +184,7 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
                 expected_result = gen.expected_result;
 
                 // mock params
-                sp::SpTxParamPackV1 tx_params;
+                SpTxParamPackV1 tx_params;
 
                 tx_params.legacy_ring_size = gen.legacy_ring_size;
                 tx_params.ref_set_decomp_n = gen.ref_set_decomp_n;
@@ -190,7 +192,7 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
                 tx_params.bin_config = gen.bin_config;
 
                 // make tx
-                sp::make_mock_tx<SpTxType>(tx_params,
+                make_mock_tx<SpTxType>(tx_params,
                     legacy_input_amounts,
                     sp_input_amounts,
                     gen.output_amounts,
@@ -211,7 +213,7 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
     try
     {
         // validate tx
-        EXPECT_TRUE(sp::validate_txs(txs_to_verify_ptrs, tx_validation_context));
+        EXPECT_TRUE(validate_txs(txs_to_verify_ptrs, tx_validation_context));
     }
     catch (...)
     {
@@ -235,7 +237,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -247,11 +249,11 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.expected_result = TestType::ExpectTrue;
         temp.alternate_input_amounts.push_back(2);
         temp.output_amounts.push_back(1);
-        temp.discretized_transaction_fee = sp::DiscretizedFee{1};
+        temp.discretized_transaction_fee = DiscretizedFee{1};
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -267,7 +269,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -283,7 +285,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -296,7 +298,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 4;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 3;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         for (std::size_t i{0}; i < 8; ++i)
         {
             temp.alternate_input_amounts.push_back(1);
@@ -314,7 +316,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
         for (std::size_t i{0}; i < 4; ++i)
         {
             temp.alternate_input_amounts.push_back(0);
@@ -335,7 +337,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -348,7 +350,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -361,7 +363,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.output_amounts.push_back(1);
         temp.legacy_ring_size = 0;
         temp.ref_set_decomp_n = 0;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -375,7 +377,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -396,11 +398,11 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
         gen.alternate_input_amounts.push_back(1);
         gen.output_amounts.push_back(2);
         gen.output_amounts.push_back(1);
-        gen.discretized_transaction_fee = sp::DiscretizedFee{1};
+        gen.discretized_transaction_fee = DiscretizedFee{1};
         gen.legacy_ring_size = 2;
         gen.ref_set_decomp_n = 2;
         gen.ref_set_decomp_m = 2;
-        gen.bin_config = sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        gen.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
     }
 
     return gen_data;
@@ -409,30 +411,30 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx, seraphis_coinbase)
 {
-    sp::MockLedgerContext ledger_context{0, 10000};
+    MockLedgerContext ledger_context{0, 10000};
 
     // 1 output
-    run_mock_tx_test<sp::SpTxCoinbaseV1>(0,
+    run_mock_tx_test<SpTxCoinbaseV1>(0,
         0,
         0,
-        sp::SpBinnedReferenceSetConfigV1{},
+        SpBinnedReferenceSetConfigV1{},
         {1},
         {},
         {1},
-        sp::DiscretizedFee{0},
+        DiscretizedFee{0},
         TestType::ExpectTrue,
         false,
         ledger_context);
 
     // 2 outputs
-    run_mock_tx_test<sp::SpTxCoinbaseV1>(0,
+    run_mock_tx_test<SpTxCoinbaseV1>(0,
         0,
         0,
-        sp::SpBinnedReferenceSetConfigV1{},
+        SpBinnedReferenceSetConfigV1{},
         {2},
         {},
         {1, 1},
-        sp::DiscretizedFee{0},
+        DiscretizedFee{0},
         TestType::ExpectTrue,
         false,
         ledger_context);
@@ -440,26 +442,26 @@ TEST(seraphis_tx, seraphis_coinbase)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx, seraphis_squashed)
 {
-    run_mock_tx_tests<sp::SpTxSquashedV1>(get_mock_tx_gen_data_misc(true));
+    run_mock_tx_tests<SpTxSquashedV1>(get_mock_tx_gen_data_misc(true));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx_batching, seraphis_squashed)
 {
-    run_mock_tx_test_batch<sp::SpTxSquashedV1>(get_mock_tx_gen_data_batching());
+    run_mock_tx_test_batch<SpTxSquashedV1>(get_mock_tx_gen_data_batching());
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_tx, seraphis_squashed_multi_input_type)
 {
-    sp::MockLedgerContext ledger_context{0, 10000};
+    MockLedgerContext ledger_context{0, 10000};
 
-    run_mock_tx_test<sp::SpTxSquashedV1>(2,
+    run_mock_tx_test<SpTxSquashedV1>(2,
         2,
         2,
-        sp::SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
+        SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
         {2, 2},
         {1, 1},
         {5},
-        sp::DiscretizedFee{1},
+        DiscretizedFee{1},
         TestType::ExpectTrue,
         true,
         ledger_context);

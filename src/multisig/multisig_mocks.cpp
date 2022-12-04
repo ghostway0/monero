@@ -53,6 +53,8 @@
 
 namespace multisig
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 void make_multisig_mock_accounts(const cryptonote::account_generator_era account_era,
     const std::uint32_t threshold,
@@ -178,4 +180,5 @@ void mock_multisig_cn_key_image_recovery(const std::vector<multisig_account> &ac
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace multisig

@@ -48,6 +48,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
@@ -77,4 +79,5 @@ void make_legacy_mock_keys(legacy_mock_keys &keys_out)
     keys_out.Kv = rct::scalarmultBase(rct::sk2rct(keys_out.k_v));
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

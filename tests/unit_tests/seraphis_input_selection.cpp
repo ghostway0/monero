@@ -43,23 +43,26 @@
 #include <list>
 #include <vector>
 
+using namespace sp;
+using namespace mocks;
+
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amounts,
     const std::vector<rct::xmr_amount> &sp_amounts,
-    sp::SpEnoteStoreMockSimpleV1 &enote_store_inout)
+    SpEnoteStoreMockSimpleV1 &enote_store_inout)
 {
     for (const rct::xmr_amount legacy_amount : legacy_amounts)
     {
-        sp::LegacyEnoteRecord temp_record{};
-        sp::LegacyEnoteV4 temp_enote;
+        LegacyEnoteRecord temp_record{};
+        LegacyEnoteV4 temp_enote;
         temp_enote.gen();
         temp_record.m_enote = temp_enote;
         temp_record.m_amount = legacy_amount;
         temp_record.m_key_image = rct::rct2ki(rct::pkGen());
 
         enote_store_inout.add_record(
-                sp::LegacyContextualEnoteRecordV1{
+                LegacyContextualEnoteRecordV1{
                     .m_record = temp_record
                 }
             );
@@ -67,15 +70,15 @@ static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amoun
 
     for (const rct::xmr_amount sp_amount : sp_amounts)
     {
-        sp::SpEnoteRecordV1 temp_record{};
-        sp::SpEnoteV1 temp_enote;
+        SpEnoteRecordV1 temp_record{};
+        SpEnoteV1 temp_enote;
         temp_enote.gen();
         temp_record.m_enote = temp_enote;
         temp_record.m_amount = sp_amount;
         temp_record.m_key_image = rct::rct2ki(rct::pkGen());
 
         enote_store_inout.add_record(
-                sp::SpContextualEnoteRecordV1{
+                SpContextualEnoteRecordV1{
                     .m_record = temp_record
                 }
             );
@@ -88,7 +91,7 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
     const std::vector<rct::xmr_amount> &output_amounts,
     const std::size_t num_additional_outputs_with_change,
     const rct::xmr_amount fee_per_tx_weight,
-    const sp::FeeCalculator &tx_fee_calculator,
+    const FeeCalculator &tx_fee_calculator,
     const std::size_t max_inputs_allowed,
     const std::vector<rct::xmr_amount> &input_legacy_amounts_expected,
     const std::vector<rct::xmr_amount> &input_sp_amounts_expected,
@@ -99,14 +102,14 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
         "too many expected input amounts");
 
     // prepare enote storage (inputs will be selected from this)
-    sp::SpEnoteStoreMockSimpleV1 enote_store;
+    SpEnoteStoreMockSimpleV1 enote_store;
     prepare_enote_store(stored_legacy_amounts, stored_sp_amounts, enote_store);
 
     // make input selector
-    const sp::InputSelectorMockSimpleV1 input_selector{enote_store};
+    const InputSelectorMockSimpleV1 input_selector{enote_store};
 
     // prepare output set context (represents pre-finalization tx outputs)
-    const sp::OutputSetContextForInputSelectionMockSimple output_set_context{
+    const OutputSetContextForInputSelectionMockSimple output_set_context{
             output_amounts,
             num_additional_outputs_with_change
         };
@@ -116,9 +119,9 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
 
     // try to get an input set
     rct::xmr_amount final_fee;
-    sp::input_set_tracker_t selected_input_set;
+    input_set_tracker_t selected_input_set;
     const bool result{
-            sp::try_get_input_set_v1(output_set_context,
+            try_get_input_set_v1(output_set_context,
                 max_inputs_allowed,
                 input_selector,
                 fee_per_tx_weight,
@@ -127,8 +130,8 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
                 selected_input_set)
         };
 
-    std::list<sp::LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
-    std::list<sp::SpContextualEnoteRecordV1> sp_contextual_inputs;
+    std::list<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
+    std::list<SpContextualEnoteRecordV1> sp_contextual_inputs;
 
     split_selected_input_set(selected_input_set, legacy_contextual_inputs, sp_contextual_inputs);
 
@@ -149,7 +152,7 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
 
     std::size_t input_index{0};
     boost::multiprecision::uint128_t total_input_amount{0};
-    for (const sp::LegacyContextualEnoteRecordV1 &legacy_input_selected : legacy_contextual_inputs)
+    for (const LegacyContextualEnoteRecordV1 &legacy_input_selected : legacy_contextual_inputs)
     {
         CHECK_AND_ASSERT_THROW_MES(legacy_input_selected.amount() == input_legacy_amounts_expected[input_index],
             "selected legacy inputs expected amount mismatch");
@@ -158,7 +161,7 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
         total_input_amount += legacy_input_selected.amount();
     }
     input_index = 0;
-    for (const sp::SpContextualEnoteRecordV1 &sp_input_selected : sp_contextual_inputs)
+    for (const SpContextualEnoteRecordV1 &sp_input_selected : sp_contextual_inputs)
     {
         CHECK_AND_ASSERT_THROW_MES(sp_input_selected.amount() == input_sp_amounts_expected[input_index],
             "selected sp inputs expected amount mismatch");
@@ -203,7 +206,7 @@ static void input_selection_test_single(const std::vector<rct::xmr_amount> &stor
     const std::vector<rct::xmr_amount> &output_amounts,
     const std::size_t num_additional_outputs_with_change,
     const rct::xmr_amount fee_per_tx_weight,
-    const sp::FeeCalculator &tx_fee_calculator,
+    const FeeCalculator &tx_fee_calculator,
     const std::size_t max_inputs_allowed,
     const std::vector<rct::xmr_amount> &input_amounts_expected,
     const bool expected_result)
@@ -239,7 +242,7 @@ TEST(seraphis_input_selection, trivial)
     //test(stored_enotes, out_amnts, +outs_w_change, fee/wght, fee_calc, max_ins, expect_in_amnts, result)
 
     // trivial calculator: fee = fee per weight
-    const sp::FeeCalculatorMockTrivial fee_calculator;
+    const FeeCalculatorMockTrivial fee_calculator;
 
     // one input, one output
     EXPECT_NO_THROW(input_selection_test_single({2}, {1}, 0, 1, fee_calculator, 1, {2}, true));
@@ -277,7 +280,7 @@ TEST(seraphis_input_selection, simple)
     //test(stored_enotes, out_amnts, +outs_w_change, fee/wght, fee_calc, max_ins, expect_in_amnts, result)
 
     // simple calculator: fee = fee per weight * (num_inputs + num_outputs)
-    const sp::FeeCalculatorMockSimple fee_calculator;
+    const FeeCalculatorMockSimple fee_calculator;
 
     // one input, one output
     EXPECT_NO_THROW(input_selection_test_single({1}, {0}, 1, 1, fee_calculator, 1, {}, false));
@@ -304,8 +307,8 @@ TEST(seraphis_input_selection, inputs_stepped)
     //test(stored_enotes, out_amnts, +outs_w_change, fee/wght, fee_calc, max_ins, expect_in_amnts, result)
 
     // fee = fee_per_weight * (num_inputs / step_size + num_outputs)
-    const sp::FeeCalculatorMockInputsStepped fee_calculator_2step{2};
-    const sp::FeeCalculatorMockInputsStepped fee_calculator_3step{3};
+    const FeeCalculatorMockInputsStepped fee_calculator_2step{2};
+    const FeeCalculatorMockInputsStepped fee_calculator_3step{3};
 
     // accumulation: no single input amount can cover the differential fee at each step
     // fee [0 in, 1 out, 3 weight]: 3
@@ -337,7 +340,7 @@ TEST(seraphis_input_selection, inputs_stepped)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_input_selection, dual_type)
 {
-    const sp::FeeCalculatorMockSimple fee_calculator;
+    const FeeCalculatorMockSimple fee_calculator;
 
     // random
     input_selection_test_full({0, 1, 0, 4, 2, 3, 10, 2},

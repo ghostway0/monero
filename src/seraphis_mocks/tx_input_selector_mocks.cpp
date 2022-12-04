@@ -49,6 +49,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool pred_has_match(const boost::container::multimap<rct::xmr_amount, ContextualRecordVariant> &input_set,
@@ -240,4 +242,5 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
     return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

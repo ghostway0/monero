@@ -55,6 +55,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 EnoteStoreUpdaterLedgerMockLegacy::EnoteStoreUpdaterLedgerMockLegacy(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_spend_privkey,
@@ -406,4 +408,5 @@ void EnoteStoreUpdaterNonLedgerMockIntermediate::process_and_handle_chunk(
     m_enote_store.update_with_sp_records_from_offchain(found_enote_records);
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

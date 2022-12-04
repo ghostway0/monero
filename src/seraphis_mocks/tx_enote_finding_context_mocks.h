@@ -52,6 +52,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 ////
 // EnoteFindingContextLedgerMockLegacy
@@ -155,4 +157,5 @@ private:
     const crypto::x25519_secret_key &m_xk_find_received;
 };
 
+} //namespace mocks
 } //namespace sp

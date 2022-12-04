@@ -44,6 +44,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 /**
 * brief: gen_mock_sp_coinbase_output_proposals_v1 - create random coinbase output proposals
@@ -63,4 +65,5 @@ std::vector<SpCoinbaseOutputProposalV1> gen_mock_sp_coinbase_output_proposals_v1
 std::vector<SpOutputProposalV1> gen_mock_sp_output_proposals_v1(const std::vector<rct::xmr_amount> &out_amounts,
     const std::size_t num_random_memo_elements);
 
+} //namespace mocks
 } //namespace sp

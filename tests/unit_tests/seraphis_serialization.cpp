@@ -38,11 +38,12 @@
 
 #include "gtest/gtest.h"
 
+using namespace sp;
+using namespace mocks;
+
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_coinbase_empty)
 {
-    using namespace sp;
-
     // make empty tx
     SpTxCoinbaseV1 tx{};
 
@@ -76,8 +77,6 @@ TEST(seraphis_serialization_demo, seraphis_coinbase_empty)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_squashed_empty)
 {
-    using namespace sp;
-
     // make empty tx
     SpTxSquashedV1 tx{};
 
@@ -111,8 +110,6 @@ TEST(seraphis_serialization_demo, seraphis_squashed_empty)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_coinbase_standard)
 {
-    using namespace sp;
-
     // ledger context
     MockLedgerContext ledger_context{0, 10000};
     const TxValidationContextMock tx_validation_context{ledger_context};
@@ -153,8 +150,6 @@ TEST(seraphis_serialization_demo, seraphis_coinbase_standard)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_squashed_standard)
 {
-    using namespace sp;
-
     // config
     SpTxParamPackV1 tx_params;
 

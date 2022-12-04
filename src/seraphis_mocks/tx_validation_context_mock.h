@@ -49,6 +49,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 class TxValidationContextMock final : public TxValidationContext
 {
@@ -98,4 +100,5 @@ private:
     const MockLedgerContext &m_mock_ledger_context;
 };
 
+} //namespace mocks
 } //namespace sp

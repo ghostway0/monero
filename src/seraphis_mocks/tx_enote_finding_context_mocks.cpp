@@ -43,6 +43,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteFindingContextLedgerMockLegacy::get_onchain_chunk(const std::uint64_t chunk_start_height,
     const std::uint64_t chunk_max_size,
@@ -74,4 +76,5 @@ bool EnoteFindingContextOffchainMock::try_get_offchain_chunk(EnoteScanningChunkN
     return m_mock_offchain_context.try_get_offchain_chunk_sp(m_xk_find_received, chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

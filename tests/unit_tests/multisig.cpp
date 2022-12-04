@@ -312,7 +312,7 @@ static void test_multisig_cn_key_image_recovery(const std::uint32_t M, const std
 
   // make M-of-N cryptonote-era multisig accounts
   std::vector<multisig_account> accounts;
-  EXPECT_NO_THROW(make_multisig_mock_accounts(cn_era, M, N, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cn_era, M, N, accounts));
   ASSERT_TRUE(accounts.size() > 0);
 
   // collect multisig account private spend key
@@ -770,7 +770,7 @@ TEST(multisig, multisig_account_conversions)
   const auto sp_era = cryptonote::account_generator_era::seraphis;
 
   // 1-of-2
-  EXPECT_NO_THROW(make_multisig_mock_accounts(cn_era, 1, 2, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cn_era, 1, 2, accounts));
   conversion_msgs.clear();
   EXPECT_NO_THROW(conversion_msgs.emplace_back(accounts[0].get_account_era_conversion_msg(sp_era)));
   EXPECT_NO_THROW(get_multisig_account_with_new_generator_era(accounts[0], sp_era, conversion_msgs, converted_account));
@@ -778,7 +778,7 @@ TEST(multisig, multisig_account_conversions)
   EXPECT_EQ(converted_account.get_era(), sp_era);
 
   // 2-of-2: cryptonote -> seraphis
-  EXPECT_NO_THROW(make_multisig_mock_accounts(cn_era, 2, 2, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cn_era, 2, 2, accounts));
   conversion_msgs.clear();
   EXPECT_NO_THROW(conversion_msgs.emplace_back(accounts[0].get_account_era_conversion_msg(sp_era)));
   EXPECT_ANY_THROW(get_multisig_account_with_new_generator_era(accounts[0], sp_era, conversion_msgs, converted_account));
@@ -796,7 +796,7 @@ TEST(multisig, multisig_account_conversions)
   EXPECT_ANY_THROW(get_multisig_account_with_new_generator_era(accounts[0], cn_era, conversion_msgs, converted_account));
 
   // 2-of-2: seraphis -> cryptonote
-  EXPECT_NO_THROW(make_multisig_mock_accounts(sp_era, 2, 2, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(sp_era, 2, 2, accounts));
   conversion_msgs.clear();
   EXPECT_NO_THROW(conversion_msgs.emplace_back(accounts[0].get_account_era_conversion_msg(cn_era)));
   EXPECT_ANY_THROW(get_multisig_account_with_new_generator_era(accounts[0], cn_era, conversion_msgs, converted_account));
@@ -806,7 +806,7 @@ TEST(multisig, multisig_account_conversions)
   EXPECT_EQ(converted_account.get_era(), cn_era);
 
   // 2-of-3: cryptonote -> seraphis
-  EXPECT_NO_THROW(make_multisig_mock_accounts(cn_era, 2, 3, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cn_era, 2, 3, accounts));
   conversion_msgs.clear();
   EXPECT_NO_THROW(conversion_msgs.emplace_back(accounts[0].get_account_era_conversion_msg(sp_era)));
   EXPECT_ANY_THROW(get_multisig_account_with_new_generator_era(accounts[0], sp_era, conversion_msgs, converted_account));
@@ -831,7 +831,7 @@ TEST(multisig, multisig_signer_recommendations_recovery)
   const auto cn_era = cryptonote::account_generator_era::cryptonote;
 
   // 2-of-3: can recover signer recommendations for aggregation if lost
-  EXPECT_NO_THROW(make_multisig_mock_accounts(cn_era, 2, 3, accounts));
+  EXPECT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cn_era, 2, 3, accounts));
 
   // reset account to remove keyshare map
   accounts[0] = multisig::multisig_account{

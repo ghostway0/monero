@@ -59,6 +59,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secret_key &sp_spend_privkey,
     const std::vector<rct::xmr_amount> &in_amounts)
@@ -289,4 +291,5 @@ void make_mock_sp_membership_proof_preps_for_inputs_v1(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

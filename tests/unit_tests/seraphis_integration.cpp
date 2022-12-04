@@ -74,14 +74,16 @@
 #include <tuple>
 #include <vector>
 
+using namespace sp;
+using namespace jamtis;
+using namespace sp::mocks;
+using namespace jamtis::mocks;
+
 
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_integration, txtype_squashed_v1)
 {
     //// demo of sending and receiving SpTxTypeSquashedV1 transactions (WIP)
-    using namespace sp;
-    using namespace jamtis;
-
 
     /// config
     const std::size_t max_inputs{1000};
@@ -165,8 +167,8 @@ TEST(seraphis_integration, txtype_squashed_v1)
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
 
     // e. user input selectors
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
 
 
     /// initial funding for user A: legacy 4000000 + seraphis 4000000

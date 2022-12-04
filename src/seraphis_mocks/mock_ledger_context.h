@@ -64,8 +64,9 @@ namespace sp
     enum class LegacyScanMode : unsigned char;
 }
 
-
 namespace sp
+{
+namespace mocks
 {
 
 class MockLedgerContext final
@@ -371,4 +372,5 @@ private:
 bool try_add_tx_to_ledger(const SpTxCoinbaseV1 &tx_to_add, MockLedgerContext &ledger_context_inout);
 bool try_add_tx_to_ledger(const SpTxSquashedV1 &tx_to_add, MockLedgerContext &ledger_context_inout);
 
+} //namespace mocks
 } //namespace sp

@@ -47,6 +47,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 class OutputSetContextForInputSelectionMockSimple final : public OutputSetContextForInputSelection
 {
@@ -78,4 +80,5 @@ private:
     std::size_t m_num_additional_with_change;
 };
 
+} //namespace mocks
 } //namespace sp

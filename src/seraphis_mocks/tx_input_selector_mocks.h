@@ -49,6 +49,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 /// simple input selector: select the next available input in the enote store (input selection with this is not thread-safe)
 class InputSelectorMockSimpleV1 final : public InputSelectorV1
@@ -112,4 +114,5 @@ private:
     const SpEnoteStoreMockV1 &m_enote_store;
 };
 
+} //namespace mocks
 } //namespace sp

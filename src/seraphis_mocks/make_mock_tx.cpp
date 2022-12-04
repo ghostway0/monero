@@ -59,6 +59,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 template <>
 void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
@@ -249,4 +251,5 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         tx_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

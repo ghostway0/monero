@@ -47,7 +47,6 @@ namespace rct { using xmr_amount = uint64_t; }
 namespace sp
 {
     class TxValidationContext;
-    class MockLedgerContext;
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
     struct DiscretizedFee;

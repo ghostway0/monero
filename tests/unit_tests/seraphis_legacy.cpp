@@ -49,6 +49,8 @@ extern "C"
 #include <memory>
 #include <vector>
 
+using namespace sp;
+using namespace mocks;
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -62,14 +64,12 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const sp::LegacyEnoteVariant &legacy_enote,
+    const LegacyEnoteVariant &legacy_enote,
     const rct::key &enote_ephemeral_pubkey,
     const std::uint64_t tx_output_index,
     const boost::optional<cryptonote::subaddress_index> &expected_recieving_index,
     const rct::xmr_amount &expected_amount)
 {
-    using namespace sp;
-
     // basic enote record: full
     LegacyBasicEnoteRecord basic_record_recovered;
 
@@ -155,8 +155,6 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_legacy, information_recovery_enote_v1)
 {
-    using namespace sp;
-
     // prepare user keys
     const crypto::secret_key legacy_spend_privkey{make_secret_key()};
     const crypto::secret_key legacy_view_privkey{make_secret_key()};
@@ -232,8 +230,6 @@ TEST(seraphis_legacy, information_recovery_enote_v1)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_legacy, information_recovery_enote_v2)
 {
-    using namespace sp;
-
     // prepare user keys
     const crypto::secret_key legacy_spend_privkey{make_secret_key()};
     const crypto::secret_key legacy_view_privkey{make_secret_key()};
@@ -309,8 +305,6 @@ TEST(seraphis_legacy, information_recovery_enote_v2)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_legacy, information_recovery_enote_v3)
 {
-    using namespace sp;
-
     // prepare user keys
     const crypto::secret_key legacy_spend_privkey{make_secret_key()};
     const crypto::secret_key legacy_view_privkey{make_secret_key()};
@@ -386,8 +380,6 @@ TEST(seraphis_legacy, information_recovery_enote_v3)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_legacy, information_recovery_enote_v4)
 {
-    using namespace sp;
-
     // prepare user keys
     const crypto::secret_key legacy_spend_privkey{make_secret_key()};
     const crypto::secret_key legacy_view_privkey{make_secret_key()};

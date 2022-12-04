@@ -71,6 +71,10 @@
 #include "boost/multiprecision/cpp_int.hpp"
 #include "gtest/gtest.h"
 
+using namespace sp;
+using namespace jamtis;
+using namespace sp::mocks;
+using namespace jamtis::mocks;
 
 class Invocable
 {
@@ -173,12 +177,10 @@ static void prepare_mock_v4_legacy_enote_for_transfer(const rct::key &destinatio
     const rct::xmr_amount amount,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
-    sp::LegacyEnoteV4 &legacy_enote_out,
+    LegacyEnoteV4 &legacy_enote_out,
     rct::key &enote_ephemeral_pubkey_out,
     crypto::key_image &key_image_out)
 {
-    using namespace sp;
-
     // prepare enote
     enote_ephemeral_pubkey_out = rct::scalarmultKey(destination_subaddr_spendkey, rct::sk2rct(enote_ephemeral_privkey));
 
@@ -208,9 +210,6 @@ static void prepare_mock_v4_legacy_enote_for_transfer(const rct::key &destinatio
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, trivial_ledger)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     // make user keys
     jamtis_mock_keys user_keys;
     make_jamtis_mock_keys(user_keys);
@@ -278,9 +277,6 @@ TEST(seraphis_enote_scanning, trivial_ledger)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_1)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -319,9 +315,6 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_2)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -360,9 +353,6 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_3)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -407,9 +397,6 @@ TEST(seraphis_enote_scanning, simple_ledger_3)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_4)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -456,9 +443,6 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_5)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -521,9 +505,6 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_6)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -596,9 +577,6 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_locked)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -678,9 +656,6 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -722,8 +697,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockPaymentValidatorV1 enote_store_PV_A{0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -782,9 +757,6 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -824,8 +796,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{0, 0, 0, 8}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -876,9 +848,6 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -919,8 +888,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{0, 0, 0, 8}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -971,9 +940,6 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -1014,8 +980,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{10, 10, 10, 10}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -1154,9 +1120,6 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -1197,8 +1160,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{2, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{10, 10, 10, 10}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -1354,9 +1317,6 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
 
     // 1. config
@@ -1393,7 +1353,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
     //    and spent within a single chunk
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
     send_sp_coinbase_amounts_to_users({{16, 0, 0, 0}}, {destination_A}, ledger_context);
 
     for (std::size_t iteration{0}; iteration < 12; ++iteration)
@@ -1435,7 +1395,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
 class InvocableTest1 final : public Invocable
 {
 public:
-    InvocableTest1(sp::MockLedgerContext &ledger_context) : m_ledger_contex{ledger_context} {}
+    InvocableTest1(MockLedgerContext &ledger_context) : m_ledger_contex{ledger_context} {}
     InvocableTest1& operator=(InvocableTest1&&) = delete;
 
     /// invoke: on the third call, pop 2 blocks from the ledger context
@@ -1447,16 +1407,16 @@ public:
             m_ledger_contex.pop_blocks(2);
     }
 private:
-    sp::MockLedgerContext &m_ledger_contex;
+    MockLedgerContext &m_ledger_contex;
     std::size_t m_num_calls{0};
 };
 //-------------------------------------------------------------------------------------------------------------------
 class InvocableTest2 final : public Invocable
 {
 public:
-    InvocableTest2(const sp::jamtis::JamtisDestinationV1 &user_address,
+    InvocableTest2(const JamtisDestinationV1 &user_address,
         std::vector<rct::xmr_amount> amounts_per_new_coinbase,
-        sp::MockLedgerContext &ledger_context) :
+        MockLedgerContext &ledger_context) :
             m_user_address{user_address},
             m_amounts_per_new_coinbase{std::move(amounts_per_new_coinbase)},
             m_ledger_contex{ledger_context}
@@ -1476,18 +1436,18 @@ public:
         }
     }
 private:
-    const sp::jamtis::JamtisDestinationV1 &m_user_address;
+    const JamtisDestinationV1 &m_user_address;
     const std::vector<rct::xmr_amount> m_amounts_per_new_coinbase;
-    sp::MockLedgerContext &m_ledger_contex;
+    MockLedgerContext &m_ledger_contex;
     std::size_t m_num_calls{0};
 };
 //-------------------------------------------------------------------------------------------------------------------
 class InvocableTest3 final : public Invocable
 {
 public:
-    InvocableTest3(const sp::jamtis::JamtisDestinationV1 &user_address,
+    InvocableTest3(const JamtisDestinationV1 &user_address,
         std::vector<rct::xmr_amount> amounts_per_new_coinbase,
-        sp::MockLedgerContext &ledger_context) :
+        MockLedgerContext &ledger_context) :
             m_user_address{user_address},
             m_amounts_per_new_coinbase{std::move(amounts_per_new_coinbase)},
             m_ledger_contex{ledger_context}
@@ -1510,18 +1470,18 @@ public:
     /// return number of invocations
     std::size_t num_invocations() const { return m_num_calls; }
 private:
-    const sp::jamtis::JamtisDestinationV1 &m_user_address;
+    const JamtisDestinationV1 &m_user_address;
     const std::vector<rct::xmr_amount> m_amounts_per_new_coinbase;
-    sp::MockLedgerContext &m_ledger_contex;
+    MockLedgerContext &m_ledger_contex;
     std::size_t m_num_calls{0};
 };
 //-------------------------------------------------------------------------------------------------------------------
 class InvocableTest4 final : public Invocable
 {
 public:
-    InvocableTest4(const sp::jamtis::JamtisDestinationV1 &user_address,
+    InvocableTest4(const JamtisDestinationV1 &user_address,
         const rct::xmr_amount amount_new_coinbase,
-        sp::MockLedgerContext &ledger_context) :
+        MockLedgerContext &ledger_context) :
             m_user_address{user_address},
             m_amount_new_coinbase{amount_new_coinbase},
             m_ledger_contex{ledger_context}
@@ -1540,17 +1500,17 @@ public:
         }
     }
 private:
-    const sp::jamtis::JamtisDestinationV1 &m_user_address;
+    const JamtisDestinationV1 &m_user_address;
     const rct::xmr_amount m_amount_new_coinbase;
-    sp::MockLedgerContext &m_ledger_contex;
+    MockLedgerContext &m_ledger_contex;
     std::size_t m_num_calls{0};
 };
 //-------------------------------------------------------------------------------------------------------------------
 class InvocableTest5Submit final : public Invocable
 {
 public:
-    InvocableTest5Submit(sp::SpTxSquashedV1 tx_to_submit,
-        sp::MockLedgerContext &ledger_context) :
+    InvocableTest5Submit(SpTxSquashedV1 tx_to_submit,
+        MockLedgerContext &ledger_context) :
             m_tx_to_submit{std::move(tx_to_submit)},
             m_ledger_contex{ledger_context}
     {}
@@ -1564,37 +1524,34 @@ public:
         if (m_num_calls == 1)
         {
             // validate and submit to the mock ledger
-            const sp::TxValidationContextMock tx_validation_context{m_ledger_contex};
+            const TxValidationContextMock tx_validation_context{m_ledger_contex};
             ASSERT_TRUE(validate_tx(m_tx_to_submit, tx_validation_context));
             ASSERT_TRUE(m_ledger_contex.try_add_unconfirmed_tx_v1(m_tx_to_submit));
         }
     }
 private:
-    const sp::SpTxSquashedV1 m_tx_to_submit;
-    sp::MockLedgerContext &m_ledger_contex;
+    const SpTxSquashedV1 m_tx_to_submit;
+    MockLedgerContext &m_ledger_contex;
     std::size_t m_num_calls{0};
 };
 //-------------------------------------------------------------------------------------------------------------------
 class InvocableTest5Commit final : public Invocable
 {
 public:
-    InvocableTest5Commit(sp::MockLedgerContext &ledger_context) : m_ledger_contex{ledger_context} {}
+    InvocableTest5Commit(MockLedgerContext &ledger_context) : m_ledger_contex{ledger_context} {}
     InvocableTest5Commit& operator=(InvocableTest5Commit&&) = delete;
 
     /// invoke: commit any unconfirmed txs in the ledger's unconfirmed chache
     void invoke() override
     {
-        m_ledger_contex.commit_unconfirmed_txs_v1(rct::key{}, sp::SpTxSupplementV1{}, std::vector<sp::SpEnoteVariant>{});
+        m_ledger_contex.commit_unconfirmed_txs_v1(rct::key{}, SpTxSupplementV1{}, std::vector<SpEnoteVariant>{});
     }
 private:
-    sp::MockLedgerContext &m_ledger_contex;
+    MockLedgerContext &m_ledger_contex;
 };
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
     DummyInvocable dummy_invocable;
 
@@ -1635,8 +1592,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
 
     // a. refresh once so alignment will begin on block 0 in the test
@@ -1705,9 +1662,6 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
     DummyInvocable dummy_invocable;
 
@@ -1748,8 +1702,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
 
     // a. refresh A so coinbase funds are available
@@ -1834,9 +1788,6 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
     DummyInvocable dummy_invocable;
 
@@ -1877,8 +1828,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
 
     // a. refresh once so user A can make a tx
@@ -1965,9 +1916,6 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
     DummyInvocable dummy_invocable;
 
@@ -2008,8 +1956,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
 
     // a. refresh once so user A can make a tx
@@ -2063,9 +2011,6 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     /// setup
     DummyInvocable dummy_invocable;
 
@@ -2106,8 +2051,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
-    const sp::InputSelectorMockV1 input_selector_A{enote_store_A};
-    const sp::InputSelectorMockV1 input_selector_B{enote_store_B};
+    const InputSelectorMockV1 input_selector_A{enote_store_A};
+    const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
 
     // a. refresh once so user A can make a tx
@@ -2195,8 +2140,6 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_1)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -2399,8 +2342,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -2617,7 +2558,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
     ASSERT_TRUE(enote_store.top_block_height() == 2);
 
     //mock seraphis refresh to fix enote store block height trackers after reorg
-    refresh_user_enote_store(jamtis::jamtis_mock_keys{},
+    refresh_user_enote_store(jamtis_mock_keys{},
         refresh_config,
         ledger_context,
         enote_store);
@@ -2630,8 +2571,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_3)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -3123,8 +3062,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_4)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -3558,8 +3495,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_5)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -4011,8 +3946,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -4405,8 +4338,6 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_7)
 {
-    using namespace sp;
-
     /// setup
 
     // 1. config
@@ -4812,20 +4743,18 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
 // functions for legacy-seraphis transition
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void legacy_view_scan_recovery_cycle(const sp::legacy_mock_keys &legacy_keys,
+static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const sp::RefreshLedgerEnoteStoreConfig &refresh_config,
-    const sp::MockLedgerContext &ledger_context,
+    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const MockLedgerContext &ledger_context,
     const std::vector<rct::key> &legacy_onetime_addresses_expected,
     const std::vector<crypto::key_image> &legacy_key_images_expected,
     const std::uint64_t expected_balance_after_intermediate_scan,
     const std::uint64_t expected_balance_after_importing,
     const std::uint64_t expected_balance_after_key_image_refresh,
     const std::uint64_t expected_final_legacy_fullscan_height,
-    sp::SpEnoteStoreMockV1 &enote_store_inout)
+    SpEnoteStoreMockV1 &enote_store_inout)
 {
-    using namespace sp;
-
     ASSERT_TRUE(legacy_onetime_addresses_expected.size() == legacy_key_images_expected.size());
 
     // 1. legacy view-only scan
@@ -4893,11 +4822,11 @@ static void legacy_view_scan_recovery_cycle(const sp::legacy_mock_keys &legacy_k
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void legacy_sp_transition_test_recovery_assertions(const sp::legacy_mock_keys &legacy_keys,
+static void legacy_sp_transition_test_recovery_assertions(const legacy_mock_keys &legacy_keys,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const sp::jamtis::jamtis_mock_keys &sp_keys,
-    const sp::RefreshLedgerEnoteStoreConfig &refresh_config,
-    const sp::MockLedgerContext &ledger_context,
+    const jamtis_mock_keys &sp_keys,
+    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const MockLedgerContext &ledger_context,
 
     const std::vector<rct::key> &view_scan_legacy_onetime_addresses_expected,
     const std::vector<crypto::key_image> &view_scan_legacy_key_images_expected,
@@ -4918,11 +4847,9 @@ static void legacy_sp_transition_test_recovery_assertions(const sp::legacy_mock_
     const std::uint64_t re_view_scan_expected_balance_after_importing_key_images,
     const std::uint64_t re_view_scan_expected_balance_after_keyimage_refresh,
 
-    sp::SpEnoteStoreMockV1 &enote_store_full_inout,
-    sp::SpEnoteStoreMockV1 &enote_store_view_inout)
+    SpEnoteStoreMockV1 &enote_store_full_inout,
+    SpEnoteStoreMockV1 &enote_store_view_inout)
 {
-    using namespace sp;
-
     // 1. test full-scan recovery
     refresh_user_enote_store_legacy_full(legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5025,8 +4952,6 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         - 3: sp
         - 4: send all to B
 */
-    using namespace sp;
-    using namespace jamtis;
 
     /// setup
 
@@ -6115,8 +6040,6 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         - 3: sp
         - 4: sp
 */
-    using namespace sp;
-    using namespace jamtis;
 
     /// setup
 
@@ -7141,8 +7064,6 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         //scan
         - 2: sp
 */
-    using namespace sp;
-    using namespace jamtis;
 
     /// setup
 
@@ -7676,8 +7597,6 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         //scan
         //scan
 */
-    using namespace sp;
-    using namespace jamtis;
 
     /// setup
 
@@ -8297,8 +8216,6 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
               but not the remaining one spent by the seraphis tx from a while ago
             - scan fresh store: seraphis only; scan should remove spent context from the remaining legacy key image
 */
-    using namespace sp;
-    using namespace jamtis;
 
     /// setup
 

@@ -254,7 +254,7 @@ public:
     }
 
 private:
-    sp::jamtis::jamtis_mock_keys m_keys;
+    sp::jamtis::mocks::jamtis_mock_keys m_keys;
 
     sp::SpEnoteV1 m_enote;
     crypto::x25519_pubkey m_enote_ephemeral_pubkey;
@@ -406,7 +406,7 @@ public:
 private:
     ScannerClientModes m_mode;
 
-    sp::jamtis::jamtis_mock_keys m_keys;
+    sp::jamtis::mocks::jamtis_mock_keys m_keys;
     std::shared_ptr<sp::jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
 
     sp::jamtis::address_index_t m_real_address_index;

@@ -47,6 +47,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 /// fee = fee_per_weight
 class FeeCalculatorMockTrivial final : public FeeCalculator
@@ -95,4 +97,5 @@ private:
     std::size_t m_step_size;
 };
 
+} //namespace mocks
 } //namespace sp

@@ -63,6 +63,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 //todo
 void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
@@ -81,7 +83,7 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
     MockLedgerContext &ledger_context_inout);
 //todo
 void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_keys,
-    const jamtis::jamtis_mock_keys &local_user_sp_keys,
+    const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
     const FeeCalculator &tx_fee_calculator,
     const rct::xmr_amount fee_per_tx_weight,
@@ -93,7 +95,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout,
     SpTxSquashedV1 &tx_out);
-void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::jamtis_mock_keys &local_user_sp_keys,
+void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
     const FeeCalculator &tx_fee_calculator,
     const rct::xmr_amount fee_per_tx_weight,
@@ -104,7 +106,7 @@ void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::jamtis_mock
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
 void transfer_funds_single_mock_v1_unconfirmed(const legacy_mock_keys &local_user_legacy_keys,
-    const jamtis::jamtis_mock_keys &local_user_sp_keys,
+    const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
     const FeeCalculator &tx_fee_calculator,
     const rct::xmr_amount fee_per_tx_weight,
@@ -116,7 +118,7 @@ void transfer_funds_single_mock_v1_unconfirmed(const legacy_mock_keys &local_use
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
 void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_keys,
-    const jamtis::jamtis_mock_keys &local_user_sp_keys,
+    const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
     const FeeCalculator &tx_fee_calculator,
     const rct::xmr_amount fee_per_tx_weight,
@@ -128,11 +130,11 @@ void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_key
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
 //todo
-void refresh_user_enote_store(const jamtis::jamtis_mock_keys &user_keys,
+void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout);
-void refresh_user_enote_store_PV(const jamtis::jamtis_mock_keys &user_keys,
+void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout);
@@ -151,4 +153,5 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout);
 
+} //namespace mocks
 } //namespace sp

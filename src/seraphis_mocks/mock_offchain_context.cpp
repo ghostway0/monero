@@ -56,6 +56,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::key_image_exists_v1(const crypto::key_image &key_image) const
 {
@@ -286,4 +288,5 @@ void MockOffchainContext::clear_cache_impl()
     m_tx_key_images.clear();
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp

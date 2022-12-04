@@ -51,6 +51,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 
 /**
 * brief: gen_mock_sp_input_proposals_v1 - create random mock inputs
@@ -113,11 +115,12 @@ std::vector<SpMembershipProofPrepV1> gen_mock_sp_membership_proof_preps_v1(
 */
 void make_mock_sp_membership_proof_preps_for_inputs_v1(
     const std::unordered_map<crypto::key_image, std::uint64_t> &input_ledger_mappings,
-    const std::vector<sp::SpInputProposalV1> &input_proposals,
+    const std::vector<SpInputProposalV1> &input_proposals,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
-    const sp::SpBinnedReferenceSetConfigV1 &bin_config,
-    const sp::MockLedgerContext &ledger_context,
-    std::vector<sp::SpMembershipProofPrepV1> &membership_proof_preps_out);
+    const SpBinnedReferenceSetConfigV1 &bin_config,
+    const MockLedgerContext &ledger_context,
+    std::vector<SpMembershipProofPrepV1> &membership_proof_preps_out);
 
+} //namespace mocks
 } //namespace sp

@@ -84,6 +84,10 @@
 #include <unordered_set>
 #include <vector>
 
+using namespace sp;
+using namespace jamtis;
+using namespace sp::mocks;
+using namespace jamtis::mocks;
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -94,11 +98,8 @@ static crypto::secret_key make_secret_key()
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &account,
-    sp::jamtis::jamtis_mock_keys &keys_out)
+    jamtis_mock_keys &keys_out)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     keys_out.k_m = rct::rct2sk(rct::Z); //master key is not known in multisig
     keys_out.k_vb = account.get_common_privkey();
     make_jamtis_unlockamounts_key(keys_out.k_vb, keys_out.xk_ua);
@@ -122,7 +123,10 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
 
         // prepare cryptonote multisig accounts
         std::vector<multisig::multisig_account> accounts;
-        make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
+        multisig::mocks::make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
+            threshold,
+            num_signers,
+            accounts);
         if (accounts.size() == 0)
             return false;
 
@@ -140,7 +144,9 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
         saved_key_components[rct::rct2pk(K)] = accounts[0].get_common_privkey();
 
         // multisig KI ceremony
-        EXPECT_NO_THROW(mock_multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images_out));
+        EXPECT_NO_THROW(multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
+            saved_key_components,
+            recovered_key_images_out));
 
         EXPECT_TRUE(recovered_key_images_out.find(rct::rct2pk(K)) != recovered_key_images_out.end());
         const crypto::key_image KI{recovered_key_images_out.at(rct::rct2pk(K))};
@@ -156,7 +162,7 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
 
         // (1/threshold) * k_common
         // (1/threshold) * z
-        const rct::key inv_threshold{sp::invert(rct::d2h(threshold))};
+        const rct::key inv_threshold{invert(rct::d2h(threshold))};
         rct::key k_common_chunk{rct::sk2rct(accounts[0].get_common_privkey())};
         rct::key z_chunk{z};
         sc_mul(k_common_chunk.bytes, inv_threshold.bytes, k_common_chunk.bytes);
@@ -302,19 +308,22 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
         // - use 'converted' accounts to verify that old cryptonote accounts can be converted to seraphis accounts that
         //   work
         std::vector<multisig::multisig_account> accounts;
-        make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote, threshold, num_signers, accounts);
-        mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
+        multisig::mocks::make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
+            threshold,
+            num_signers,
+            accounts);
+        multisig::mocks::mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
         if (accounts.size() == 0)
             return false;
 
         // make a seraphis composition proof pubkey: x G + y X + z U
         rct::key K{rct::pk2rct(accounts[0].get_multisig_pubkey())};  //start with base key: z U
-        sp::extend_seraphis_spendkey_x(accounts[0].get_common_privkey(), K);  //+ y X
-        sp::mask_key(x, K, K);  //+ x G
+        extend_seraphis_spendkey_x(accounts[0].get_common_privkey(), K);  //+ y X
+        mask_key(x, K, K);  //+ x G
 
         // make the corresponding key image: (z/y) U
         crypto::key_image KI;
-        sp::make_seraphis_key_image(accounts[0].get_common_privkey(), accounts[0].get_multisig_pubkey(), KI);
+        make_seraphis_key_image(accounts[0].get_common_privkey(), accounts[0].get_multisig_pubkey(), KI);
 
         // tx proposer: make proposal and specify which other signers should try to co-sign (all of them)
         const rct::key message{rct::zero()};
@@ -352,7 +361,7 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
         std::vector<multisig::SpCompositionProofMultisigPartial> partial_sigs;
         std::vector<multisig::MultisigPubNonces> signer_pub_nonces;  //stored with *(1/8)
         crypto::secret_key z_temp;
-        sp::SpCompositionProof proof;
+        SpCompositionProof proof;
 
         for (const multisig::signer_set_filter filter : filter_permutations)
         {
@@ -401,7 +410,7 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
             multisig::finalize_sp_composition_multisig_proof(partial_sigs, proof);
 
             // verify proof
-            if (!sp::verify_sp_composition_proof(proof, message, K, KI))
+            if (!verify_sp_composition_proof(proof, message, K, KI))
                 return false;
         }
     }
@@ -413,12 +422,10 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold,
 //-------------------------------------------------------------------------------------------------------------------
 static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig::multisig_account> &accounts,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const sp::RefreshLedgerEnoteStoreConfig &refresh_config,
-    const sp::MockLedgerContext &ledger_context,
-    sp::SpEnoteStoreMockV1 &enote_store_inout)
+    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const MockLedgerContext &ledger_context,
+    SpEnoteStoreMockV1 &enote_store_inout)
 {
-    using namespace sp;
-
     ASSERT_TRUE(accounts.size() > 0);
 
     // 1. legacy view-only scan
@@ -451,7 +458,9 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
 
     // 4. recover key images (multisig KI ceremony)
     std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images;
-    EXPECT_NO_THROW(mock_multisig_cn_key_image_recovery(accounts, saved_key_components, recovered_key_images));
+    EXPECT_NO_THROW(multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
+        saved_key_components,
+        recovered_key_images));
 
     // 5. import acquired key images (will fail if the onetime addresses and key images don't line up)
     for (const auto &recovered_key_image : recovered_key_images)
@@ -477,12 +486,12 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool legacy_multisig_input_is_ready_to_spend(const sp::LegacyMultisigInputProposalV1 &input_proposal,
-    const sp::SpEnoteStoreMockV1 &enote_store,
+static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputProposalV1 &input_proposal,
+    const SpEnoteStoreMockV1 &enote_store,
     const std::uint64_t current_chain_height)
 {
     // 1. get the legacy enote from the enote store
-    sp::LegacyContextualEnoteRecordV1 contextual_record;
+    LegacyContextualEnoteRecordV1 contextual_record;
     if (!enote_store.try_get_legacy_enote_record(input_proposal.m_key_image, contextual_record))
         return false;
 
@@ -491,11 +500,11 @@ static bool legacy_multisig_input_is_ready_to_spend(const sp::LegacyMultisigInpu
         return false;
 
     // 3. expect that the enote is unspent
-    if (contextual_record.m_spent_context.m_spent_status != sp::SpEnoteSpentStatus::UNSPENT)
+    if (contextual_record.m_spent_context.m_spent_status != SpEnoteSpentStatus::UNSPENT)
         return false;
 
     // 4. expect the enote is spendable within the height specified
-    if (sp::onchain_legacy_enote_is_locked(contextual_record.m_origin_context.m_block_height,
+    if (onchain_legacy_enote_is_locked(contextual_record.m_origin_context.m_block_height,
             contextual_record.m_record.m_unlock_time,
             current_chain_height,
             0,  //default spendable age: configurable
@@ -506,19 +515,19 @@ static bool legacy_multisig_input_is_ready_to_spend(const sp::LegacyMultisigInpu
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool sp_multisig_input_is_ready_to_spend(const sp::SpMultisigInputProposalV1 &input_proposal,
-    const sp::SpEnoteStoreMockV1 &enote_store,
-    const std::unordered_set<sp::SpEnoteOriginStatus> &origin_statuses,
+static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 &input_proposal,
+    const SpEnoteStoreMockV1 &enote_store,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::uint64_t current_chain_height,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance)
 {
     // 1. convert to a normal input proposal so the key image is available
-    sp::SpInputProposalV1 normal_input_proposal;
+    SpInputProposalV1 normal_input_proposal;
     input_proposal.get_input_proposal_v1(jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
 
     // 2. get the legacy enote from the enote store
-    sp::SpContextualEnoteRecordV1 contextual_record;
+    SpContextualEnoteRecordV1 contextual_record;
     if (!enote_store.try_get_sp_enote_record(normal_input_proposal.m_core.m_key_image, contextual_record))
         return false;
 
@@ -531,13 +540,13 @@ static bool sp_multisig_input_is_ready_to_spend(const sp::SpMultisigInputProposa
         return false;
 
     // 5. expect that the enote is unspent
-    if (contextual_record.m_spent_context.m_spent_status != sp::SpEnoteSpentStatus::UNSPENT)
+    if (contextual_record.m_spent_context.m_spent_status != SpEnoteSpentStatus::UNSPENT)
         return false;
 
     // 6. expect the enote is spendable within the height specified (only check when only onchain enotes are permitted)
     if (origin_statuses.size() == 1 &&
-        origin_statuses.find(sp::SpEnoteOriginStatus::ONCHAIN) != origin_statuses.end() &&
-        sp::onchain_sp_enote_is_locked(contextual_record.m_origin_context.m_block_height,
+        origin_statuses.find(SpEnoteOriginStatus::ONCHAIN) != origin_statuses.end() &&
+        onchain_sp_enote_is_locked(contextual_record.m_origin_context.m_block_height,
             current_chain_height,
             0))  //default spendable age: configurable
         return false;
@@ -548,7 +557,7 @@ static bool sp_multisig_input_is_ready_to_spend(const sp::SpMultisigInputProposa
 //-------------------------------------------------------------------------------------------------------------------
 static bool legacy_ring_members_are_ready_to_spend(const std::vector<std::uint64_t> &reference_set,
     const rct::ctkeyV &legacy_ring_members,
-    const sp::MockLedgerContext &ledger_context)
+    const MockLedgerContext &ledger_context)
 {
     // 1. 'zero ring members' are always ready to spend
     if (reference_set.size() == 0)
@@ -581,8 +590,8 @@ static bool legacy_ring_members_are_ready_to_spend(const std::vector<std::uint64
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &multisig_tx_proposal,
-    const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
+static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+    const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     const std::uint32_t threshold,
     const std::size_t num_signers,
     const rct::key &legacy_spend_pubkey,
@@ -590,11 +599,9 @@ static void validate_multisig_tx_proposal(const sp::SpMultisigTxProposalV1 &mult
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    const sp::SpEnoteStoreMockV1 &enote_store,
-    const sp::MockLedgerContext &ledger_context)
+    const SpEnoteStoreMockV1 &enote_store,
+    const MockLedgerContext &ledger_context)
 {
-    using namespace sp;
-
     // 1. check that the multisig tx proposal is well-formed
     ASSERT_TRUE(try_simulate_tx_from_multisig_tx_proposal_v1(multisig_tx_proposal,
         semantic_rules_version,
@@ -661,12 +668,9 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts_normal,
     const std::vector<rct::xmr_amount> &out_amounts_selfsend,
-    const sp::DiscretizedFee &fee,
-    const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version)
+    const DiscretizedFee &fee,
+    const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version)
 {
-    using namespace sp;
-    using namespace jamtis;
-
     ASSERT_TRUE(num_signers > 0);
     ASSERT_TRUE(requested_signers.size() >= threshold);
     ASSERT_TRUE(requested_signers.size() <= num_signers);
@@ -706,12 +710,13 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
     // a) make accounts
     std::vector<multisig::multisig_account> legacy_accounts;
-    ASSERT_NO_THROW(make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
+    ASSERT_NO_THROW(multisig::mocks::make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
         threshold,
         num_signers,
         legacy_accounts));
     std::vector<multisig::multisig_account> seraphis_accounts{legacy_accounts};
-    ASSERT_NO_THROW(mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, seraphis_accounts));
+    ASSERT_NO_THROW(multisig::mocks::mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis,
+        seraphis_accounts));
     ASSERT_TRUE(legacy_accounts.size() == num_signers);
     ASSERT_TRUE(seraphis_accounts.size() == num_signers);
     ASSERT_TRUE(legacy_accounts[0].get_base_pubkey() == seraphis_accounts[0].get_base_pubkey());
@@ -797,14 +802,14 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     // a) prepare outputs
 
     // - normal payments
-    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals;
+    std::vector<JamtisPaymentProposalV1> normal_payment_proposals;
     normal_payment_proposals.reserve(out_amounts_normal.size());
 
     for (const rct::xmr_amount out_amount : out_amounts_normal)
         tools::add_element(normal_payment_proposals).gen(out_amount, 0);
 
     // - self-send payments
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;
+    std::vector<JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;
     selfsend_payment_proposals.reserve(out_amounts_selfsend.size());
 
     for (const rct::xmr_amount out_amount : out_amounts_selfsend)
@@ -836,8 +841,8 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         aggregate_filter_of_requested_multisig_signers);
 
     // c) prepare inputs and finalize outputs
-    const sp::InputSelectorMockV1 input_selector{enote_store};
-    const sp::FeeCalculatorMockTrivial tx_fee_calculator;  //trivial fee calculator so we can use specified input fee
+    const InputSelectorMockV1 input_selector{enote_store};
+    const FeeCalculatorMockTrivial tx_fee_calculator;  //trivial fee calculator so we can use specified input fee
 
     std::list<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
     std::list<SpContextualEnoteRecordV1> sp_contextual_inputs;
@@ -1162,13 +1167,13 @@ TEST(seraphis_multisig, txtype_squashed_v1)
     // parameters: threshold | num_signers | {requested_signers} | {legacy in amnts} | {sp in amnts} | {out amnts normal} |
     // {out amnts selfsend} | fee | semantic_rules_version
 
-    const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version{
-            sp::SpTxSquashedV1::SemanticRulesVersion::MOCK
+    const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version{
+            SpTxSquashedV1::SemanticRulesVersion::MOCK
         };
 
     // prepare fees to use (these should discretize perfectly)
-    const sp::DiscretizedFee fee_zero{0};
-    const sp::DiscretizedFee fee_one{1};
+    const DiscretizedFee fee_zero{0};
+    const DiscretizedFee fee_one{1};
     EXPECT_TRUE(fee_zero == rct::xmr_amount{0});
     EXPECT_TRUE(fee_one == rct::xmr_amount{1});
 

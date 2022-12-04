@@ -55,6 +55,8 @@ namespace sp
 {
 namespace jamtis
 {
+namespace mocks
+{
 
 ////
 // A set of jamtis keys for mock-ups/unit testing
@@ -80,5 +82,6 @@ void make_jamtis_mock_keys(jamtis_mock_keys &keys_out);
 //todo
 void make_random_address_for_user(const jamtis_mock_keys &user_keys, JamtisDestinationV1 &user_address_out);
 
+} //namespace mocks
 } //namespace jamtis
 } //namespace sp

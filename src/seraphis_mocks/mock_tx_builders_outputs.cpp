@@ -47,6 +47,8 @@
 
 namespace sp
 {
+namespace mocks
+{
 //-------------------------------------------------------------------------------------------------------------------
 std::vector<SpCoinbaseOutputProposalV1> gen_mock_sp_coinbase_output_proposals_v1(
     const std::vector<rct::xmr_amount> &out_amounts,
@@ -81,4 +83,5 @@ std::vector<SpOutputProposalV1> gen_mock_sp_output_proposals_v1(const std::vecto
     return output_proposals;
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace mocks
 } //namespace sp
