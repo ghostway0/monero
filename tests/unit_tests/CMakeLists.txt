@@ -71,6 +71,7 @@ set(unit_tests_sources
   mul_div.cpp
   multiexp.cpp
   multisig.cpp
+  multisig_signing.cpp
   net.cpp
   node_server.cpp
   notify.cpp

@@ -34,11 +34,8 @@
 #include "cryptonote_basic/subaddress_index.h"
 #include "multisig/multisig.h"
 #include "multisig/multisig_account.h"
-#include "multisig/multisig_account_era_conversion_msg.h"
-#include "multisig/multisig_clsag.h"
 #include "multisig/multisig_mocks.h"
 #include "multisig/multisig_nonce_record.h"
-#include "multisig/multisig_partial_cn_key_image_msg.h"
 #include "multisig/multisig_signer_set_filter.h"
 #include "multisig/multisig_signing_errors.h"
 #include "multisig/multisig_signing_helper_types.h"
@@ -91,12 +88,6 @@ using namespace jamtis::mocks;
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static crypto::secret_key make_secret_key()
-{
-    return rct::rct2sk(rct::skGen());
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &account,
     jamtis_mock_keys &keys_out)
 {
@@ -110,313 +101,6 @@ static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &acc
     extend_seraphis_spendkey_x(keys_out.k_vb, keys_out.K_1_base);
     crypto::x25519_scmul_base(keys_out.xk_ua, keys_out.xK_ua);
     crypto::x25519_scmul_key(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static bool clsag_multisig_test(const std::uint32_t threshold,
-    const std::uint32_t num_signers,
-    const std::uint32_t ring_size)
-{
-    try
-    {
-        // we will make a CLSAG on the multisig pubkey plus multisig common key: (k_common + k_multisig) G
-
-        // prepare cryptonote multisig accounts
-        std::vector<multisig::multisig_account> accounts;
-        multisig::mocks::make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
-            threshold,
-            num_signers,
-            accounts);
-        if (accounts.size() == 0)
-            return false;
-
-        // K = (k_common + k_multisig) G
-        const rct::key K{
-                rct::addKeys(
-                        rct::scalarmultBase(rct::sk2rct(accounts[0].get_common_privkey())),
-                        rct::pk2rct(accounts[0].get_multisig_pubkey())
-                    )
-            };
-
-        // obtain the corresponding key image: KI = (k_common + k_multisig) Hp(K)
-        std::unordered_map<crypto::public_key, crypto::secret_key> saved_key_components;
-        std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images_out;
-        saved_key_components[rct::rct2pk(K)] = accounts[0].get_common_privkey();
-
-        // multisig KI ceremony
-        EXPECT_NO_THROW(multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
-            saved_key_components,
-            recovered_key_images_out));
-
-        EXPECT_TRUE(recovered_key_images_out.find(rct::rct2pk(K)) != recovered_key_images_out.end());
-        const crypto::key_image KI{recovered_key_images_out.at(rct::rct2pk(K))};
-
-        // C = x G + 1 H
-        // C" = -z G + C
-        // auxilliary CLSAG key: C - C" = z G
-        const rct::key x{rct::skGen()};
-        const rct::key z{rct::skGen()};
-        const rct::key C{rct::commit(1, x)};
-        rct::key masked_C;  //C" = C - z G
-        rct::subKeys(masked_C, C, rct::scalarmultBase(z));
-
-        // (1/threshold) * k_common
-        // (1/threshold) * z
-        const rct::key inv_threshold{invert(rct::d2h(threshold))};
-        rct::key k_common_chunk{rct::sk2rct(accounts[0].get_common_privkey())};
-        rct::key z_chunk{z};
-        sc_mul(k_common_chunk.bytes, inv_threshold.bytes, k_common_chunk.bytes);
-        sc_mul(z_chunk.bytes, inv_threshold.bytes, z_chunk.bytes);
-
-        // auxilliary key image: D = z Hp(K)
-        crypto::key_image D;
-        crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(z), D);
-
-        // key image base: Hp(K)
-        crypto::key_image KI_base;
-        crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(rct::I), KI_base);
-
-        // make random rings of size ring_size
-        rct::ctkeyV ring_members;
-
-        for (std::size_t ring_index{0}; ring_index < ring_size; ++ring_index)
-            ring_members.emplace_back(rct::ctkey{rct::pkGen(), rct::pkGen()});
-
-        // get random real signing index
-        const std::uint32_t l{crypto::rand_idx<std::uint32_t>(ring_size)};
-
-        // set real keys to sign in the rings
-        ring_members[l] = rct::ctkey{.dest = K, .mask = C};
-
-        // tx proposer: make proposal and specify which other signers should try to co-sign (all of them)
-        const rct::key message{rct::zero()};
-        multisig::CLSAGMultisigProposal proposal;
-        multisig::make_clsag_multisig_proposal(message, ring_members, masked_C, KI, D, l, proposal);
-
-        multisig::signer_set_filter aggregate_filter;
-        multisig::multisig_signers_to_filter(accounts[0].get_signers(), accounts[0].get_signers(), aggregate_filter);
-
-        // get signer group permutations (all signer groups that can complete a signature)
-        std::vector<multisig::signer_set_filter> filter_permutations;
-        multisig::aggregate_multisig_signer_set_filter_to_permutations(threshold,
-            num_signers,
-            aggregate_filter,
-            filter_permutations);
-
-        // each signer prepares for each signer group it is a member of
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            for (std::size_t filter_index{0}; filter_index < filter_permutations.size(); ++filter_index)
-            {
-                if (!multisig::signer_is_in_filter(accounts[signer_index].get_base_pubkey(),
-                        accounts[signer_index].get_signers(),
-                        filter_permutations[filter_index]))
-                    continue;
-
-                EXPECT_TRUE(signer_nonce_records[signer_index].try_add_nonces(proposal.message,
-                    proposal.main_proof_key(),
-                    filter_permutations[filter_index]));
-            }
-        }
-
-        // complete and validate each signature attempt
-        std::vector<multisig::CLSAGMultisigPartial> partial_sigs;
-        std::vector<multisig::MultisigPubNonces> signer_pub_nonces_G;  //stored with *(1/8)
-        std::vector<multisig::MultisigPubNonces> signer_pub_nonces_Hp;  //stored with *(1/8)
-        crypto::secret_key k_e_temp;
-        rct::clsag proof;
-
-        for (const multisig::signer_set_filter filter : filter_permutations)
-        {
-            partial_sigs.clear();
-            signer_pub_nonces_G.clear();
-            signer_pub_nonces_Hp.clear();
-            partial_sigs.reserve(threshold);
-            signer_pub_nonces_G.reserve(threshold);
-            signer_pub_nonces_Hp.reserve(threshold);
-
-            // assemble nonce pubkeys for this signing attempt
-            for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-            {
-                if (!multisig::signer_is_in_filter(accounts[signer_index].get_base_pubkey(),
-                        accounts[signer_index].get_signers(),
-                        filter))
-                    continue;
-
-                EXPECT_TRUE(signer_nonce_records[signer_index].try_get_nonce_pubkeys_for_base(proposal.message,
-                    proposal.main_proof_key(),
-                    filter,
-                    rct::G,
-                    tools::add_element(signer_pub_nonces_G)));
-                EXPECT_TRUE(signer_nonce_records[signer_index].try_get_nonce_pubkeys_for_base(proposal.message,
-                    proposal.main_proof_key(),
-                    filter,
-                    rct::ki2rct(KI_base),
-                    tools::add_element(signer_pub_nonces_Hp)));
-            }
-
-            // each signer partially signs for this attempt
-            for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-            {
-                // get signing privkey
-                if (!accounts[signer_index].try_get_aggregate_signing_key(filter, k_e_temp))
-                    continue;
-
-                // include shared offset
-                sc_add(to_bytes(k_e_temp), k_common_chunk.bytes, to_bytes(k_e_temp));
-
-                // make partial signature
-                EXPECT_TRUE(multisig::try_make_clsag_multisig_partial_sig(
-                    proposal,
-                    k_e_temp,
-                    rct::rct2sk(z_chunk),
-                    signer_pub_nonces_G,
-                    signer_pub_nonces_Hp,
-                    filter,
-                    signer_nonce_records[signer_index],
-                    tools::add_element(partial_sigs)));
-            }
-
-            // sanity checks
-            EXPECT_TRUE(signer_pub_nonces_G.size() == threshold);
-            EXPECT_TRUE(signer_pub_nonces_Hp.size() == threshold);
-            EXPECT_TRUE(partial_sigs.size() == threshold);
-
-            // make proof
-            multisig::finalize_clsag_multisig_proof(partial_sigs, ring_members, masked_C, proof);
-
-            // verify proof
-            if (!rct::verRctCLSAGSimple(message, proof, ring_members, masked_C))
-                return false;
-        }
-    }
-    catch (...) { return false; }
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static bool composition_proof_multisig_test(const std::uint32_t threshold,
-    const std::uint32_t num_signers,
-    const crypto::secret_key &x)
-{
-    try
-    {
-        // prepare multisig accounts (for seraphis)
-        // - use 'converted' accounts to verify that old cryptonote accounts can be converted to seraphis accounts that
-        //   work
-        std::vector<multisig::multisig_account> accounts;
-        multisig::mocks::make_multisig_mock_accounts(cryptonote::account_generator_era::cryptonote,
-            threshold,
-            num_signers,
-            accounts);
-        multisig::mocks::mock_convert_multisig_accounts(cryptonote::account_generator_era::seraphis, accounts);
-        if (accounts.size() == 0)
-            return false;
-
-        // make a seraphis composition proof pubkey: x G + y X + z U
-        rct::key K{rct::pk2rct(accounts[0].get_multisig_pubkey())};  //start with base key: z U
-        extend_seraphis_spendkey_x(accounts[0].get_common_privkey(), K);  //+ y X
-        mask_key(x, K, K);  //+ x G
-
-        // make the corresponding key image: (z/y) U
-        crypto::key_image KI;
-        make_seraphis_key_image(accounts[0].get_common_privkey(), accounts[0].get_multisig_pubkey(), KI);
-
-        // tx proposer: make proposal and specify which other signers should try to co-sign (all of them)
-        const rct::key message{rct::zero()};
-        multisig::SpCompositionProofMultisigProposal proposal;
-        multisig::make_sp_composition_multisig_proposal(message, K, KI, proposal);
-        multisig::signer_set_filter aggregate_filter;
-        multisig::multisig_signers_to_filter(accounts[0].get_signers(), accounts[0].get_signers(), aggregate_filter);
-
-        // get signer group permutations (all signer groups that can complete a signature)
-        std::vector<multisig::signer_set_filter> filter_permutations;
-        multisig::aggregate_multisig_signer_set_filter_to_permutations(threshold,
-            num_signers,
-            aggregate_filter,
-            filter_permutations);
-
-        // each signer prepares for each signer group it is a member of
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            for (std::size_t filter_index{0}; filter_index < filter_permutations.size(); ++filter_index)
-            {
-                if (!multisig::signer_is_in_filter(accounts[signer_index].get_base_pubkey(),
-                        accounts[signer_index].get_signers(),
-                        filter_permutations[filter_index]))
-                    continue;
-
-                EXPECT_TRUE(signer_nonce_records[signer_index].try_add_nonces(proposal.message,
-                    proposal.K,
-                    filter_permutations[filter_index]));
-            }
-        }
-
-        // complete and validate each signature attempt
-        std::vector<multisig::SpCompositionProofMultisigPartial> partial_sigs;
-        std::vector<multisig::MultisigPubNonces> signer_pub_nonces;  //stored with *(1/8)
-        crypto::secret_key z_temp;
-        SpCompositionProof proof;
-
-        for (const multisig::signer_set_filter filter : filter_permutations)
-        {
-            signer_pub_nonces.clear();
-            partial_sigs.clear();
-            signer_pub_nonces.reserve(threshold);
-            partial_sigs.reserve(threshold);
-
-            // assemble nonce pubkeys for this signing attempt
-            for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-            {
-                if (!multisig::signer_is_in_filter(accounts[signer_index].get_base_pubkey(),
-                        accounts[signer_index].get_signers(),
-                        filter))
-                    continue;
-
-                EXPECT_TRUE(signer_nonce_records[signer_index].try_get_nonce_pubkeys_for_base(proposal.message,
-                    proposal.K,
-                    filter,
-                    rct::pk2rct(crypto::get_U()),
-                    tools::add_element(signer_pub_nonces)));
-            }
-
-            // each signer partially signs for this attempt
-            for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-            {
-                if (!accounts[signer_index].try_get_aggregate_signing_key(filter, z_temp))
-                    continue;
-
-                EXPECT_TRUE(multisig::try_make_sp_composition_multisig_partial_sig(
-                    proposal,
-                    x,
-                    accounts[signer_index].get_common_privkey(),
-                    z_temp,
-                    signer_pub_nonces,
-                    filter,
-                    signer_nonce_records[signer_index],
-                    tools::add_element(partial_sigs)));
-            }
-
-            // sanity checks
-            EXPECT_TRUE(signer_pub_nonces.size() == threshold);
-            EXPECT_TRUE(partial_sigs.size() == threshold);
-
-            // make proof
-            multisig::finalize_sp_composition_multisig_proof(partial_sigs, proof);
-
-            // verify proof
-            if (!verify_sp_composition_proof(proof, message, K, KI))
-                return false;
-        }
-    }
-    catch (...) { return false; }
-
-    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -1106,11 +790,10 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         completed_tx));
 
     // - sanity check fee (should do this in production use-case, but can't do it here with the trivial fee calculator)
-    //ASSERT_TRUE(completed_tx.m_fee == tx_fee_calculator.compute_fee(fee_per_tx_weight, completed_tx));
+    //ASSERT_TRUE(completed_tx.m_tx_fee == tx_fee_calculator.compute_fee(fee_per_tx_weight, completed_tx));
 
     // g) verify tx
     const TxValidationContextMock tx_validation_context{ledger_context};
-
     ASSERT_NO_THROW(ASSERT_TRUE(validate_tx(completed_tx, tx_validation_context)));
 
     // h) add tx to mock ledger
@@ -1138,29 +821,6 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == total_input_amount - total_spent_amount - specified_fee);
 }
 //-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis_multisig, CLSAG_multisig)
-{
-    // test various account combinations
-    EXPECT_TRUE(clsag_multisig_test(1, 2, 2));
-    EXPECT_TRUE(clsag_multisig_test(1, 2, 3));
-    EXPECT_TRUE(clsag_multisig_test(2, 2, 2));
-    EXPECT_TRUE(clsag_multisig_test(1, 3, 2));
-    EXPECT_TRUE(clsag_multisig_test(2, 3, 2));
-    EXPECT_TRUE(clsag_multisig_test(3, 3, 2));
-    EXPECT_TRUE(clsag_multisig_test(2, 4, 2));
-}
-//-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis_multisig, composition_proof_multisig)
-{
-    // test various account combinations
-    EXPECT_TRUE(composition_proof_multisig_test(1, 2, make_secret_key()));
-    EXPECT_TRUE(composition_proof_multisig_test(2, 2, make_secret_key()));
-    EXPECT_TRUE(composition_proof_multisig_test(1, 3, make_secret_key()));
-    EXPECT_TRUE(composition_proof_multisig_test(2, 3, make_secret_key()));
-    EXPECT_TRUE(composition_proof_multisig_test(3, 3, make_secret_key()));
-    EXPECT_TRUE(composition_proof_multisig_test(2, 4, make_secret_key()));
-}
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_multisig, txtype_squashed_v1)
 {
