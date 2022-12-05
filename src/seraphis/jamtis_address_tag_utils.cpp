@@ -97,7 +97,7 @@ static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_
     // note: use a raw C-style struct here instead of SpKDFTranscript for maximal performance
     struct hint_cypher_hash_context_t {
         char domain_separator[sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT)];
-        rct::key cipher_key;
+        rct::key cipher_key;  //not crypto::secret_key, which has significant construction cost
         address_index_t enc_j;
     } hint_hash_context;
 
