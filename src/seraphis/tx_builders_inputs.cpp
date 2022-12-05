@@ -86,7 +86,7 @@ void make_binned_ref_set_generator_seed_v1(const rct::key &masked_address,
     transcript.append("C_masked", masked_commitment);
 
     // hash to the result
-    sp_hash_to_32(transcript, generator_seed_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), generator_seed_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_binned_ref_set_generator_seed_v1(const rct::key &onetime_address,
@@ -152,7 +152,7 @@ void make_tx_membership_proof_message_v1(const SpBinnedReferenceSetV1 &binned_re
     transcript.append("project_name", project_name);  //i.e. referenced enotes are members of what project's ledger?
     transcript.append("binned_reference_set", binned_reference_set);
 
-    sp_hash_to_32(transcript, message_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), message_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void prepare_input_commitment_factors_for_balance_proof_v1(const std::vector<SpInputProposalV1> &input_proposals,
@@ -212,7 +212,7 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     transcript.append("legacy_enote_images", legacy_enote_images);
     transcript.append("sp_enote_images", sp_enote_images);
 
-    sp_hash_to_32(transcript, input_images_prefix_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), input_images_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_core_spend_pubkey)

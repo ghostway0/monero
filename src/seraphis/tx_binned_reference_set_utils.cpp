@@ -218,7 +218,7 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
                     transcript.append("length", bin_locus);
                     transcript.append("bin_index", bin_index_in_set);
                     transcript.append("num_generator_refreshes", num_generator_refreshes);
-                    sp_hash_to_64(transcript, member_generator);
+                    sp_hash_to_64(transcript.data(), transcript.size(), member_generator);
                     ++num_generator_refreshes;
                 }
 

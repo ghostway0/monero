@@ -78,7 +78,7 @@ static encrypted_address_tag_secret_t get_encrypted_address_tag_secret(const rct
     transcript.append("Ko", onetime_address);
 
     rct::key temp_encryption_secret;
-    sp_hash_to_32(transcript, temp_encryption_secret.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), temp_encryption_secret.bytes);
 
     // truncate to desired size of the secret
     encrypted_address_tag_secret_t encryption_secret;
@@ -107,16 +107,9 @@ static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_
     hint_hash_context.cipher_key = rct::sk2rct(cipher_key);
     hint_hash_context.enc_j = encrypted_address_index;
 
-    //todo: use sp_hash_to_2(&hint_hash_context, sizeof(hint_cypher_hash_context_t), address_tag_hint.bytes)
     // address_tag_hint = H_2(k, cipher[k](j))
     address_tag_hint_t address_tag_hint;
-    CHECK_AND_ASSERT_THROW_MES(blake2b(address_tag_hint.bytes,
-            2,
-            &hint_hash_context,
-            sizeof(hint_cypher_hash_context_t),
-            nullptr,
-            0) == 0,
-        "address tag hint hash failed");
+    sp_hash_to_2(&hint_hash_context, sizeof(hint_cypher_hash_context_t), address_tag_hint.bytes);
 
     // clean up cipher key bytes
     memwipe(hint_hash_context.cipher_key.bytes, 32);

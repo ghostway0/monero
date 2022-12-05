@@ -144,7 +144,7 @@ namespace sp
             // Generate the initial Fiat-Shamir transcript hash, which is constant across all proofs
             // h_initial = H_n()
             SpFSTranscript initial_transcript_temp{config::HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT, 0};
-            sp_hash_to_scalar(initial_transcript_temp, initial_transcript.bytes);
+            sp_hash_to_scalar(initial_transcript_temp.data(), initial_transcript_temp.size(), initial_transcript.bytes);
 
         });
     }
@@ -428,7 +428,7 @@ namespace sp
     {
         SpFSTranscript transcript_update{config::HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT_UPDATE, sizeof(rct::key)};
         transcript_update.append("prev", transcript);
-        sp_hash_to_scalar(transcript_update, transcript.bytes);
+        sp_hash_to_scalar(transcript_update.data(), transcript_update.size(), transcript.bytes);
         return transcript;
     }
 
@@ -437,7 +437,7 @@ namespace sp
         SpFSTranscript transcript_update{config::HASH_KEY_BULLETPROOF_PLUS2_TRANSCRIPT_UPDATE, 2*sizeof(rct::key)};
         transcript_update.append("prev", transcript);
         transcript_update.append("0", update_0);
-        sp_hash_to_scalar(transcript_update, transcript.bytes);
+        sp_hash_to_scalar(transcript_update.data(), transcript_update.size(), transcript.bytes);
         return transcript;
     }
 
@@ -447,7 +447,7 @@ namespace sp
         transcript_update.append("prev", transcript);
         transcript_update.append("0", update_0);
         transcript_update.append("1", update_1);
-        sp_hash_to_scalar(transcript_update, transcript.bytes);
+        sp_hash_to_scalar(transcript_update.data(), transcript_update.size(), transcript.bytes);
         return transcript;
     }
 
@@ -459,7 +459,7 @@ namespace sp
             };
         transcript_update.append("prev", transcript);
         transcript_update.append("v", update_vec);
-        sp_hash_to_scalar(transcript_update, transcript.bytes);
+        sp_hash_to_scalar(transcript_update.data(), transcript_update.size(), transcript.bytes);
         return transcript;
     }
 

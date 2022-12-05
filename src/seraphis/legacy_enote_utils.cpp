@@ -57,7 +57,7 @@ void get_legacy_enote_identifier(const rct::key &onetime_address, const rct::xmr
     transcript.append("Ko", onetime_address);
     transcript.append("a", amount);
 
-    sp_hash_to_32(transcript, identifier_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), identifier_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v1(const rct::key &destination_spendkey,

@@ -59,7 +59,7 @@ void make_jamtis_unlockamounts_key(const crypto::secret_key &k_view_balance,
 {
     // xk_ua = H_n_x25519[k_vb]()
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_UNLOCKAMOUNTS_KEY, 0};
-    sp_derive_x25519_key(to_bytes(k_view_balance), transcript, xk_unlock_amounts_out.data);
+    sp_derive_x25519_key(to_bytes(k_view_balance), transcript.data(), transcript.size(), xk_unlock_amounts_out.data);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_findreceived_key(const crypto::secret_key &k_view_balance,
@@ -67,7 +67,7 @@ void make_jamtis_findreceived_key(const crypto::secret_key &k_view_balance,
 {
     // xk_fr = H_n_x25519[k_vb]()
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_FINDRECEIVED_KEY, 0};
-    sp_derive_x25519_key(to_bytes(k_view_balance), transcript, xk_find_received_out.data);
+    sp_derive_x25519_key(to_bytes(k_view_balance), transcript.data(), transcript.size(), xk_find_received_out.data);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_generateaddress_secret(const crypto::secret_key &k_view_balance,
@@ -75,7 +75,7 @@ void make_jamtis_generateaddress_secret(const crypto::secret_key &k_view_balance
 {
     // s_ga = H_32[k_vb]()
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_GENERATEADDRESS_SECRET, 0};
-    sp_derive_secret(to_bytes(k_view_balance), transcript, to_bytes(s_generate_address_out));
+    sp_derive_secret(to_bytes(k_view_balance), transcript.data(), transcript.size(), to_bytes(s_generate_address_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_ciphertag_secret(const crypto::secret_key &s_generate_address,
@@ -83,7 +83,7 @@ void make_jamtis_ciphertag_secret(const crypto::secret_key &s_generate_address,
 {
     // s_ct = H_32[s_ga]()
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_CIPHERTAG_SECRET, 0};
-    sp_derive_secret(to_bytes(s_generate_address), transcript, to_bytes(s_cipher_tag_out));
+    sp_derive_secret(to_bytes(s_generate_address), transcript.data(), transcript.size(), to_bytes(s_cipher_tag_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace jamtis

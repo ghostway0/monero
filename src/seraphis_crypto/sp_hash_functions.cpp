@@ -48,91 +48,98 @@ extern "C"
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-// H_x[k](transcript)
+// H_x[k](data)
 // - if derivation_key == nullptr, then the hash is NOT keyed
 //-------------------------------------------------------------------------------------------------------------------
-static void hash_base(const unsigned char *derivation_key,  //32 bytes
-    const DataSource &data_source,
+static void hash_base(const void *derivation_key,  //32 bytes
+    const void *data,
+    const std::size_t data_length,
     unsigned char *hash_out,
     const std::size_t out_length)
 {
     CHECK_AND_ASSERT_THROW_MES(blake2b(hash_out,
             out_length,
-            data_source.data(),
-            data_source.size(),
+            data,
+            data_length,
             derivation_key,
             derivation_key ? 32 : 0) == 0,
         "seraphis hash base: blake2b failed.");
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_1(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_1(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_1(x): 1-byte output
-    hash_base(nullptr, data_source, hash_out, 1);
+    hash_base(nullptr, data, data_length, hash_out, 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_2(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_2(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_2(x): 2-byte output
-    hash_base(nullptr, data_source, hash_out, 2);
+    hash_base(nullptr, data, data_length, hash_out, 2);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_8(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_8(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_8(x): 8-byte output
-    hash_base(nullptr, data_source, hash_out, 8);
+    hash_base(nullptr, data, data_length, hash_out, 8);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_16(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_16(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_16(x): 16-byte output
-    hash_base(nullptr, data_source, hash_out, 16);
+    hash_base(nullptr, data, data_length, hash_out, 16);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_32(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_32(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_32(x): 32-byte output
-    hash_base(nullptr, data_source, hash_out, 32);
+    hash_base(nullptr, data, data_length, hash_out, 32);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_64(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_64(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_64(x): 64-byte output
-    hash_base(nullptr, data_source, hash_out, 64);
+    hash_base(nullptr, data, data_length, hash_out, 64);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_hash_to_scalar(const DataSource &data_source, unsigned char *hash_out)
+void sp_hash_to_scalar(const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_n(x): Ed25519 group scalar output (32 bytes)
     // note: hash to 64 bytes then mod l
     unsigned char temp[64];
-    hash_base(nullptr, data_source, temp, 64);
+    hash_base(nullptr, data, data_length, temp, 64);
     sc_reduce(temp);  //mod l
     memcpy(hash_out, temp, 32);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_derive_key(const unsigned char *derivation_key, const DataSource &data_source, unsigned char *hash_out)
+void sp_derive_key(const void *derivation_key, const void *data, const std::size_t data_length, unsigned char *hash_out)
 {
     // H_n[k](x): Ed25519 group scalar output (32 bytes)
     // note: hash to 64 bytes then mod l
     unsigned char temp[64];
-    hash_base(derivation_key, data_source, temp, 64);
+    hash_base(derivation_key, data, data_length, temp, 64);
     sc_reduce(temp);  //mod l
     memcpy(hash_out, temp, 32);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_derive_secret(const unsigned char *derivation_key, const DataSource &data_source, unsigned char *hash_out)
+void sp_derive_secret(const void *derivation_key,
+    const void *data,
+    const std::size_t data_length,
+    unsigned char *hash_out)
 {
     // H_32[k](x): 32-byte output
-    hash_base(derivation_key, data_source, hash_out, 32);
+    hash_base(derivation_key, data, data_length, hash_out, 32);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void sp_derive_x25519_key(const unsigned char *derivation_key, const DataSource &data_source, unsigned char *hash_out)
+void sp_derive_x25519_key(const void *derivation_key,
+    const void *data,
+    const std::size_t data_length,
+    unsigned char *hash_out)
 {
     // H_n_x25519[k](x): canonical X25519 group scalar output (32 bytes)
     // - bits 0, 1, 2, 255 set to zero
-    hash_base(derivation_key, data_source, hash_out, 32);
+    hash_base(derivation_key, data, data_length, hash_out, 32);
     hash_out[0] &= 255 - 7;
     hash_out[31] &= 127;
 }

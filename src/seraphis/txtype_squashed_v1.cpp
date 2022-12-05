@@ -111,7 +111,7 @@ void SpTxSquashedV1::get_id(rct::key &tx_id_out) const
     transcript.append("input_images_prefix", input_images_prefix);
     transcript.append("tx_proofs_prefix", tx_proofs_prefix);
 
-    sp_hash_to_32(transcript, tx_id_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,

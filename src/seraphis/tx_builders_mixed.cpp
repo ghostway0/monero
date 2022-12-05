@@ -409,7 +409,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     transcript.append("tx_supplement", tx_supplement);
     transcript.append("transaction_fee", transaction_fee);
 
-    sp_hash_to_32(transcript, proposal_prefix_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), proposal_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -581,7 +581,7 @@ void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
     transcript.append("sp_image_proofs", sp_image_proofs);
     transcript.append("sp_membership_proofs", sp_membership_proofs);
 
-    sp_hash_to_32(transcript, tx_proofs_prefix_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_proofs_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinationV1 &change_address,

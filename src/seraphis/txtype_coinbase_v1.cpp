@@ -85,7 +85,7 @@ void SpTxCoinbaseV1::get_id(rct::key &tx_id_out) const
     transcript.append("output_enotes", m_outputs);
     transcript.append("tx_supplement", m_tx_supplement);
 
-    sp_hash_to_32(transcript, tx_id_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t SpTxCoinbaseV1::size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra)

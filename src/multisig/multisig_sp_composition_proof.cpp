@@ -74,7 +74,7 @@ static rct::key multisig_binonce_merge_factor(const rct::key &message, const std
     transcript.append("nonces", nonces);
 
     rct::key merge_factor;
-    sp::sp_hash_to_scalar(transcript, merge_factor.bytes);
+    sp::sp_hash_to_scalar(transcript.data(), transcript.size(), merge_factor.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(merge_factor.bytes),
         "multisig sp composition proof: binonce merge factor must be nonzero!");
 

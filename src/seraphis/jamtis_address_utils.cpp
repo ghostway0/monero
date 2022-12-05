@@ -64,7 +64,7 @@ void make_jamtis_spendkey_extension_g(const crypto::secret_key &s_generate_addre
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_G, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
-    sp_derive_key(to_bytes(s_generate_address), transcript, to_bytes(extension_out));
+    sp_derive_key(to_bytes(s_generate_address), transcript.data(), transcript.size(), to_bytes(extension_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension_x(const crypto::secret_key &s_generate_address,
@@ -75,7 +75,7 @@ void make_jamtis_spendkey_extension_x(const crypto::secret_key &s_generate_addre
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_X, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
-    sp_derive_key(to_bytes(s_generate_address), transcript, to_bytes(extension_out));
+    sp_derive_key(to_bytes(s_generate_address), transcript.data(), transcript.size(), to_bytes(extension_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension_u(const crypto::secret_key &s_generate_address,
@@ -86,7 +86,7 @@ void make_jamtis_spendkey_extension_u(const crypto::secret_key &s_generate_addre
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_U, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
-    sp_derive_key(to_bytes(s_generate_address), transcript, to_bytes(extension_out));
+    sp_derive_key(to_bytes(s_generate_address), transcript.data(), transcript.size(), to_bytes(extension_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_address_privkey(const crypto::secret_key &s_generate_address,
@@ -97,7 +97,7 @@ void make_jamtis_address_privkey(const crypto::secret_key &s_generate_address,
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_ADDRESS_PRIVKEY, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
-    sp_derive_x25519_key(to_bytes(s_generate_address), transcript, address_privkey_out.data);
+    sp_derive_x25519_key(to_bytes(s_generate_address), transcript.data(), transcript.size(), address_privkey_out.data);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_address_spend_key(const rct::key &spend_pubkey,

@@ -93,7 +93,7 @@ static rct::key compute_base_aggregation_coefficient(const rct::key &message,
 
     // mu
     rct::key aggregation_coefficient;
-    sp_hash_to_scalar(transcript, aggregation_coefficient.bytes);
+    sp_hash_to_scalar(transcript.data(), transcript.size(), aggregation_coefficient.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(aggregation_coefficient.bytes),
         "dual base vector proof aggregation coefficient: aggregation coefficient must be nonzero!");
 
@@ -114,7 +114,7 @@ static rct::key compute_challenge_message(const rct::key &message)
 
     // m
     rct::key challenge_message;
-    sp_hash_to_32(transcript, challenge_message.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), challenge_message.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge_message.bytes),
         "dual base vector proof challenge message: challenge_message must be nonzero!");
 
@@ -134,7 +134,7 @@ static rct::key compute_challenge(const rct::key &message, const rct::key &V_1_p
 
     // c
     rct::key challenge;
-    sp_hash_to_scalar(transcript, challenge.bytes);
+    sp_hash_to_scalar(transcript.data(), transcript.size(), challenge.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes),
         "dual base vector proof challenge: challenge must be nonzero!");
 

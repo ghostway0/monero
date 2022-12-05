@@ -141,7 +141,7 @@ static rct::key compute_challenge(const rct::key &message,
 
     // challenge
     rct::key challenge;
-    sp_hash_to_scalar(transcript, challenge.bytes);
+    sp_hash_to_scalar(transcript.data(), transcript.size(), challenge.bytes);
     CHECK_AND_ASSERT_THROW_MES(!(challenge == ZERO), "grootle proof challenge: transcript challenge must be nonzero!");
 
     return challenge;

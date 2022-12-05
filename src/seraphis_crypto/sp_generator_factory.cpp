@@ -82,7 +82,7 @@ static std::vector<SpFactoryGenerator> prepare_generators()
         transcript.append("generator_index", generator_index);
 
         // G[generator_index] = keccak_to_pt(H_32("sp_generator_factory", generator_index))
-        sp_hash_to_32(transcript, intermediate_hash.bytes);
+        sp_hash_to_32(transcript.data(), transcript.size(), intermediate_hash.bytes);
         rct::hash_to_p3(generators[generator_index].generator_p3, intermediate_hash);
 
         // convert to other representations

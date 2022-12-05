@@ -79,7 +79,7 @@ rct::key compute_challenge_message(const rct::key &message,
 
     // challenge_message
     rct::key challenge_message;
-    sp_hash_to_32(transcript, challenge_message.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), challenge_message.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge_message.bytes), "Transcript challenge_message must be nonzero!");
 
     return challenge_message;
@@ -101,7 +101,7 @@ rct::key compute_challenge(const rct::key &challenge_message,
     transcript.append("KI_proofkey", KI_proofkey);
 
     rct::key challenge;
-    sp_hash_to_scalar(transcript, challenge.bytes);
+    sp_hash_to_scalar(transcript.data(), transcript.size(), challenge.bytes);
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(challenge.bytes), "Transcript challenge must be nonzero!");
 
     return challenge;

@@ -145,7 +145,7 @@ void make_tx_legacy_ring_signature_message_v1(const rct::key &tx_proposal_messag
     transcript.append("tx_proposal_message", tx_proposal_message);
     transcript.append("reference_set_indices", reference_set_indices);
 
-    sp_hash_to_32(transcript, message_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), message_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_legacy_input_proposal_semantics_v1(const LegacyInputProposalV1 &input_proposal,

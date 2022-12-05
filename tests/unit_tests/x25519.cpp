@@ -111,7 +111,7 @@ TEST(x25519, x25519_sample_tests)
         const rct::key test3_derivation_key{rct::skGen()};
         std::string test3_data{};
 
-        sp::sp_derive_x25519_key(test3_derivation_key.bytes, test3_data, test3_scalar.data);
+        sp::sp_derive_x25519_key(test3_derivation_key.bytes, test3_data.data(), test3_data.size(), test3_scalar.data);
         ASSERT_TRUE(crypto::x25519_scalar_is_canonical(test3_scalar));
     }
 }

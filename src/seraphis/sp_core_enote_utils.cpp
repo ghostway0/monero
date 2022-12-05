@@ -166,7 +166,7 @@ void make_seraphis_squash_prefix(const rct::key &onetime_address,
     transcript.append("C", amount_commitment);
 
     // hash to the result
-    sp_hash_to_scalar(transcript, squash_prefix_out.bytes);
+    sp_hash_to_scalar(transcript.data(), transcript.size(), squash_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_squashed_address_key(const rct::key &onetime_address,
