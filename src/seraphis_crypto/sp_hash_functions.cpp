@@ -72,6 +72,12 @@ void sp_hash_to_1(const DataSource &data_source, unsigned char *hash_out)
     hash_base(nullptr, data_source, hash_out, 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void sp_hash_to_2(const DataSource &data_source, unsigned char *hash_out)
+{
+    // H_2(x): 2-byte output
+    hash_base(nullptr, data_source, hash_out, 2);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void sp_hash_to_8(const DataSource &data_source, unsigned char *hash_out)
 {
     // H_8(x): 8-byte output

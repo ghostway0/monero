@@ -538,7 +538,7 @@ bool try_get_intermediate_enote_record_v1(const SpEnoteVariant &enote,
     crypto::secret_key s_cipher_tag;
     jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
 
-    const jamtis::jamtis_address_tag_cipher_context cipher_context{rct::sk2rct(s_cipher_tag)};
+    const jamtis::jamtis_address_tag_cipher_context cipher_context{s_cipher_tag};
 
     return try_get_intermediate_enote_record_v1(enote,
         enote_ephemeral_pubkey,
@@ -595,7 +595,7 @@ bool try_get_intermediate_enote_record_v1(const SpBasicEnoteRecordV1 &basic_reco
     crypto::secret_key s_cipher_tag;
     jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
 
-    const jamtis::jamtis_address_tag_cipher_context cipher_context{rct::sk2rct(s_cipher_tag)};
+    const jamtis::jamtis_address_tag_cipher_context cipher_context{s_cipher_tag};
 
     return try_get_intermediate_enote_record_v1(basic_record,
         jamtis_spend_pubkey,
@@ -623,7 +623,7 @@ bool try_get_enote_record_v1_plain(const SpEnoteVariant &enote,
     jamtis::make_jamtis_generateaddress_secret(k_view_balance, s_generate_address);
     jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
 
-    const jamtis::jamtis_address_tag_cipher_context cipher_context{rct::sk2rct(s_cipher_tag)};
+    const jamtis::jamtis_address_tag_cipher_context cipher_context{s_cipher_tag};
 
     // q' and addr_tag'
     rct::key nominal_sender_receiver_secret;
@@ -703,7 +703,7 @@ bool try_get_enote_record_v1_plain(const SpBasicEnoteRecordV1 &basic_record,
     jamtis::make_jamtis_generateaddress_secret(k_view_balance, s_generate_address);
     jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
 
-    const jamtis::jamtis_address_tag_cipher_context cipher_context{rct::sk2rct(s_cipher_tag)};
+    const jamtis::jamtis_address_tag_cipher_context cipher_context{s_cipher_tag};
 
     return try_get_enote_record_v1_plain(basic_record,
         jamtis_spend_pubkey,

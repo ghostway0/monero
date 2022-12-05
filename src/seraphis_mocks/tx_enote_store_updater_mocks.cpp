@@ -134,7 +134,7 @@ EnoteStoreUpdaterLedgerMock::EnoteStoreUpdaterLedgerMock(const rct::key &jamtis_
     jamtis::make_jamtis_generateaddress_secret(m_k_view_balance, m_s_generate_address);
     jamtis::make_jamtis_ciphertag_secret(m_s_generate_address, m_s_cipher_tag);
 
-    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(rct::sk2rct(m_s_cipher_tag));
+    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterLedgerMock::start_chunk_handling_session()
@@ -210,7 +210,7 @@ EnoteStoreUpdaterNonLedgerMock::EnoteStoreUpdaterNonLedgerMock(const rct::key &j
     jamtis::make_jamtis_generateaddress_secret(m_k_view_balance, m_s_generate_address);
     jamtis::make_jamtis_ciphertag_secret(m_s_generate_address, m_s_cipher_tag);
 
-    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(rct::sk2rct(m_s_cipher_tag));
+    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterNonLedgerMock::process_and_handle_chunk(
@@ -325,7 +325,7 @@ EnoteStoreUpdaterLedgerMockIntermediate::EnoteStoreUpdaterLedgerMockIntermediate
 {
     jamtis::make_jamtis_ciphertag_secret(m_s_generate_address, m_s_cipher_tag);
 
-    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(rct::sk2rct(m_s_cipher_tag));
+    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterLedgerMockIntermediate::start_chunk_handling_session()
@@ -388,7 +388,7 @@ EnoteStoreUpdaterNonLedgerMockIntermediate::EnoteStoreUpdaterNonLedgerMockInterm
 {
     jamtis::make_jamtis_ciphertag_secret(m_s_generate_address, m_s_cipher_tag);
 
-    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(rct::sk2rct(m_s_cipher_tag));
+    m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterNonLedgerMockIntermediate::process_and_handle_chunk(

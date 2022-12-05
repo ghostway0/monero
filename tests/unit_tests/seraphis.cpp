@@ -474,7 +474,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 static bool test_info_recovery_addressindex(const address_index_t j)
 {
     // convert the index to/from raw tag form
-    const address_tag_t raw_address_tag{j};
+    const address_tag_t raw_address_tag{j, address_tag_hint_t{}};
     address_index_t j_recovered;
     if (!try_get_address_index(raw_address_tag, j_recovered))
         return false;
@@ -484,9 +484,9 @@ static bool test_info_recovery_addressindex(const address_index_t j)
     // cipher and decipher the index
     crypto::secret_key cipher_key;
     make_secret_key(cipher_key);
-    const address_tag_t ciphered_tag{cipher_address_index(rct::sk2rct(cipher_key), j)};
+    const address_tag_t ciphered_tag{cipher_address_index(cipher_key, j)};
     address_index_t decipher_j;
-    if (!try_decipher_address_index(rct::sk2rct(cipher_key), ciphered_tag, decipher_j))
+    if (!try_decipher_address_index(cipher_key, ciphered_tag, decipher_j))
         return false;
     if (decipher_j != j)
         return false;

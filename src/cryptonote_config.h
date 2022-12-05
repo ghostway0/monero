@@ -301,6 +301,7 @@ namespace config
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_G[] = "jamtis_spendkey_extension_g";
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_X[] = "jamtis_spendkey_extension_x";
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_U[] = "jamtis_spendkey_extension_u";
+  const constexpr char HASH_KEY_JAMTIS_ADDRESS_TAG_HINT[] = "jamtis_address_tag_hint";
   const constexpr char HASH_KEY_JAMTIS_ENCRYPTED_ADDRESS_TAG[] = "jamtis_encrypted_address_tag";
   const constexpr char HASH_KEY_JAMTIS_VIEW_TAG[] = "jamtis_view_tag";
   const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_PLAIN[] = "jamtis_sender_receiver_secret_plain";

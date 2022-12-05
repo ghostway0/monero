@@ -112,7 +112,7 @@ void JamtisPaymentProposalV1::get_coinbase_output_proposal_v1(const std::uint64_
         m_destination.m_addr_K1,
         output_proposal_out.m_enote.m_core.m_onetime_address);
 
-    // 9. encrypt address tag: addr_tag_enc = addr_tag(cipher(j || hint)) ^ H(q, Ko)
+    // 9. encrypt address tag: addr_tag_enc = addr_tag(cipher(j) || hint)) ^ H(q, Ko)
     output_proposal_out.m_enote.m_addr_tag_enc =
         encrypt_address_tag(q, output_proposal_out.m_enote.m_core.m_onetime_address, m_destination.m_addr_tag);
 
@@ -174,7 +174,7 @@ void JamtisPaymentProposalV1::get_output_proposal_v1(const rct::key &input_conte
         m_destination.m_addr_K1,
         output_proposal_out.m_core.m_onetime_address);
 
-    // 11. encrypt address tag: addr_tag_enc = addr_tag(cipher(j || hint)) ^ H(q, Ko)
+    // 11. encrypt address tag: addr_tag_enc = addr_tag(cipher(j) || hint)) ^ H(q, Ko)
     output_proposal_out.m_addr_tag_enc =
         encrypt_address_tag(q, output_proposal_out.m_core.m_onetime_address, m_destination.m_addr_tag);
 
@@ -266,11 +266,11 @@ void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secre
     make_jamtis_generateaddress_secret(viewbalance_privkey, generateaddress_secret);
     make_jamtis_ciphertag_secret(generateaddress_secret, ciphertag_secret);
     address_index_t j;
-    CHECK_AND_ASSERT_THROW_MES(try_decipher_address_index(rct::sk2rct(ciphertag_secret), m_destination.m_addr_tag, j),
+    CHECK_AND_ASSERT_THROW_MES(try_decipher_address_index(ciphertag_secret, m_destination.m_addr_tag, j),
         "Failed to create a self-send-type output proposal: could not decipher the destination's address tag.");
 
     // b. make a raw address tag (not ciphered)
-    const address_tag_t raw_address_tag{j};
+    const address_tag_t raw_address_tag{j, address_tag_hint_t{}};
 
     // c. encrypt the raw address tag: addr_tag_enc = addr_tag(j || hint) ^ H(q, Ko)
     output_proposal_out.m_addr_tag_enc =

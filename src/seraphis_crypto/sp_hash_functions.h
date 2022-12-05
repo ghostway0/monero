@@ -109,6 +109,8 @@ private:
 
 /// H_1(x): 1-byte output
 void sp_hash_to_1(const DataSource &data_source, unsigned char *hash_out);
+/// H_2(x): 2-byte output
+void sp_hash_to_2(const DataSource &data_source, unsigned char *hash_out);
 /// H_8(x): 8-byte output
 void sp_hash_to_8(const DataSource &data_source, unsigned char *hash_out);
 /// H_16(x): 16-byte output

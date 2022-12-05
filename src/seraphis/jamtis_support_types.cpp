@@ -114,13 +114,11 @@ bool address_tag_hint_t::operator==(const address_tag_hint_t &other_hint) const
     return memcmp(this->bytes, other_hint.bytes, sizeof(address_tag_hint_t)) == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
-address_tag_t::address_tag_t(const address_index_t &j)
+address_tag_t::address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint)
 {
-    const address_tag_hint_t hint{};
-
     // addr_tag = j || hint
-    memcpy(this->bytes, &j, ADDRESS_INDEX_BYTES);
-    memcpy(this->bytes + ADDRESS_INDEX_BYTES, &hint, ADDRESS_TAG_HINT_BYTES);
+    memcpy(this->bytes, &enc_j, ADDRESS_INDEX_BYTES);
+    memcpy(this->bytes + ADDRESS_INDEX_BYTES, &addr_tag_hint, ADDRESS_TAG_HINT_BYTES);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool address_tag_t::operator==(const address_tag_t &other_tag) const

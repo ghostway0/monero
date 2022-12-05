@@ -90,7 +90,7 @@ struct address_tag_t final
     unsigned char bytes[ADDRESS_INDEX_BYTES + ADDRESS_TAG_HINT_BYTES];
 
     address_tag_t() = default;
-    address_tag_t(const address_index_t &j);
+    address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint);
 
     /// comparison operators
     bool operator==(const address_tag_t &other_tag) const;

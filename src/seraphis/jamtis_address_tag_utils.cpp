@@ -36,11 +36,13 @@
 #include "cryptonote_config.h"
 extern "C"
 {
+#include "crypto/blake2b.h"
 #include "crypto/twofish.h"
 }
 #include "jamtis_support_types.h"
 #include "memwipe.h"
 #include "misc_language.h"
+#include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
@@ -86,10 +88,51 @@ static encrypted_address_tag_secret_t get_encrypted_address_tag_secret(const rct
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-jamtis_address_tag_cipher_context::jamtis_address_tag_cipher_context(const rct::key &cipher_key)
+static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_key,
+    const address_index_t &encrypted_address_index)
 {
+    static_assert(sizeof(address_tag_hint_t) == 2, "");
+
+    // assemble hash contents: 'domain-sep' || k || cipher[k](j)
+    // note: use a raw C-style struct here instead of SpKDFTranscript for maximal performance
+    struct hint_cypher_hash_context_t {
+        char domain_separator[sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT)];
+        rct::key cipher_key;
+        address_index_t enc_j;
+    } hint_hash_context;
+
+    memcpy(hint_hash_context.domain_separator,
+        config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT,
+        sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT));
+    hint_hash_context.cipher_key = rct::sk2rct(cipher_key);
+    hint_hash_context.enc_j = encrypted_address_index;
+
+    //todo: use sp_hash_to_2(&hint_hash_context, sizeof(hint_cypher_hash_context_t), address_tag_hint.bytes)
+    // address_tag_hint = H_2(k, cipher[k](j))
+    address_tag_hint_t address_tag_hint;
+    CHECK_AND_ASSERT_THROW_MES(blake2b(address_tag_hint.bytes,
+            2,
+            &hint_hash_context,
+            sizeof(hint_cypher_hash_context_t),
+            nullptr,
+            0) == 0,
+        "address tag hint hash failed");
+
+    // clean up cipher key bytes
+    memwipe(hint_hash_context.cipher_key.bytes, 32);
+
+    return address_tag_hint;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+jamtis_address_tag_cipher_context::jamtis_address_tag_cipher_context(const crypto::secret_key &cipher_key)
+{
+    // cache the cipher key
+    m_cipher_key = cipher_key;
+
+    // prepare the twofish key
     Twofish_initialise();
-    Twofish_prepare_key(cipher_key.bytes, sizeof(rct::key), &(m_twofish_key));
+    Twofish_prepare_key(to_bytes(cipher_key), sizeof(rct::key), &(m_twofish_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
 jamtis_address_tag_cipher_context::~jamtis_address_tag_cipher_context()
@@ -97,104 +140,43 @@ jamtis_address_tag_cipher_context::~jamtis_address_tag_cipher_context()
     memwipe(&m_twofish_key, sizeof(Twofish_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
-// pseudo-CBC encryption (equivalent to CBC ciphertext stealing, but more intuitive)
-// - given a plaintext that isn't a multiple of the cipher block size, use an 'overlapping' chained block cipher
-// - example
-//     block size: 4 bits
-//     plaintext: 1111111
-//     blocks:    [111[1]111]  (the 4th bit overlaps)
-//     cipher block 1:      [010[0]111]  (first 4 bits ciphered)
-//     xor non-overlapping: [010[0]101]  (last 3 bits xord with first three)
-//     cipher block 2:      [010[1]110]  (last 4 bits ciphered)
-// SECURITY PROPERTIES
-// - no bits of the cipher key are leaked
-// - all bits of the address tag are pseudo-randomly dependent on all bits of the address index and all bits of the
-//   cipher key; they do not need to be explicitly dependent on constants like the address tag hint
-//-------------------------------------------------------------------------------------------------------------------
 address_tag_t jamtis_address_tag_cipher_context::cipher(const address_index_t &j) const
 {
-    // concatenate index and hint
-    address_tag_t addr_tag{j};
+    // address tag = cipher[k](j) || H_2(k, cipher[k](j))
 
-    // expect address index to fit in one Twofish block (16 bytes), and for there to be no more than 2 Twofish blocks
-    static_assert(sizeof(address_index_t) <= TWOFISH_BLOCK_SIZE &&
-            sizeof(address_tag_t) >= TWOFISH_BLOCK_SIZE &&
-            sizeof(address_tag_t) <= 2 * TWOFISH_BLOCK_SIZE,
-        "");
+    // expect address index to fit in one Twofish block (16 bytes)
+    static_assert(sizeof(address_index_t) == TWOFISH_BLOCK_SIZE, "");
 
-    // encrypt the first block
+    // prepare ciphered index
+    address_index_t encrypted_j{j};
+
+    // encrypt the address index
     unsigned char temp_cipher[TWOFISH_BLOCK_SIZE];
-    memcpy(temp_cipher, addr_tag.bytes, TWOFISH_BLOCK_SIZE);
+    memcpy(temp_cipher, encrypted_j.bytes, TWOFISH_BLOCK_SIZE);
     Twofish_encrypt_block(&m_twofish_key, temp_cipher, temp_cipher);
-    memcpy(addr_tag.bytes, temp_cipher, TWOFISH_BLOCK_SIZE);
+    memcpy(encrypted_j.bytes, temp_cipher, TWOFISH_BLOCK_SIZE);
 
-    static constexpr std::size_t nonoverlapping_width{sizeof(address_tag_t) - TWOFISH_BLOCK_SIZE};
-    if (nonoverlapping_width > 0)
-    {
-        // XOR the non-overlapping pieces
-        for (std::size_t offset_index{0}; offset_index < nonoverlapping_width; ++offset_index)
-        {
-            addr_tag.bytes[offset_index + TWOFISH_BLOCK_SIZE] ^= addr_tag.bytes[offset_index];
-        }
-
-        // encrypt the second block (pseudo-CBC mode)
-        memcpy(temp_cipher, addr_tag.bytes + nonoverlapping_width, TWOFISH_BLOCK_SIZE);
-        Twofish_encrypt_block(&m_twofish_key, temp_cipher, temp_cipher);
-        memcpy(addr_tag.bytes + nonoverlapping_width, temp_cipher, TWOFISH_BLOCK_SIZE);
-    }
-
-    return addr_tag;
+    // make the address tag hint and complete the address tag
+    return address_tag_t{encrypted_j, get_address_tag_hint(m_cipher_key, encrypted_j)};
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool jamtis_address_tag_cipher_context::try_decipher(address_tag_t addr_tag, address_index_t &j_out) const
+bool jamtis_address_tag_cipher_context::try_decipher(const address_tag_t &addr_tag, address_index_t &j_out) const
 {
-    // expect one of the following
-    // A) address tag is exactly one block
-    // B) address tag fits in 2 blocks and address index equals one block (the address hint is a fixed constant, so
-    //    it may go in the second block)
-    static_assert(
-            (
-                sizeof(address_tag_t) == TWOFISH_BLOCK_SIZE
-            ) ||
-            (
-                sizeof(address_index_t) == TWOFISH_BLOCK_SIZE &&
-                sizeof(address_tag_t) > TWOFISH_BLOCK_SIZE &&
-                sizeof(address_tag_t) <= 2 * TWOFISH_BLOCK_SIZE
-            ),
-        "");
+    static_assert(sizeof(address_index_t) == TWOFISH_BLOCK_SIZE, "");
+    static_assert(sizeof(address_index_t) + sizeof(address_tag_hint_t) == sizeof(address_tag_t), "");
 
-    // decrypt the second block
-    static constexpr std::size_t nonoverlapping_width{sizeof(address_tag_t) - TWOFISH_BLOCK_SIZE};
+    // extract the encrypted index
+    memcpy(j_out.bytes, addr_tag.bytes, sizeof(address_index_t));
 
-    unsigned char temp_cipher[TWOFISH_BLOCK_SIZE];
-    memcpy(temp_cipher, addr_tag.bytes + nonoverlapping_width, TWOFISH_BLOCK_SIZE);
-    Twofish_decrypt_block(&m_twofish_key, temp_cipher, temp_cipher);
-    memcpy(addr_tag.bytes + nonoverlapping_width, temp_cipher, TWOFISH_BLOCK_SIZE);    
+    // recover the address tag hint
+    const address_tag_hint_t address_tag_hint{get_address_tag_hint(m_cipher_key, j_out)};
 
-    // XOR the non-overlapping pieces
-    for (std::size_t offset_index{0}; offset_index < nonoverlapping_width; ++offset_index)
-    {
-        addr_tag.bytes[offset_index + TWOFISH_BLOCK_SIZE] ^= addr_tag.bytes[offset_index];
-    }
-
-    // check the hint
-    address_index_t j_temp;
-
-    if (!try_get_address_index(addr_tag, j_temp))
+    // check the address tag hint
+    if (memcmp(addr_tag.bytes + sizeof(address_index_t), address_tag_hint.bytes, sizeof(address_tag_hint_t)) != 0)
         return false;
 
-    // decrypt the remaining bytes (if there are any)
-    if (nonoverlapping_width > 0)
-    {
-        // decrypt the first block
-        memcpy(temp_cipher, addr_tag.bytes, TWOFISH_BLOCK_SIZE);
-        Twofish_decrypt_block(&m_twofish_key, temp_cipher, temp_cipher);
-        memcpy(addr_tag.bytes, temp_cipher, TWOFISH_BLOCK_SIZE);
-    }
-
-    // extract the index j
-    if (!try_get_address_index(addr_tag, j_out))
-        return false;
+    // decrypt the address index
+    Twofish_decrypt_block(&m_twofish_key, j_out.bytes, j_out.bytes);
 
     return true;
 }
@@ -214,7 +196,7 @@ address_tag_t cipher_address_index(const jamtis_address_tag_cipher_context &ciph
     return cipher_context.cipher(j);
 }
 //-------------------------------------------------------------------------------------------------------------------
-address_tag_t cipher_address_index(const rct::key &cipher_key, const address_index_t &j)
+address_tag_t cipher_address_index(const crypto::secret_key &cipher_key, const address_index_t &j)
 {
     // prepare to cipher the index and hint
     const jamtis_address_tag_cipher_context cipher_context{cipher_key};
@@ -230,7 +212,8 @@ bool try_decipher_address_index(const jamtis_address_tag_cipher_context &cipher_
     return cipher_context.try_decipher(addr_tag, j_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_decipher_address_index(const rct::key &cipher_key, const address_tag_t &addr_tag, address_index_t &j_out)
+bool try_decipher_address_index(const crypto::secret_key &cipher_key,
+    const address_tag_t &addr_tag, address_index_t &j_out)
 {
     // prepare to decrypt the tag
     const jamtis_address_tag_cipher_context cipher_context{cipher_key};

@@ -59,7 +59,7 @@ struct jamtis_address_tag_cipher_context
 public:
 //constructors
     /// normal constructor
-    jamtis_address_tag_cipher_context(const rct::key &cipher_key);
+    jamtis_address_tag_cipher_context(const crypto::secret_key &cipher_key);
 
 //destructor
     ~jamtis_address_tag_cipher_context();
@@ -70,25 +70,28 @@ public:
 
 //member functions
     address_tag_t cipher(const address_index_t &j) const;
-    bool try_decipher(address_tag_t addr_tag, address_index_t &j_out) const;
+    bool try_decipher(const address_tag_t &addr_tag, address_index_t &j_out) const;
 
 //member variables
 private:
+    crypto::secret_key m_cipher_key;
     Twofish_key m_twofish_key;
 };
 
-/// try to get j from an address tag representation (fails if hint != 0)
+/// try to get j from a raw address tag representation (fails if hint != 0)
 bool try_get_address_index(const address_tag_t &addr_tag, address_index_t &j_out);
 
-/// cipher[k](j || addr_tag_hint) -> addr_tag
+/// cipher[k](j) || H_2(k, cipher[k](j)) -> addr_tag
 address_tag_t cipher_address_index(const jamtis_address_tag_cipher_context &cipher_context, const address_index_t &j);
-address_tag_t cipher_address_index(const rct::key &cipher_key, const address_index_t &j);
+address_tag_t cipher_address_index(const crypto::secret_key &cipher_key, const address_index_t &j);
 
-/// cipher_decrypt[k](addr_tag) -> {j, addr_tag_hint}
+/// cipher[k](j) || H_2(k, cipher[k](j)) -> j
 bool try_decipher_address_index(const jamtis_address_tag_cipher_context &cipher_context,
     const address_tag_t &addr_tag,
     address_index_t &j_out);
-bool try_decipher_address_index(const rct::key &cipher_key, const address_tag_t &addr_tag, address_index_t &j_out);
+bool try_decipher_address_index(const crypto::secret_key &cipher_key,
+    const address_tag_t &addr_tag,
+    address_index_t &j_out);
 
 /// addr_tag_enc = addr_tag XOR addr_tag_enc_secret
 encrypted_address_tag_t encrypt_address_tag(const rct::key &sender_receiver_secret,

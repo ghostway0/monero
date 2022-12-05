@@ -311,7 +311,7 @@ public:
             user_address);
 
         // prepare cipher context for the test
-        m_cipher_context = std::make_shared<sp::jamtis::jamtis_address_tag_cipher_context>(rct::sk2rct(m_keys.s_ct));
+        m_cipher_context = std::make_shared<sp::jamtis::jamtis_address_tag_cipher_context>(m_keys.s_ct);
 
         // make enote paying to address
         const crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
@@ -438,7 +438,7 @@ public:
     bool init(const ParamsShuttleAddressTagDecipher &params)
     {
         // user ciphertag secret
-        rct::key ciphertag_secret = rct::skGen();
+        crypto::secret_key ciphertag_secret = rct::rct2sk(rct::skGen());
 
         // prepare cipher context for the test
         m_cipher_context = std::make_shared<sp::jamtis::jamtis_address_tag_cipher_context>(ciphertag_secret);
@@ -454,7 +454,7 @@ public:
                 do
                 {
                     address_index_temp.gen();
-                    addr_tag = sp::jamtis::address_tag_t{address_index_temp};
+                    addr_tag = sp::jamtis::address_tag_t{address_index_temp, sp::jamtis::address_tag_hint_t{}};
                 }
                 while (sp::jamtis::try_decipher_address_index(*m_cipher_context, addr_tag, address_index_temp));
             }
