@@ -904,7 +904,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
     const std::unordered_map<rct::key, rct::key> &allowed_proof_contexts,  //[ proof key : proof message ]
     const int expected_partial_sig_variant_index,
     const std::unordered_map<crypto::public_key, std::vector<MultisigPartialSigSetV1>> &partial_sigs_per_signer,
-    std::list<MultisigSigningErrorVariant> &multisig_errors_inout, //todo
+    std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
     std::unordered_map<signer_set_filter,  //signing group
         std::unordered_map<rct::key,                 //proof key
             std::vector<MultisigPartialSigVariant>>> &collected_sigs_per_key_per_filter_out)
