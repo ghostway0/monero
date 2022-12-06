@@ -123,6 +123,28 @@ static void make_test_clsag_multisig_proposal(const std::vector<multisig::multis
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static void make_test_composition_proof_multisig_proposal(const crypto::public_key &K_base,
+    const crypto::secret_key &y,
+    const rct::key &message,
+    rct::key &K_out,
+    crypto::secret_key &x_out,
+    crypto::key_image &KI_out,
+    multisig::SpCompositionProofMultisigProposal &multisig_proof_proposal_out)
+{
+    // make a seraphis composition proof pubkey: x G + y X + z U
+    K_out = rct::pk2rct(K_base);  //start with base key: z U
+    x_out = rct::rct2sk(rct::skGen());
+    sp::extend_seraphis_spendkey_x(y, K_out);  //+ y X
+    sp::mask_key(x_out, K_out, K_out);  //+ x G
+
+    // make the corresponding key image: (z/y) U
+    sp::make_seraphis_key_image(y, K_base, KI_out);
+
+    // make multisig proposal
+    multisig::make_sp_composition_multisig_proposal(message, K_out, KI_out, multisig_proof_proposal_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static void prepare_nonce_records(const std::vector<multisig::multisig_account> &accounts,
     const std::vector<multisig::signer_set_filter> &filter_permutations,
     const rct::key &proof_message,
@@ -340,20 +362,24 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
         if (accounts.size() == 0)
             return false;
 
-        // make a seraphis composition proof pubkey: x G + y X + z U
-        const crypto::secret_key x{rct::rct2sk(rct::skGen())};
-        rct::key K{rct::pk2rct(accounts[0].get_multisig_pubkey())};  //start with base key: z U
-        sp::extend_seraphis_spendkey_x(accounts[0].get_common_privkey(), K);  //+ y X
-        sp::mask_key(x, K, K);  //+ x G
-
-        // make the corresponding key image: (z/y) U
-        crypto::key_image KI;
-        sp::make_seraphis_key_image(accounts[0].get_common_privkey(), accounts[0].get_multisig_pubkey(), KI);
-
-        // tx proposer: make proposal and specify which other signers should try to co-sign (all of them)
+        // make multisig proposal
         const rct::key message{rct::zero()};
-        multisig::SpCompositionProofMultisigProposal proposal;
-        multisig::make_sp_composition_multisig_proposal(message, K, KI, proposal);
+        const crypto::public_key zU{accounts[0].get_multisig_pubkey()};
+        const crypto::secret_key y{accounts[0].get_common_privkey()};
+        rct::key K;
+        crypto::secret_key x;
+        crypto::key_image KI;
+        multisig::SpCompositionProofMultisigProposal multisig_proof_proposal;
+
+        make_test_composition_proof_multisig_proposal(zU,
+            y,
+            message,
+            K,
+            x,
+            KI,
+            multisig_proof_proposal);
+
+        // tx proposer: specify which other signers should try to co-sign (all of them)
         multisig::signer_set_filter aggregate_filter;
         multisig::multisig_signers_to_filter(accounts[0].get_signers(), accounts[0].get_signers(), aggregate_filter);
 
@@ -366,7 +392,11 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
 
         // each signer prepares for each signer group it is a member of
         std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
-        prepare_nonce_records(accounts, filter_permutations, proposal.message, proposal.K, signer_nonce_records);
+        prepare_nonce_records(accounts,
+            filter_permutations,
+            multisig_proof_proposal.message,
+            multisig_proof_proposal.K,
+            signer_nonce_records);
 
         // complete and validate each signature attempt
         std::vector<multisig::SpCompositionProofMultisigPartial> partial_sigs;
@@ -385,8 +415,8 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
             assemble_nonce_pubkeys_for_signing(accounts,
                 signer_nonce_records,
                 rct::pk2rct(crypto::get_U()),
-                proposal.message,
-                proposal.K,
+                multisig_proof_proposal.message,
+                multisig_proof_proposal.K,
                 filter,
                 signer_pub_nonces);
 
@@ -397,9 +427,9 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
                     continue;
 
                 EXPECT_TRUE(multisig::try_make_sp_composition_multisig_partial_sig(
-                    proposal,
+                    multisig_proof_proposal,
                     x,
-                    accounts[signer_index].get_common_privkey(),
+                    y,
                     z_temp,
                     signer_pub_nonces,
                     filter,
