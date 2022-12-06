@@ -53,6 +53,76 @@
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static void make_test_clsag_multisig_proposal(const std::vector<multisig::multisig_account> &accounts,
+    const std::uint32_t ring_size,
+    const rct::key &message,
+    const rct::key &k_offset,
+    rct::key &K_out,
+    rct::key &x_out,
+    rct::key &z_out,
+    rct::key &C_out,
+    rct::key &masked_C_out,
+    crypto::key_image &KI_out,
+    crypto::key_image &D_out,
+    crypto::key_image &KI_base_out,
+    rct::ctkeyV &ring_members_out,
+    std::uint32_t &l_out,
+    multisig::CLSAGMultisigProposal &multisig_proof_proposal_out)
+{
+    ASSERT_TRUE(accounts.size() > 0);
+    ASSERT_TRUE(ring_size > 0);
+
+    // K = (k_offset + k_multisig) G
+    K_out = rct::addKeys(rct::scalarmultBase(k_offset), rct::pk2rct(accounts[0].get_multisig_pubkey()));
+
+    // C = x G + 1 H
+    // C" = -z G + C
+    // auxilliary CLSAG key: C - C" = z G
+    x_out = rct::skGen();
+    z_out = rct::skGen();
+    C_out = rct::commit(1, x_out);
+    rct::subKeys(masked_C_out, C_out, rct::scalarmultBase(z_out));  //C" = C - z G
+
+    // multisig KI ceremony
+    std::unordered_map<crypto::public_key, crypto::secret_key> saved_key_components;
+    saved_key_components[rct::rct2pk(K_out)] = rct::rct2sk(k_offset);
+
+    std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images;
+    multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
+        saved_key_components,
+        recovered_key_images);
+    KI_out = recovered_key_images.at(rct::rct2pk(K_out));
+
+    // auxilliary key image: D = z Hp(K)
+    crypto::generate_key_image(rct::rct2pk(K_out), rct::rct2sk(z_out), D_out);
+
+    // key image base: Hp(K)
+    crypto::generate_key_image(rct::rct2pk(K_out), rct::rct2sk(rct::I), KI_base_out);
+
+    // make random rings of size ring_size
+    ring_members_out.clear();
+    ring_members_out.reserve(ring_size);
+
+    for (std::size_t ring_index{0}; ring_index < ring_size; ++ring_index)
+        ring_members_out.emplace_back(rct::ctkey{rct::pkGen(), rct::pkGen()});
+
+    // get random real signing index
+    l_out = crypto::rand_idx<std::uint32_t>(ring_size);
+
+    // set real keys to sign in the ring
+    ring_members_out[l_out] = rct::ctkey{.dest = K_out, .mask = C_out};
+
+    // make multisig proposal
+    multisig::make_clsag_multisig_proposal(message,
+        ring_members_out,
+        masked_C_out,
+        KI_out,
+        D_out,
+        l_out,
+        multisig_proof_proposal_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static void prepare_nonce_records(const std::vector<multisig::multisig_account> &accounts,
     const std::vector<multisig::signer_set_filter> &filter_permutations,
     const rct::key &proof_message,
@@ -123,69 +193,46 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
         if (accounts.size() == 0)
             return false;
 
-        // K = (k_common + k_multisig) G
-        const rct::key K{
-                rct::addKeys(
-                        rct::scalarmultBase(rct::sk2rct(accounts[0].get_common_privkey())),
-                        rct::pk2rct(accounts[0].get_multisig_pubkey())
-                    )
-            };
+        // make a multisig proposal
+        const rct::key message{rct::zero()};
+        const rct::key k_offset{rct::sk2rct(accounts[0].get_common_privkey())};
+        rct::key K;
+        rct::key x;
+        rct::key z;
+        rct::key C;
+        rct::key masked_C;
+        crypto::key_image KI;
+        crypto::key_image D;
+        crypto::key_image KI_base;
+        rct::ctkeyV ring_members;
+        std::uint32_t l;
+        multisig::CLSAGMultisigProposal multisig_proof_proposal;
 
-        // obtain the corresponding key image: KI = (k_common + k_multisig) Hp(K)
-        std::unordered_map<crypto::public_key, crypto::secret_key> saved_key_components;
-        saved_key_components[rct::rct2pk(K)] = accounts[0].get_common_privkey();
-
-        // multisig KI ceremony
-        std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images;
-        EXPECT_NO_THROW(multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
-            saved_key_components,
-            recovered_key_images));
-
-        EXPECT_TRUE(recovered_key_images.find(rct::rct2pk(K)) != recovered_key_images.end());
-        const crypto::key_image KI{recovered_key_images.at(rct::rct2pk(K))};
-
-        // C = x G + 1 H
-        // C" = -z G + C
-        // auxilliary CLSAG key: C - C" = z G
-        const rct::key x{rct::skGen()};
-        const rct::key z{rct::skGen()};
-        const rct::key C{rct::commit(1, x)};
-        rct::key masked_C;  //C" = C - z G
-        rct::subKeys(masked_C, C, rct::scalarmultBase(z));
+        make_test_clsag_multisig_proposal(accounts,
+            ring_size,
+            message,
+            k_offset,
+            K,
+            x,
+            z,
+            C,
+            masked_C,
+            KI,
+            D,
+            KI_base,
+            ring_members,
+            l,
+            multisig_proof_proposal);
 
         // (1/threshold) * k_common
         // (1/threshold) * z
         const rct::key inv_threshold{sp::invert(rct::d2h(threshold))};
-        rct::key k_common_chunk{rct::sk2rct(accounts[0].get_common_privkey())};
+        rct::key k_common_chunk{k_offset};
         rct::key z_chunk{z};
         sc_mul(k_common_chunk.bytes, inv_threshold.bytes, k_common_chunk.bytes);
         sc_mul(z_chunk.bytes, inv_threshold.bytes, z_chunk.bytes);
 
-        // auxilliary key image: D = z Hp(K)
-        crypto::key_image D;
-        crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(z), D);
-
-        // key image base: Hp(K)
-        crypto::key_image KI_base;
-        crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(rct::I), KI_base);
-
-        // make random rings of size ring_size
-        rct::ctkeyV ring_members;
-
-        for (std::size_t ring_index{0}; ring_index < ring_size; ++ring_index)
-            ring_members.emplace_back(rct::ctkey{rct::pkGen(), rct::pkGen()});
-
-        // get random real signing index
-        const std::uint32_t l{crypto::rand_idx<std::uint32_t>(ring_size)};
-
-        // set real keys to sign in the ring
-        ring_members[l] = rct::ctkey{.dest = K, .mask = C};
-
-        // tx proposer: make proposal and specify which other signers should try to co-sign (all of them)
-        const rct::key message{rct::zero()};
-        multisig::CLSAGMultisigProposal proposal;
-        multisig::make_clsag_multisig_proposal(message, ring_members, masked_C, KI, D, l, proposal);
-
+        // specify which other signers should try to co-sign (all of them)
         multisig::signer_set_filter aggregate_filter;
         multisig::multisig_signers_to_filter(accounts[0].get_signers(), accounts[0].get_signers(), aggregate_filter);
 
@@ -200,8 +247,8 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
         std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
         prepare_nonce_records(accounts,
             filter_permutations,
-            proposal.message,
-            proposal.main_proof_key(),
+            multisig_proof_proposal.message,
+            multisig_proof_proposal.main_proof_key(),
             signer_nonce_records);
 
         // complete and validate each signature attempt
@@ -224,15 +271,15 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
             assemble_nonce_pubkeys_for_signing(accounts,
                 signer_nonce_records,
                 rct::G,
-                proposal.message,
-                proposal.main_proof_key(),
+                multisig_proof_proposal.message,
+                multisig_proof_proposal.main_proof_key(),
                 filter,
                 signer_pub_nonces_G);
             assemble_nonce_pubkeys_for_signing(accounts,
                 signer_nonce_records,
                 rct::ki2rct(KI_base),
-                proposal.message,
-                proposal.main_proof_key(),
+                multisig_proof_proposal.message,
+                multisig_proof_proposal.main_proof_key(),
                 filter,
                 signer_pub_nonces_Hp);
 
@@ -248,7 +295,7 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
 
                 // make partial signature
                 EXPECT_TRUE(multisig::try_make_clsag_multisig_partial_sig(
-                    proposal,
+                    multisig_proof_proposal,
                     k_e_temp,
                     rct::rct2sk(z_chunk),
                     signer_pub_nonces_G,
@@ -378,7 +425,7 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool multisig_framework_clsag(const std::uint32_t threshold,
+static bool multisig_framework_clsag_test(const std::uint32_t threshold,
     const std::uint32_t num_signers,
     const std::uint32_t num_proofs,
     const std::uint32_t ring_size)
@@ -415,60 +462,33 @@ static bool multisig_framework_clsag(const std::uint32_t threshold,
 
         for (std::size_t proof_index{0}; proof_index < num_proofs; ++proof_index)
         {
-            // K = (k_offset + k_multisig) G
-            const rct::key k_offset{rct::skGen()};
-            const rct::key K{
-                    rct::addKeys(rct::scalarmultBase(k_offset), rct::pk2rct(accounts[0].get_multisig_pubkey()))
-                };
-
-            // C = x G + 1 H
-            // C" = -z G + C
-            // auxilliary CLSAG key: C - C" = z G
-            const rct::key x{rct::skGen()};
-            const rct::key z{rct::skGen()};
-            const rct::key C{rct::commit(1, x)};
-            rct::key masked_C;  //C" = C - z G
-            rct::subKeys(masked_C, C, rct::scalarmultBase(z));
-
-            // multisig KI ceremony
-            std::unordered_map<crypto::public_key, crypto::secret_key> saved_key_components;
-            saved_key_components[rct::rct2pk(K)] = rct::rct2sk(k_offset);
-
-            std::unordered_map<crypto::public_key, crypto::key_image> recovered_key_images;
-            multisig::mocks::mock_multisig_cn_key_image_recovery(accounts,
-                saved_key_components,
-                recovered_key_images);
-            const crypto::key_image KI{recovered_key_images.at(rct::rct2pk(K))};
-
-            // auxilliary key image: D = z Hp(K)
-            crypto::key_image D;
-            crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(z), D);
-
-            // key image base: Hp(K)
-            crypto::key_image KI_base;
-            crypto::generate_key_image(rct::rct2pk(K), rct::rct2sk(rct::I), KI_base);
-
-            // make random rings of size ring_size
-            rct::ctkeyV ring_members;
-
-            for (std::size_t ring_index{0}; ring_index < ring_size; ++ring_index)
-                ring_members.emplace_back(rct::ctkey{rct::pkGen(), rct::pkGen()});
-
-            // get random real signing index
-            const std::uint32_t l{crypto::rand_idx<std::uint32_t>(ring_size)};
-
-            // set real keys to sign in the ring
-            ring_members[l] = rct::ctkey{.dest = K, .mask = C};
-
-            // message (random)
-            const rct::key message{rct::pkGen()};
-
             // make multisig proposal
-            make_clsag_multisig_proposal(message,
-                ring_members,
+            const rct::key message{rct::pkGen()};
+            const rct::key k_offset{rct::skGen()};
+            rct::key K;
+            rct::key x;
+            rct::key z;
+            rct::key C;
+            rct::key masked_C;
+            crypto::key_image KI;
+            crypto::key_image D;
+            crypto::key_image KI_base;
+            rct::ctkeyV ring_members;
+            std::uint32_t l;
+
+            make_test_clsag_multisig_proposal(accounts,
+                ring_size,
+                message,
+                k_offset,
+                K,
+                x,
+                z,
+                C,
                 masked_C,
                 KI,
                 D,
+                KI_base,
+                ring_members,
                 l,
                 tools::add_element(multisig_proof_proposals));
 
@@ -629,21 +649,21 @@ TEST(multisig_signing, composition_proof_multisig)
 TEST(multisig_signing, multisig_framework_CLSAG)
 {
     // test various account combinations
-    EXPECT_TRUE(multisig_framework_clsag(1, 2, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(1, 2, 2, 2));
-    EXPECT_TRUE(multisig_framework_clsag(1, 2, 3, 2));
-    EXPECT_TRUE(multisig_framework_clsag(1, 2, 1, 3));
-    EXPECT_TRUE(multisig_framework_clsag(1, 2, 2, 3));
-    EXPECT_TRUE(multisig_framework_clsag(2, 2, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 2, 2, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 2, 3, 2));
-    EXPECT_TRUE(multisig_framework_clsag(1, 3, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(1, 3, 2, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 3, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 3, 2, 2));
-    EXPECT_TRUE(multisig_framework_clsag(3, 3, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(3, 3, 2, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 4, 1, 2));
-    EXPECT_TRUE(multisig_framework_clsag(2, 4, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 2, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 2, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 2, 3, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 2, 1, 3));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 2, 2, 3));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 2, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 2, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 2, 3, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 3, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(1, 3, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 3, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 3, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(3, 3, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(3, 3, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 4, 1, 2));
+    EXPECT_TRUE(multisig_framework_clsag_test(2, 4, 2, 2));
 }
 //-------------------------------------------------------------------------------------------------------------------
