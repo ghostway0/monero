@@ -95,24 +95,24 @@ static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_
 
     // assemble hash contents: 'domain-sep' || k || cipher[k](j)
     // note: use a raw C-style struct here instead of SpKDFTranscript for maximal performance
-    struct hint_cypher_hash_context_t {
+    struct hash_context_t {
         char domain_separator[sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT)];
         rct::key cipher_key;  //not crypto::secret_key, which has significant construction cost
         address_index_t enc_j;
-    } hint_hash_context;
+    } hash_context;
 
-    memcpy(hint_hash_context.domain_separator,
+    memcpy(hash_context.domain_separator,
         config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT,
         sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT));
-    hint_hash_context.cipher_key = rct::sk2rct(cipher_key);
-    hint_hash_context.enc_j = encrypted_address_index;
+    hash_context.cipher_key = rct::sk2rct(cipher_key);
+    hash_context.enc_j = encrypted_address_index;
 
     // address_tag_hint = H_2(k, cipher[k](j))
     address_tag_hint_t address_tag_hint;
-    sp_hash_to_2(&hint_hash_context, sizeof(hint_cypher_hash_context_t), address_tag_hint.bytes);
+    sp_hash_to_2(&hash_context, sizeof(hash_context_t), address_tag_hint.bytes);
 
     // clean up cipher key bytes
-    memwipe(hint_hash_context.cipher_key.bytes, 32);
+    memwipe(hash_context.cipher_key.bytes, 32);
 
     return address_tag_hint;
 }

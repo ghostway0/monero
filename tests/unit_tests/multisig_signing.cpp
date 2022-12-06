@@ -631,10 +631,12 @@ TEST(multisig_signing, multisig_framework_CLSAG)
     // test various account combinations
     EXPECT_TRUE(multisig_framework_clsag(1, 2, 1, 2));
     EXPECT_TRUE(multisig_framework_clsag(1, 2, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag(1, 2, 3, 2));
     EXPECT_TRUE(multisig_framework_clsag(1, 2, 1, 3));
     EXPECT_TRUE(multisig_framework_clsag(1, 2, 2, 3));
     EXPECT_TRUE(multisig_framework_clsag(2, 2, 1, 2));
     EXPECT_TRUE(multisig_framework_clsag(2, 2, 2, 2));
+    EXPECT_TRUE(multisig_framework_clsag(2, 2, 3, 2));
     EXPECT_TRUE(multisig_framework_clsag(1, 3, 1, 2));
     EXPECT_TRUE(multisig_framework_clsag(1, 3, 2, 2));
     EXPECT_TRUE(multisig_framework_clsag(2, 3, 1, 2));
