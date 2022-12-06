@@ -455,6 +455,130 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+template <typename ProposalT, typename PartialSigT, typename ProofT>
+static bool multisig_framework_test_impl(const std::vector<multisig::multisig_account> &accounts,
+    const cryptonote::account_generator_era expected_multisig_account_era,
+    const std::size_t num_expected_proof_basekeys,
+    const std::vector<ProposalT> &multisig_proof_proposals,
+    const std::unordered_map<rct::key, rct::key> &proof_contexts,  //[ proof key : proof message ]
+    const std::unordered_map<rct::key, rct::keyV> &proof_key_base_points,  //[ proof key : {proof key base points} ]
+    const multisig::MultisigPartialSigMaker &partial_sig_maker,
+    const std::function<bool(const rct::key&, const std::vector<PartialSigT>&, ProofT&)>
+        &try_assemble_partial_sigs_func,
+    const std::function<bool(const ProofT&)> &validate_proof_func)
+{
+    try
+    {
+        if (accounts.size() == 0)
+            return false;
+
+        /// setup
+
+        // 1. get initial info
+        const std::size_t num_signers{accounts.size()};
+        const std::uint32_t threshold{accounts[0].get_threshold()};
+        const std::size_t num_proofs{multisig_proof_proposals.size()};
+
+        // 2. get signers as a filter
+        multisig::signer_set_filter signers_as_filter;
+        multisig::multisig_signers_to_filter(accounts[0].get_signers(), accounts[0].get_signers(), signers_as_filter);
+
+
+        /// make seraphis composition proofs
+
+        // 1. each signer responds to the proposals with a proof initialization set
+        // note: before doing this, signers should validate the multisig proposals then cache them for futher use
+        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
+        std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
+            init_set_collection_per_signer;  //[ signer id : [ proof key : init set ] ]
+
+        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
+        {
+            multisig::make_v1_multisig_init_set_collection_v1(threshold,
+                accounts[signer_index].get_signers(),
+                signers_as_filter,
+                accounts[signer_index].get_base_pubkey(),
+                proof_contexts,
+                proof_key_base_points,
+                signer_nonce_records[signer_index],
+                init_set_collection_per_signer[accounts[signer_index].get_base_pubkey()]);
+        }
+
+        // 3. each signer partially signs all the proof proposals for each signer subgroup they are a member of
+        std::list<multisig::MultisigSigningErrorVariant> multisig_errors;
+        std::unordered_map<crypto::public_key, std::vector<multisig::MultisigPartialSigSetV1>> partial_sig_sets_per_signer;
+
+        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
+        {
+            if (!multisig::try_make_v1_multisig_partial_sig_sets_v1(accounts[signer_index],
+                    expected_multisig_account_era,
+                    signers_as_filter,
+                    proof_contexts,
+                    num_expected_proof_basekeys,
+                    partial_sig_maker,
+                    init_set_collection_per_signer.at(accounts[signer_index].get_base_pubkey()),
+                    init_set_collection_per_signer,
+                    multisig_errors,
+                    signer_nonce_records[signer_index],
+                    partial_sig_sets_per_signer[accounts[signer_index].get_base_pubkey()]))
+                return false;
+
+            if (multisig_errors.size() != 0)
+                return false;
+        }
+
+        // 4. assemble and validate the final proof set for each signer subgroup
+        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
+        {
+            // a. prepare the partial signatures so they can be combined
+            std::unordered_map<multisig::signer_set_filter,  //signing group
+                std::unordered_map<rct::key,                 //proof key
+                    std::vector<multisig::MultisigPartialSigVariant>>> collected_sigs_per_key_per_filter;
+
+            multisig::filter_multisig_partial_signatures_for_combining_v1(accounts[signer_index].get_signers(),
+                proof_contexts,
+                multisig::MultisigPartialSigVariant::type_index_of<PartialSigT>(),
+                partial_sig_sets_per_signer,
+                multisig_errors,
+                collected_sigs_per_key_per_filter);
+
+            if (multisig_errors.size() != 0)
+                return false;
+
+            // b. assemble all the proofs
+            std::vector<ProofT> proofs;
+
+            if (!multisig::try_assemble_multisig_partial_sigs_signer_group_attempts<
+                        PartialSigT,
+                        ProofT
+                    >(
+                        num_proofs,
+                        collected_sigs_per_key_per_filter,
+                        try_assemble_partial_sigs_func,
+                        multisig_errors,
+                        proofs
+                    ))
+                return false;
+
+            if (multisig_errors.size() != 0)
+                return false;
+            if (proofs.size() != num_proofs)
+                return false;
+
+            // c. check all the proofs
+            for (const ProofT &proof : proofs)
+            {
+                if (!validate_proof_func(proof))
+                    return false;
+            }
+        }
+    }
+    catch (...) { return false; }
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static bool multisig_framework_clsag_test(const std::uint32_t threshold,
     const std::uint32_t num_signers,
     const std::uint32_t num_proofs,
@@ -532,25 +656,7 @@ static bool multisig_framework_clsag_test(const std::uint32_t threshold,
             mapped_masked_commitments[K] = masked_C;
         }
 
-        // 2. each signer responds to the proposals with a proof initialization set
-        // note: before doing this, signers should validate the multisig proposals then cache them for futher use
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
-        std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
-            init_set_collection_per_signer;  //[ signer id : [ proof key : init set ] ]
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            multisig::make_v1_multisig_init_set_collection_v1(threshold,
-                accounts[signer_index].get_signers(),
-                signers_as_filter,
-                accounts[signer_index].get_base_pubkey(),
-                proof_contexts,
-                proof_key_base_points,
-                signer_nonce_records[signer_index],
-                init_set_collection_per_signer[accounts[signer_index].get_base_pubkey()]);
-        }
-
-        // 3. each signer partially signs all the proof proposals for each signer subgroup they are a member of
+        // 2. prepare partial signature maker
         const multisig::MultisigPartialSigMakerCLSAG partial_sig_maker{
                 threshold,
                 multisig_proof_proposals,
@@ -558,93 +664,49 @@ static bool multisig_framework_clsag_test(const std::uint32_t threshold,
                 proof_privkeys_z
             };
 
-        std::list<multisig::MultisigSigningErrorVariant> multisig_errors;
-        std::unordered_map<crypto::public_key, std::vector<multisig::MultisigPartialSigSetV1>> partial_sig_sets_per_signer;
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            if (!multisig::try_make_v1_multisig_partial_sig_sets_v1(accounts[signer_index],
+        // 3. perform the framework test using CLSAGs
+        if (!multisig_framework_test_impl<
+                    multisig::CLSAGMultisigProposal,
+                    multisig::CLSAGMultisigPartial,
+                    rct::clsag
+                >(
+                    accounts,
                     cryptonote::account_generator_era::cryptonote,
-                    signers_as_filter,
+                    2,  //clsag has 2 base pubkeys
+                    multisig_proof_proposals,
                     proof_contexts,
-                    2,  //2 for CLSAG
+                    proof_key_base_points,
                     partial_sig_maker,
-                    init_set_collection_per_signer.at(accounts[signer_index].get_base_pubkey()),
-                    init_set_collection_per_signer,
-                    multisig_errors,
-                    signer_nonce_records[signer_index],
-                    partial_sig_sets_per_signer[accounts[signer_index].get_base_pubkey()]))
-                return false;
+                    [&](const rct::key &proof_key,
+                        const std::vector<multisig::CLSAGMultisigPartial> &partial_sigs,
+                        rct::clsag &clsag_out) -> bool
+                    {
+                        // sanity check
+                        if (proof_contexts.find(proof_key) == proof_contexts.end())
+                            return false;
 
-            if (multisig_errors.size() != 0)
-                return false;
-        }
+                        // make the proof
+                        multisig::finalize_clsag_multisig_proof(partial_sigs,
+                            mapped_ring_members.at(proof_key),
+                            mapped_masked_commitments.at(proof_key),
+                            clsag_out);
 
-        // 4. assemble and validate the final proof set for each signer subgroup
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            // a. prepare the partial signatures so they can be combined
-            std::unordered_map<multisig::signer_set_filter,  //signing group
-                std::unordered_map<rct::key,                 //proof key
-                    std::vector<multisig::MultisigPartialSigVariant>>> collected_sigs_per_key_per_filter;
+                        return true;
+                    },
+                    [&](const rct::clsag &clsag_proof) -> bool
+                    {
+                        const rct::key &proof_key{mapped_proof_keys.at(rct::rct2ki(clsag_proof.I))};
 
-            multisig::filter_multisig_partial_signatures_for_combining_v1(accounts[signer_index].get_signers(),
-                proof_contexts,
-                multisig::MultisigPartialSigVariant::type_index_of<multisig::CLSAGMultisigPartial>(),
-                partial_sig_sets_per_signer,
-                multisig_errors,
-                collected_sigs_per_key_per_filter);
-
-            if (multisig_errors.size() != 0)
-                return false;
-
-            // b. assemble all the proofs
-            std::vector<rct::clsag> clsag_proofs;
-
-            if (!multisig::try_assemble_multisig_partial_sigs_signer_group_attempts<
-                        multisig::CLSAGMultisigPartial,
-                        rct::clsag
-                    >(
-                        num_proofs,
-                        collected_sigs_per_key_per_filter,
-                        [&](const rct::key &proof_key,
-                            const std::vector<multisig::CLSAGMultisigPartial> &partial_sigs,
-                            rct::clsag &clsag_out) -> bool
-                        {
-                            // sanity check
-                            if (proof_contexts.find(proof_key) == proof_contexts.end())
-                                return false;
-
-                            // make the proof
-                            multisig::finalize_clsag_multisig_proof(partial_sigs,
+                        if (!rct::verRctCLSAGSimple(proof_contexts.at(proof_key),
+                                clsag_proof,
                                 mapped_ring_members.at(proof_key),
-                                mapped_masked_commitments.at(proof_key),
-                                clsag_out);
+                                mapped_masked_commitments.at(proof_key)))
+                            return false;
 
-                            return true;
-                        },
-                        multisig_errors,
-                        clsag_proofs
-                    ))
-                return false;
-
-            if (multisig_errors.size() != 0)
-                return false;
-            if (clsag_proofs.size() != num_proofs)
-                return false;
-
-            // c. check all the proofs
-            for (const rct::clsag &proof : clsag_proofs)
-            {
-                const rct::key &proof_key{mapped_proof_keys.at(rct::rct2ki(proof.I))};
-
-                if (!rct::verRctCLSAGSimple(proof_contexts.at(proof_key),
-                        proof,
-                        mapped_ring_members.at(proof_key),
-                        mapped_masked_commitments.at(proof_key)))
-                    return false;
-            }
-        }
+                        return true;
+                    }
+                ))
+            return false;
     }
     catch (...) { return false; }
 
@@ -719,25 +781,7 @@ static bool multisig_framework_composition_proof_test(const std::uint32_t thresh
             proof_key_base_points[K] = {rct::pk2rct(crypto::get_U())};            
         }
 
-        // 2. each signer responds to the proposals with a proof initialization set
-        // note: before doing this, signers should validate the multisig proposals then cache them for futher use
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
-        std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
-            init_set_collection_per_signer;  //[ signer id : [ proof key : init set ] ]
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            multisig::make_v1_multisig_init_set_collection_v1(threshold,
-                accounts[signer_index].get_signers(),
-                signers_as_filter,
-                accounts[signer_index].get_base_pubkey(),
-                proof_contexts,
-                proof_key_base_points,
-                signer_nonce_records[signer_index],
-                init_set_collection_per_signer[accounts[signer_index].get_base_pubkey()]);
-        }
-
-        // 3. each signer partially signs all the proof proposals for each signer subgroup they are a member of
+        // 2. prepare partial signature maker
         const multisig::MultisigPartialSigMakerSpCompositionProof partial_sig_maker{
                 threshold,
                 multisig_proof_proposals,
@@ -747,90 +791,46 @@ static bool multisig_framework_composition_proof_test(const std::uint32_t thresh
                 proof_privkeys_z_multiplier
             };
 
-        std::list<multisig::MultisigSigningErrorVariant> multisig_errors;
-        std::unordered_map<crypto::public_key, std::vector<multisig::MultisigPartialSigSetV1>> partial_sig_sets_per_signer;
-
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            if (!multisig::try_make_v1_multisig_partial_sig_sets_v1(accounts[signer_index],
+        // 3. perform the framework test using seraphis composition proofs
+        if (!multisig_framework_test_impl<
+                    multisig::SpCompositionProofMultisigProposal,
+                    multisig::SpCompositionProofMultisigPartial,
+                    sp::SpCompositionProof
+                >(
+                    accounts,
                     cryptonote::account_generator_era::seraphis,
-                    signers_as_filter,
+                    1,  //sp composition proof has 1 base pubkey
+                    multisig_proof_proposals,
                     proof_contexts,
-                    1,  //1 for seraphis composition proof
+                    proof_key_base_points,
                     partial_sig_maker,
-                    init_set_collection_per_signer.at(accounts[signer_index].get_base_pubkey()),
-                    init_set_collection_per_signer,
-                    multisig_errors,
-                    signer_nonce_records[signer_index],
-                    partial_sig_sets_per_signer[accounts[signer_index].get_base_pubkey()]))
-                return false;
+                    [&](const rct::key &proof_key,
+                        const std::vector<multisig::SpCompositionProofMultisigPartial> &partial_sigs,
+                        sp::SpCompositionProof &composition_proof_out) -> bool
+                    {
+                        // sanity check
+                        if (proof_contexts.find(proof_key) == proof_contexts.end())
+                            return false;
 
-            if (multisig_errors.size() != 0)
-                return false;
-        }
+                        // make the proof
+                        multisig::finalize_sp_composition_multisig_proof(partial_sigs, composition_proof_out);
 
-        // 4. assemble and validate the final proof set for each signer subgroup
-        for (std::size_t signer_index{0}; signer_index < num_signers; ++signer_index)
-        {
-            // a. prepare the partial signatures so they can be combined
-            std::unordered_map<multisig::signer_set_filter,  //signing group
-                std::unordered_map<rct::key,                 //proof key
-                    std::vector<multisig::MultisigPartialSigVariant>>> collected_sigs_per_key_per_filter;
+                        return true;
+                    },
+                    [&](const sp::SpCompositionProof &composition_proof) -> bool
+                    {
+                        const rct::key &proof_key{mapped_proof_keys.at(composition_proof.K_t1)};
 
-            multisig::filter_multisig_partial_signatures_for_combining_v1(accounts[signer_index].get_signers(),
-                proof_contexts,
-                multisig::MultisigPartialSigVariant::type_index_of<multisig::SpCompositionProofMultisigPartial>(),
-                partial_sig_sets_per_signer,
-                multisig_errors,
-                collected_sigs_per_key_per_filter);
+                        if (!sp::verify_sp_composition_proof(composition_proof,
+                                proof_contexts.at(proof_key),
+                                proof_key,
+                                mapped_KI.at(proof_key)))
+                            return false;
 
-            if (multisig_errors.size() != 0)
-                return false;
-
-            // b. assemble all the proofs
-            std::vector<sp::SpCompositionProof> composition_proofs;
-
-            if (!multisig::try_assemble_multisig_partial_sigs_signer_group_attempts<
-                        multisig::SpCompositionProofMultisigPartial,
-                        sp::SpCompositionProof
-                    >(
-                        num_proofs,
-                        collected_sigs_per_key_per_filter,
-                        [&](const rct::key &proof_key,
-                            const std::vector<multisig::SpCompositionProofMultisigPartial> &partial_sigs,
-                            sp::SpCompositionProof &composition_proof_out) -> bool
-                        {
-                            // sanity check
-                            if (proof_contexts.find(proof_key) == proof_contexts.end())
-                                return false;
-
-                            // make the proof
-                            multisig::finalize_sp_composition_multisig_proof(partial_sigs, composition_proof_out);
-
-                            return true;
-                        },
-                        multisig_errors,
-                        composition_proofs
-                    ))
-                return false;
-
-            if (multisig_errors.size() != 0)
-                return false;
-            if (composition_proofs.size() != num_proofs)
-                return false;
-
-            // c. check all the proofs
-            for (const sp::SpCompositionProof &proof : composition_proofs)
-            {
-                const rct::key &proof_key{mapped_proof_keys.at(proof.K_t1)};
-
-                if (!sp::verify_sp_composition_proof(proof,
-                        proof_contexts.at(proof_key),
-                        proof_key,
-                        mapped_KI.at(proof_key)))
-                    return false;
-            }
-        }
+                        return true;
+                    }
+                ))
+            return false;
     }
     catch (...) { return false; }
 
