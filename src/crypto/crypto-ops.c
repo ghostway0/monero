@@ -39,6 +39,9 @@ DISABLE_VS_WARNINGS(4146 4244)
 /* Predeclarations */
 
 static void fe_sq(fe, const fe);
+static void ge_madd(ge_p1p1 *, const ge_p3 *, const ge_precomp *);
+static void ge_msub(ge_p1p1 *, const ge_p3 *, const ge_precomp *);
+static void ge_p2_0(ge_p2 *);
 static void ge_p3_dbl(ge_p1p1 *, const ge_p3 *);
 static void fe_divpowm1(fe, const fe, const fe);
 
@@ -1425,7 +1428,7 @@ int ge_frombytes_vartime(ge_p3 *h, const unsigned char *s) {
 r = p + q
 */
 
-void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
+static void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe t0;
   fe_add(r->X, p->Y, p->X);
   fe_sub(r->Y, p->Y, p->X);
@@ -1445,7 +1448,7 @@ void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
 r = p - q
 */
 
-void ge_msub(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
+static void ge_msub(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe t0;
   fe_add(r->X, p->Y, p->X);
   fe_sub(r->Y, p->Y, p->X);
@@ -1486,7 +1489,7 @@ void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p) {
 
 /* From ge_p2_0.c */
 
-void ge_p2_0(ge_p2 *h) {
+static void ge_p2_0(ge_p2 *h) {
   fe_0(h->X);
   fe_1(h->Y);
   fe_1(h->Z);
