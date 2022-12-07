@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "multisig_nonce_record.h"
 
@@ -35,6 +33,7 @@
 #include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "misc_log_ex.h"
+#include "multisig_signer_set_filter.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
@@ -44,6 +43,8 @@
 #include <boost/utility/string_ref.hpp>
 
 //standard headers
+#include <tuple>
+#include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "multisig"
@@ -53,23 +54,19 @@ namespace multisig
 //-------------------------------------------------------------------------------------------------------------------
 bool MultisigPubNonces::operator<(const MultisigPubNonces &other) const
 {
+    // sort by nonce pubkey 1 then nonce pubkey 2 if pubkey 1 is equal
     const int nonce_1_comparison{
             memcmp(signature_nonce_1_pub.bytes, &other.signature_nonce_1_pub.bytes, sizeof(rct::key))
         };
 
     if (nonce_1_comparison < 0)
-    {
         return true;
-    }
-    else if (nonce_1_comparison == 0 &&
+
+    if (nonce_1_comparison == 0 &&
         memcmp(signature_nonce_2_pub.bytes, &other.signature_nonce_2_pub.bytes, sizeof(rct::key)) < 0)
-    {
         return true;
-    }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool MultisigPubNonces::operator==(const MultisigPubNonces &other) const
@@ -81,6 +78,22 @@ void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBu
 {
     transcript_inout.append("nonce1", container.signature_nonce_1_pub);
     transcript_inout.append("nonce2", container.signature_nonce_2_pub);
+}
+//-------------------------------------------------------------------------------------------------------------------
+MultisigNonceRecord::MultisigNonceRecord(const std::vector<
+        std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>
+    > &raw_nonce_data)
+{
+    for (const auto &signature_attempt : raw_nonce_data)
+    {
+        // note: ignore failures
+        this->try_add_nonces_impl(
+                std::get<0>(signature_attempt),
+                std::get<1>(signature_attempt),
+                std::get<2>(signature_attempt),
+                std::get<3>(signature_attempt)
+            );
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool MultisigNonceRecord::has_record(const rct::key &message,
@@ -96,30 +109,11 @@ bool MultisigNonceRecord::try_add_nonces(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter)
 {
-    if (this->has_record(message, proof_key, filter))
+    if (!this->try_add_nonces_impl(message,
+            proof_key,
+            filter,
+            MultisigNonces{rct::rct2sk(rct::skGen()), rct::rct2sk(rct::skGen())}))
         return false;
-
-    if (!sp::key_domain_is_prime_subgroup(proof_key))
-        return false;
-
-    // add record
-    m_record[message][proof_key][filter] = MultisigNonces{rct::rct2sk(rct::skGen()), rct::rct2sk(rct::skGen())};
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_get_recorded_nonce_privkeys(const rct::key &message,
-    const rct::key &proof_key,
-    const signer_set_filter &filter,
-    crypto::secret_key &nonce_privkey_1_out,
-    crypto::secret_key &nonce_privkey_2_out) const
-{
-    if (!this->has_record(message, proof_key, filter))
-        return false;
-
-    // privkeys
-    nonce_privkey_1_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_1_priv;
-    nonce_privkey_2_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_2_priv;
 
     return true;
 }
@@ -147,6 +141,22 @@ bool MultisigNonceRecord::try_get_nonce_pubkeys_for_base(const rct::key &message
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool MultisigNonceRecord::try_get_recorded_nonce_privkeys(const rct::key &message,
+    const rct::key &proof_key,
+    const signer_set_filter &filter,
+    crypto::secret_key &nonce_privkey_1_out,
+    crypto::secret_key &nonce_privkey_2_out) const
+{
+    if (!this->has_record(message, proof_key, filter))
+        return false;
+
+    // privkeys
+    nonce_privkey_1_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_1_priv;
+    nonce_privkey_2_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_2_priv;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool MultisigNonceRecord::try_remove_record(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter)
@@ -160,6 +170,40 @@ bool MultisigNonceRecord::try_remove_record(const rct::key &message,
         m_record[message].erase(proof_key);
     if (m_record[message].empty())
         m_record.erase(message);
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> MultisigNonceRecord::export_data() const
+{
+    // flatten the record and return it
+    std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> raw_data;
+
+    for (const auto &message_map : m_record)
+    {
+        for (const auto &key_map : message_map.second)
+        {
+            for (const auto &filter_map : key_map.second)
+                raw_data.emplace_back(message_map.first, key_map.first, filter_map.first, filter_map.second);
+        }
+    }
+
+    return raw_data;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MultisigNonceRecord::try_add_nonces_impl(const rct::key &message,
+    const rct::key &proof_key,
+    const signer_set_filter &filter,
+    const MultisigNonces &nonces)
+{
+    if (this->has_record(message, proof_key, filter))
+        return false;
+
+    if (!sp::key_domain_is_prime_subgroup(proof_key))
+        return false;
+
+    // add record
+    m_record[message][proof_key][filter] = nonces;
 
     return true;
 }

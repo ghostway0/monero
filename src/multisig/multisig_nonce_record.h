@@ -26,16 +26,13 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Record of Musig2-style nonces for multisig signing.
-
+// Records Musig2-style nonces for multisig signing.
 
 #pragma once
 
 //local headers
 #include "crypto/crypto.h"
-#include "multisig/multisig_signer_set_filter.h"
+#include "multisig_signer_set_filter.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_transcript.h"
 
@@ -43,17 +40,18 @@
 #include <boost/utility/string_ref.hpp>
 
 //standard headers
+#include <tuple>
 #include <unordered_map>
+#include <vector>
 
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
-
 
 namespace multisig
 {
 
 ////
-// Multisig prep struct
+// Multisig public nonces
 // - store multisig participant's MuSig2-style signature opening nonces for an arbitrary base point J
 // - IMPORTANT: these are stored *(1/8) so another person can efficiently mul8 and be confident the result is canonical
 //
@@ -70,7 +68,7 @@ struct MultisigPubNonces final
     // signature nonce pubkey: (1/8) * alpha_{2,e}*J
     rct::key signature_nonce_2_pub;
 
-    /// overload operator< for sorting: compare nonce_1 then nonce_2
+    /// overload operator< for sorting: compare nonce_1 then nonce_2 (does not need to be constant time)
     bool operator<(const MultisigPubNonces &other) const;
     bool operator==(const MultisigPubNonces &other) const;
 
@@ -80,6 +78,18 @@ struct MultisigPubNonces final
 inline const boost::string_ref container_name(const MultisigPubNonces&) { return "MultisigPubNonces"; }
 void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBuilder &transcript_inout);
 
+////
+// Multisig nonce record
+// - store a multisig signer's signature nonces
+// - nonces may be stored for multiple signing attempts on different messages, keys, and for different signer subgroups
+//   of which the signer is a member
+//
+// WARNING: a nonce removed from the record may still exist in persistent storage (a file somewhere); users should
+//          ALWAYS refresh that storage after making a signature and before exposing that signature outside the local
+//          context, to avoid a situation where the signature is exported then the local context crashes/closes without
+//          updating the nonces in storage; those nonces could be used to make another signature, thereby leaking the
+//          local signer's private multisig key material
+///
 struct MultisigNonces final
 {
     // signature nonce privkey: alpha_{1,e}
@@ -88,24 +98,22 @@ struct MultisigNonces final
     crypto::secret_key signature_nonce_2_priv;
 };
 
-////
-// Multisig nonce record
-// - store a multisig participant's nonces for multiple signing attempts
-//   - multiple messages to sign
-//   - multiple signer groups per message
-///
 class MultisigNonceRecord final
 {
 public:
 //constructors
     /// default constructor
     MultisigNonceRecord() = default;
-    /// copy constructor: disabled
+    /// import raw nonce data (e.g. from a file)
+    MultisigNonceRecord(const std::vector<
+            std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>
+        > &raw_nonce_data);
+    /// copy constructor: disabled (don't want copies of the nonces floating around)
     MultisigNonceRecord(const MultisigNonceRecord&) = delete;
     /// move constructor: defaulted
     MultisigNonceRecord(MultisigNonceRecord&&) = default;
 //overloaded operators
-    /// copy assignment: disabled
+    /// copy assignment: disabled (don't want copies of the nonces floating around)
     MultisigNonceRecord& operator=(const MultisigNonceRecord&) = delete;
     /// move assignment: defaulted
     MultisigNonceRecord& operator=(MultisigNonceRecord&&) = default;
@@ -115,34 +123,40 @@ public:
     bool has_record(const rct::key &message, const rct::key &proof_key, const signer_set_filter &filter) const;
     /// true if successfully added nonces for a given signing scenario
     /// note: nonces are generated internally and only exposed by try_get_recorded_nonce_privkeys()
-    bool try_add_nonces(const rct::key &message,
+    bool try_add_nonces(const rct::key &message, const rct::key &proof_key, const signer_set_filter &filter);
+    /// true if created nonce pubkeys for a given signing scenario on the specified base key J
+    bool try_get_nonce_pubkeys_for_base(const rct::key &message,
         const rct::key &proof_key,
-        const signer_set_filter &filter);
+        const signer_set_filter &filter,
+        const rct::key &pubkey_base,
+        MultisigPubNonces &nonce_pubkeys_out) const;
     /// true if found nonce privkeys for a given signing scenario
     bool try_get_recorded_nonce_privkeys(const rct::key &message,
         const rct::key &proof_key,
         const signer_set_filter &filter,
         crypto::secret_key &nonce_privkey_1_out,
         crypto::secret_key &nonce_privkey_2_out) const;
-    /// true if found nonce pubkeys for a given signing scenario
-    bool try_get_nonce_pubkeys_for_base(const rct::key &message,
+    /// true if successfully removed a record for a given signing scenario
+    bool try_remove_record(const rct::key &message, const rct::key &proof_key, const signer_set_filter &filter);
+    /// export the nonce data (e.g. to record in a file)
+    std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> export_data() const;
+
+private:
+    /// true if successfully added nonces for a given signing scenario
+    bool try_add_nonces_impl(const rct::key &message,
         const rct::key &proof_key,
         const signer_set_filter &filter,
-        const rct::key &pubkey_base,
-        MultisigPubNonces &nonce_pubkeys_out) const;
-    /// true if removed a record for a given signing scenario
-    bool try_remove_record(const rct::key &message, const rct::key &proof_key, const signer_set_filter &filter);
+        const MultisigNonces &nonces);
 
 //member variables
-private:
-    // [message : [proof key : [filter, nonces]]]
+    /// [ message : [ proof key : [ filter : nonces ] ] ]
     std::unordered_map<
-        rct::key,                              //message to sign
+        rct::key,                   //message to sign
         std::unordered_map<
-            rct::key,                          //proof key to be signed
+            rct::key,               //proof key to sign with using multisig
             std::unordered_map<
-                signer_set_filter,   //filter representing a signer group
-                MultisigNonces                 //nonces
+                signer_set_filter,  //filter representing the signer group that should make this signature
+                MultisigNonces      //the local signer's private nonce material for this signing attempt
             >
         >
     > m_record;
