@@ -70,12 +70,13 @@
 #include "ringct/rctTypes.h"
 
 //third party headers
+#include <boost/utility/string_ref.hpp>
 
 //standard headers
 #include <vector>
 
 //forward declarations
-
+namespace sp { class SpTranscriptBuilder; }
 
 namespace sp
 {
@@ -92,6 +93,8 @@ struct DualBaseVectorProof
     std::vector<crypto::public_key> V_1;
     std::vector<crypto::public_key> V_2;
 };
+inline const boost::string_ref container_name(const DualBaseVectorProof&) { return "DualBaseVectorProof"; }
+void append_to_transcript(const DualBaseVectorProof &container, SpTranscriptBuilder &transcript_inout);
 
 /**
 * brief: make_dual_base_vector_proof - create a dual base vector proof

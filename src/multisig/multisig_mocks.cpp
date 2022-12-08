@@ -120,7 +120,7 @@ void mock_convert_multisig_accounts(const cryptonote::account_generator_era new_
 }
 //-------------------------------------------------------------------------------------------------------------------
 void mock_multisig_cn_key_image_recovery(const std::vector<multisig_account> &accounts,
-    //[base key for key image : shared offset privkey material in base key]
+    //[ base key for key image : shared offset privkey material in base key ]
     const std::unordered_map<crypto::public_key, crypto::secret_key> &saved_key_components,
     std::unordered_map<crypto::public_key, crypto::key_image> &recovered_key_images_out)
 {
@@ -165,16 +165,17 @@ void mock_multisig_cn_key_image_recovery(const std::vector<multisig_account> &ac
     // 3. add the shared offset component to each key image core
     for (const auto &recovered_key_image_core : recovered_key_image_cores)
     {
-        CHECK_AND_ASSERT_THROW_MES(saved_key_components.find(recovered_key_image_core.first) != saved_key_components.end(),
-            "mock multisig cn key image recovery: could not find an expected key image core.");
+        CHECK_AND_ASSERT_THROW_MES(saved_key_components.find(recovered_key_image_core.first) !=
+                saved_key_components.end(),
+            "mock multisig cn key image recovery: did not produce an expected key image core.");
 
-        // KI_shared_piece = shared_offset * Hp(core key)
+        // KI_shared_piece = shared_offset * Hp(base key)
         crypto::key_image KI_shared_piece;
         crypto::generate_key_image(recovered_key_image_core.first,
             saved_key_components.at(recovered_key_image_core.first),
             KI_shared_piece);
 
-        // KI = shared_offset * Hp(core key) + k_multisig * Hp(core key)
+        // KI = shared_offset * Hp(base key) + k_multisig * Hp(base key)
         recovered_key_images_out[recovered_key_image_core.first] =
             rct::rct2ki(rct::addKeys(rct::ki2rct(KI_shared_piece), rct::pk2rct(recovered_key_image_core.second)));
     }

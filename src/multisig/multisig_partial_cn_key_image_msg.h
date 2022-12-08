@@ -36,82 +36,67 @@
 
 namespace sp { struct DualBaseVectorProof; }
 
-
 namespace multisig
 {
-  ////
-  // multisig partial cryptonote key image msg
-  // - This message contains a proof that a set of public keys on generator G have 1:1 discrete log relations with a
-  //    set of partial key images on base key Hp(Ko) for hash-to-point algorithm Hp() and some onetime address Ko.
-  // - A multisig group member (for an M-of-N multisig) can recover the key image KI for a cryptonote onetime address
-  //   Ko owned by the group by collecting messages from M group members (where the private signing keys are shares
-  //   of the group key held by each group member). Once at least M messages are collected, sum together unique
-  //   partial KI keys plus the onetime address's view component times Hp(Ko) to get the actual key image KI. Verify
-  //   the key image by summing the unique multisig public keyshares and expecting it to equal the group's base spend
-  //   key.
-  // - INVARIANT: keyshares stored here are canonical prime-order subgroup points.
-  //
-  // dualbase_proof_msg = domain-sep || signing_pubkey || Ko
-  //
-  // msg = versioning-domain-sep ||
-  //       b58(signing_pubkey || Ko || {multisig_keyshares} || {partial_KI} || dualbase_proof_challenge ||
-  //           dualbase_proof_response ||
-  //           crypto_sig[signing_privkey](Ko || dualbase_proof_challenge || dualbase_proof_response))
-  ///
-  class multisig_partial_cn_key_image_msg final
-  {
-  //constructors
-  public:
-    // default constructor
-    multisig_partial_cn_key_image_msg() = default;
 
-    // construct from info
-    multisig_partial_cn_key_image_msg(const crypto::secret_key &signing_privkey,
-      const crypto::public_key &onetime_address,
-      const std::vector<crypto::secret_key> &keyshare_privkeys);
+////
+// multisig partial cryptonote key image message
+// - This message contains a proof that a set of public keys on generator G have 1:1 discrete log relations with a
+//   set of partial key images on base key Hp(Ko) for hash-to-point algorithm Hp() and some onetime address Ko.
+// - A multisig group member (for an M-of-N multisig) can recover the key image KI for a cryptonote onetime address
+//   Ko owned by the group by collecting these messages from M group members (where the private signing keys are
+//   shares of the group key held by each group member). Once at least M messages are collected, sum together unique
+//   partial KI keys from those message (plus the onetime address's view component times Hp(Ko)) to get the actual
+//   key image KI. Verify the key image by summing the unique multisig public keyshares from the messages and expecting
+//   the result to equal the group's base spend key.
+// - INVARIANT: keyshares stored here are canonical prime-order subgroup points (this is guaranteed by obtaining the
+//   keyshares from a DualBaseVectorProof).
+///
+class multisig_partial_cn_key_image_msg final
+{
+//constructors
+public:
+  // default constructor
+  multisig_partial_cn_key_image_msg() = default;
+  // construct from info (create message)
+  multisig_partial_cn_key_image_msg(const crypto::secret_key &signing_privkey,
+    const crypto::public_key &onetime_address,
+    const std::vector<crypto::secret_key> &keyshare_privkeys);
+  // construct from string (deserialize and validate message)
+  multisig_partial_cn_key_image_msg(std::string msg);
 
-    // construct from string
-    multisig_partial_cn_key_image_msg(std::string msg);
+//member functions
+  // get msg string
+  const std::string& get_msg() const { return m_msg; }
+  // get onetime address this message is built for
+  const crypto::public_key& get_onetime_address() const { return m_onetime_address; }
+  // get the multisig group key keyshares (these are guaranteed to be canonical points)
+  const std::vector<crypto::public_key>& get_multisig_keyshares() const { return m_multisig_keyshares; }
+  // get the partial key image keys (these are guaranteed to be canonical points)
+  const std::vector<crypto::public_key>& get_partial_key_images() const { return m_partial_key_images; }
+  // get msg signing pubkey (guaranteed to be a canonical point)
+  const crypto::public_key& get_signing_pubkey() const { return m_signing_pubkey; }
 
-    // copy constructor: default
+private:
+  // set: msg string based on msg contents, with signing pubkey defined from signing privkey
+  void construct_msg(const crypto::secret_key &signing_privkey, const sp::DualBaseVectorProof &dualbase_proof);
+  // parse msg string into parts, validate contents and signature
+  void parse_and_validate_msg();
 
-  //destructor: default
-    ~multisig_partial_cn_key_image_msg() = default;
+//member variables
+private:
+  // message as string
+  std::string m_msg;
 
-  //overloaded operators: none
+  // onetime address this message is built for
+  crypto::public_key m_onetime_address;
+  // the msg signer's multisig key keyshares
+  std::vector<crypto::public_key> m_multisig_keyshares;
+  // the msg signer's partial key images for the designated onetime address
+  std::vector<crypto::public_key> m_partial_key_images;
 
-  //member functions
-    // get msg string
-    const std::string& get_msg() const { return m_msg; }
-    // get onetime address this message is built for
-    const crypto::public_key& get_onetime_address() const { return m_onetime_address; }
-    // get the multisig group key keyshares
-    const std::vector<crypto::public_key>& get_multisig_keyshares() const { return m_multisig_keyshares; }
-    // get the partial key image keys
-    const std::vector<crypto::public_key>& get_partial_key_images() const { return m_partial_key_images; }
-    // get msg signing pubkey
-    const crypto::public_key& get_signing_pubkey() const { return m_signing_pubkey; }
-
-  private:
-    // set: msg string based on msg contents, with signing pubkey defined from input privkey
-    void construct_msg(const crypto::secret_key &signing_privkey, const sp::DualBaseVectorProof &dualbase_proof);
-    // parse msg string into parts, validate contents and signature
-    void parse_and_validate_msg();
-
-  //member variables
-  private:
-    // message as string
-    std::string m_msg;
-
-    // onetime address this message is built for
-    crypto::public_key m_onetime_address;
-    // the msg signer's multisig key keyshares
-    std::vector<crypto::public_key> m_multisig_keyshares;
-    // the msg signer's partial key images for the designated onetime address using their multisig private keyshares
-    std::vector<crypto::public_key> m_partial_key_images;
-
-    // pubkey used to sign this msg
-    crypto::public_key m_signing_pubkey;
-  };
+  // pubkey used to sign this msg
+  crypto::public_key m_signing_pubkey;
+};
 
 } //namespace multisig

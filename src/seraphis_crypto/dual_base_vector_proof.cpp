@@ -166,6 +166,15 @@ static void compute_response(const std::vector<crypto::secret_key> &k,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const DualBaseVectorProof &container, SpTranscriptBuilder &transcript_inout)
+{
+    transcript_inout.append("m", container.m);
+    transcript_inout.append("c", container.c);
+    transcript_inout.append("r", container.r);
+    transcript_inout.append("V_1", container.V_1);
+    transcript_inout.append("V_2", container.V_2);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_dual_base_vector_proof(const rct::key &message,
     const crypto::public_key &G_1,
     const crypto::public_key &G_2,

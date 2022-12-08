@@ -308,7 +308,7 @@ static void test_multisig_cn_key_image_recovery(const std::uint32_t M, const std
   ASSERT_TRUE(N > 0);
 
   using namespace multisig;
-  const auto cn_era = cryptonote::account_generator_era::cryptonote;
+  const cryptonote::account_generator_era cn_era = cryptonote::account_generator_era::cryptonote;
 
   // make M-of-N cryptonote-era multisig accounts
   std::vector<multisig_account> accounts;
@@ -613,7 +613,7 @@ TEST(multisig, multisig_partial_cn_ki_msg)
   crypto::public_key signing_pubkey;
   crypto::secret_key_to_public_key(signing_skey, signing_pubkey);
 
-  // misc. edge cases
+  // create a message: misc. edge cases
   const crypto::public_key rand_Ko{rct::rct2pk(rct::pkGen())};
 
   EXPECT_NO_THROW((multisig_partial_cn_key_image_msg{}));
@@ -654,6 +654,7 @@ TEST(multisig, multisig_partial_cn_ki_msg)
     multisig_partial_cn_key_image_msg recovery_test_msg{signing_skey, Ko, privkeys};
     multisig_partial_cn_key_image_msg recovery_test_msg_reverse{recovery_test_msg.get_msg()};
     EXPECT_EQ(recovery_test_msg.get_onetime_address(), Ko);
+    EXPECT_EQ(recovery_test_msg.get_onetime_address(), recovery_test_msg_reverse.get_onetime_address());
     EXPECT_EQ(recovery_test_msg.get_signing_pubkey(), signing_pubkey);
     EXPECT_EQ(recovery_test_msg.get_signing_pubkey(), recovery_test_msg_reverse.get_signing_pubkey());
     EXPECT_EQ(recovery_test_msg.get_partial_key_images().size(), privkeys.size());

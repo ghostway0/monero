@@ -44,30 +44,24 @@ namespace sp
 {
 
 /// H_1(x): 1-byte output
-void sp_hash_to_1(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_1(const void *data, const std::size_t data_length, void *hash_out);
 /// H_2(x): 2-byte output
-void sp_hash_to_2(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_2(const void *data, const std::size_t data_length, void *hash_out);
 /// H_8(x): 8-byte output
-void sp_hash_to_8(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_8(const void *data, const std::size_t data_length, void *hash_out);
 /// H_16(x): 16-byte output
-void sp_hash_to_16(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_16(const void *data, const std::size_t data_length, void *hash_out);
 /// H_32(x): 32-byte output
-void sp_hash_to_32(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_32(const void *data, const std::size_t data_length, void *hash_out);
 /// H_64(x): 64-byte output
-void sp_hash_to_64(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_64(const void *data, const std::size_t data_length, void *hash_out);
 /// H_n(x): Ed25519 group scalar output (32 bytes)
-void sp_hash_to_scalar(const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_hash_to_scalar(const void *data, const std::size_t data_length, void *hash_out);
 /// H_n[k](x): 32-byte key; Ed25519 group scalar output (32 bytes)
-void sp_derive_key(const void *derivation_key, const void *data, const std::size_t data_length, unsigned char *hash_out);
+void sp_derive_key(const void *derivation_key, const void *data, const std::size_t data_length, void *hash_out);
 /// H_32[k](x): 32-byte key; 32-byte output
-void sp_derive_secret(const void *derivation_key,
-    const void *data,
-    const std::size_t data_length,
-    unsigned char *hash_out);
+void sp_derive_secret(const void *derivation_key, const void *data, const std::size_t data_length, void *hash_out);
 /// H_n_x25519[k](x): 32-byte key; canonical X25519 group scalar output (32 bytes)
-void sp_derive_x25519_key(const void *derivation_key,
-    const void *data,
-    const std::size_t data_length,
-    unsigned char *hash_out);
+void sp_derive_x25519_key(const void *derivation_key, const void *data, const std::size_t data_length, void *hash_out);
 
 } //namespace sp

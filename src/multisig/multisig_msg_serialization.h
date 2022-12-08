@@ -105,9 +105,9 @@ namespace multisig
   {
     // onetime address
     crypto::public_key onetime_address;
-    // old keyshares
+    // multisig keyshares
     std::vector<crypto::public_key> multisig_keyshares;
-    // new keyshares
+    // partial keyimage shares
     std::vector<crypto::public_key> partial_key_images;
     // pubkey used to sign this msg
     crypto::public_key signing_pubkey;

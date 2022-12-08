@@ -48,11 +48,7 @@
 namespace multisig
 {
   //----------------------------------------------------------------------------------------------------------------------
-  // note: keyshares are collected mul8 to ensure the sets contain no effective duplicates (they are stored inv8)
-  // - otherwise, a partial ki message's dualbase vector proof could contain the same multisig keyshare twice, but proven
-  //   against {partial_ki, partial_ki + [small subgroup offset]}; the resulting recovered key image core would contain
-  //   2*partial_ki + [small subgroup offset] and therefore be invalid, even though the multisig keyshares correctly sum
-  //   to the base spend key
+  // note: keyshares stored in multisig_partial_cn_key_image_msg's are guaranteed to be canonical (prime order subgroup)
   //----------------------------------------------------------------------------------------------------------------------
   static bool try_process_partial_ki_msg(const std::vector<crypto::public_key> &multisig_signers,
     const crypto::public_key &expected_onetime_address,
@@ -61,7 +57,7 @@ namespace multisig
     std::unordered_set<crypto::public_key> &collected_multisig_keyshares_inout,
     std::unordered_set<crypto::public_key> &collected_partial_key_images_inout)
   {
-    // ignore messages from signers outside the designated list
+    // ignore messages from signers outside the designated signer list
     if (std::find(multisig_signers.begin(), multisig_signers.end(), expected_msg_signer) == multisig_signers.end())
       return false;
 
@@ -101,8 +97,10 @@ namespace multisig
     // collect multisig and ki keyshares for this signer subgroup
     for (const auto &partial_ki_msg : partial_ki_msgs)
     {
+      // ignore messages with unknown associated signers (continuing here is probably due to a bug)
       if (signers_as_filters.find(partial_ki_msg.first) == signers_as_filters.end())
         continue;
+      // ignore messages from signers not in the specified subgroup
       if (!(signers_as_filters.at(partial_ki_msg.first) & filter))
         continue;
 
@@ -164,7 +162,7 @@ namespace multisig
     std::unordered_map<crypto::public_key, crypto::public_key> &recovered_key_image_cores_inout)
   {
     CHECK_AND_ASSERT_THROW_MES(multisig_threshold <= multisig_signers.size(),
-      "multisig recover cn key image bases: threshold is > the number of signers.");
+      "multisig recover cn key image bases: threshold is greater than the number of signers.");
 
     // 1. identify available signers
     signer_set_filter available_signers_filter{};
@@ -173,12 +171,17 @@ namespace multisig
     for (const auto &signer_with_msg : partial_ki_msgs)
     {
       try { multisig_signer_to_filter(signer_with_msg.first, multisig_signers, signers_as_filters[signer_with_msg.first]); }
-      catch (...) { continue; }  //skip unknown signers
+      catch (...)
+      {
+        // skip unknown signers
+        signers_as_filters.erase(signer_with_msg.first);
+        continue;
+      }
 
       available_signers_filter |= signers_as_filters[signer_with_msg.first];
     }
 
-    // 2. early return if there are insufficient signers
+    // 2. early return if there are insufficient valid signers
     if (signers_as_filters.size() < multisig_threshold)
     {
       onetime_addresses_with_insufficient_partial_kis_inout[expected_onetime_address] = available_signers_filter;
@@ -200,7 +203,7 @@ namespace multisig
 
     for (const signer_set_filter filter : filter_permutations)
     {
-      // try to collect collect multisig and ki keyshares for this combination attempt
+      // a. try to collect collect multisig and ki keyshares for this combination attempt
       if (!try_collect_partial_ki_keyshares(multisig_signers,
         expected_onetime_address,
         partial_ki_msgs,
@@ -213,7 +216,7 @@ namespace multisig
         continue;
       }
 
-      // try to get the key image core using this subgroup
+      // b. try to get the key image core using this subgroup
       if (!try_combine_partial_ki_shares(multisig_base_spend_key,
         collected_multisig_keyshares_temp,
         collected_partial_key_images_temp,
@@ -224,7 +227,7 @@ namespace multisig
         continue;
       }
 
-      // assembly succeeded
+      // c. assembly succeeded
       recovered_key_image_cores_inout[expected_onetime_address] = recovered_key_image_core_temp;
       return true;
     }
@@ -346,9 +349,9 @@ namespace multisig
     // [ Ko : KI core ]
     std::unordered_map<crypto::public_key, crypto::public_key> &recovered_key_image_cores_out)
   {
-    recovered_key_image_cores_out.clear();
     onetime_addresses_with_insufficient_partial_kis_out.clear();
     onetime_addresses_with_invalid_partial_kis_out.clear();
+    recovered_key_image_cores_out.clear();
 
     for (const auto &partial_ki_set : partial_ki_msgs)
     {
