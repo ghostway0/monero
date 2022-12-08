@@ -245,7 +245,7 @@ static void make_multisig_signer_list(const std::uint32_t num_signers, std::vect
 }
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
-static void test_multisig_signer_set_filter(const std::uint32_t num_signers, const std::uint32_t threshold)
+static void test_multisig_signer_set_filter(const std::uint32_t threshold, const std::uint32_t num_signers)
 {
   using namespace multisig;
 
@@ -535,37 +535,37 @@ TEST(multisig, multisig_signer_set_filter)
 {
   using namespace multisig;
 
-  // 0 signers, 0 threshold
+  // 0 threshold, 0 signers
   test_multisig_signer_set_filter(0, 0);
 
-  // 1 signer, 0 threshold
-  test_multisig_signer_set_filter(1, 0);
+  // 0 threshold, 1 signer
+  test_multisig_signer_set_filter(0, 1);
 
-  // 1 signer, 1 threshold
+  // 1 threshold, 1 signer
   test_multisig_signer_set_filter(1, 1);
 
-  // 2 signers, 0 threshold
-  test_multisig_signer_set_filter(2, 0);
+  // 0 threshold, 2 signers
+  test_multisig_signer_set_filter(0, 2);
 
-  // 2 signers, 1 threshold
-  test_multisig_signer_set_filter(2, 1);
+  // 1 threshold, 2 signers
+  test_multisig_signer_set_filter(1, 2);
 
-  // 2 signers, 2 threshold
+  // 2 threshold, 2 signers
   test_multisig_signer_set_filter(2, 2);
 
-  // 3 signers, 1 threshold
-  test_multisig_signer_set_filter(3, 1);
+  // 1 threshold, 3 signers
+  test_multisig_signer_set_filter(1, 3);
 
-  // 3 signers, 2 threshold
-  test_multisig_signer_set_filter(3, 2);
+  // 2 threshold, 3 signers
+  test_multisig_signer_set_filter(2, 3);
 
-  // 3 signers, 3 threshold
+  // 3 threshold, 3 signers
   test_multisig_signer_set_filter(3, 3);
 
-  // 7 signers, 3 threshold
-  test_multisig_signer_set_filter(7, 3);
+  // 3 threshold, 7 signers
+  test_multisig_signer_set_filter(3, 7);
 
-  // check that signer set permutations have the expected members: 4 signers, 2 threshold, 3 allowed
+  // check that signer set permutations have the expected members: 2 threshold, 4 signers -> 3 allowed
 
   using namespace multisig;
 
@@ -574,8 +574,8 @@ TEST(multisig, multisig_signer_set_filter)
   std::vector<crypto::public_key> filtered_signers;
   signer_set_filter aggregate_filter;
   std::vector<signer_set_filter> filters;
-  std::uint32_t num_signers{4};
   std::uint32_t threshold{2};
+  std::uint32_t num_signers{4};
 
   make_multisig_signer_list(num_signers, signer_list);
 
