@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Seraphis transaction-builder helper types (multisig).
-
+// Multisig signing helper types.
 
 #pragma once
 
@@ -37,14 +34,12 @@
 #include "common/variant.h"
 #include "crypto/crypto.h"
 #include "multisig_clsag.h"
-#include "multisig_signer_set_filter.h"
 #include "multisig_nonce_record.h"
+#include "multisig_signer_set_filter.h"
 #include "multisig_sp_composition_proof.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
-#include <boost/variant/get.hpp>
-#include <boost/variant/variant.hpp>
 
 //standard headers
 #include <unordered_map>
@@ -58,48 +53,46 @@ namespace multisig
 
 ////
 // MultisigProofInitSetV1
-// - initialize a proof to be signed by a multisig group
-// - every set of multisig signers that includes the signer in the signer's multisig group gets a 'signature
-//   initialization', which is a vector of nonce pubkeys that aligns to the proof base keys that will be signed on (e.g.
-//   CLSAG signs on G and Hp(Ko) simultaneously)
-//   - the vectors of proof nonces map 1:1 with the signer sets that include the local signer that can be extracted
-//     from the aggregate filter
+// - this signer initializes a proof to be signed by a multisig group
+// - the init set initializes a proof attempt for every signer subgroup this signer is a member of in the specified
+//   aggregate signer set filter
 ///
 struct MultisigProofInitSetV1 final
 {
-    /// all multisig signers who should participate in attempting to make these multisig proofs
+    /// all multisig signers who should participate in attempting to make these multisig proofs (get this from e.g. a
+    ///   multisig proof proposal)
     signer_set_filter m_aggregate_signer_set_filter;
     /// id of signer who made this proof initializer set
     crypto::public_key m_signer_id;
     /// message to be signed by the multisig proofs
     rct::key m_proof_message;
     /// main proof key to be signed by the multisig proofs (any additional/auxilliary proof keys aren't recorded here,
-    ///   since they are assumed to be tied to the main proof key)
+    ///   since they are assumed to be implicitly tied to the main proof key)
     rct::key m_proof_key;
 
-    // {  { {pub nonces: filter 0 and proof base key 0},  {pub nonces: filter 0 and proof base key 1 } },  ... }
+    /// proof initializers
     // - for each signer set in permutations of the aggregate signer set that includes the specified signer id, record a
     //   vector of pub nonces where each element aligns to a set of nonce base keys across which the multisig signature will
     //   be made (for example: CLSAG signs across both G and Hp(Ko), where Ko = ko*G is the proof key recorded here)
     // - note that permutations of signers depend on the threshold and list of multisig signers, which are not recorded here
     //   - WARNING: ordering is dependent on the signer set filter permutation generator
-    //   - the set of nonce pubkeys aligns 
+    // {  { {pub nonces: filter 0 and proof base key 0},  {pub nonces: filter 0 and proof base key 1 } },  ... }
     std::vector<               //filter permutations
         std::vector<           //proof base keys
             MultisigPubNonces  //nonces
         >
     > m_inits;
 
-    /// get set of nonces for a given filter (return false if the location doesn't exist)
+    /// get set of nonces for a given filter (returns false if the location doesn't exist)
     bool try_get_nonces(const std::size_t filter_index, std::vector<MultisigPubNonces> &nonces_out) const;
 };
 
 ////
 // MultisigPartialSigVariant
-// - type-erased multisig partial signature
+// - variant of multisig partial signatures
 // 
-// proof_key_ref(): get the partial signature's main proof key (there may be additional auxilliary proof keys)
-// message_ref(): get the partial signature's signed message
+// proof_key_ref(): get the main proof key used in the partial signature (there may be additional auxilliary proof keys)
+// message_ref(): get the message signed by the partial signature
 ///
 using MultisigPartialSigVariant = tools::variant<CLSAGMultisigPartial, SpCompositionProofMultisigPartial>;
 const rct::key& proof_key_ref(const MultisigPartialSigVariant &variant);
@@ -107,11 +100,11 @@ const rct::key& message_ref(const MultisigPartialSigVariant &variant);
 
 ////
 // MultisigPartialSigSetV1
-// - set of partially signed multisigs for different proof keys; combine partial signatures to complete a proof
+// - set of multisig partial signatures for different proof keys; combine partial signatures to complete a proof
 ///
 struct MultisigPartialSigSetV1 final
 {
-    /// set of multisig signers these partial signatures correspond to
+    /// multisig signer subgroup these partial signatures were created for
     signer_set_filter m_signer_set_filter;
     /// id of signer who made these partial signatures
     crypto::public_key m_signer_id;
