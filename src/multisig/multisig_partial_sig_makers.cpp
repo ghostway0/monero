@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "multisig_partial_sig_makers.h"
 
@@ -39,9 +37,9 @@ extern "C"
 }
 #include "misc_log_ex.h"
 #include "multisig_clsag.h"
-#include "multisig_signer_set_filter.h"
 #include "multisig_nonce_record.h"
 #include "multisig_signing_helper_types.h"
+#include "multisig_signer_set_filter.h"
 #include "multisig_sp_composition_proof.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -58,7 +56,7 @@ extern "C"
 namespace multisig
 {
 //-------------------------------------------------------------------------------------------------------------------
-// for partial proof key K_e = (k_offset + k_e)*G
+// for local signer's partial proof key K_e = (k_offset + k_e)*G
 // and secondary proof key C_z = z*G
 //-------------------------------------------------------------------------------------------------------------------
 static CLSAGMultisigPartial attempt_make_clsag_multisig_partial_sig(const rct::key &one_div_threshold,
@@ -71,7 +69,7 @@ static CLSAGMultisigPartial attempt_make_clsag_multisig_partial_sig(const rct::k
     const multisig::signer_set_filter filter,
     MultisigNonceRecord &nonce_record_inout)
 {
-    // prepare the main signing key: (1/threshold)*k_offset + k_e
+    // prepare the main signing privkey: (1/threshold)*k_offset + k_e
     // note: k_offset is assumed to be a value known by all signers, so each signer adds (1/threshold)*k_offset to ensure
     //       the sum of partial signatures works out
     crypto::secret_key k_e_signing;
@@ -98,7 +96,7 @@ static CLSAGMultisigPartial attempt_make_clsag_multisig_partial_sig(const rct::k
     return partial_sig;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// for partial proof key K_e = x*G + y*X + z_multiplier*( (1/threshold) * z_offset + z_e )*U
+// for local signer's partial proof key K_e = x*G + y*X + z_multiplier*( (1/threshold) * z_offset + z_e )*U
 //-------------------------------------------------------------------------------------------------------------------
 static SpCompositionProofMultisigPartial attempt_make_sp_composition_multisig_partial_sig(
     const rct::key &one_div_threshold,
@@ -112,13 +110,13 @@ static SpCompositionProofMultisigPartial attempt_make_sp_composition_multisig_pa
     const multisig::signer_set_filter filter,
     MultisigNonceRecord &nonce_record_inout)
 {
-    // prepare the signing key: z_multiplier((1/threshold)*z_offset + z_e)
+    // prepare the signing privkey: z_multiplier*((1/threshold)*z_offset + z_e)
     // note: z_offset is assumed to be a value known by all signers, so each signer adds (1/threshold)*z_offset to ensure
     //       the sum of partial signatures works out
     crypto::secret_key z_e_signing;
-    sc_mul(to_bytes(z_e_signing), one_div_threshold.bytes, to_bytes(z_offset));
-    sc_add(to_bytes(z_e_signing), to_bytes(z_e_signing), to_bytes(z_e));
-    sc_mul(to_bytes(z_e_signing), to_bytes(z_multiplier), to_bytes(z_e_signing));
+    sc_mul(to_bytes(z_e_signing), one_div_threshold.bytes, to_bytes(z_offset));    //(1/threshold)*z_offset 
+    sc_add(to_bytes(z_e_signing), to_bytes(z_e_signing), to_bytes(z_e));           //... + z_e
+    sc_mul(to_bytes(z_e_signing), to_bytes(z_multiplier), to_bytes(z_e_signing));  //z_multiplier*(...)
 
     // local signer's partial sig for this proof key
     SpCompositionProofMultisigPartial partial_sig;
@@ -177,7 +175,7 @@ void MultisigPartialSigMakerCLSAG::attempt_make_partial_sig(const rct::key &proo
     const std::size_t signature_proposal_index{m_cached_proof_keys.at(proof_key)};
 
     CHECK_AND_ASSERT_THROW_MES(m_proof_proposals.at(signature_proposal_index).message == proof_message,
-        "MultisigPartialSigMakerCLSAG (attempt make partial sig): requested proof message doesn't match with the expected "
+        "MultisigPartialSigMakerCLSAG (attempt make partial sig): proof message doesn't match with the requested "
         "proof proposal.");
 
     partial_sig_out = attempt_make_clsag_multisig_partial_sig(m_inv_threshold,
@@ -235,12 +233,12 @@ void MultisigPartialSigMakerSpCompositionProof::attempt_make_partial_sig(const r
         "is unknown.");
     CHECK_AND_ASSERT_THROW_MES(signer_group_pub_nonces.size() == 1,
         "MultisigPartialSigMakerSpCompositionProof (attempt make partial sig): signer group's pub nonces don't line up with "
-        "signature requirements (must be one sets for base key U).");
+        "signature requirements (must be one set for base key U).");
 
     const std::size_t signature_proposal_index{m_cached_proof_keys.at(proof_key)};
 
     CHECK_AND_ASSERT_THROW_MES(m_proof_proposals.at(signature_proposal_index).message == proof_message,
-        "MultisigPartialSigMakerCLSAG (attempt make partial sig): requested proof message doesn't match with the expected "
+        "MultisigPartialSigMakerCLSAG (attempt make partial sig): proof message doesn't match with the requested "
         "proof proposal.");
 
     partial_sig_out = attempt_make_sp_composition_multisig_partial_sig(m_inv_threshold,

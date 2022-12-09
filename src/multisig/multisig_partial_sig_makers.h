@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Tools for making multisig partial signatures in a type-agnostic way for a range of signature schemes.
-
+// Tool for making multisig partial signatures in a type-agnostic way for a range of signature schemes.
 
 #pragma once
 
@@ -55,9 +52,7 @@ namespace multisig
 // MultisigPartialSigMaker
 // - interface for producing multisig partial signatures, agnostic to the signature scheme (it must be Schnorr-like
 //   and use musig2-style multisig via MultisigNonceRecord)
-// - must support wrapping multiple multisig signature proposals, which are accessed via a 'signature_proposal_index'
-// - NOTE: this interface is tightly coupled to the attempt_make_v1_multisig_input_partial_sig_set_v1() method in the
-//         seraphis library's multisig builders
+// - must support wrapping multiple multisig signature proposals, which are accessed via the primary proof key
 ///
 class MultisigPartialSigMaker
 {
@@ -72,21 +67,22 @@ public:
 //member functions
     /**
     * brief: attempt_make_partial_sig - attempt to make a partial multisig signature (i.e. partially sign using the local
-    *     multisig signer's private key)
-    * - throws on failure
+    *        multisig signer's private key)
+    *   - throws on failure
     * param: proof_message - proof message to make a signature for
     * param: proof_key - proof key of one of the multisig proposals stored in this signature maker
     * param: signer_group_filter - filter representing the subgroup of multisig signers who are expected to participate
-    *                              in making this partial signature (i.e. their public nonces will be used)
-    * param: signer_group_pub_nonces - the public nonces of the signers who are participating in this signature attempt,
-    *                                  each element in the primary vector is a set of public nonces corresponding to one
-    *                                  nonce base key (e.g. G and Hp(proof key) for CLSAG, and U for sp composition proofs)
+    *        in making this partial signature (i.e. their public nonces will be used)
+    * param: signer_group_pub_nonces - the public nonces the signers who are participating in this signature attempt;
+    *        the main vector lines up with the nonce base keys used in the proof (e.g. G and Hp(proof key) for CLSAG, and
+    *        U for sp composition proofs); the internal vector lines up with the signers participating in this signature
+    *        attempt
     * param: local_multisig_signing_key - the local multisig signer's multisig signing key for the multisig subgroup
-    *                                     represented by 'signer_group_filter'
+    *        represented by 'signer_group_filter'
     * inoutparam: nonce_record_inout - the nonce record from which the local signer's nonce private keys for this
-    *                                  signing attempt will be extracted
+    *             signing attempt will be extracted
     * outparam: partial_sig_out - partial signature created by the local signer for the specified signature proposal and
-    *                             signing group
+    *           signing group
     */
     virtual void attempt_make_partial_sig(const rct::key &proof_message,
         const rct::key &proof_key,
@@ -104,6 +100,7 @@ class MultisigPartialSigMakerCLSAG final : public MultisigPartialSigMaker
 {
 public:
 //constructors
+    /// normal constructor: data to wrap
     MultisigPartialSigMakerCLSAG(const std::uint32_t threshold,
         const std::vector<CLSAGMultisigProposal> &proof_proposals,
         const std::vector<crypto::secret_key> &proof_privkeys_k_offset,
@@ -140,6 +137,7 @@ class MultisigPartialSigMakerSpCompositionProof final : public MultisigPartialSi
 {
 public:
 //constructors
+    /// normal constructor: data to wrap
     MultisigPartialSigMakerSpCompositionProof(const std::uint32_t threshold,
         const std::vector<SpCompositionProofMultisigProposal> &proof_proposals,
         const std::vector<crypto::secret_key> &proof_privkeys_x,

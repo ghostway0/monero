@@ -278,8 +278,7 @@ private:
         // named containers must satisfy two concepts:
         //   const boost::string_ref container_name(const T &container);
         //   void append_to_transcript(const T &container, SpTranscriptBuilder &transcript_inout);
-        //todo: this append must be called from within the namespace that container_name() and append_to_transcript()
-        //      are defined, but that is not generic
+        //todo: container_name() and append_to_transcript() must be defined in the sp namespace, but that is not generic
         this->append_label(label);
         this->begin_named_container(container_name(named_container));
         append_to_transcript(named_container, *this);  //non-member function assumed to be implemented elsewhere

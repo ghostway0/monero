@@ -44,7 +44,7 @@ namespace multisig
   // round 1 kex message
   // - legacy: use signing_pubkey as a msg_pubkey directly
   ///
-  struct multisig_kex_msg_serializable_round1_legacy
+  struct multisig_kex_msg_serializable_round1_legacy final
   {
     // privkey stored in msg
     crypto::secret_key msg_privkey;
@@ -61,7 +61,7 @@ namespace multisig
   };
 
   /// round 1 kex message
-  struct multisig_kex_msg_serializable_round1
+  struct multisig_kex_msg_serializable_round1 final
   {
     // privkey stored in msg
     crypto::secret_key msg_privkey;
@@ -81,7 +81,7 @@ namespace multisig
   };
 
   /// general kex message (if round > 1)
-  struct multisig_kex_msg_serializable_general
+  struct multisig_kex_msg_serializable_general final
   {
     // key exchange round this msg was produced for
     std::uint32_t kex_round;
@@ -101,7 +101,7 @@ namespace multisig
   };
 
   /// multisig partial cryptonote key image message
-  struct multisig_partial_cn_ki_msg_serializable
+  struct multisig_partial_cn_ki_msg_serializable final
   {
     // onetime address
     crypto::public_key onetime_address;
@@ -127,7 +127,7 @@ namespace multisig
   };
 
   /// multisig account era conversion message
-  struct multisig_conversion_msg_serializable
+  struct multisig_conversion_msg_serializable final
   {
     // old era
     cryptonote::account_generator_era old_era;
