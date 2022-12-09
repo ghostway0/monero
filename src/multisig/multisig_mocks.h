@@ -49,6 +49,7 @@ namespace multisig
 {
 namespace mocks
 {
+
 /**
 * brief: make_multisig_mock_accounts - make accounts for a mock multisig group
 * param: account_era - account era

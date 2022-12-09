@@ -36,7 +36,6 @@
 #include "multisig.h"
 #include "multisig_account.h"
 #include "multisig_kex_msg.h"
-#include "multisig_nonce_record.h"
 #include "multisig_partial_cn_key_image_msg.h"
 #include "multisig_signer_set_filter.h"
 #include "ringct/rctOps.h"
@@ -111,6 +110,7 @@ void mock_convert_multisig_accounts(const cryptonote::account_generator_era new_
     // collect messages
     std::vector<multisig_account_era_conversion_msg> conversion_msgs;
     conversion_msgs.reserve(accounts_inout.size());
+
     for (const multisig_account &account : accounts_inout)
         conversion_msgs.emplace_back(account.get_account_era_conversion_msg(new_era));
 
