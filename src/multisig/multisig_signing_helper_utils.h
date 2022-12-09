@@ -26,32 +26,27 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Utilities to assist with multisig signing ceremonies.
-// IMPORTANT: These utilities should have strong guarantees about signer ID consistency. It is imperative that
+// IMPORTANT: These utilities should enforce strong guarantees about signer ID consistency. It is imperative that
 //            a malicious signer not be allowed to pretend they are a different signer or part of signer subgroup
 //            they aren't actually a member of.
-
 
 #pragma once
 
 //local headers
 #include "common/container_helpers.h"
 #include "crypto/crypto.h"
-#include "multisig/multisig_account.h"
-#include "multisig/multisig_signer_set_filter.h"
+#include "multisig_account.h"
+#include "multisig_signer_set_filter.h"
 #include "multisig_signing_errors.h"
 #include "multisig_signing_helper_types.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
-#include <boost/optional/optional.hpp>
 
 //standard headers
 #include <functional>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -61,7 +56,6 @@ namespace multisig
     class MultisigNonceRecord;
     class MultisigPartialSigMaker;
 }
-
 
 namespace multisig
 {
@@ -88,7 +82,7 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
 * param: expected_proof_message -
 * param: expected_main_proof_key -
 * param: num_expected_nonce_sets_per_proofkey -
-* return: boost::none if the init set is valid, otherwise a multisig error
+* return: empty variant if the init set is valid, otherwise a multisig error
 */
 MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProofInitSetV1 &init_set,
     const std::uint32_t threshold,
@@ -145,11 +139,11 @@ void check_v1_multisig_partial_sig_set_semantics_v1(const MultisigPartialSigSetV
     const std::vector<crypto::public_key> &multisig_signers);
 /**
 * brief: try_make_v1_multisig_partial_sig_sets_v1 - try to make multisig partial signature sets with an injected partial
-*      sig maker
+*        sig maker
 *   - weak preconditions: ignores invalid initializers from non-local signers
 *   - will throw if local signer is not in the aggregate signer filter (or has an invalid initializer)
-*   - will only return true if a partial sig set can be made containing a partial sig for each of the requested proof
-*     contexts
+*   - will only return true if at least one partial sig set can be made containing a partial sig for each of the 
+*     requested proof contexts
 * param: signer_account -
 * param: expected_multisig_account_era -
 * param: aggregate_signer_set_filter -
@@ -178,7 +172,7 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
     std::vector<MultisigPartialSigSetV1> &partial_sig_sets_out);
 /**
 * brief: filter_multisig_partial_signatures_for_combining_v1 - filter multisig partial signature sets into a convenient
-*      map for combining them into complete signatures
+*        map for combining them into complete signatures
 *   - weak preconditions: ignores signature sets that don't conform to expectations
 * param: multisig_signers -
 * param: allowed_proof_contexts -
@@ -193,10 +187,10 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
     const std::unordered_map<crypto::public_key, std::vector<MultisigPartialSigSetV1>> &partial_sigs_per_signer,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
     std::unordered_map<signer_set_filter,  //signing group
-        std::unordered_map<rct::key,                 //proof key
+        std::unordered_map<rct::key,       //proof key
             std::vector<MultisigPartialSigVariant>>> &collected_sigs_per_key_per_filter_out);
 /**
-* brief: collect_partial_sigs_v1 - unwrap type-erased multisig partial signatures
+* brief: collect_partial_sigs_v1 - unwrap multisig partial signatures
 * type: PartialSigT -
 * param: type_erased_partial_sigs -
 * outparam: partial_sigs_out -
@@ -218,8 +212,8 @@ void collect_partial_sigs_v1(const std::vector<MultisigPartialSigVariant> &type_
     }
 }
 /**
-* brief: try_assemble_multisig_partial_sigs - try to combine type-erased multisig partial signatures
-*      into full signatures of type ContextualSigT using an injected function for merging partial signatures
+* brief: try_assemble_multisig_partial_sigs - try to combine multisig partial signatures into full signatures of
+*        type ContextualSigT using an injected function for merging partial signatures
 *   - takes as input a set of {proof key, {partial signatures}} pairs, and only succeeds if each of those pairs can be
 *     resolved to a complete signature
 * type: PartialSigT -
@@ -256,9 +250,9 @@ bool try_assemble_multisig_partial_sigs(
     return true;
 }
 /**
-* brief: try_assemble_multisig_partial_sigs_signer_group_attempts - try to combine type-erased multisig
-*      partial signatures into full signatures of type ContextualSigT using an injected function for merging partial
-*      signatures; makes attemps for multiple signer groups
+* brief: try_assemble_multisig_partial_sigs_signer_group_attempts - try to combine multisig partial signatures into full
+*        signatures of type ContextualSigT using an injected function for merging partial signatures; makes attempts for
+*        multiple signer groups
 *   - note: it is the responsibility of the caller to validate the 'collected_sigs_per_key_per_filter' map; failing to
 *           validate it could allow a malicious signer to pollute the signature attempts of signer subgroups they aren't
 *           a member of, or lead to unexpected failures where the signatures output from here are invalid according to

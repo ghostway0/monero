@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "multisig_signing_helper_utils.h"
 
@@ -47,8 +45,7 @@
 
 //third party headers
 #include <boost/math/special_functions/binomial.hpp>
-#include "boost/multiprecision/cpp_int.hpp"
-#include <boost/optional/optional.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 //standard headers
 #include <unordered_map>
@@ -110,7 +107,7 @@ static void prepare_multisig_init_set_collections_v1(const std::uint32_t thresho
         expected_proof_contexts,
         num_expected_nonce_sets_per_proofkey);
     CHECK_AND_ASSERT_THROW_MES(!validation_error_self_init,
-        "validate and prepare multisig inits: the local signer's initializer is invalid.");
+        "validate and prepare multisig init set collections: the local signer's collection is invalid.");
 
     // 2. weed out invalid other init set collections
     tools::for_all_in_map_erase_if(other_init_set_collections,
@@ -188,10 +185,10 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
     const signer_set_filter filter,
     const std::unordered_map<rct::key, rct::key> &proof_contexts,  //[ proof key : proof message ]
     const std::size_t num_expected_proof_basekeys,
+    const std::unordered_map<crypto::public_key, signer_set_filter> &available_signers_as_filters,
     //[ signer id : [ proof key : init set ] ]
     const std::unordered_map<crypto::public_key, std::unordered_map<rct::key, MultisigProofInitSetV1>>
         &all_init_set_collections,
-    const std::unordered_map<crypto::public_key, signer_set_filter> &available_signers_as_filters,
     const std::unordered_map<crypto::public_key, std::size_t> &signer_nonce_trackers,
     const MultisigPartialSigMaker &partial_sig_maker,
     const crypto::secret_key &local_signer_privkey,
@@ -208,8 +205,8 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
     CHECK_AND_ASSERT_THROW_MES(signer_nonce_trackers.size() == all_init_set_collections.size(),
         "make multisig partial signatures: signer nonce trackers don't line up with init sets (bug).");
 
-    // 2. try to make the partial signatures (if unable to make a partial signature on all proof key/messsage pairs in
-    //    the set, then an exception will be thrown)
+    // 2. try to make the partial signatures (if unable to make a partial signature on all requested proof contexts,
+    //    then an error will be returned)
     std::vector<MultisigPubNonces> signer_pub_nonces_set_temp;
     std::vector<std::vector<MultisigPubNonces>> split_signer_pub_nonce_sets_temp;
 
@@ -223,21 +220,21 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
 
         for (const auto &init_set_collection : all_init_set_collections)
         {
-            // ignore unknown signers
+            // i. ignore unknown signers
             if (available_signers_as_filters.find(init_set_collection.first) == available_signers_as_filters.end())
                 continue;
             if (signer_nonce_trackers.find(init_set_collection.first) == signer_nonce_trackers.end())
                 continue;
 
-            // ignore signers not in the requested signing group
+            // ii. ignore signers not in the requested signing group
             if ((available_signers_as_filters.at(init_set_collection.first) & filter) == 0)
                 continue;
 
-            // ignore unknown proof keys
+            // iii. ignore unknown proof keys
             if (init_set_collection.second.find(proof_context.first) == init_set_collection.second.end())
                 continue;
 
-            // indexing:
+            // iv. get public nonces from this init set collection, indexed by:
             // - this signer's init set
             // - select the proof we are working on (via this proof's proof key)
             // - select the nonces that line up with the signer's nonce tracker (i.e. the nonces associated with this
@@ -248,20 +245,20 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
             {
                 return MultisigSigningErrorBadInitSetCollection{
                         .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::GET_NONCES_FAIL,
-                        .m_signer_id  = init_set_collection.second.at(proof_context.first).m_signer_id,
+                        .m_signer_id  = init_set_collection.first
                     };
             }
 
-            // expect nonce sets to be consistently sized
+            // v. expect nonce sets to be consistently sized
             if (signer_pub_nonces_set_temp.size() != num_expected_proof_basekeys)
             {
                 return MultisigSigningErrorBadInitSetCollection{
                         .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::INVALID_NONCES_SET_SIZE,
-                        .m_signer_id  = init_set_collection.second.at(proof_context.first).m_signer_id,
+                        .m_signer_id  = init_set_collection.first
                     };
             }
 
-            // save nonce sets; the set members are split between rows in the split_signer_pub_nonce_sets_temp matrix
+            // vi. save nonce sets; the set members are split between rows in the split_signer_pub_nonce_sets_temp matrix
             for (std::size_t nonce_set_index{0}; nonce_set_index < num_expected_proof_basekeys; ++nonce_set_index)
             {
                 split_signer_pub_nonce_sets_temp[nonce_set_index].emplace_back(
@@ -320,12 +317,12 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
     const std::size_t num_expected_proof_basekeys,
     const std::vector<signer_set_filter> &filter_permutations,
     const signer_set_filter local_signer_filter,
-    //[ signer id : [ proof key : init set ] ]
-    const std::unordered_map<crypto::public_key, std::unordered_map<rct::key, MultisigProofInitSetV1>>
-        &all_init_set_collections,
     const signer_set_filter available_signers_filter,
     //[ signer id : signer as filter ]
     const std::unordered_map<crypto::public_key, signer_set_filter> &available_signers_as_filters,
+    //[ signer id : [ proof key : init set ] ]
+    const std::unordered_map<crypto::public_key, std::unordered_map<rct::key, MultisigProofInitSetV1>>
+        &all_init_set_collections,
     const MultisigPartialSigMaker &partial_sig_maker,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
     MultisigNonceRecord &nonce_record_inout,
@@ -380,13 +377,13 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
                     throw dummy_multisig_exception{};
                 }
 
-                // 2. attempt to make the partial sig set
+                // 2. try to make the partial sig set
                 if (auto make_sigs_error = try_make_v1_multisig_partial_signatures_v1(signer_account.get_threshold(),
                         filter,
                         proof_contexts,
                         num_expected_proof_basekeys,
-                        all_init_set_collections,
                         available_signers_as_filters,
+                        all_init_set_collections,
                         signer_nonce_trackers,
                         partial_sig_maker,
                         k_e_temp,
@@ -459,7 +456,7 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
     const std::vector<crypto::public_key> &multisig_signers,
     const std::size_t num_expected_nonce_sets_per_proofkey)
 {
-    // signer set filter must be valid (at least 'threshold' signers allowed, format is valid)
+    // 1. signer set filter must be valid (at least 'threshold' signers allowed, format is valid)
     CHECK_AND_ASSERT_THROW_MES(validate_aggregate_multisig_signer_set_filter(threshold,
             multisig_signers.size(),
             init_set.m_aggregate_signer_set_filter),
@@ -473,8 +470,8 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
             init_set.m_aggregate_signer_set_filter),
         "multisig init set semantics: signer is not eligible.");
 
-    // for each proof key to sign, there should be one nonce set (signing attempt) per signer subgroup that contains the
-    //     signer
+    // 2. for each proof key to sign, there should be one nonce set (signing attempt) per signer subgroup that contains the
+    //   signer
     // - there are 'num signers requested' choose 'threshold' total signer subgroups who can participate in signing this
     //   proof
     // - remove our init's signer, then choose 'threshold - 1' signers from the remaining 'num signers requested - 1' to
@@ -503,7 +500,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
     const rct::key &expected_main_proof_key,
     const std::size_t num_expected_nonce_sets_per_proofkey)
 {
-    // aggregate filter should match the expected aggregate filter
+    // 1. aggregate filter should match the expected aggregate filter
     if (init_set.m_aggregate_signer_set_filter != expected_aggregate_signer_set_filter)
     {
         return MultisigSigningErrorBadInitSet{
@@ -515,7 +512,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
             };
     }
 
-    // signer should be expected
+    // 2. signer should be expected
     if (!(init_set.m_signer_id == expected_signer_id))
     {
         return MultisigSigningErrorBadInitSet{
@@ -527,7 +524,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
             };
     }
 
-    // proof message should be expected
+    // 3. proof message should be expected
     if (!(init_set.m_proof_message == expected_proof_message))
     {
         return MultisigSigningErrorBadInitSet{
@@ -539,7 +536,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
             };
     }
 
-    // proof key should be expected
+    // 4. proof key should be expected
     // NOTE: the relationship between the main proof key and any auxilliary/secondary keys must be implemented by the
     //       caller
     if (!(init_set.m_proof_key == expected_main_proof_key))
@@ -553,7 +550,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
             };
     }
 
-    // init set semantics must be valid
+    // 5. init set semantics must be valid
     try
     {
         check_v1_multisig_init_set_semantics_v1(init_set,
@@ -600,7 +597,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
     const std::unordered_map<rct::key, rct::key> &expected_proof_contexts,  //[ proof key : proof message ]
     const std::size_t num_expected_nonce_sets_per_proofkey)
 {
-    // expect the init set collection was built for at least one proof context
+    // 1. expect the init set collection was built for at least one proof context
     if (expected_proof_contexts.size() == 0)
     {
         return MultisigSigningErrorBadInitSetCollection{
@@ -609,7 +606,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
             };
     }
 
-    // expect the same number of proof messages as init sets in the collection
+    // 2. expect the same number of proof messages as init sets in the collection
     if (init_set_collection.size() != expected_proof_contexts.size())
     {
         return MultisigSigningErrorBadInitSetCollection{
@@ -618,7 +615,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
             };
     }
 
-    // check that the init set collection maps to its internal proof keys correctly
+    // 3. check that the init set collection maps to its internal proof keys correctly
     if (!tools::keys_match_internal_values(init_set_collection,
                 [](const MultisigProofInitSetV1 &init_set) -> const rct::key&
                 {
@@ -632,10 +629,10 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
             };
     }
 
-    // validate each init set in the input collection
+    // 4. validate each init set in the input collection
     for (const auto &init_set : init_set_collection)
     {
-        // check that the init set has one of the expected messages
+        // a. check that the init set has one of the expected messages
         // note: using maps ensures the expected proof contexts line up 1:1 with init sets without duplicates
         if (expected_proof_contexts.find(init_set.first) == expected_proof_contexts.end())
         {
@@ -645,7 +642,7 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
                 };
         }
 
-        // validate the init set
+        // b. validate the init set
         if (auto validation_error = validate_v1_multisig_init_set_v1(init_set.second,
                 threshold,
                 multisig_signers,
@@ -689,6 +686,9 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
     init_set_out.m_inits.reserve(num_sets_with_signer_expected);
 
     // 3. add nonces for every possible signer set that includes the signer
+    CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(local_signer_id, multisig_signers, aggregate_signer_set_filter),
+        "make multisig proof initializer: local signer is not in signer list requested!");
+
     std::vector<signer_set_filter> filter_permutations;
     aggregate_multisig_signer_set_filter_to_permutations(threshold,
         multisig_signers.size(),
@@ -702,10 +702,10 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
             continue;
 
         // b. add new nonces to the nonce record for this <proof message, main proof key, filter> combination
-        // note: ignore failures to add nonces (re-using existing nonces is allowed)
+        // - ignore failures to add nonces (re-using existing nonces is allowed)
         // NOTE: the relationship between the main proof key and any auxilliary/secondary keys must be enforced
-        //       by the caller (i.e. it's feasible that an init set could be used for different auxilliary keys if
-        //       the caller is careless)
+        //       by the caller (an init set can be used with any auxilliary keys, which may defy the caller's
+        //       expectations)
         nonce_record_inout.try_add_nonces(proof_message, main_proof_key, filter);
 
         // c. add nonces to the inits at this filter permutation for each requested proof base point
@@ -765,20 +765,22 @@ void make_v1_multisig_init_set_collection_v1(const std::uint32_t threshold,
 void check_v1_multisig_partial_sig_set_semantics_v1(const MultisigPartialSigSetV1 &partial_sig_set,
     const std::vector<crypto::public_key> &multisig_signers)
 {
-    // signer is in filter
+    // 1. signer is in filter
     CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(partial_sig_set.m_signer_id,
             multisig_signers,
             partial_sig_set.m_signer_set_filter),
         "multisig partial sig set semantics: the signer is not a member of the signer group (or the filter is invalid).");
 
-    // the partial signature map is well formed
-    for (const auto &partial_sig : partial_sig_set.m_partial_signatures)
-    {
-        CHECK_AND_ASSERT_THROW_MES(partial_sig.first == proof_key_ref(partial_sig.second),
-            "multisig partial sig set semantics: a partial signature's mapped proof key does not match its stored key.");
-    }
+    // 2. the partial signatures map to their proof keys properly
+    CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(partial_sig_set.m_partial_signatures,
+                [](const MultisigPartialSigVariant &partial_sig) -> const rct::key&
+                {
+                    return proof_key_ref(partial_sig);
+                }
+            ),
+        "multisig partial sig set semantics: a partial signature's mapped proof key does not match its stored key.");
 
-    // all partial sigs must have the same underlying type
+    // 3. all partial sigs must have the same underlying type
     CHECK_AND_ASSERT_THROW_MES(std::adjacent_find(partial_sig_set.m_partial_signatures.begin(),
             partial_sig_set.m_partial_signatures.end(),
             [](const auto &v1, const auto &v2) -> bool
@@ -856,7 +858,7 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
 
     // 4. check how the available signers line up against the signers allowed to participate in this multisig ceremony
     // note: signers not permitted by the ceremony should not make it this far, but we record them just in case; the
-    //       the partial signature maker will ignore them
+    //       partial signature maker will ignore them
     if (available_signers_filter != aggregate_signer_set_filter)
     {
         multisig_errors_inout.emplace_back(
@@ -880,15 +882,15 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
         return false;
 
 
-    /// make partial signatures
+    /// make partial signature sets
     make_v1_multisig_partial_sig_sets_v1(signer_account,
         expected_proof_contexts,
         num_expected_proof_basekeys,
         filter_permutations,
         local_signer_filter,
-        all_init_set_collections,
         available_signers_filter,
         available_signers_as_filters,
+        all_init_set_collections,
         partial_sig_maker,
         multisig_errors_inout,
         nonce_record_inout,
@@ -906,9 +908,11 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
     const std::unordered_map<crypto::public_key, std::vector<MultisigPartialSigSetV1>> &partial_sigs_per_signer,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
     std::unordered_map<signer_set_filter,  //signing group
-        std::unordered_map<rct::key,                 //proof key
+        std::unordered_map<rct::key,       //proof key
             std::vector<MultisigPartialSigVariant>>> &collected_sigs_per_key_per_filter_out)
 {
+    collected_sigs_per_key_per_filter_out.clear();
+
     // filter the partial signatures passed in into the 'collected sigs' output map
     std::unordered_map<signer_set_filter, std::unordered_set<crypto::public_key>> collected_signers_per_filter;
 
@@ -945,7 +949,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 continue;
             }
 
-            // b. skip sig sets if their signer ids don't match the input signer ids
+            // b. skip sig sets that don't map to their signer ids properly
             if (!(partial_sig_set.m_signer_id == partial_sigs_for_signer.first))
             {
                 multisig_errors_inout.emplace_back(
@@ -969,7 +973,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
             // d. record the partial sigs
             for (const auto &partial_sig : partial_sig_set.m_partial_signatures)
             {
-                // skip partial sigs with unknown proof keys
+                // i. skip partial sigs with unknown proof keys
                 if (allowed_proof_contexts.find(partial_sig.first) == allowed_proof_contexts.end())
                 {
                     multisig_errors_inout.emplace_back(
@@ -984,7 +988,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                     continue;
                 }
 
-                // skip sig sets with unexpected proof messages
+                // ii. skip sig sets with unexpected proof messages
                 if (!(allowed_proof_contexts.at(partial_sig.first) == message_ref(partial_sig.second)))
                 {
                     multisig_errors_inout.emplace_back(
@@ -999,7 +1003,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                     continue;
                 }
 
-                // skip partial sigs with unexpected internal variant type
+                // iii. skip partial sigs with unexpected internal variant type
                 if (partial_sig.second.type_index() != expected_partial_sig_variant_index)
                 {
                     multisig_errors_inout.emplace_back(
@@ -1014,7 +1018,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                     continue;
                 }
 
-                // add this signer's partial signature for this proof key for this signer group
+                // iv. add this signer's partial signature for this proof key for this signer group
                 collected_sigs_per_key_per_filter_out[partial_sig_set.m_signer_set_filter][partial_sig.first]
                     .emplace_back(partial_sig.second);
             }

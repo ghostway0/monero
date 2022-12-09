@@ -26,12 +26,9 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Error objects for reporting problems that occur during multisig signing ceremonies.
 // NOTE: The error messages are declared last in each error type so they can be ignored
 //       when using designated initialization.
-
 
 #pragma once
 
@@ -44,16 +41,16 @@
 //third party headers
 
 //standard headers
-
-//forward declarations
 #include <exception>
 #include <string>
+
+//forward declarations
 
 
 namespace multisig
 {
 
-struct dummy_multisig_exception : public std::exception
+struct dummy_multisig_exception final : public std::exception
 {};
 
 struct MultisigSigningErrorBadInitSet final
