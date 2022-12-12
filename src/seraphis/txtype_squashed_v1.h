@@ -65,7 +65,8 @@ namespace sp
 // - membership (seraphis): grootle proofs (one per input)
 // - ownership (seraphis): seraphis composition proofs (one per input)
 // - key image validity (seraphis): seraphis composition proofs (one per input)
-// - range proofs: Bulletproof+ (aggregated range proofs for all seraphis input masked commitments and new output commitments)
+// - range proofs: Bulletproof+ (aggregated range proofs for all seraphis input masked commitments and new output
+//   commitments)
 // - reference sets (legacy): set of on-chain indices
 // - reference sets (seraphis): binned reference sets
 // - fees: discretized

@@ -61,8 +61,8 @@ void make_jamtis_mock_keys(jamtis_mock_keys &keys_out)
     make_jamtis_generateaddress_secret(keys_out.k_vb, keys_out.s_ga);
     make_jamtis_ciphertag_secret(keys_out.s_ga, keys_out.s_ct);
     make_seraphis_spendkey(keys_out.k_vb, keys_out.k_m, keys_out.K_1_base);
-    x25519_scmul_base(keys_out.xk_ua, keys_out.xK_ua);
-    x25519_scmul_key(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
+    make_jamtis_unlockamounts_pubkey(keys_out.xk_ua, keys_out.xK_ua);
+    make_jamtis_findreceived_pubkey(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_random_address_for_user(const jamtis_mock_keys &user_keys, JamtisDestinationV1 &user_address_out)

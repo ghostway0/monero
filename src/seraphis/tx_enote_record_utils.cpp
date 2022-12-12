@@ -752,7 +752,8 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
         };
 
     // try to get the address index
-    if (!try_get_address_index(decrypted_addr_tag, record_out.m_address_index))
+    // - for self-sends, the decrypted address tag should be a raw address index + empty address tag hint
+    if (!try_get_address_index_raw(decrypted_addr_tag, record_out.m_address_index))
         return false;
 
     // save a copy of the amount commitment (optimization: it needs to be computed for enotes with plaintext amounts)

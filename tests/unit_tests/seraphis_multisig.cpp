@@ -99,8 +99,8 @@ static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &acc
     make_jamtis_ciphertag_secret(keys_out.s_ga, keys_out.s_ct);
     keys_out.K_1_base = rct::pk2rct(account.get_multisig_pubkey());
     extend_seraphis_spendkey_x(keys_out.k_vb, keys_out.K_1_base);
-    crypto::x25519_scmul_base(keys_out.xk_ua, keys_out.xK_ua);
-    crypto::x25519_scmul_key(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
+    make_jamtis_unlockamounts_pubkey(keys_out.xk_ua, keys_out.xK_ua);
+    make_jamtis_findreceived_pubkey(keys_out.xk_fr, keys_out.xK_ua, keys_out.xK_fr);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

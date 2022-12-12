@@ -174,7 +174,7 @@ bool jamtis_address_tag_cipher_context::try_decipher(const address_tag_t &addr_t
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_get_address_index(const address_tag_t &addr_tag, address_index_t &j_out)
+bool try_get_address_index_raw(const address_tag_t &addr_tag, address_index_t &j_out)
 {
     // addr_tag -> {j, hint}
     address_tag_hint_t hint{};

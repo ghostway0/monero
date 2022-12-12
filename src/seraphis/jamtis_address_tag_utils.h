@@ -79,7 +79,7 @@ private:
 };
 
 /// try to get j from a raw address tag representation (fails if hint != 0)
-bool try_get_address_index(const address_tag_t &addr_tag, address_index_t &j_out);
+bool try_get_address_index_raw(const address_tag_t &addr_tag, address_index_t &j_out);
 
 /// cipher[k](j) || H_2(k, cipher[k](j)) -> addr_tag
 address_tag_t cipher_address_index(const jamtis_address_tag_cipher_context &cipher_context, const address_index_t &j);

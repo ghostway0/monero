@@ -62,12 +62,27 @@ void make_jamtis_unlockamounts_key(const crypto::secret_key &k_view_balance,
     sp_derive_x25519_key(to_bytes(k_view_balance), transcript.data(), transcript.size(), xk_unlock_amounts_out.data);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_jamtis_unlockamounts_pubkey(const crypto::x25519_secret_key &xk_unlock_amounts,
+    crypto::x25519_pubkey &unlockamounts_pubkey_out)
+{
+    // xK_ua = xk_ua * xG
+    x25519_scmul_base(xk_unlock_amounts, unlockamounts_pubkey_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_findreceived_key(const crypto::secret_key &k_view_balance,
     crypto::x25519_secret_key &xk_find_received_out)
 {
     // xk_fr = H_n_x25519[k_vb]()
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_FINDRECEIVED_KEY, 0};
     sp_derive_x25519_key(to_bytes(k_view_balance), transcript.data(), transcript.size(), xk_find_received_out.data);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_jamtis_findreceived_pubkey(const crypto::x25519_secret_key &xk_find_received,
+    const crypto::x25519_pubkey &unlockamounts_pubkey,
+    crypto::x25519_pubkey &findreceived_pubkey_out)
+{
+    // xK_fr = xk_fr * xK_ua
+    x25519_scmul_key(xk_find_received, unlockamounts_pubkey, findreceived_pubkey_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_generateaddress_secret(const crypto::secret_key &k_view_balance,

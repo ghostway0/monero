@@ -71,7 +71,7 @@ static long double round_to_sig_figs(long double value, const std::size_t num_si
         ++decimal_scale;
     }
 
-    // round
+    // round to remove undesired digits
     value = std::round(value);
 
     // put value back into normal notation
