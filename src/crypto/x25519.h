@@ -118,6 +118,6 @@ void x25519_invmul_key(std::vector<x25519_secret_key> privkeys_to_invert,
 } //namespace crypto
 
 /// upgrade x25519 keys
-CRYPTO_MAKE_HASHABLE(crypto, x25519_pubkey)
-CRYPTO_MAKE_HASHABLE_CONSTANT_TIME(crypto, x25519_scalar)
-CRYPTO_MAKE_HASHABLE_CONSTANT_TIME(crypto, x25519_secret_key)
+CRYPTO_MAKE_HASHABLE(x25519_pubkey)
+CRYPTO_MAKE_HASHABLE_CONSTANT_TIME(x25519_scalar)
+CRYPTO_MAKE_HASHABLE_CONSTANT_TIME(x25519_secret_key)
