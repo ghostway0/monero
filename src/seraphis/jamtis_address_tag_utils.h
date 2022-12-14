@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Address tag handling for Jamtis addresses.
-
 
 #pragma once
 
@@ -54,7 +51,7 @@ namespace jamtis
 {
 
 /// cipher context for making address tags
-struct jamtis_address_tag_cipher_context
+struct jamtis_address_tag_cipher_context final
 {
 public:
 //constructors
@@ -81,11 +78,11 @@ private:
 /// try to get j from a raw address tag representation (fails if hint != 0)
 bool try_get_address_index_raw(const address_tag_t &addr_tag, address_index_t &j_out);
 
-/// cipher[k](j) || H_2(k, cipher[k](j)) -> addr_tag
+/// addr_tag = cipher[k](j) || H_2(k, cipher[k](j))
 address_tag_t cipher_address_index(const jamtis_address_tag_cipher_context &cipher_context, const address_index_t &j);
 address_tag_t cipher_address_index(const crypto::secret_key &cipher_key, const address_index_t &j);
 
-/// cipher[k](j) || H_2(k, cipher[k](j)) -> j
+/// try to get j from an address tag
 bool try_decipher_address_index(const jamtis_address_tag_cipher_context &cipher_context,
     const address_tag_t &addr_tag,
     address_index_t &j_out);
@@ -93,12 +90,12 @@ bool try_decipher_address_index(const crypto::secret_key &cipher_key,
     const address_tag_t &addr_tag,
     address_index_t &j_out);
 
-/// addr_tag_enc = addr_tag XOR addr_tag_enc_secret
+/// addr_tag_enc = addr_tag XOR H_32(q, Ko)
 encrypted_address_tag_t encrypt_address_tag(const rct::key &sender_receiver_secret,
     const rct::key &onetime_address,
     const address_tag_t &addr_tag);
 
-/// addr_tag = addr_tag_enc XOR addr_tag_enc_secret
+/// addr_tag = addr_tag_enc XOR H_32(q, Ko)
 address_tag_t decrypt_address_tag(const rct::key &sender_receiver_secret,
     const rct::key &onetime_address,
     const encrypted_address_tag_t &addr_tag_enc);
