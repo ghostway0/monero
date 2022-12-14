@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis core types.
-
 
 #pragma once
 
@@ -47,7 +44,6 @@
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
 
-
 namespace sp
 {
 
@@ -56,9 +52,10 @@ namespace sp
 ///
 struct SpCoinbaseEnoteCore final
 {
-    /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
+    /// Ko = k_g G + k_x X + (k_u + k_m) U
     rct::key m_onetime_address;
     /// a
+    /// note: C = 1 G + a H  (implied)
     rct::xmr_amount m_amount;
 
     /// less-than operator for sorting
@@ -93,7 +90,7 @@ void append_to_transcript(const SpCoinbaseEnoteCore &container, SpTranscriptBuil
 ///
 struct SpEnoteCore final
 {
-    /// Ko = k_g G + k_x X + (k_u + k_{b, recipient}) U
+    /// Ko = k_g G + k_x X + (k_u + k_m) U
     rct::key m_onetime_address;
     /// C = x G + a H
     rct::key m_amount_commitment;
@@ -132,7 +129,7 @@ void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &tra
 // onetime_address_ref(): get the enote's onetime address
 // amount_commitment_ref(): get the enote's amount commitment (this is a copy because coinbase enotes need to
 //                          compute the commitment)
-// operator==(): test equalify of two enote cores
+// operator==(): test equality of two enote cores
 ///
 using SpEnoteCoreVariant = tools::variant<SpCoinbaseEnoteCore, SpEnoteCore>;
 const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant);
@@ -148,7 +145,7 @@ struct SpEnoteImageCore final
     rct::key m_masked_address;
     /// C" = (t_c + x) G + a H
     rct::key m_masked_commitment;
-    /// KI = (k_{b, recipient} / (k_{a, sender} + k_{a, recipient})) U
+    /// KI = ((k_u + k_m) / k_x) U
     crypto::key_image m_key_image;
 
     /// less-than operator for sorting
@@ -173,11 +170,11 @@ struct SpInputProposalCore final
     /// the enote's key image
     crypto::key_image m_key_image;
 
-    /// k_{mask, sender} + k_{mask, recipient}
+    /// k_g = k_{g, sender} + k_{g, recipient}
     crypto::secret_key m_enote_view_privkey_g;
-    /// k_{a, sender} + k_{a, recipient}
+    /// k_x = k_{x, sender} + k_{x, recipient}
     crypto::secret_key m_enote_view_privkey_x;
-    /// k_{b, sender} + k_{b, recipient}  (does not include k_s)
+    /// k_u = k_{u, sender} + k_{u, recipient}  (does not include k_m)
     crypto::secret_key m_enote_view_privkey_u;
     /// x
     crypto::secret_key m_amount_blinding_factor;
@@ -206,7 +203,7 @@ struct SpInputProposalCore final
 
     /**
     * brief: get_squash_prefix - get this input's enote's squash prefix
-    * outparam: squash_prefix_out - H_n(Ko, C)
+    * outparam: squash_prefix_out - H_n(Ko,C)
     */
     void get_squash_prefix(rct::key &squash_prefix_out) const;
 

@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "sp_core_types.h"
 
@@ -61,7 +59,6 @@ bool SpCoinbaseEnoteCore::onetime_address_is_canonical() const
 //-------------------------------------------------------------------------------------------------------------------
 void SpCoinbaseEnoteCore::gen()
 {
-    // all random
     m_onetime_address = rct::pkGen();
     crypto::rand(8, reinterpret_cast<unsigned char*>(&m_amount));
 }
@@ -79,7 +76,6 @@ bool SpEnoteCore::onetime_address_is_canonical() const
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteCore::gen()
 {
-    // all random
     m_onetime_address = rct::pkGen();
     m_amount_commitment = rct::pkGen();
 }
@@ -158,7 +154,7 @@ void SpInputProposalCore::get_enote_image_core(SpEnoteImageCore &image_out) cons
         image_out.m_masked_address,
         image_out.m_masked_commitment);
 
-    // KI = k_b/k_a U
+    // KI = ((k_u + k_m) / k_x) U
     image_out.m_key_image = this->key_image();
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -197,7 +193,6 @@ void SpOutputProposalCore::get_enote_core(SpEnoteCore &enote_out) const
 //-------------------------------------------------------------------------------------------------------------------
 void SpOutputProposalCore::gen(const rct::xmr_amount amount)
 {
-    // all random except amount
     m_onetime_address = rct::pkGen();
     m_amount_blinding_factor = rct::rct2sk(rct::skGen());
     m_amount = amount;
