@@ -290,7 +290,7 @@ static bool try_get_intermediate_record_info_v1_helper(const SpEnoteVariant &eno
         nominal_spendkey);
 
     // check nominal spend key
-    if (!jamtis::test_jamtis_nominal_spend_key(jamtis_spend_pubkey,
+    if (!jamtis::test_jamtis_nominal_address_spend_key(jamtis_spend_pubkey,
             s_generate_address,
             nominal_address_index,
             nominal_spendkey))
@@ -764,7 +764,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
     jamtis::make_jamtis_nominal_spend_key(q, onetime_address_ref(enote), amount_commitment, nominal_recipient_spendkey);
 
     // check nominal spend key
-    if (!jamtis::test_jamtis_nominal_spend_key(jamtis_spend_pubkey,
+    if (!jamtis::test_jamtis_nominal_address_spend_key(jamtis_spend_pubkey,
             s_generate_address,
             record_out.m_address_index,
             nominal_recipient_spendkey))

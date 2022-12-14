@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Utilities for building Jamtis addresses.
-
 
 #pragma once
 
@@ -95,7 +92,7 @@ void make_jamtis_address_privkey(const crypto::secret_key &s_generate_address,
 /**
 * brief: make_jamtis_address_spend_key - K_1
 *   - K_1 = k^j_g G + k^j_x X + k^j_u U + K_s
-* param: spend_pubkey - K_s
+* param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
 * outparam: address_spendkey_out - K_1
@@ -105,26 +102,26 @@ void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     const address_index_t j,
     rct::key &address_spendkey_out);
 /**
-* brief: test_jamtis_nominal_spend_key - see if a spend key is owned by this wallet
+* brief: test_jamtis_nominal_address_spend_key - see if an address spend key is owned by this wallet
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address_index
-* param: nominal_spend_key - spend key to test
+* param: nominal_address_spend_key - address spend key to test K'_1
 * return: true if the nominal spend key matches this wallet's spend key at address index 'j'
 */
-bool test_jamtis_nominal_spend_key(const rct::key &spend_pubkey,
+bool test_jamtis_nominal_address_spend_key(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
     const address_index_t j,
-    const rct::key &nominal_spend_key);
+    const rct::key &nominal_address_spend_key);
 /**
 * brief: make_seraphis_key_image_jamtis_style - KI
 *   - KI = ((H_n("..u..", q, C) + k^j_u + k_m)/(H_n("..x..", q, C) + k^j_x + k_vb)) U
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: k_view_balance - k_vb
 * param: spendkey_extension_x - k^j_x
-* param: spendkey_extension_u - k^j_x
+* param: spendkey_extension_u - k^j_u
 * param: sender_extension_x - H_n("..x..", q, C)
-* param: sender_extension_u - H_n("..x..", q, C)
+* param: sender_extension_u - H_n("..u..", q, C)
 * outparam: key_image_out - KI
 */
 void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,

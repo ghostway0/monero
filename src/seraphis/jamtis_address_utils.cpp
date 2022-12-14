@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "jamtis_address_utils.h"
 
@@ -39,14 +37,15 @@
 #include "jamtis_core_utils.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
-#include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
 #include "sp_core_enote_utils.h"
 
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -119,17 +118,17 @@ void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     mask_key(address_extension_key_g, address_spendkey_out, address_spendkey_out);  //k^j_g G + k^j_x X + k^j_u U + K_s
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool test_jamtis_nominal_spend_key(const rct::key &spend_pubkey,
+bool test_jamtis_nominal_address_spend_key(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
     const address_index_t j,
-    const rct::key &nominal_spend_key)
+    const rct::key &nominal_address_spend_key)
 {
     // get the spend key of the address at the uncovered index: K_1
     rct::key address_spendkey;
     make_jamtis_address_spend_key(spend_pubkey, s_generate_address, j, address_spendkey);
 
     // check if the nominal spend key matches the real spend key: K'_1 ?= K_1
-    return nominal_spend_key == address_spendkey;
+    return nominal_address_spend_key == address_spendkey;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,
