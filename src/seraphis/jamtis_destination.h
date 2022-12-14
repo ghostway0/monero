@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // A Jamtis 'destination', i.e. an address that can receive funds.
-
 
 #pragma once
 
@@ -61,7 +58,7 @@ struct JamtisDestinationV1 final
     rct::key m_addr_K1;
     /// xK_2 = xk^j_a xK_fr                       (address view key)
     crypto::x25519_pubkey m_addr_K2;
-    /// xK_3 = xk^j_a xG                          (DH base key)
+    /// xK_3 = xk^j_a xK_ua                       (DH base key)
     crypto::x25519_pubkey m_addr_K3;
     /// addr_tag
     address_tag_t m_addr_tag;
@@ -98,7 +95,7 @@ void make_jamtis_destination_v1(const rct::key &spend_pubkey,
     JamtisDestinationV1 &destination_out);
 /**
 * brief: try_get_jamtis_index_from_destination_v1 - check if a destination can be recreated, then return its address index
-*    - note: partial-recreation of a destination will return FALSE
+*   - note: partial-recreation of a destination will return FALSE
 * param: destination - destination address to recreate
 * param: spend_pubkey - K_s
 * param: unlockamounts_pubkey - xK_ua = xk_ua xG

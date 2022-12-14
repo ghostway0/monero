@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "jamtis_destination.h"
 
@@ -44,6 +42,7 @@
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -80,7 +79,7 @@ void make_jamtis_destination_v1(const rct::key &spend_pubkey,
     // xK_3 = xk^j_a xK_ua
     x25519_scmul_key(address_privkey, unlockamounts_pubkey, destination_out.m_addr_K3);
 
-    // addr_tag = cipher[s_ct](j, hint)
+    // addr_tag = cipher[k](j) || H_2(k, cipher[k](j))
     crypto::secret_key ciphertag_secret;
     make_jamtis_ciphertag_secret(s_generate_address, ciphertag_secret);
 
