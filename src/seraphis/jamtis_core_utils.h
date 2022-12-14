@@ -26,10 +26,8 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 ////
-// Core implementation details for making Jamtis privkeys and secrets.
+// Core implementation details for making Jamtis privkeys, secrets, and pubkeys.
 // - Jamtis is a specification for Seraphis-compatible addresses
 //
 // reference: https://gist.github.com/tevador/50160d160d24cfc6c52ae02eb3d17024
@@ -45,7 +43,6 @@
 //third party headers
 
 //standard headers
-#include <vector>
 
 //forward declarations
 
@@ -56,7 +53,7 @@ namespace jamtis
 {
 
 /**
-* brief: make_jamtis_unlockamounts_key - unlock-amounts key, for decrypting amounts and reconstructing amount commitments
+* brief: make_jamtis_unlockamounts_key - unlock-amounts key, for recovering amounts and reconstructing amount commitments
 *   xk_ua = H_n_x25519[k_vb]()
 * param: k_view_balance - k_vb
 * outparam: xk_unlock_amounts_out - xk_ua
@@ -64,8 +61,8 @@ namespace jamtis
 void make_jamtis_unlockamounts_key(const crypto::secret_key &k_view_balance,
     crypto::x25519_secret_key &xk_unlock_amounts_out);
 /**
-* brief: make_jamtis_unlockamounts_key - xK_ua
-*   - xK_ua = xK_ua = xk_ua * xG
+* brief: make_jamtis_unlockamounts_pubkey - xK_ua
+*   - xK_ua = xk_ua * xG
 * param: xk_unlock_amounts - xk_ua
 * outparam: unlockamounts_pubkey_out - xK_ua
 */
@@ -81,10 +78,10 @@ void make_jamtis_unlockamounts_pubkey(const crypto::x25519_secret_key &xk_unlock
 void make_jamtis_findreceived_key(const crypto::secret_key &k_view_balance,
     crypto::x25519_secret_key &xk_find_received_out);
 /**
-* brief: make_jamtis_findreceived_key - xK_fr
+* brief: make_jamtis_findreceived_pubkey - xK_fr
 *   - xK_fr = xk_fr * xK_ua
-* param: xk_find_received - xk_ua
-* param: unlockamounts_pubkey - xK_fr
+* param: xk_find_received - xk_fr
+* param: unlockamounts_pubkey - xK_ua
 * outparam: findreceived_pubkey_out - xK_fr
 */
 void make_jamtis_findreceived_pubkey(const crypto::x25519_secret_key &xk_find_received,
