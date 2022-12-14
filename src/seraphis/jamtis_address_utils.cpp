@@ -143,20 +143,20 @@ void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,
     // KI = ((H_n("..u..", q, C) + k^j_u + k_m)/(H_n("..x..", q, C) + k^j_x + k_vb)) U
 
     // k_m U = K_s - k_vb X
-    rct::key master_pubkey{spend_pubkey};  //K_s = k_vb X + k_m U
-    reduce_seraphis_spendkey_x(k_view_balance, master_pubkey);  //k_m U
+    rct::key zU{spend_pubkey};  //K_s = k_vb X + k_m U
+    reduce_seraphis_spendkey_x(k_view_balance, zU);  //k_m U
 
-    // k_b U = H_n("..u..", q, C) U + k^j_u U + k_m U
-    extend_seraphis_spendkey_u(spendkey_extension_u, master_pubkey);  //k^j_u U + k_m U
-    extend_seraphis_spendkey_u(sender_extension_u, master_pubkey);  //H_n("..u..", q, C) U + k^j_u U + k_m U
+    // z U = (k_u + k_m) U = H_n("..u..", q, C) U + k^j_u U + k_m U
+    extend_seraphis_spendkey_u(spendkey_extension_u, zU);  //k^j_u U + k_m U
+    extend_seraphis_spendkey_u(sender_extension_u, zU);  //H_n("..u..", q, C) U + k^j_u U + k_m U
 
-    // k_a_recipient = k^j_x + k_vb
-    crypto::secret_key k_a_recipient;
-    sc_add(to_bytes(k_a_recipient), to_bytes(spendkey_extension_x), to_bytes(k_view_balance));  //k^j_x + k_vb
+    // k_x = H_n("..x..", q, C) + k^j_x + k_vb
+    crypto::secret_key k_x;
+    sc_add(to_bytes(k_x), to_bytes(sender_extension_x), to_bytes(spendkey_extension_x));  //H_n("..x..", q, C) + k^j_x
+    sc_add(to_bytes(k_x), to_bytes(k_x), to_bytes(k_view_balance));  //+ k_vb
 
-    // k_a_sender = H_n("..x..", q, C)
-    // KI = (1/(k_a_sender + k_a_recipient))*k_b*U
-    make_seraphis_key_image(sender_extension_x, k_a_recipient, rct::rct2pk(master_pubkey), key_image_out);
+    // KI = (1/k_x)*(k_u + k_m)*U
+    make_seraphis_key_image(k_x, rct::rct2pk(zU), key_image_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace jamtis

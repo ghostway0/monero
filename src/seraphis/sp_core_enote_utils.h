@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// seraphis core enote and enote image component builders.
-
+// Seraphis core enote and enote image component builders.
 
 #pragma once
 
@@ -54,37 +51,25 @@ namespace sp
 /**
 * brief: make_seraphis_key_image - create a seraphis key image from 'y' and spend key base 'zU'
 *   KI = (1/y) * z U
-* param: y - private key 'y' (e.g. created from private view key secrets)
-* param: zU - pubkey z U (e.g. the base spend key 'ks U')
+* param: y - y = k_x
+* param: zU - z U = (k_u + k_m) U
 * outparam: key_image_out - KI
 */
 void make_seraphis_key_image(const crypto::secret_key &y, const crypto::public_key &zU, crypto::key_image &key_image_out);
 /**
 * brief: make_seraphis_key_image - create a seraphis key image from private keys 'y' and 'z'
 *   KI = (z/y)*U
-*      = (k_{b, recipient} / (k_{a, sender} + k_{a, recipient}))*U
-* param: y - private key '(k_{a, sender} + k_{a, recipient}))' (e.g. created from private view key secrets)
-* param: z - private key 'k_{b, recipient}' (e.g. the private spend key 'ks')
+*      = ((k_u + k_m) / k_x)*U
+* param: y - y = k_x
+* param: z - z = (k_u + k_m)
 * outparam: key_image_out - KI
 */
 void make_seraphis_key_image(const crypto::secret_key &y, const crypto::secret_key &z, crypto::key_image &key_image_out);
 /**
-* brief: make_seraphis_key_image - create a seraphis key image from sender/recipient pieces
-*   KI = (k_{b. recipient} / (k_{a, sender} + k_{a, recipient})) * U
-* param: k_a_sender - private key derived from sender (e.g. created from sender-recipient secret q_t)
-* param: k_a_recipient - private key provided by recipient (e.g. based on the private view key)
-* param: k_bU - recipient's spendbase pubkey (k_{b, recipient} * U)
-* outparam: key_image_out - KI
-*/
-void make_seraphis_key_image(const crypto::secret_key &k_a_sender,
-    const crypto::secret_key &k_a_recipient,
-    const crypto::public_key &k_bU,
-    crypto::key_image &key_image_out);
-/**
 * brief: make_seraphis_spendbase - create the base part of a seraphis spendkey
-*   spendbase = k_{b, recipient} U
-* param: sp_spend_privkey - k_{b, recipient}
-* outparam: spendbase_pubkey_out - k_{b, recipient} U
+*   spendbase = k_m U
+* param: sp_spend_privkey - k_m
+* outparam: spendbase_pubkey_out - k_m U
 */
 void make_seraphis_spendbase(const crypto::secret_key &sp_spend_privkey, rct::key &spendbase_pubkey_out);
 /**
@@ -123,7 +108,7 @@ void reduce_seraphis_spendkey_x(const crypto::secret_key &k_reducer_x, rct::key 
 */
 void reduce_seraphis_spendkey_u(const crypto::secret_key &k_reducer_u, rct::key &spendkey_inout);
 /**
-* brief: make_seraphis_spendkey - create a seraphis spendkey (or onetime address)
+* brief: make_seraphis_spendkey - create a seraphis spendkey
 *   K = k_a X + k_b U
 * param: view_privkey - k_a
 * param: sp_spend_privkey - k_b
@@ -189,13 +174,13 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     const rct::xmr_amount amount,
     SpEnoteCore &enote_core_out);
 /**
-* brief: make_seraphis_enote_core - make a seraphis enote when all secrets are known
-* param: enote_view_privkey_g -
-* param: enote_view_privkey_x -
-* param: enote_view_privkey_u -
-* param: sp_spend_privkey -
-* param: amount_blinding_factor -
-* param: amount -
+* brief: make_seraphis_enote_core - make a seraphis enote by building the address from scratch
+* param: enote_view_privkey_g - k_g
+* param: enote_view_privkey_x - k_x
+* param: enote_view_privkey_u - k_u
+* param: sp_spend_privkey - k_m
+* param: amount_blinding_factor - x
+* param: amount - a
 * outparam: enote_core_out -
 */
 void make_seraphis_enote_core(const crypto::secret_key &enote_view_privkey_g,

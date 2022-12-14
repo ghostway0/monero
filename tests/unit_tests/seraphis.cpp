@@ -509,7 +509,7 @@ TEST(seraphis, information_recovery_keyimage)
     // different methods for making key images all have same results
     crypto::secret_key y, z, k_a_sender_x, k_a_recipient_x;
     rct::key zU, k_bU;
-    crypto::key_image key_image1, key_image2, key_image3, key_image_jamtis;
+    crypto::key_image key_image1, key_image2, key_image_jamtis;
 
     make_secret_key(y);
     k_a_sender_x = y;
@@ -521,7 +521,6 @@ TEST(seraphis, information_recovery_keyimage)
 
     make_seraphis_key_image(y, z, key_image1);  // y X + y X + z U -> (z/2y) U
     make_seraphis_key_image(y, rct::rct2pk(zU), key_image2);
-    make_seraphis_key_image(k_a_sender_x, k_a_recipient_x, rct::rct2pk(k_bU), key_image3);
 
     rct::key jamtis_spend_pubkey{k_bU};
     crypto::secret_key k_view_balance, spendkey_extension;
@@ -538,7 +537,6 @@ TEST(seraphis, information_recovery_keyimage)
         key_image_jamtis);  // -y X + -y X + (4*y X + z U) -> (z/2y) U
 
     EXPECT_TRUE(key_image1 == key_image2);
-    EXPECT_TRUE(key_image1 == key_image3);
     EXPECT_TRUE(key_image1 == key_image_jamtis);
 }
 //-------------------------------------------------------------------------------------------------------------------

@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "sp_core_enote_utils.h"
 
@@ -76,25 +74,13 @@ void make_seraphis_key_image(const crypto::secret_key &y, const crypto::secret_k
     CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(z)), "z must be nonzero for making a key image!");
 
     // KI = (z/y)*U
-    rct::key zU{rct::scalarmultKey(rct::pk2rct(crypto::get_U()), rct::sk2rct(z))}; // z U
+    const rct::key zU{rct::scalarmultKey(rct::pk2rct(crypto::get_U()), rct::sk2rct(z))}; // z U
     make_seraphis_key_image(y, rct::rct2pk(zU), key_image_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_seraphis_key_image(const crypto::secret_key &k_a_sender,
-    const crypto::secret_key &k_a_recipient,
-    const crypto::public_key &k_bU,
-    crypto::key_image &key_image_out)
-{
-    // KI = (k_b/(k_a_sender + k_a_recipient))*U
-    crypto::secret_key k_a_combined;
-    sc_add(to_bytes(k_a_combined), to_bytes(k_a_sender), to_bytes(k_a_recipient));
-
-    make_seraphis_key_image(k_a_combined, k_bU, key_image_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_spendbase(const crypto::secret_key &sp_spend_privkey, rct::key &spendbase_pubkey_out)
 {
-    // spendbase = k_{b, recipient} U
+    // spendbase = k_m U
     rct::scalarmultKey(spendbase_pubkey_out, rct::pk2rct(crypto::get_U()), rct::sk2rct(sp_spend_privkey));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -124,7 +110,7 @@ void reduce_seraphis_spendkey_g(const crypto::secret_key &k_reducer_g, rct::key 
     crypto::secret_key mask_to_remove;
 
     sc_mul(to_bytes(mask_to_remove), MINUS_ONE.bytes, to_bytes(k_reducer_g));  // -k_reducer_g
-    mask_key(mask_to_remove, spendkey_inout, spendkey_inout);  // (-k_reducer_g) G + Ko_t
+    mask_key(mask_to_remove, spendkey_inout, spendkey_inout);  // (-k_reducer_g) G + K_original
 }
 //-------------------------------------------------------------------------------------------------------------------
 void reduce_seraphis_spendkey_x(const crypto::secret_key &k_reducer_x, rct::key &spendkey_inout)
@@ -135,7 +121,7 @@ void reduce_seraphis_spendkey_x(const crypto::secret_key &k_reducer_x, rct::key 
     crypto::secret_key extension;
 
     sc_mul(to_bytes(extension), MINUS_ONE.bytes, to_bytes(k_reducer_x));  // -k_reducer_x
-    extend_seraphis_spendkey_x(extension, spendkey_inout);  // (-k_reducer_x) X + Ko_t
+    extend_seraphis_spendkey_x(extension, spendkey_inout);  // (-k_reducer_x) X + K_original
 }
 //-------------------------------------------------------------------------------------------------------------------
 void reduce_seraphis_spendkey_u(const crypto::secret_key &k_reducer_u, rct::key &spendkey_inout)
@@ -146,7 +132,7 @@ void reduce_seraphis_spendkey_u(const crypto::secret_key &k_reducer_u, rct::key 
     crypto::secret_key extension;
 
     sc_mul(to_bytes(extension), MINUS_ONE.bytes, to_bytes(k_reducer_u));  // -k_reducer_u
-    extend_seraphis_spendkey_u(extension, spendkey_inout);  // (-k_reducer_u) U + Ko_t
+    extend_seraphis_spendkey_u(extension, spendkey_inout);  // (-k_reducer_u) U + K_original
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_spendkey(const crypto::secret_key &k_a, const crypto::secret_key &k_b, rct::key &spendkey_out)
@@ -160,7 +146,7 @@ void make_seraphis_squash_prefix(const rct::key &onetime_address,
     const rct::key &amount_commitment,
     rct::key &squash_prefix_out)
 {
-    // H_n(Ko, C)
+    // H_n(Ko,C)
     SpKDFTranscript transcript{config::HASH_KEY_SERAPHIS_SQUASHED_ENOTE, 2*sizeof(rct::key)};
     transcript.append("Ko", onetime_address);
     transcript.append("C", amount_commitment);
@@ -211,7 +197,7 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     const rct::xmr_amount amount,
     SpEnoteCore &enote_core_out)
 {
-    // Ko = k_sender_extension_g G + k_sender_extension_x X + k_sender_extension_u U + K
+    // Ko = k_extension_g G + k_extension_x X + k_extension_u U + K
     enote_core_out.m_onetime_address = initial_address;
     extend_seraphis_spendkey_u(extension_privkey_u, enote_core_out.m_onetime_address);
     extend_seraphis_spendkey_x(extension_privkey_x, enote_core_out.m_onetime_address);
@@ -229,14 +215,14 @@ void make_seraphis_enote_core(const crypto::secret_key &enote_view_privkey_g,
     const rct::xmr_amount amount,
     SpEnoteCore &enote_core_out)
 {
-    // spendbase = k_{b, recipient} U
+    // spendbase = k_m U
     rct::key spendbase;
     make_seraphis_spendbase(sp_spend_privkey, spendbase);
 
     // finish making the enote
-    make_seraphis_enote_core(enote_view_privkey_g,
-        enote_view_privkey_x,
-        enote_view_privkey_u,
+    make_seraphis_enote_core(enote_view_privkey_g,  //k_g
+        enote_view_privkey_x,  //k_x
+        enote_view_privkey_u,  //k_u
         spendbase,
         amount_blinding_factor,
         amount,
