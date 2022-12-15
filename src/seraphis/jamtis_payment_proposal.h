@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // A 'payment proposal' is a proposal to make an enote sending funds to a Jamtis address.
-
 
 #pragma once
 
@@ -39,7 +36,6 @@
 #include "jamtis_destination.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
-#include "tx_builder_types.h"
 #include "tx_extra.h"
 
 //third party headers
@@ -77,7 +73,7 @@ struct JamtisPaymentProposalV1 final
     TxExtra m_partial_memo;
 
     /**
-    * brief: get_enote_ephemeral_pubkey - get this proposal's enote ephemeral pubkey sK_e
+    * brief: get_enote_ephemeral_pubkey - get this proposal's enote ephemeral pubkey xK_e
     * outparam: enote_ephemeral_pubkey_out -
     */
     void get_enote_ephemeral_pubkey(crypto::x25519_pubkey &enote_ephemeral_pubkey_out) const;
@@ -129,11 +125,11 @@ struct JamtisPaymentProposalSelfSendV1 final
     void get_enote_ephemeral_pubkey(crypto::x25519_pubkey &enote_ephemeral_pubkey_out) const;
     /**
     * brief: get_output_proposal_v1 - convert this proposal to a concrete output proposal
-    * param: viewbalance_privkey -
+    * param: k_view_balance -
     * param: input_context -
     * outparam: output_proposal_out -
     */
-    void get_output_proposal_v1(const crypto::secret_key &viewbalance_privkey,
+    void get_output_proposal_v1(const crypto::secret_key &k_view_balance,
         const rct::key &input_context,
         SpOutputProposalV1 &output_proposal_out) const;
     /**

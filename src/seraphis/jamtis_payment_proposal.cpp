@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "jamtis_payment_proposal.h"
 
@@ -52,6 +50,7 @@
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -112,12 +111,13 @@ void JamtisPaymentProposalV1::get_coinbase_output_proposal_v1(const std::uint64_
         m_destination.m_addr_K1,
         output_proposal_out.m_enote.m_core.m_onetime_address);
 
-    // 9. encrypt address tag: addr_tag_enc = addr_tag(cipher(j) || hint)) ^ H(q, Ko)
+    // 9. encrypt address tag: addr_tag_enc = addr_tag ^ H(q, Ko)
     output_proposal_out.m_enote.m_addr_tag_enc =
         encrypt_address_tag(q, output_proposal_out.m_enote.m_core.m_onetime_address, m_destination.m_addr_tag);
 
     // 10. view tag: view_tag = H_1(xK_d, Ko)
-    make_jamtis_view_tag(xK_d, output_proposal_out.m_enote.m_core.m_onetime_address,
+    make_jamtis_view_tag(xK_d,
+        output_proposal_out.m_enote.m_core.m_onetime_address,
         output_proposal_out.m_enote.m_view_tag);
 
     // 11. memo elements
@@ -174,7 +174,7 @@ void JamtisPaymentProposalV1::get_output_proposal_v1(const rct::key &input_conte
         m_destination.m_addr_K1,
         output_proposal_out.m_core.m_onetime_address);
 
-    // 11. encrypt address tag: addr_tag_enc = addr_tag(cipher(j) || hint)) ^ H(q, Ko)
+    // 11. encrypt address tag: addr_tag_enc = addr_tag ^ H(q, Ko)
     output_proposal_out.m_addr_tag_enc =
         encrypt_address_tag(q, output_proposal_out.m_core.m_onetime_address, m_destination.m_addr_tag);
 
@@ -210,7 +210,7 @@ void JamtisPaymentProposalSelfSendV1::get_enote_ephemeral_pubkey(crypto::x25519_
     make_jamtis_enote_ephemeral_pubkey(m_enote_ephemeral_privkey, m_destination.m_addr_K3, enote_ephemeral_pubkey_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secret_key &viewbalance_privkey,
+void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secret_key &k_view_balance,
     const rct::key &input_context,
     SpOutputProposalV1 &output_proposal_out) const
 {
@@ -219,9 +219,9 @@ void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secre
         "jamtis payment proposal self-send: invalid enote ephemeral privkey (zero).");
     CHECK_AND_ASSERT_THROW_MES(x25519_scalar_is_canonical(m_enote_ephemeral_privkey),
         "jamtis payment proposal self-send: invalid enote ephemeral privkey (not canonical).");
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(viewbalance_privkey)),
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(k_view_balance)),
         "jamtis payment proposal self-send: invalid view-balance privkey (zero).");
-    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(viewbalance_privkey)) == 0,
+    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(k_view_balance)) == 0,
         "jamtis payment proposal self-send: invalid view-balance privkey (not canonical).");
     CHECK_AND_ASSERT_THROW_MES(m_type <= JamtisSelfSendType::MAX,
         "jamtis payment proposal self-send: unknown self-send type.");
@@ -232,7 +232,7 @@ void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secre
     // 3. sender-receiver shared secret: q = H_32[k_vb](xK_e, input_context)  //note: xK_e not xK_d
     rct::key q;
     auto q_wiper = epee::misc_utils::create_scope_leave_handler([&]{ memwipe(&q, sizeof(q)); });
-    make_jamtis_sender_receiver_secret_selfsend(viewbalance_privkey,
+    make_jamtis_sender_receiver_secret_selfsend(k_view_balance,
         output_proposal_out.m_enote_ephemeral_pubkey,
         input_context,
         m_type,
@@ -258,21 +258,20 @@ void JamtisPaymentProposalSelfSendV1::get_output_proposal_v1(const crypto::secre
         m_destination.m_addr_K1,
         output_proposal_out.m_core.m_onetime_address);
 
-    // 9. encrypt address index: addr_tag_enc = addr_tag(j, hint) ^ H(q, Ko)
-
+    // 9. encrypt address index: addr_tag_enc = addr_tag{j || hint} ^ H(q, Ko)
     // a. extract the address index from the destination address's address tag
-    crypto::secret_key generateaddress_secret;
-    crypto::secret_key ciphertag_secret;
-    make_jamtis_generateaddress_secret(viewbalance_privkey, generateaddress_secret);
-    make_jamtis_ciphertag_secret(generateaddress_secret, ciphertag_secret);
+    crypto::secret_key s_generate_address;
+    crypto::secret_key s_cipher_tag;
+    make_jamtis_generateaddress_secret(k_view_balance, s_generate_address);
+    make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
     address_index_t j;
-    CHECK_AND_ASSERT_THROW_MES(try_decipher_address_index(ciphertag_secret, m_destination.m_addr_tag, j),
+    CHECK_AND_ASSERT_THROW_MES(try_decipher_address_index(s_cipher_tag, m_destination.m_addr_tag, j),
         "Failed to create a self-send-type output proposal: could not decipher the destination's address tag.");
 
     // b. make a raw address tag (not ciphered)
     const address_tag_t raw_address_tag{j, address_tag_hint_t{}};
 
-    // c. encrypt the raw address tag: addr_tag_enc = addr_tag(j || hint) ^ H(q, Ko)
+    // c. encrypt the raw address tag: addr_tag_enc = addr_tag{j || hint} ^ H(q, Ko)
     output_proposal_out.m_addr_tag_enc =
         encrypt_address_tag(q, output_proposal_out.m_core.m_onetime_address, raw_address_tag);
 
