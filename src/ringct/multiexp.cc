@@ -702,7 +702,7 @@ ge_p3 pippenger_p3(const std::vector<MultiexpData> &data, const std::shared_ptr<
 rct::key pippenger(const std::vector<MultiexpData> &data, const std::shared_ptr<pippenger_cached_data> &cache, const size_t cache_size, const size_t c)
 {
   rct::key res;
-  ge_p3 result_p3 = pippenger_p3(std::move(data), cache, cache_size, c);
+  ge_p3 result_p3 = pippenger_p3(data, cache, cache_size, c);
   ge_p3_tobytes(res.bytes, &result_p3);
   return res;
 }

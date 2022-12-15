@@ -26,18 +26,16 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "jamtis_enote_utils.h"
 
 //local headers
 #include "crypto/crypto.h"
-#include "crypto/x25519.h"
 extern "C"
 {
 #include "crypto/crypto-ops.h"
 }
+#include "crypto/x25519.h"
 #include "cryptonote_config.h"
 #include "int-util.h"
 #include "jamtis_support_types.h"
@@ -51,10 +49,9 @@ extern "C"
 #include "sp_core_enote_utils.h"
 
 //third party headers
+#include <boost/utility/string_ref.hpp>
 
 //standard headers
-#include <algorithm>
-#include <string>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -83,8 +80,30 @@ static auto make_derivation_with_wiper(const crypto::x25519_secret_key &privkey,
     return a_wiper;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// a = a_enc XOR H_8(q, xr xG)
-// a_enc = a XOR H_8(q, xr xG)
+//-------------------------------------------------------------------------------------------------------------------
+static const boost::string_ref sender_receiver_secret_domain_separator(const jamtis::JamtisSelfSendType self_send_type)
+{
+    CHECK_AND_ASSERT_THROW_MES(self_send_type <= jamtis::JamtisSelfSendType::MAX,
+        "jamtis self-send sender-receiver secret: unknown self-send type.");
+
+    // dummy self-send
+    if (self_send_type == jamtis::JamtisSelfSendType::DUMMY)
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_DUMMY;
+
+    // change self-send
+    if (self_send_type == jamtis::JamtisSelfSendType::CHANGE)
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_CHANGE;
+
+    // self-spend self-send
+    if (self_send_type == jamtis::JamtisSelfSendType::SELF_SPEND)
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_SELF_SPEND;
+
+    CHECK_AND_ASSERT_THROW_MES(false, "jamtis self-send sender-receiver secret domain separator error.");
+    return "";
+}
+//-------------------------------------------------------------------------------------------------------------------
+// a = a_enc XOR H_8(q, xr xG)  note: a is returned little-endian
+// a_enc = a XOR H_8(q, xr xG)  note: a must be little-endian
 //-------------------------------------------------------------------------------------------------------------------
 static rct::xmr_amount enc_dec_jamtis_amount_plain(const rct::xmr_amount original,
     const rct::key &sender_receiver_secret,
@@ -92,38 +111,34 @@ static rct::xmr_amount enc_dec_jamtis_amount_plain(const rct::xmr_amount origina
 {
     static_assert(sizeof(rct::xmr_amount) == 8, "");
 
-    // ret = H_8(q, xr xG) XOR_64 original
-    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_PLAIN, 2*sizeof(rct::key)};
+    // H_8(q, xr xG)
+    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_ENC_PLAIN, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
     transcript.append("baked_key", baked_key);
 
-    crypto::secret_key hash_result;
-    sp_hash_to_8(transcript.data(), transcript.size(), to_bytes(hash_result));
-
     rct::xmr_amount mask;
-    memcpy(&mask, &hash_result, 8);
+    sp_hash_to_8(transcript.data(), transcript.size(), &mask);
 
+    // original XOR H_8(q, xr xG)
     return original ^ mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// a = a_enc XOR H_8(q)
-// a_enc = a XOR H_8(q)
+// a = a_enc XOR H_8(q)  note: a is returned little-endian
+// a_enc = a XOR H_8(q)  note: a must be little-endian
 //-------------------------------------------------------------------------------------------------------------------
 static rct::xmr_amount enc_dec_jamtis_amount_selfsend(const rct::xmr_amount original,
     const rct::key &sender_receiver_secret)
 {
     static_assert(sizeof(rct::xmr_amount) == 8, "");
 
-    // ret = H_8(q) XOR_64 original
-    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_SELF, sizeof(sender_receiver_secret)};
+    // H_8(q)
+    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_ENC_SELF, sizeof(sender_receiver_secret)};
     transcript.append("q", sender_receiver_secret);
 
-    crypto::secret_key hash_result;
-    sp_hash_to_8(transcript.data(), transcript.size(), to_bytes(hash_result));
-
     rct::xmr_amount mask;
-    memcpy(&mask, &hash_result, 8);
+    sp_hash_to_8(transcript.data(), transcript.size(), &mask);
 
+    // original XOR H_8(q)
     return original ^ mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -231,38 +246,8 @@ void make_jamtis_sender_receiver_secret_selfsend(const crypto::secret_key &k_vie
     const jamtis::JamtisSelfSendType self_send_type,
     rct::key &sender_receiver_secret_out)
 {
-    static const std::string dummy_separator{
-            config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_DUMMY
-        };
-    static const std::string change_separator{
-            config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_CHANGE
-        };
-    static const std::string self_spend_separator{
-            config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_SELF_SPEND
-        };
-
-    CHECK_AND_ASSERT_THROW_MES(self_send_type <= jamtis::JamtisSelfSendType::MAX,
-        "jamtis self-send sender-receiver secret: unknown self-send type.");
-
-    const std::string &domain_separator{
-            [&]() -> const std::string&
-            {
-                if (self_send_type == jamtis::JamtisSelfSendType::DUMMY)
-                    return dummy_separator;
-                else if (self_send_type == jamtis::JamtisSelfSendType::CHANGE)
-                    return change_separator;
-                else if (self_send_type == jamtis::JamtisSelfSendType::SELF_SPEND)
-                    return self_spend_separator;
-                else
-                {
-                    CHECK_AND_ASSERT_THROW_MES(false, "jamtis self-send sender-receiver secret domain separator error");
-                    return dummy_separator;
-                }
-            }()
-        };
-
     // q = H_32[k_vb](xK_e, input_context)
-    SpKDFTranscript transcript{domain_separator, 2*sizeof(rct::key)};
+    SpKDFTranscript transcript{sender_receiver_secret_domain_separator(self_send_type), 2*sizeof(rct::key)};
     transcript.append("xK_e", enote_ephemeral_pubkey);
     transcript.append("input_context", input_context);
 
@@ -273,7 +258,7 @@ void make_jamtis_onetime_address_extension_g(const rct::key &sender_receiver_sec
     const rct::key &amount_commitment,
     crypto::secret_key &sender_extension_out)
 {
-    // k_{mask, sender} = H_n("..g..", q, C)
+    // k_{g, sender} = H_n("..g..", q, C)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_G, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
     transcript.append("C", amount_commitment);
@@ -285,7 +270,7 @@ void make_jamtis_onetime_address_extension_x(const rct::key &sender_receiver_sec
     const rct::key &amount_commitment,
     crypto::secret_key &sender_extension_out)
 {
-    // k_{a, sender} = H_n("..x..", q, C)
+    // k_{x, sender} = H_n("..x..", q, C)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_X, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
     transcript.append("C", amount_commitment);
@@ -297,7 +282,7 @@ void make_jamtis_onetime_address_extension_u(const rct::key &sender_receiver_sec
     const rct::key &amount_commitment,
     crypto::secret_key &sender_extension_out)
 {
-    // k_{b, sender} = H_n("..u..", q, C)
+    // k_{u, sender} = H_n("..u..", q, C)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_U, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
     transcript.append("C", amount_commitment);
@@ -307,18 +292,18 @@ void make_jamtis_onetime_address_extension_u(const rct::key &sender_receiver_sec
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_onetime_address(const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::key &recipient_spend_key,
+    const rct::key &recipient_address_spend_key,
     rct::key &onetime_address_out)
 {
     // Ko = H_n("..g..", q, C) G + H_n("..x..", q, C) X + H_n("..u..", q, C) U + K_1
-    crypto::secret_key extension_u;
-    crypto::secret_key extension_x;
     crypto::secret_key extension_g;
-    make_jamtis_onetime_address_extension_u(sender_receiver_secret, amount_commitment, extension_u);  //H_n("..u..", q, C)
-    make_jamtis_onetime_address_extension_x(sender_receiver_secret, amount_commitment, extension_x);  //H_n("..x..", q, C)
+    crypto::secret_key extension_x;
+    crypto::secret_key extension_u;
     make_jamtis_onetime_address_extension_g(sender_receiver_secret, amount_commitment, extension_g);  //H_n("..g..", q, C)
+    make_jamtis_onetime_address_extension_x(sender_receiver_secret, amount_commitment, extension_x);  //H_n("..x..", q, C)
+    make_jamtis_onetime_address_extension_u(sender_receiver_secret, amount_commitment, extension_u);  //H_n("..u..", q, C)
 
-    onetime_address_out = recipient_spend_key;
+    onetime_address_out = recipient_address_spend_key;  //K_1
     extend_seraphis_spendkey_u(extension_u, onetime_address_out);  //H_n("..u..", q, C) U + K_1
     extend_seraphis_spendkey_x(extension_x, onetime_address_out);  //H_n("..x..", q, C) X + H_n("..u..", q, C) U + K_1
     mask_key(extension_g,
@@ -349,13 +334,12 @@ void make_jamtis_amount_blinding_factor_plain(const rct::key &sender_receiver_se
     // x = H_n(q, xr xG)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_PLAIN, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
-    transcript.append("baked_key", baked_key);  //q || xr xG
+    transcript.append("baked_key", baked_key);
 
     sp_hash_to_scalar(transcript.data(), transcript.size(), to_bytes(mask_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_jamtis_amount_blinding_factor_selfsend(const rct::key &sender_receiver_secret,
-    crypto::secret_key &mask_out)
+void make_jamtis_amount_blinding_factor_selfsend(const rct::key &sender_receiver_secret, crypto::secret_key &mask_out)
 {
     // x = H_n(q)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_SELF, sizeof(rct::key)};
@@ -380,8 +364,7 @@ rct::xmr_amount decode_jamtis_amount_plain(const rct::xmr_amount encoded_amount,
     return SWAP64LE(enc_dec_jamtis_amount_plain(encoded_amount, sender_receiver_secret, baked_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount encode_jamtis_amount_selfsend(const rct::xmr_amount amount,
-    const rct::key &sender_receiver_secret)
+rct::xmr_amount encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret)
 {
     // a_enc = little_endian(a) XOR H_8(q)
     return enc_dec_jamtis_amount_selfsend(SWAP64LE(amount), sender_receiver_secret);
@@ -394,8 +377,8 @@ rct::xmr_amount decode_jamtis_amount_selfsend(const rct::xmr_amount encoded_amou
     return SWAP64LE(enc_dec_jamtis_amount_selfsend(encoded_amount, sender_receiver_secret));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_jamtis_nominal_spend_key(const rct::key &sender_receiver_secret,
-    const rct::key &onetime_address,
+void make_jamtis_nominal_spend_key(const rct::key &onetime_address,
+    const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
     rct::key &nominal_spend_key_out)
 {
@@ -407,8 +390,8 @@ void make_jamtis_nominal_spend_key(const rct::key &sender_receiver_secret,
     make_jamtis_onetime_address_extension_x(sender_receiver_secret, amount_commitment, extension_x);  //H_n("..x..", q, C)
     make_jamtis_onetime_address_extension_u(sender_receiver_secret, amount_commitment, extension_u);  //H_n("..u..", q, C)
 
-    nominal_spend_key_out = onetime_address;  //Ko_t
-    reduce_seraphis_spendkey_g(extension_g, nominal_spend_key_out);  //(-H_n("..g..", q, C)) G + Ko_t
+    nominal_spend_key_out = onetime_address;  //Ko
+    reduce_seraphis_spendkey_g(extension_g, nominal_spend_key_out);  //(-H_n("..g..", q, C)) G + Ko
     reduce_seraphis_spendkey_x(extension_x, nominal_spend_key_out);  //(-H_n("..x..", q, C)) X + ...
     reduce_seraphis_spendkey_u(extension_u, nominal_spend_key_out);  //(-H_n("..u..", q, C)) U + ...
 }
@@ -447,10 +430,11 @@ bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
     const rct::xmr_amount nominal_amount{decode_jamtis_amount_plain(encoded_amount, sender_receiver_secret, baked_key)};
 
     // C' = x' G + a' H
-    make_jamtis_amount_blinding_factor_plain(sender_receiver_secret, baked_key, amount_blinding_factor_out);  // x'
+    make_jamtis_amount_blinding_factor_plain(sender_receiver_secret, baked_key, amount_blinding_factor_out);  //x'
     const rct::key nominal_amount_commitment{rct::commit(nominal_amount, rct::sk2rct(amount_blinding_factor_out))};
 
     // check that recomputed commitment matches original commitment
+    // note: this defends against the Janus attack, and against malformed amount commitments
     if (!(nominal_amount_commitment == amount_commitment))
         return false;
 
@@ -469,10 +453,11 @@ bool try_get_jamtis_amount_selfsend(const rct::key &sender_receiver_secret,
     const rct::xmr_amount nominal_amount{decode_jamtis_amount_selfsend(encoded_amount, sender_receiver_secret)};
 
     // C' = x' G + a' H
-    make_jamtis_amount_blinding_factor_selfsend(sender_receiver_secret, amount_blinding_factor_out);  // x'
+    make_jamtis_amount_blinding_factor_selfsend(sender_receiver_secret, amount_blinding_factor_out);  //x'
     const rct::key nominal_amount_commitment{rct::commit(nominal_amount, rct::sk2rct(amount_blinding_factor_out))};
 
     // check that recomputed commitment matches original commitment
+    // note: this defends against the Janus attack, and against malformed amount commitments
     if (!(nominal_amount_commitment == amount_commitment))
         return false;
 

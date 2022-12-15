@@ -284,8 +284,8 @@ static bool try_get_intermediate_record_info_v1_helper(const SpEnoteVariant &eno
 
     // nominal spend key
     rct::key nominal_spendkey;
-    jamtis::make_jamtis_nominal_spend_key(nominal_sender_receiver_secret,
-        onetime_address_ref(enote),
+    jamtis::make_jamtis_nominal_spend_key(onetime_address_ref(enote),
+        nominal_sender_receiver_secret,
         amount_commitment_ref(enote),
         nominal_spendkey);
 
@@ -738,6 +738,8 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
     const jamtis::JamtisSelfSendType expected_type,
     SpEnoteRecordV1 &record_out)
 {
+    // note: do not test the view tag here (for efficiency, assume it was already checked)
+
     // sender-receiver secret for expected self-send type
     rct::key q;
     jamtis::make_jamtis_sender_receiver_secret_selfsend(k_view_balance,
@@ -761,7 +763,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
 
     // nominal spend key
     rct::key nominal_recipient_spendkey;
-    jamtis::make_jamtis_nominal_spend_key(q, onetime_address_ref(enote), amount_commitment, nominal_recipient_spendkey);
+    jamtis::make_jamtis_nominal_spend_key(onetime_address_ref(enote), q, amount_commitment, nominal_recipient_spendkey);
 
     // check nominal spend key
     if (!jamtis::test_jamtis_nominal_address_spend_key(jamtis_spend_pubkey,

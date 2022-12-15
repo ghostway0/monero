@@ -310,7 +310,8 @@ namespace config
   const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_U[] = "jamtis_sender_onetime_address_extension_u";
   const constexpr char HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_PLAIN[] = "jamtis_enote_amount_commitment_blinding_factor_plain";
   const constexpr char HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_SELF[] = "jamtis_enote_amount_commitment_blinding_factor_self";
-  const constexpr char HASH_KEY_JAMTIS_AMOUNT_ENC[] = "jamtis_enote_amount_encoding";
+  const constexpr char HASH_KEY_JAMTIS_AMOUNT_ENC_PLAIN[] = "jamtis_enote_amount_encoding_plain";
+  const constexpr char HASH_KEY_JAMTIS_AMOUNT_ENC_SELF[] = "jamtis_enote_amount_encoding_self";
   const constexpr char HASH_KEY_JAMTIS_INPUT_CONTEXT_COINBASE[] = "jamtis_input_context_coinbase";
   const constexpr char HASH_KEY_JAMTIS_INPUT_CONTEXT_STANDARD[] = "jamtis_input_context_standard";
   const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_DUMMY[] = "jamtis_self_send_enote_dummy";
