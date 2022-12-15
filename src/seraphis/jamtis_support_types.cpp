@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "jamtis_support_types.h"
 
@@ -41,32 +39,11 @@
 //standard headers
 #include <cstdint>
 #include <cstddef>
-#include <cstring>
-
 
 namespace sp
 {
 namespace jamtis
 {
-//-------------------------------------------------------------------------------------------------------------------
-// little-endian swaps
-//-------------------------------------------------------------------------------------------------------------------
-constexpr unsigned char swap_le(const unsigned char x)
-{
-    return x;
-}
-constexpr std::uint16_t swap_le(const std::uint16_t x)
-{
-    return SWAP16LE(x);
-}
-constexpr std::uint32_t swap_le(const std::uint32_t x)
-{
-    return SWAP32LE(x);
-}
-constexpr std::uint64_t swap_le(const std::uint64_t x)
-{
-    return SWAP64LE(x);
-}
 //-------------------------------------------------------------------------------------------------------------------
 address_index_t::address_index_t()
 {
@@ -75,16 +52,15 @@ address_index_t::address_index_t()
 //-------------------------------------------------------------------------------------------------------------------
 address_index_t::address_index_t(std::uint64_t half1, std::uint64_t half2)
 {
-    static_assert(sizeof(half1) + sizeof(half2) >= sizeof(address_index_t) &&
-            sizeof(half1) <= sizeof(address_index_t),
-        "");
+    static_assert(sizeof(half1) + sizeof(half2) == sizeof(address_index_t), "");
 
     // copy each half of the index over (as little endian bytes)
+    half1 = SWAP64LE(half1);
+    half2 = SWAP64LE(half2);
+
     std::memset(this->bytes, 0, ADDRESS_INDEX_BYTES);
-    half1 = swap_le(half1);
-    half2 = swap_le(half2);
     memcpy(this->bytes, &half1, sizeof(half1));
-    memcpy(this->bytes + sizeof(half1), &half2, ADDRESS_INDEX_BYTES - sizeof(half2));
+    memcpy(this->bytes + sizeof(half1), &half2, sizeof(half2));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void address_index_t::gen()
@@ -116,7 +92,7 @@ bool address_tag_hint_t::operator==(const address_tag_hint_t &other_hint) const
 //-------------------------------------------------------------------------------------------------------------------
 address_tag_t::address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint)
 {
-    // addr_tag = j || hint
+    // addr_tag = enc(j) || hint
     memcpy(this->bytes, &enc_j, ADDRESS_INDEX_BYTES);
     memcpy(this->bytes + ADDRESS_INDEX_BYTES, &addr_tag_hint, ADDRESS_TAG_HINT_BYTES);
 }

@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Supporting types for Jamtis (address index, address tag hint, address tag, etc.).
-
 
 #pragma once
 
@@ -40,7 +37,6 @@
 //standard headers
 #include <cstdint>
 #include <cstddef>
-#include <cstring>
 
 //forward declarations
 
@@ -70,7 +66,7 @@ struct address_index_t final
     bool operator!=(const address_index_t &other_index) const { return !(*this == other_index); }
 };
 
-/// hint for address tags (little-endian): addr_tag_hint
+/// hint for address tags: addr_tag_hint
 constexpr std::size_t ADDRESS_TAG_HINT_BYTES{2};
 struct address_tag_hint_t final
 {
@@ -84,7 +80,7 @@ struct address_tag_hint_t final
     bool operator!=(const address_tag_hint_t &other_hint) const { return !(*this == other_hint); }
 };
 
-/// index ciphered with a cipher key: addr_tag = enc[cipher_key](little_endian(j) || little_endian(addr_tag_hint))
+/// index ciphered with a cipher key: addr_tag = enc[cipher_key](j) || addr_tag_hint
 struct address_tag_t final
 {
     unsigned char bytes[ADDRESS_INDEX_BYTES + ADDRESS_TAG_HINT_BYTES];
@@ -96,14 +92,14 @@ struct address_tag_t final
     bool operator==(const address_tag_t &other_tag) const;
     bool operator!=(const address_tag_t &other_tag) const { return !(*this == other_tag); }
 
-    /// operator^ for encrypting tags
+    /// XOR operator for encrypting tags
     address_tag_t operator^(const address_tag_t &other_tag) const;
 };
 
 /// address tag XORd with a user-defined secret: addr_tag_enc = addr_tag XOR addr_tag_enc_secret
 using encrypted_address_tag_t = address_tag_t;
 
-/// sizes are consistent
+/// sizes must be consistent
 static_assert(
     sizeof(address_index_t)    == ADDRESS_INDEX_BYTES                           &&
     sizeof(address_tag_hint_t) == ADDRESS_TAG_HINT_BYTES                        &&
