@@ -45,6 +45,7 @@ extern "C"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
+#include "span.h"
 
 //third party headers
 
@@ -98,6 +99,7 @@ static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_
         rct::key cipher_key;  //not crypto::secret_key, which has significant construction cost
         address_index_t enc_j;
     } hash_context;
+    static_assert(!epee::has_padding<hash_context_t>(), "");
 
     memcpy(hash_context.domain_separator,
         config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT,
