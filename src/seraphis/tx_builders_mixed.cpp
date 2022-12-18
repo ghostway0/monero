@@ -388,7 +388,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         "tx proposal prefix (v1): legacy input key images are not sorted.");
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(sp_input_key_images.begin(), sp_input_key_images.end()),
         "tx proposal prefix (v1): seraphis input key images are not sorted.");
-    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(), output_enotes.end(), tools::equals_from_less{}),
+    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(), output_enotes.end()),
         "tx proposal prefix (v1): output enotes are not sorted.");
 
     // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,

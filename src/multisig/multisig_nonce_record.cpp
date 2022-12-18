@@ -71,7 +71,7 @@ bool MultisigPubNonces::operator<(const MultisigPubNonces &other) const
 //-------------------------------------------------------------------------------------------------------------------
 bool MultisigPubNonces::operator==(const MultisigPubNonces &other) const
 {
-    return tools::equals_from_less{}(*this, other);
+    return !(*this < other) && !(other < *this);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBuilder &transcript_inout)
