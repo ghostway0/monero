@@ -68,7 +68,7 @@ static rct::key multisig_binonce_merge_factor(const rct::key &message, const std
     // build hash
     sp::SpKDFTranscript transcript{
             config::HASH_KEY_MULTISIG_BINONCE_MERGE_FACTOR,
-            sizeof(rct::key) + nonces.size() * MultisigPubNonces::size_bytes()
+            sizeof(rct::key) + nonces.size() * multisig_pub_nonces_size_bytes()
         };
     transcript.append("message", message);
     transcript.append("nonces", nonces);

@@ -46,16 +46,6 @@
 namespace multisig
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigProofInitSetV1::try_get_nonces(const std::size_t filter_index, std::vector<MultisigPubNonces> &nonces_out) const
-{
-    if (filter_index >= m_inits.size())
-        return false;
-
-    nonces_out = m_inits[filter_index];
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
 const rct::key& proof_key_ref(const MultisigPartialSigVariant &variant)
 {
     struct visitor : public tools::variant_static_visitor<const rct::key&>
@@ -82,6 +72,17 @@ const rct::key& message_ref(const MultisigPartialSigVariant &variant)
     };
 
     return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_nonces(const MultisigProofInitSetV1 &init_set,
+    const std::size_t filter_index,
+    std::vector<MultisigPubNonces> &nonces_out)
+{
+    if (filter_index >= init_set.m_inits.size())
+        return false;
+
+    nonces_out = init_set.m_inits[filter_index];
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace multisig

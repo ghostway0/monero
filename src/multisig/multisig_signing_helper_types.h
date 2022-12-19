@@ -82,9 +82,6 @@ struct MultisigProofInitSetV1 final
             MultisigPubNonces  //nonces
         >
     > m_inits;
-
-    /// get set of nonces for a given filter (returns false if the location doesn't exist)
-    bool try_get_nonces(const std::size_t filter_index, std::vector<MultisigPubNonces> &nonces_out) const;
 };
 
 ////
@@ -112,5 +109,10 @@ struct MultisigPartialSigSetV1 final
     /// [ proof key : partial signatures ] partial signatures mapped to their internally cached proof keys
     std::unordered_map<rct::key, MultisigPartialSigVariant> m_partial_signatures;
 };
+
+/// get set of nonces from an init set for a given filter (returns false if the location doesn't exist)
+bool try_get_nonces(const MultisigProofInitSetV1 &init_set,
+    const std::size_t filter_index,
+    std::vector<MultisigPubNonces> &nonces_out);
 
 } //namespace multisig

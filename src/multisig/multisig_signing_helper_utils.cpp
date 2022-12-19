@@ -239,7 +239,7 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
             // - select the proof we are working on (via this proof's proof key)
             // - select the nonces that line up with the signer's nonce tracker (i.e. the nonces associated with this
             //   filter for this signer)
-            if (!init_set_collection.second.at(proof_context.first).try_get_nonces(
+            if (!try_get_nonces(init_set_collection.second.at(proof_context.first),
                     signer_nonce_trackers.at(init_set_collection.first),
                     signer_pub_nonces_set_temp))
             {
