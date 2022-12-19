@@ -93,12 +93,12 @@ void LegacyMultisigInputProposalV1::get_input_proposal_v1(const rct::key &legacy
 bool LegacyMultisigInputProposalV1::matches_with(const multisig::CLSAGMultisigProposal &proof_proposal) const
 {
     // onetime address to sign
-    if (!(proof_proposal.main_proof_key() == onetime_address_ref(m_enote)))
+    if (!(main_proof_key_ref(proof_proposal) == onetime_address_ref(m_enote)))
         return false;
 
     // amount commitment to sign
     const rct::key amount_commitment{amount_commitment_ref(m_enote)};
-    if (!(proof_proposal.auxilliary_proof_key() == amount_commitment))
+    if (!(auxilliary_proof_key_ref(proof_proposal) == amount_commitment))
         return false;
 
     // pseudo-output commitment

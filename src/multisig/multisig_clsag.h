@@ -84,11 +84,6 @@ struct CLSAGMultisigProposal final
 
     // signing key pair's index in the ring
     std::uint32_t l;
-
-    // range-checked access to the signing main proof pubkey
-    const rct::key& main_proof_key() const;
-    // range-checked access to the signing auxilliary proof pubkey
-    const rct::key& auxilliary_proof_key() const;
 };
 
 ////
@@ -118,6 +113,11 @@ struct CLSAGMultisigPartial final
     crypto::key_image D;
 };
 
+
+/// range-checked access to the signing main proof pubkey
+const rct::key& main_proof_key_ref(const CLSAGMultisigProposal &proposal);
+/// range-checked access to the signing auxilliary proof pubkey
+const rct::key& auxilliary_proof_key_ref(const CLSAGMultisigProposal &proposal);
 /**
 * brief: make_clsag_multisig_proposal - propose to make a multisig CLSAG proof
 * param: message - message to insert in the proof's Fiat-Shamir transform hash

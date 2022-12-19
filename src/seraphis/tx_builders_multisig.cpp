@@ -391,7 +391,7 @@ static bool try_make_legacy_inputs_for_multisig_v1(const rct::key &tx_proposal_p
     std::unordered_map<rct::key, rct::ctkeyV> mapped_ring_members;
 
     for (const multisig::CLSAGMultisigProposal &legacy_input_proof_proposal : legacy_input_proof_proposals)
-        mapped_ring_members[legacy_input_proof_proposal.main_proof_key()] = legacy_input_proof_proposal.ring_members;
+        mapped_ring_members[main_proof_key_ref(legacy_input_proof_proposal)] = legacy_input_proof_proposal.ring_members;
 
     // 4. filter the legacy partial signatures into a map
     std::unordered_map<multisig::signer_set_filter,  //signing group

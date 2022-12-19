@@ -102,20 +102,20 @@ static rct::keyV sum_together_multisig_pub_nonces(const std::vector<MultisigPubN
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-const rct::key& CLSAGMultisigProposal::main_proof_key() const
+const rct::key& main_proof_key_ref(const CLSAGMultisigProposal &proposal)
 {
-    CHECK_AND_ASSERT_THROW_MES(l < ring_members.size(),
+    CHECK_AND_ASSERT_THROW_MES(proposal.l < proposal.ring_members.size(),
         "CLSAGMultisigProposal (get main proof key): l is out of range.");
 
-    return ring_members[l].dest;
+    return proposal.ring_members[proposal.l].dest;
 }
 //-------------------------------------------------------------------------------------------------------------------
-const rct::key& CLSAGMultisigProposal::auxilliary_proof_key() const
+const rct::key& auxilliary_proof_key_ref(const CLSAGMultisigProposal &proposal)
 {
-    CHECK_AND_ASSERT_THROW_MES(l < ring_members.size(),
+    CHECK_AND_ASSERT_THROW_MES(proposal.l < proposal.ring_members.size(),
         "CLSAGMultisigProposal (get auxilliary proof key): l is out of range.");
 
-    return ring_members[l].mask;
+    return proposal.ring_members[proposal.l].mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_clsag_multisig_proposal(const rct::key &message,
@@ -150,7 +150,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     CLSAGMultisigPartial &partial_sig_out)
 {
     // check multisig proposal
-    CHECK_AND_ASSERT_THROW_MES(!(proposal.main_proof_key() == rct::identity()),
+    CHECK_AND_ASSERT_THROW_MES(!(main_proof_key_ref(proposal) == rct::identity()),
         "make CLSAG multisig partial sig: bad proof key (main key identity)!");
     CHECK_AND_ASSERT_THROW_MES(!(rct::ki2rct(proposal.KI) == rct::identity()), 
         "make CLSAG multisig partial sig: bad proof key (KI identity)!");
@@ -208,7 +208,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     rct::scalarmultBase(local_pub_nonces_G.signature_nonce_2_pub, rct::sk2rct(local_nonce_2_priv));
 
     crypto::key_image key_image_base;
-    crypto::generate_key_image(rct::rct2pk(proposal.main_proof_key()), rct::rct2sk(rct::I), key_image_base);  //Hp(K[l])
+    crypto::generate_key_image(rct::rct2pk(main_proof_key_ref(proposal)), rct::rct2sk(rct::I), key_image_base);  //Hp(K[l])
 
     MultisigPubNonces local_nonce_pubs_Hp;
     rct::scalarmultKey(local_nonce_pubs_Hp.signature_nonce_1_pub,
@@ -301,7 +301,7 @@ void make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
 
     /// set the partial signature components
     partial_sig_out.message = proposal.message;
-    partial_sig_out.main_proof_key_K = proposal.main_proof_key();
+    partial_sig_out.main_proof_key_K = main_proof_key_ref(proposal);
     partial_sig_out.l = proposal.l;
     partial_sig_out.responses = proposal.decoy_responses;
     partial_sig_out.responses[proposal.l] = partial_response;  //inject partial response
@@ -323,7 +323,7 @@ bool try_make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     crypto::secret_key nonce_privkey_1;
     crypto::secret_key nonce_privkey_2;
     if (!nonce_record_inout.try_get_recorded_nonce_privkeys(proposal.message,
-            proposal.main_proof_key(),
+            main_proof_key_ref(proposal),
             filter,
             nonce_privkey_1,
             nonce_privkey_2))
@@ -341,7 +341,7 @@ bool try_make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
         partial_sig_temp);
 
     // clear the used nonces
-    CHECK_AND_ASSERT_THROW_MES(nonce_record_inout.try_remove_record(proposal.message, proposal.main_proof_key(), filter),
+    CHECK_AND_ASSERT_THROW_MES(nonce_record_inout.try_remove_record(proposal.message, main_proof_key_ref(proposal), filter),
         "try make clsag multisig partial sig: failed to clear nonces from nonce record (aborting partial signature)!");
 
     // set the output partial sig AFTER used nonces are cleared, in case of exception

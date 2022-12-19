@@ -155,7 +155,7 @@ MultisigPartialSigMakerCLSAG::MultisigPartialSigMakerCLSAG(const std::uint32_t t
 
     // cache the proof keys mapped to indices in the referenced signature context data
     for (std::size_t signature_proposal_index{0}; signature_proposal_index < num_proposals; ++signature_proposal_index)
-        m_cached_proof_keys[m_proof_proposals[signature_proposal_index].main_proof_key()] = signature_proposal_index;
+        m_cached_proof_keys[main_proof_key_ref(m_proof_proposals[signature_proposal_index])] = signature_proposal_index;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MultisigPartialSigMakerCLSAG::attempt_make_partial_sig(const rct::key &proof_message,

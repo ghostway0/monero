@@ -389,7 +389,7 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
         prepare_nonce_records(accounts,
             filter_permutations,
             multisig_proof_proposal.message,
-            multisig_proof_proposal.main_proof_key(),
+            main_proof_key_ref(multisig_proof_proposal),
             signer_nonce_records);
 
         // 7. complete and validate each signature attempt
@@ -413,14 +413,14 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
                 signer_nonce_records,
                 rct::G,
                 multisig_proof_proposal.message,
-                multisig_proof_proposal.main_proof_key(),
+                main_proof_key_ref(multisig_proof_proposal),
                 filter,
                 signer_pub_nonces_G);
             assemble_nonce_pubkeys_for_signing(accounts,
                 signer_nonce_records,
                 rct::ki2rct(KI_base),
                 multisig_proof_proposal.message,
-                multisig_proof_proposal.main_proof_key(),
+                main_proof_key_ref(multisig_proof_proposal),
                 filter,
                 signer_pub_nonces_Hp);
 
