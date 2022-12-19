@@ -240,7 +240,7 @@ static void check_is_owned(const JamtisPaymentProposalSelfSendV1 &test_proposal,
 {
     // convert to output proposal
     SpOutputProposalV1 output_proposal;
-    test_proposal.get_output_proposal_v1(keys.k_vb, rct::zero(), output_proposal);
+    get_output_proposal_v1(test_proposal, keys.k_vb, rct::zero(), output_proposal);
 
     // check ownership
     check_is_owned(output_proposal, keys, j_expected, amount_expected, type_expected);
@@ -642,7 +642,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
     const std::uint64_t block_height{0};
     JamtisPaymentProposalV1 payment_proposal{user_address, amount, enote_privkey};
     SpCoinbaseOutputProposalV1 output_proposal;
-    payment_proposal.get_coinbase_output_proposal_v1(block_height, output_proposal);
+    get_coinbase_output_proposal_v1(payment_proposal, block_height, output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, block_height, keys, j, amount, JamtisEnoteType::PLAIN);
@@ -672,7 +672,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
 
     JamtisPaymentProposalV1 payment_proposal{user_address, amount, enote_privkey};
     SpOutputProposalV1 output_proposal;
-    payment_proposal.get_output_proposal_v1(rct::zero(), output_proposal);
+    get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::PLAIN);
@@ -705,7 +705,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
         JamtisSelfSendType::SELF_SPEND,
         enote_privkey};
     SpOutputProposalV1 output_proposal;
-    payment_proposal_selfspend.get_output_proposal_v1(keys.k_vb, rct::zero(), output_proposal);
+    get_output_proposal_v1(payment_proposal_selfspend, keys.k_vb, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::SELF_SPEND);
@@ -718,7 +718,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
         amount,
         JamtisSelfSendType::CHANGE,
         enote_privkey};
-    payment_proposal_change.get_output_proposal_v1(keys.k_vb, rct::zero(), output_proposal);
+    get_output_proposal_v1(payment_proposal_change, keys.k_vb, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::CHANGE);
@@ -767,9 +767,9 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     SpOutputProposalV1 self_spend_proposal1_amnt_1;
     SpOutputProposalV1 self_spend_proposal2_amnt_1;
     SpOutputProposalV1 change_proposal_amnt_1;
-    self_spend_payment_proposal1_amnt_1.get_output_proposal_v1(keys.k_vb, rct::zero(), self_spend_proposal1_amnt_1);
-    self_spend_payment_proposal2_amnt_1.get_output_proposal_v1(keys.k_vb, rct::zero(), self_spend_proposal2_amnt_1);
-    change_payment_proposal_amnt_1.get_output_proposal_v1(keys.k_vb, rct::zero(), change_proposal_amnt_1);
+    get_output_proposal_v1(self_spend_payment_proposal1_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal1_amnt_1);
+    get_output_proposal_v1(self_spend_payment_proposal2_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal2_amnt_1);
+    get_output_proposal_v1(change_payment_proposal_amnt_1, keys.k_vb, rct::zero(), change_proposal_amnt_1);
     check_is_owned(self_spend_proposal2_amnt_1, keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
     check_is_owned(self_spend_proposal1_amnt_1, keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
     check_is_owned(change_proposal_amnt_1, keys, j_change, 1, JamtisEnoteType::CHANGE);
@@ -809,7 +809,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 normal output, 0 change: 2 outputs (1 self-send dummy)
     in_amount = 1 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.clear();
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 1);
@@ -819,7 +819,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 normal output, >0 change: 2 outputs (1 change)
     in_amount = 2 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);  //change = 1
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);  //change = 1
     selfsend_proposals.clear();
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 1);
@@ -829,8 +829,8 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 2 normal outputs, 0 change: 3 outputs (1 self-send dummy)
     in_amount = 2 + fee;
     normal_proposals.resize(2);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.clear();
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 2);
@@ -840,8 +840,8 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 2 normal outputs (shared ephemeral pubkey), 0 change: error
     in_amount = 2 + fee;
     normal_proposals.resize(2);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
     normal_proposals[1].m_enote_ephemeral_privkey = normal_proposals[0].m_enote_ephemeral_privkey;
     normal_proposals[1].m_destination.m_addr_K3 = normal_proposals[0].m_destination.m_addr_K3;
     selfsend_proposals.clear();
@@ -850,8 +850,8 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 2 normal outputs (shared ephemeral pubkey), >0 change: error
     in_amount = 3 + fee;
     normal_proposals.resize(2);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);  //change = 1
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);  //change = 1
     normal_proposals[1].m_enote_ephemeral_privkey = normal_proposals[0].m_enote_ephemeral_privkey;
     normal_proposals[1].m_destination.m_addr_K3 = normal_proposals[0].m_destination.m_addr_K3;
     selfsend_proposals.clear();
@@ -860,9 +860,9 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 3 normal outputs, 0 change: 4 outputs (1 self-send dummy)
     in_amount = 3 + fee;
     normal_proposals.resize(3);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
-    normal_proposals[2].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[2] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.clear();
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 3);
@@ -872,9 +872,9 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 3 normal outputs, >0 change: 4 outputs (1 change)
     in_amount = 4 + fee;
     normal_proposals.resize(3);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
-    normal_proposals[2].gen(1, 0);  //change = 1
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[2] = gen_jamtis_payment_proposal_v1(1, 0);  //change = 1
     selfsend_proposals.clear();
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 3);
@@ -913,7 +913,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output & 1 normal output (shared ephemeral pubkey), 0 change: 2 outputs
     in_amount = 2 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;
     normal_proposals[0].m_enote_ephemeral_privkey = selfsend_proposals[0].m_enote_ephemeral_privkey;
@@ -926,7 +926,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output & 1 normal output (shared ephemeral pubkey), >0 change: error
     in_amount = 3 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;  //change = 1
     normal_proposals[0].m_enote_ephemeral_privkey = selfsend_proposals[0].m_enote_ephemeral_privkey;
@@ -936,7 +936,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output, 1 normal output, 0 change: 3 outputs (1 dummy)
     in_amount = 2 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
@@ -948,7 +948,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output, 1 normal output, >0 change: 3 outputs (1 change)
     in_amount = 3 + fee;
     normal_proposals.resize(1);
-    normal_proposals[0].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;  //change = 1
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
@@ -960,8 +960,8 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output, 2 normal outputs, 0 change: 3 outputs
     in_amount = 3 + fee;
     normal_proposals.resize(2);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
@@ -972,8 +972,8 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     // 1 self-send output, 2 normal outputs, >0 change: 4 outputs (1 change)
     in_amount = 4 + fee;
     normal_proposals.resize(2);
-    normal_proposals[0].gen(1, 0);
-    normal_proposals[1].gen(1, 0);
+    normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
+    normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;  //change = 1
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));

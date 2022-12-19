@@ -65,13 +65,13 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)
     {
-        normal_proposal.get_enote_ephemeral_pubkey(temp_enote_ephemeral_pubkey);
+        get_enote_ephemeral_pubkey(normal_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
     {
-        selfsend_proposal.get_enote_ephemeral_pubkey(temp_enote_ephemeral_pubkey);
+        get_enote_ephemeral_pubkey(selfsend_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 

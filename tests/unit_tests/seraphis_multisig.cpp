@@ -490,7 +490,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     normal_payment_proposals.reserve(out_amounts_normal.size());
 
     for (const rct::xmr_amount out_amount : out_amounts_normal)
-        tools::add_element(normal_payment_proposals).gen(out_amount, 0);
+        tools::add_element(normal_payment_proposals) = gen_jamtis_payment_proposal_v1(out_amount, 0);
 
     // - self-send payments
     std::vector<JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;

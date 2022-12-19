@@ -118,7 +118,6 @@ struct CLSAGMultisigPartial final
     crypto::key_image D;
 };
 
-
 /**
 * brief: make_clsag_multisig_proposal - propose to make a multisig CLSAG proof
 * param: message - message to insert in the proof's Fiat-Shamir transform hash
