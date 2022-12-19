@@ -363,9 +363,15 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         output_proposals[1].m_enote_ephemeral_pubkey = output_proposals[0].m_enote_ephemeral_pubkey;
 
     // pre-sort inputs and outputs (doing this here makes everything else easier)
-    std::sort(legacy_input_proposals.begin(), legacy_input_proposals.end());
-    std::sort(sp_input_proposals.begin(), sp_input_proposals.end());
-    std::sort(output_proposals.begin(), output_proposals.end());
+    std::sort(legacy_input_proposals.begin(),
+        legacy_input_proposals.end(),
+        tools::compare_func<LegacyInputProposalV1>(compare_KI));
+    std::sort(sp_input_proposals.begin(),
+        sp_input_proposals.end(),
+        tools::compare_func<SpInputProposalV1>(compare_KI));
+    std::sort(output_proposals.begin(),
+        output_proposals.end(),
+        tools::compare_func<SpOutputProposalV1>(compare_Ko));
 
     // make mock memo elements
     std::vector<ExtraFieldElement> additional_memo_elements;

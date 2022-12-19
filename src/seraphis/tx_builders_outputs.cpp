@@ -288,7 +288,7 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
         "Semantics check coinbase output proposals v1: enote ephemeral pubkeys aren't all unique.");
 
     // proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals, compare_Ko),
         "Semantics check output proposals v1: output onetime addresses are not sorted and unique.");
 
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -324,7 +324,7 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     }
 
     // proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_proposals, compare_Ko),
         "Semantics check output proposals v1: output onetime addresses are not sorted and unique.");
 
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)

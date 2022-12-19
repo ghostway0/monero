@@ -68,4 +68,19 @@ void LegacyInputProposalV1::gen(const crypto::secret_key &legacy_spend_privkey, 
     make_legacy_key_image(m_enote_view_privkey, legacy_spend_privkey, m_onetime_address, m_key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b)
+{
+    return a.m_key_image < b.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePrepV1 &b)
+{
+    return compare_KI(a.m_reference_image, b.m_reference_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b)
+{
+    return compare_KI(a.m_input_image, b.m_input_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

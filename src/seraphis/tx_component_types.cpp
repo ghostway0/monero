@@ -53,13 +53,6 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool SpCoinbaseEnoteV1::operator==(const SpCoinbaseEnoteV1 &other_enote) const
-{
-    return m_core      == other_enote.m_core &&
-        m_addr_tag_enc == other_enote.m_addr_tag_enc &&
-        m_view_tag     == other_enote.m_view_tag;
-}
-//-------------------------------------------------------------------------------------------------------------------
 void SpCoinbaseEnoteV1::gen()
 {
     // generate a dummy enote: random pieces, completely unspendable
@@ -77,14 +70,6 @@ void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilde
     transcript_inout.append("core", container.m_core);
     transcript_inout.append("addr_tag_enc", container.m_addr_tag_enc.bytes);
     transcript_inout.append("view_tag", container.m_view_tag);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteV1::operator==(const SpEnoteV1 &other_enote) const
-{
-    return m_core        == other_enote.m_core &&
-        m_encoded_amount == other_enote.m_encoded_amount &&
-        m_addr_tag_enc   == other_enote.m_addr_tag_enc &&
-        m_view_tag       == other_enote.m_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteV1::gen()
@@ -171,26 +156,6 @@ jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant)
     };
 
     return variant.visit(visitor{});
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2)
-{
-    // check they have the same type
-    if (!SpEnoteVariant::same_type(variant1, variant2))
-        return false;
-
-    // use a visitor to test equality with variant2
-    struct visitor : public tools::variant_static_visitor<bool>
-    {
-        visitor(const SpEnoteVariant &other_ref) : other{other_ref} {}
-        const SpEnoteVariant &other;
-
-        using variant_static_visitor::operator();  //for blank overload
-        bool operator()(const SpCoinbaseEnoteV1 &enote) const { return enote == other.unwrap<SpCoinbaseEnoteV1>(); }
-        bool operator()(const SpEnoteV1 &enote) const { return enote == other.unwrap<SpEnoteV1>(); }
-    };
-
-    return variant1.visit(visitor{variant2});
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout)
@@ -301,6 +266,56 @@ void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder
 {
     transcript_inout.append("output_xK_e_keys", container.m_output_enote_ephemeral_pubkeys);
     transcript_inout.append("tx_extra", container.m_tx_extra);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b)
+{
+    return a.m_core      == b.m_core &&
+        a.m_addr_tag_enc == b.m_addr_tag_enc &&
+        a.m_view_tag     == b.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpEnoteV1 &a, const SpEnoteV1 &b)
+{
+    return a.m_core        == b.m_core &&
+        a.m_encoded_amount == b.m_encoded_amount &&
+        a.m_addr_tag_enc   == b.m_addr_tag_enc &&
+        a.m_view_tag       == b.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2)
+{
+    // check they have the same type
+    if (!SpEnoteVariant::same_type(variant1, variant2))
+        return false;
+
+    // use a visitor to test equality with variant2
+    struct visitor : public tools::variant_static_visitor<bool>
+    {
+        visitor(const SpEnoteVariant &other_ref) : other{other_ref} {}
+        const SpEnoteVariant &other;
+
+        using variant_static_visitor::operator();  //for blank overload
+        bool operator()(const SpCoinbaseEnoteV1 &enote) const { return enote == other.unwrap<SpCoinbaseEnoteV1>(); }
+        bool operator()(const SpEnoteV1 &enote) const { return enote == other.unwrap<SpEnoteV1>(); }
+    };
+
+    return variant1.visit(visitor{variant2});
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b)
+{
+    return compare_Ko(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpEnoteV1 &a, const SpEnoteV1 &b)
+{
+    return compare_Ko(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpEnoteImageV1 &a, const SpEnoteImageV1 &b)
+{
+    return compare_KI(a.m_core, b.m_core);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

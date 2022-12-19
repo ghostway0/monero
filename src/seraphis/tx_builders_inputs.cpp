@@ -125,10 +125,13 @@ void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_imag
     {
         // find the membership proof that matches with the input image at this index
         auto membership_proof_match =
-            std::find(
+            std::find_if(
                 alignable_membership_proofs.begin(),
                 alignable_membership_proofs.end(),
-                input_image.m_core.m_masked_address
+                [&masked_address = input_image.m_core.m_masked_address](const SpAlignableMembershipProofV1 &a) -> bool
+                {
+                    return alignment_check(a, masked_address);
+                }
             );
 
         CHECK_AND_ASSERT_THROW_MES(membership_proof_match != alignable_membership_proofs.end(),

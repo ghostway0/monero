@@ -52,26 +52,26 @@
 namespace multisig
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigPubNonces::operator<(const MultisigPubNonces &other) const
+bool operator<(const MultisigPubNonces &a, const MultisigPubNonces &b)
 {
     // sort by nonce pubkey 1 then nonce pubkey 2 if pubkey 1 is equal
     const int nonce_1_comparison{
-            memcmp(signature_nonce_1_pub.bytes, &other.signature_nonce_1_pub.bytes, sizeof(rct::key))
+            memcmp(a.signature_nonce_1_pub.bytes, &b.signature_nonce_1_pub.bytes, sizeof(rct::key))
         };
 
     if (nonce_1_comparison < 0)
         return true;
 
     if (nonce_1_comparison == 0 &&
-        memcmp(signature_nonce_2_pub.bytes, &other.signature_nonce_2_pub.bytes, sizeof(rct::key)) < 0)
+        memcmp(a.signature_nonce_2_pub.bytes, &b.signature_nonce_2_pub.bytes, sizeof(rct::key)) < 0)
         return true;
 
     return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigPubNonces::operator==(const MultisigPubNonces &other) const
+bool operator==(const MultisigPubNonces &a, const MultisigPubNonces &b)
 {
-    return !(*this < other) && !(other < *this);
+    return !(a < b) && !(b < a);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBuilder &transcript_inout)

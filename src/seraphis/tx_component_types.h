@@ -72,11 +72,6 @@ struct SpCoinbaseEnoteV1 final
     /// view_tag
     jamtis::view_tag_t m_view_tag;
 
-    /// less-than operator for sorting
-    bool operator<(const SpCoinbaseEnoteV1 &other_enote) const { return m_core < other_enote.m_core; }
-    /// comparison operator for equivalence testing
-    bool operator==(const SpCoinbaseEnoteV1 &other_enote) const;
-
     /// generate a dummy v1 coinbase enote (all random; completely unspendable)
     void gen();
 
@@ -104,11 +99,6 @@ struct SpEnoteV1 final
     jamtis::encrypted_address_tag_t m_addr_tag_enc;
     /// view_tag
     jamtis::view_tag_t m_view_tag;
-
-    /// less-than operator for sorting
-    bool operator<(const SpEnoteV1 &other_enote) const { return m_core < other_enote.m_core; }
-    /// comparison operator for equivalence testing
-    bool operator==(const SpEnoteV1 &other_enote) const;
 
     /// generate a dummy v1 enote (all random; completely unspendable)
     void gen();
@@ -142,7 +132,6 @@ const rct::key& onetime_address_ref(const SpEnoteVariant &variant);
 rct::key amount_commitment_ref(const SpEnoteVariant &variant);
 const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &variant);
 jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant);
-bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2);
 
 ////
 // SpEnoteImageV1
@@ -151,9 +140,6 @@ struct SpEnoteImageV1 final
 {
     /// enote image core (masked address, masked amount commitment, key image)
     SpEnoteImageCore m_core;
-
-    /// less-than operator for sorting
-    bool operator<(const SpEnoteImageV1 &other_image) const { return m_core < other_image.m_core; }
 
     static std::size_t size_bytes() { return SpEnoteImageCore::size_bytes(); }
 };
@@ -241,5 +227,19 @@ struct SpTxSupplementV1 final
 };
 inline const boost::string_ref container_name(const SpTxSupplementV1&) { return "SpTxSupplementV1"; }
 void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// comparison operator for equivalence testing
+bool operator==(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
+/// comparison operator for equivalence testing
+bool operator==(const SpEnoteV1 &a, const SpEnoteV1 &b);
+/// comparison operator for equivalence testing
+bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2);
+
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpEnoteV1 &a, const SpEnoteV1 &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpEnoteImageV1 &a, const SpEnoteImageV1 &b);
 
 } //namespace sp

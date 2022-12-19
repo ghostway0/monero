@@ -70,9 +70,6 @@ struct SpInputProposalV1 final
     /// core of the proposal
     SpInputProposalCore m_core;
 
-    /// less-than operator for sorting
-    bool operator<(const SpInputProposalV1 &other_proposal) const { return m_core < other_proposal.m_core; }
-
     /**
     * brief: get_enote_image_v1 - get this input's enote image in the squashed enote model
     * outparam: image_out -
@@ -108,9 +105,6 @@ struct SpCoinbaseOutputProposalV1 final
     /// memo elements to add to the tx memo
     TxExtra m_partial_memo;
 
-    /// less-than operator for sorting
-    bool operator<(const SpCoinbaseOutputProposalV1 &other_proposal) const { return m_enote < other_proposal.m_enote; }
-
     /// get the amount of this proposal
     rct::xmr_amount amount() const { return m_enote.m_core.m_amount; }
 
@@ -141,9 +135,6 @@ struct SpOutputProposalV1 final
 
     /// memo elements to add to the tx memo
     TxExtra m_partial_memo;
-
-    /// less-than operator for sorting
-    bool operator<(const SpOutputProposalV1 &other_proposal) const { return m_core < other_proposal.m_core; }
 
     /// convert this destination into a v1 enote
     void get_enote_v1(SpEnoteV1 &enote_out) const;
@@ -191,10 +182,6 @@ struct SpAlignableMembershipProofV1 final
     rct::key m_masked_address;
     /// the membership proof
     SpMembershipProofV1 m_membership_proof;
-
-    /// overloaded operator for aligning
-    bool operator==(const SpAlignableMembershipProofV1 &other) const { return m_masked_address == other.m_masked_address; }
-    bool operator==(const rct::key &other_masked_address) const { return m_masked_address == other_masked_address; }
 };
 
 ////
@@ -268,9 +255,6 @@ struct SpPartialInputV1 final
     rct::xmr_amount m_input_amount;
     /// input amount commitment's blinding factor; used for making the balance proof
     crypto::secret_key m_input_amount_blinding_factor;
-
-    /// less-than operator for sorting
-    bool operator<(const SpPartialInputV1 &other_input) const { return m_input_image < other_input.m_input_image; }
 };
 
 ////
@@ -304,5 +288,18 @@ struct SpPartialTxV1 final
     std::vector<crypto::secret_key> m_sp_address_masks;
     std::vector<crypto::secret_key> m_sp_commitment_masks;
 };
+
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b);
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputProposalV1 &b);
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpOutputProposalV1 &a, const SpOutputProposalV1 &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpPartialInputV1 &a, const SpPartialInputV1 &b);
+
+/// alignment checks for aligning seraphis membership proofs: test if masked addresses are equal
+bool alignment_check(const SpAlignableMembershipProofV1 &a, const SpAlignableMembershipProofV1 &b);
+bool alignment_check(const SpAlignableMembershipProofV1 &proof, const rct::key &masked_address);
 
 } //namespace sp

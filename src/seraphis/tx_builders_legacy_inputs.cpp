@@ -315,7 +315,9 @@ void make_v3_legacy_ring_signatures_v1(std::vector<LegacyRingSignaturePrepV1> ri
     }
 
     // sort ring signature preps
-    std::sort(ring_signature_preps.begin(), ring_signature_preps.end());
+    std::sort(ring_signature_preps.begin(),
+        ring_signature_preps.end(),
+        tools::compare_func<LegacyRingSignaturePrepV1>(compare_KI));
 
     // make multiple ring signatures
     ring_signatures_out.clear();

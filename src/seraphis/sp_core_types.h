@@ -58,18 +58,6 @@ struct SpCoinbaseEnoteCore final
     /// note: C = 1 G + a H  (implied)
     rct::xmr_amount m_amount;
 
-    /// less-than operator for sorting
-    bool operator<(const SpCoinbaseEnoteCore &other_enote) const
-    {
-        return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
-    }
-    /// comparison operator for equivalence testing
-    bool operator==(const SpCoinbaseEnoteCore &other_enote) const
-    {
-        return m_onetime_address == other_enote.m_onetime_address &&
-            m_amount == other_enote.m_amount;
-    }
-
     /**
     * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
     */
@@ -94,18 +82,6 @@ struct SpEnoteCore final
     rct::key m_onetime_address;
     /// C = x G + a H
     rct::key m_amount_commitment;
-
-    /// less-than operator for sorting
-    bool operator<(const SpEnoteCore &other_enote) const
-    {
-        return memcmp(m_onetime_address.bytes, other_enote.m_onetime_address.bytes, sizeof(rct::key)) < 0;
-    }
-    /// comparison operator for equivalence testing
-    bool operator==(const SpEnoteCore &other_enote) const
-    {
-        return m_onetime_address == other_enote.m_onetime_address &&
-            m_amount_commitment  == other_enote.m_amount_commitment;
-    }
 
     /**
     * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
@@ -148,12 +124,6 @@ struct SpEnoteImageCore final
     /// KI = ((k_u + k_m) / k_x) U
     crypto::key_image m_key_image;
 
-    /// less-than operator for sorting
-    bool operator<(const SpEnoteImageCore &other_image) const
-    {
-        return m_key_image < other_image.m_key_image;
-    }
-
     static std::size_t size_bytes() { return 32*3; }
 };
 inline const boost::string_ref container_name(const SpEnoteImageCore&) { return "SpEnoteImageCore"; }
@@ -185,9 +155,6 @@ struct SpInputProposalCore final
     crypto::secret_key m_address_mask;
     /// t_c
     crypto::secret_key m_commitment_mask;
-
-    /// less-than operator for sorting
-    bool operator<(const SpInputProposalCore &other_proposal) const { return m_key_image < other_proposal.m_key_image; }
 
     /**
     * brief: key_image - get this input's key image
@@ -234,12 +201,6 @@ struct SpOutputProposalCore final
     /// b
     rct::xmr_amount m_amount;
 
-    /// less-than operator for sorting
-    bool operator<(const SpOutputProposalCore &other_proposal) const
-    {
-        return memcmp(&m_onetime_address, &other_proposal.m_onetime_address, sizeof(rct::key)) < 0;
-    }
-
     /**
     * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
     */
@@ -257,5 +218,21 @@ struct SpOutputProposalCore final
     */
     void gen(const rct::xmr_amount amount);
 };
+
+/// equality operator for equivalence testing
+bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
+/// equality operator for equivalence testing
+bool operator==(const SpEnoteCore &a, const SpEnoteCore &b);
+
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpEnoteCore &a, const SpEnoteCore &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpEnoteImageCore &a, const SpEnoteImageCore &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b);
+/// comparison method for sorting: a.Ko < b.Ko
+bool compare_Ko(const SpOutputProposalCore &a, const SpOutputProposalCore &b);
 
 } //namespace sp

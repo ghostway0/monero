@@ -279,7 +279,7 @@ bool verify_sp_composition_proof(const SpCompositionProof &proof,
     // get K_t1
     rct::scalarmult8(K_t1_p3, proof.K_t1);
     CHECK_AND_ASSERT_THROW_MES(!(ge_p3_is_point_at_infinity_vartime(&K_t1_p3)),
-         "verify sp composition proof: invalid proof element K_t1!");
+        "verify sp composition proof: invalid proof element K_t1!");
 
     // get KI
     CHECK_AND_ASSERT_THROW_MES(ge_frombytes_vartime(&KI_p3, rct::ki2rct(KI).bytes) == 0, "ge_frombytes_vartime failed!");
@@ -292,7 +292,7 @@ bool verify_sp_composition_proof(const SpCompositionProof &proof,
     ge_sub(&temp_p1p1, &K_t2_p3, &temp_cache);  //(K_t1 - X) - KI
     ge_p1p1_to_p3(&K_t2_p3, &temp_p1p1);
     CHECK_AND_ASSERT_THROW_MES(!(ge_p3_is_point_at_infinity_vartime(&K_t2_p3)),
-         "verify sp composition proof: invalid proof element K_t2!");
+        "verify sp composition proof: invalid proof element K_t2!");
 
     // K_t1 part: [r_t1 * K + c * K_t1]
     ge_dsm_precomp(temp_dsmp, &K_t1_p3);

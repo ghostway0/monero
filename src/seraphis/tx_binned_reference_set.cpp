@@ -71,4 +71,15 @@ void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptB
     transcript_inout.append("bin_loci", container.m_bin_loci);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b)
+{
+    return a.m_bin_radius      == b.m_bin_radius &&
+           a.m_num_bin_members == b.m_num_bin_members;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator!=(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b)
+{
+    return !(a == b);
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

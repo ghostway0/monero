@@ -128,6 +128,16 @@ void ExtraFieldElement::gen()
     crypto::rand(m_value.size(), m_value.data());
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
+{
+    if (a.m_type < b.m_type)
+        return true;
+    else if (a.m_type > b.m_type)
+        return false;
+    else //(a.m_type == b.m_type)
+        return a.m_value < b.m_value;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_out)
 {
     tx_extra_out.clear();

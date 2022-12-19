@@ -313,7 +313,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
     const TxExtra &tx_extra)
 {
     // output enotes should be sorted by onetime address with byte-wise comparisons (ascending), and unique
-    if (!tools::is_sorted_and_unique(outputs))
+    if (!tools::is_sorted_and_unique(outputs, compare_Ko))
         return false;
 
     // enote ephemeral pubkeys should be unique (they don't need to be sorted)
@@ -355,11 +355,11 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     }
 
     // legacy input images should be sorted by key image with byte-wise comparisons (ascending), and unique
-    if (!tools::is_sorted_and_unique(legacy_input_images))
+    if (!tools::is_sorted_and_unique(legacy_input_images, compare_KI))
         return false;
 
     // seraphis input images should be sorted by key image with byte-wise comparisons (ascending), and unique
-    if (!tools::is_sorted_and_unique(sp_input_images))
+    if (!tools::is_sorted_and_unique(sp_input_images, compare_KI))
         return false;
 
     // legacy and seraphis input images should not have any matching key images
@@ -374,7 +374,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     }
 
     // output enotes should be sorted by onetime address with byte-wise comparisons (ascending), and unique
-    if (!tools::is_sorted_and_unique(outputs))
+    if (!tools::is_sorted_and_unique(outputs, compare_Ko))
         return false;
 
     // enote ephemeral pubkeys should be unique (they don't need to be sorted)

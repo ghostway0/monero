@@ -75,19 +75,9 @@ address_index_t address_index_t::max()
     return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool address_index_t::operator==(const address_index_t &other_index) const
-{
-    return memcmp(this->bytes, other_index.bytes, sizeof(address_index_t)) == 0;
-}
-//-------------------------------------------------------------------------------------------------------------------
 address_tag_hint_t::address_tag_hint_t()
 {
     std::memset(this->bytes, 0, ADDRESS_TAG_HINT_BYTES);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool address_tag_hint_t::operator==(const address_tag_hint_t &other_hint) const
-{
-    return memcmp(this->bytes, other_hint.bytes, sizeof(address_tag_hint_t)) == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
 address_tag_t::address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint)
@@ -97,16 +87,26 @@ address_tag_t::address_tag_t(const address_index_t &enc_j, const address_tag_hin
     memcpy(this->bytes + ADDRESS_INDEX_BYTES, &addr_tag_hint, ADDRESS_TAG_HINT_BYTES);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool address_tag_t::operator==(const address_tag_t &other_tag) const
+bool operator==(const address_index_t &a, const address_index_t &b)
 {
-    return memcmp(this->bytes, other_tag.bytes, sizeof(address_tag_t)) == 0;
+    return memcmp(a.bytes, b.bytes, sizeof(address_index_t)) == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
-address_tag_t address_tag_t::operator^(const address_tag_t &other_tag) const
+bool operator==(const address_tag_hint_t &a, const address_tag_hint_t &b)
+{
+    return memcmp(a.bytes, b.bytes, sizeof(address_tag_hint_t)) == 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const address_tag_t &a, const address_tag_t &b)
+{
+    return memcmp(a.bytes, b.bytes, sizeof(address_tag_t)) == 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+address_tag_t operator^(const address_tag_t &a, const address_tag_t &b)
 {
     address_tag_t temp;
     for (std::size_t i{0}; i < sizeof(address_tag_t); ++i)
-        temp.bytes[i] = this->bytes[i] ^ other_tag.bytes[i];
+        temp.bytes[i] = a.bytes[i] ^ b.bytes[i];
 
     return temp;
 }

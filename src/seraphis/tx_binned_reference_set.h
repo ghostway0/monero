@@ -63,14 +63,6 @@ struct SpBinnedReferenceSetConfigV1 final
     /// number of elements referenced by a bin
     ref_set_bin_dimension_v1_t m_num_bin_members;
 
-    /// equals operator for equality checks
-    bool operator==(const SpBinnedReferenceSetConfigV1 &other_config) const
-    {
-        return m_bin_radius == other_config.m_bin_radius &&
-            m_num_bin_members == other_config.m_num_bin_members;
-    }
-    bool operator!=(const SpBinnedReferenceSetConfigV1 &other_config) const { return !(*this == other_config); }
-
     static std::size_t size_bytes() { return sizeof(m_bin_radius) + sizeof(m_num_bin_members); }
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetConfigV1&) { return "SpBinnedReferenceSetConfigV1"; }
@@ -105,5 +97,9 @@ struct SpBinnedReferenceSetV1 final
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetV1&) { return "SpBinnedReferenceSetV1"; }
 void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// equivalence operators for equality checks
+bool operator==(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b);
+bool operator!=(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b);
 
 } //namespace sp

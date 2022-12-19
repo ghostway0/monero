@@ -61,17 +61,6 @@ struct ExtraFieldElement final
 
     std::size_t length() const { return m_value.size(); }
 
-    /// less-than operator for sorting: type, value length, value bytewise comparison
-    bool operator<(const ExtraFieldElement &other_element) const
-    {
-        if (m_type < other_element.m_type)
-            return true;
-        else if (m_type > other_element.m_type)
-            return false;
-        else //(m_type == other_element.m_type)
-            return m_value < other_element.m_value;
-    }
-
     /// convert to bytes and append to the input variable: varint(type) || varint(length) || value
     void append_bytes(std::vector<unsigned char> &bytes_inout) const;
 
@@ -79,6 +68,8 @@ struct ExtraFieldElement final
     void gen();
 };
 
+/// less-than operator for sorting: type, value length, value bytewise comparison
+bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b);
 /**
 * brief: make_tx_extra - make a tx extra
 * param: elements -

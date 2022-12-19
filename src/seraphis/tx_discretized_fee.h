@@ -66,17 +66,16 @@ struct DiscretizedFee final
     /// normal constructor: discretize a raw fee value
     DiscretizedFee(const rct::xmr_amount raw_fee_value);
 
-    /// equality operators
-    bool operator==(const DiscretizedFee &other) const { return m_fee_level == other.m_fee_level; }
-    bool operator==(const discretized_fee_level_t other_fee_level) const { return m_fee_level == other_fee_level; }
-    bool operator==(const rct::xmr_amount raw_fee_value) const;
-
     static std::size_t size_bytes() { return sizeof(m_fee_level); }
 };
 inline const boost::string_ref container_name(const DiscretizedFee&) { return "DiscretizedFee"; }
 void append_to_transcript(const DiscretizedFee &container, SpTranscriptBuilder &transcript_inout);
 
-bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &discretized_fee);
+/// equality operators
+bool operator==(const DiscretizedFee &a, const DiscretizedFee &b);
+bool operator==(const DiscretizedFee &fee, const discretized_fee_level_t fee_level);
+bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &fee);
+bool operator==(const DiscretizedFee &fee, const rct::xmr_amount raw_fee_value);
 
 /**
 * brief: try_get_fee_value - try to extract a raw fee value from a discretized fee

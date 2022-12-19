@@ -71,4 +71,9 @@ void append_to_transcript(const LegacyRingSignatureV3 &container, SpTranscriptBu
     transcript_inout.append("reference_set", container.m_reference_set);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b)
+{
+    return a.m_key_image < b.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

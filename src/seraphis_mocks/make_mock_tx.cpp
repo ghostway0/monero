@@ -32,6 +32,7 @@
 #include "make_mock_tx.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "mock_ledger_context.h"
 #include "mock_tx_builders_inputs.h"
@@ -148,11 +149,13 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     std::vector<LegacyInputProposalV1> legacy_input_proposals{
             gen_mock_legacy_input_proposals_v1(legacy_spend_privkey, legacy_in_amounts)
         };
-    std::sort(legacy_input_proposals.begin(), legacy_input_proposals.end());
+    std::sort(legacy_input_proposals.begin(),
+        legacy_input_proposals.end(),
+        tools::compare_func<LegacyInputProposalV1>(compare_KI));
 
     // make mock seraphis inputs
     std::vector<SpInputProposalV1> sp_input_proposals{gen_mock_sp_input_proposals_v1(sp_spend_privkey, sp_in_amounts)};
-    std::sort(sp_input_proposals.begin(), sp_input_proposals.end());
+    std::sort(sp_input_proposals.begin(), sp_input_proposals.end(), tools::compare_func<SpInputProposalV1>(compare_KI));
 
     // make mock outputs
     std::vector<SpOutputProposalV1> output_proposals{
@@ -202,7 +205,9 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
                 params.legacy_ring_size,
                 ledger_context_inout)
         };
-    std::sort(legacy_ring_signature_preps.begin(), legacy_ring_signature_preps.end());
+    std::sort(legacy_ring_signature_preps.begin(),
+        legacy_ring_signature_preps.end(),
+        tools::compare_func<LegacyRingSignaturePrepV1>(compare_KI));
 
     // make legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;
@@ -212,13 +217,13 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         std::move(legacy_ring_signature_preps),
         legacy_spend_privkey,
         legacy_inputs);
-    std::sort(legacy_inputs.begin(), legacy_inputs.end());
+    std::sort(legacy_inputs.begin(), legacy_inputs.end(), tools::compare_func<LegacyInputV1>(compare_KI));
 
     // make seraphis partial inputs
     std::vector<SpPartialInputV1> sp_partial_inputs;
 
     make_v1_partial_inputs_v1(sp_input_proposals, proposal_prefix, sp_spend_privkey, sp_partial_inputs);
-    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end());
+    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // prepare partial tx
     SpPartialTxV1 partial_tx;

@@ -111,7 +111,9 @@ void SpCoinbaseTxProposalV1::get_coinbase_output_proposals_v1(
         payment_proposal.get_coinbase_output_proposal_v1(m_block_height, tools::add_element(output_proposals_out));
 
     // sort output proposals
-    std::sort(output_proposals_out.begin(), output_proposals_out.end());
+    std::sort(output_proposals_out.begin(),
+        output_proposals_out.end(),
+        tools::compare_func<SpCoinbaseOutputProposalV1>(compare_Ko));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpTxProposalV1::get_output_proposals_v1(const crypto::secret_key &k_view_balance,
@@ -139,7 +141,9 @@ void SpTxProposalV1::get_output_proposals_v1(const crypto::secret_key &k_view_ba
     }
 
     // sort output proposals
-    std::sort(output_proposals_out.begin(), output_proposals_out.end());
+    std::sort(output_proposals_out.begin(),
+        output_proposals_out.end(),
+        tools::compare_func<SpOutputProposalV1>(compare_Ko));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpTxProposalV1::get_proposal_prefix(const std::string &version_string,
@@ -161,6 +165,36 @@ void SpTxProposalV1::get_proposal_prefix(const std::string &version_string,
         m_partial_memo,
         m_tx_fee,
         proposal_prefix_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b)
+{
+    return compare_KI(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputProposalV1 &b)
+{
+    return compare_Ko(a.m_enote, b.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpOutputProposalV1 &a, const SpOutputProposalV1 &b)
+{
+    return compare_Ko(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpPartialInputV1 &a, const SpPartialInputV1 &b)
+{
+    return compare_KI(a.m_input_image, b.m_input_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool alignment_check(const SpAlignableMembershipProofV1 &a, const SpAlignableMembershipProofV1 &b)
+{
+    return a.m_masked_address == b.m_masked_address;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool alignment_check(const SpAlignableMembershipProofV1 &proof, const rct::key &masked_address)
+{
+    return proof.m_masked_address == masked_address;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

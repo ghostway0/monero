@@ -65,9 +65,6 @@ struct LegacyEnoteImageV2 final
     /// legacy key image
     crypto::key_image m_key_image;
 
-    /// less-than operator for sorting
-    bool operator<(const LegacyEnoteImageV2 &other_image) const { return m_key_image < other_image.m_key_image; }
-
     static std::size_t size_bytes() { return 32 + 32; }
 };
 inline const boost::string_ref container_name(const LegacyEnoteImageV2&) { return "LegacyEnoteImageV2"; }
@@ -100,5 +97,8 @@ struct LegacyRingSignatureV3 final
 };
 inline const boost::string_ref container_name(const LegacyRingSignatureV3&) { return "LegacyRingSignatureV3"; }
 void append_to_transcript(const LegacyRingSignatureV3 &container, SpTranscriptBuilder &transcript_inout);
+
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b);
 
 } //namespace sp

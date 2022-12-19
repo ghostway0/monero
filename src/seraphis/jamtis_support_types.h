@@ -60,10 +60,6 @@ struct address_index_t final
 
     /// max address index
     static address_index_t max();
-
-    /// comparison operators
-    bool operator==(const address_index_t &other_index) const;
-    bool operator!=(const address_index_t &other_index) const { return !(*this == other_index); }
 };
 
 /// hint for address tags: addr_tag_hint
@@ -74,10 +70,6 @@ struct address_tag_hint_t final
 
     /// default constructor: default initializes hint to 0 bytes
     address_tag_hint_t();
-
-    /// comparison operators
-    bool operator==(const address_tag_hint_t &other_hint) const;
-    bool operator!=(const address_tag_hint_t &other_hint) const { return !(*this == other_hint); }
 };
 
 /// index ciphered with a cipher key: addr_tag = enc[cipher_key](j) || addr_tag_hint
@@ -87,13 +79,6 @@ struct address_tag_t final
 
     address_tag_t() = default;
     address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint);
-
-    /// comparison operators
-    bool operator==(const address_tag_t &other_tag) const;
-    bool operator!=(const address_tag_t &other_tag) const { return !(*this == other_tag); }
-
-    /// XOR operator for encrypting tags
-    address_tag_t operator^(const address_tag_t &other_tag) const;
 };
 
 /// address tag XORd with a user-defined secret: addr_tag_enc = addr_tag XOR addr_tag_enc_secret
@@ -126,12 +111,23 @@ enum class JamtisSelfSendType : unsigned char
     MAX = SELF_SPEND
 };
 
+/// jamtis view tags
+using view_tag_t = unsigned char;
+
+/// overloaded operators: address index
+bool operator==(const address_index_t &a, const address_index_t &b);
+inline bool operator!=(const address_index_t &a, const address_index_t &b) { return !(a == b); }
+/// overloaded operators: address tag hint
+bool operator==(const address_tag_hint_t &a, const address_tag_hint_t &b);
+inline bool operator!=(const address_tag_hint_t &a, const address_tag_hint_t &b) { return !(a == b); }
+/// overloaded operators: address tag
+bool operator==(const address_tag_t &a, const address_tag_t &b);
+inline bool operator!=(const address_tag_t &a, const address_tag_t &b) { return !(a == b); }
+address_tag_t operator^(const address_tag_t &a, const address_tag_t &b);
+
 /// convert between jamtis enote types and self-send types
 bool try_get_jamtis_enote_type(const JamtisSelfSendType self_send_type, JamtisEnoteType &enote_type_out);
 bool try_get_jamtis_self_send_type(const JamtisEnoteType enote_type, JamtisSelfSendType &self_send_type_out);
-
-/// jamtis view tags
-using view_tag_t = unsigned char;
 
 } //namespace jamtis
 } //namespace sp

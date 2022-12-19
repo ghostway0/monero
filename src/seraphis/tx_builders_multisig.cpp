@@ -53,6 +53,7 @@
 #include "multisig/multisig_sp_composition_proof.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis/tx_builder_types_legacy.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "sp_core_enote_utils.h"
 #include "tx_builder_types.h"
@@ -174,7 +175,7 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
     std::vector<crypto::secret_key> &proof_privkeys_k_offset_out,
     std::vector<crypto::secret_key> &proof_privkeys_z)
 {
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(legacy_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(legacy_input_proposals, compare_KI),
         "collect legacy clsag privkeys for multisig: legacy input proposals aren't sorted and unique.");
 
     proof_privkeys_k_offset_out.clear();
@@ -226,7 +227,7 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
     std::vector<crypto::secret_key> &proof_privkeys_z_offset_out,
     std::vector<crypto::secret_key> &proof_privkeys_z_multiplier_out)
 {
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(sp_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(sp_input_proposals, compare_KI),
         "collect sp composition proof privkeys for multisig: sp input proposals aren't sorted and unique.");
 
     proof_privkeys_x_out.clear();
@@ -614,7 +615,8 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
 
     // 1. check the multisig input proposal semantics
     // a. legacy
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(multisig_tx_proposal.m_legacy_multisig_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(multisig_tx_proposal.m_legacy_multisig_input_proposals,
+            compare_KI),
         "multisig tx proposal: legacy multisig input proposals are not sorted and unique.");
 
     for (const LegacyMultisigInputProposalV1 &legacy_multisig_input_proposal :
@@ -856,7 +858,9 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
             }
         }
 
-        std::sort(tx_proposal.m_legacy_input_proposals.begin(), tx_proposal.m_legacy_input_proposals.end());
+        std::sort(tx_proposal.m_legacy_input_proposals.begin(),
+            tx_proposal.m_legacy_input_proposals.end(),
+            tools::compare_func<LegacyInputProposalV1>(compare_KI));
 
         // b. seraphis input proposals
         std::vector<SpInputProposalV1> sp_input_proposals{std::move(tx_proposal.m_sp_input_proposals)};
@@ -887,7 +891,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
                 sp_input_proposal.m_core.m_key_image);
         }
 
-        std::sort(sp_input_proposals.begin(), sp_input_proposals.end());
+        std::sort(sp_input_proposals.begin(), sp_input_proposals.end(), tools::compare_func<SpInputProposalV1>(compare_KI));
         tx_proposal.m_sp_input_proposals = std::move(sp_input_proposals);
 
         // note: at this point calling check_v1_tx_proposal_semantics_v1() would not work because our seraphis inputs
@@ -901,7 +905,9 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
         for (LegacyRingSignaturePrepV1 &ring_signature_prep : legacy_ring_signature_preps)
             ring_signature_prep.m_proposal_prefix = tx_proposal_prefix;  //now we can set this
 
-        std::sort(legacy_ring_signature_preps.begin(), legacy_ring_signature_preps.end());
+        std::sort(legacy_ring_signature_preps.begin(),
+            legacy_ring_signature_preps.end(),
+            tools::compare_func<LegacyRingSignaturePrepV1>(compare_KI));
 
         // convert the input proposals to inputs/partial inputs
         // a. legacy inputs
@@ -967,7 +973,9 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     // 1. pre-sort legacy multisig input proposals (they need to be sorted in the multisig tx proposal, and the
     //    tx proposal also calls sort on legacy input proposals so pre-sorting here means less work there)
-    std::sort(legacy_multisig_input_proposals.begin(), legacy_multisig_input_proposals.end());
+    std::sort(legacy_multisig_input_proposals.begin(),
+        legacy_multisig_input_proposals.end(),
+        tools::compare_func<LegacyMultisigInputProposalV1>(compare_KI));
 
     // 2. convert legacy multisig input proposals to input proposals
     std::vector<LegacyInputProposalV1> legacy_input_proposals;

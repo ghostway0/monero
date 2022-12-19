@@ -70,9 +70,6 @@ struct LegacyInputProposalV1 final
     /// z
     crypto::secret_key m_commitment_mask;
 
-    /// less-than operator for sorting
-    bool operator<(const LegacyInputProposalV1 &other_proposal) const { return m_key_image < other_proposal.m_key_image; }
-
     /**
     * brief: get_enote_image_v2 - get this input's enote image
     * outparam: image_out -
@@ -106,12 +103,6 @@ struct LegacyRingSignaturePrepV1 final
     crypto::secret_key m_reference_view_privkey;
     /// commitment mask applied to the reference amount commitment to produce the image's masked commitment
     crypto::secret_key m_reference_commitment_mask;
-
-    /// less-than operator for sorting
-    bool operator<(const LegacyRingSignaturePrepV1 &other_prep) const
-    {
-        return m_reference_image < other_prep.m_reference_image;
-    }
 };
 
 ////
@@ -139,9 +130,13 @@ struct LegacyInputV1 final
 
     /// proposal prefix (represents the inputs/outputs/fee/memo; signed by this input's ring signature)
     rct::key m_proposal_prefix;
-
-    /// less-than operator for sorting
-    bool operator<(const LegacyInputV1 &other_input) const { return m_input_image < other_input.m_input_image; }
 };
+
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePrepV1 &b);
+/// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b);
 
 } //namespace sp

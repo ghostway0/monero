@@ -68,15 +68,15 @@ struct MultisigPubNonces final
     // signature nonce pubkey: (1/8) * alpha_{2,e}*J
     rct::key signature_nonce_2_pub;
 
-    /// overload operator< for sorting: compare nonce_1 then nonce_2 (does not need to be constant time)
-    bool operator<(const MultisigPubNonces &other) const;
-    bool operator==(const MultisigPubNonces &other) const;
-
     /// get size in bytes
     static std::size_t size_bytes() { return 2*sizeof(rct::key); }
 };
 inline const boost::string_ref container_name(const MultisigPubNonces&) { return "MultisigPubNonces"; }
 void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBuilder &transcript_inout);
+
+/// overload operator< for sorting: compare nonce_1 then nonce_2 (does not need to be constant time)
+bool operator<(const MultisigPubNonces &a, const MultisigPubNonces &b);
+bool operator==(const MultisigPubNonces &a, const MultisigPubNonces &b);
 
 ////
 // Multisig nonce record

@@ -388,7 +388,9 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         "tx proposal prefix (v1): legacy input key images are not sorted.");
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(sp_input_key_images.begin(), sp_input_key_images.end()),
         "tx proposal prefix (v1): seraphis input key images are not sorted.");
-    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(), output_enotes.end()),
+    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(output_enotes.begin(),
+            output_enotes.end(),
+            tools::compare_func<SpEnoteV1>(compare_Ko)),
         "tx proposal prefix (v1): output enotes are not sorted.");
 
     // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
@@ -673,7 +675,7 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     finalize_tx_extra_v1(tx_proposal.m_partial_memo, output_proposals, tx_supplement.m_tx_extra);
 
     // 3. outputs should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes, compare_Ko),
         "Semantics check coinbase tx proposal v1: output onetime addresses are not sorted and unique.");
 
     // 4. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -754,7 +756,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
         "Semantics check tx proposal v1: there are fewer than 2 outputs.");
 
     // 4. outputs should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes, compare_Ko),
         "Semantics check tx proposal v1: output onetime addresses are not sorted and unique.");
 
     // 5. onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
@@ -791,9 +793,9 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
         "Semantics check tx proposal v1: there are no inputs.");
 
     // 2. input proposals should be sorted and unique
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_legacy_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_legacy_input_proposals, compare_KI),
         "Semantics check tx proposal v1: legacy input proposals are not sorted and unique.");
-    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_sp_input_proposals),
+    CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(tx_proposal.m_sp_input_proposals, compare_KI),
         "Semantics check tx proposal v1: seraphis input proposals are not sorted and unique.");
 
     // 3. legacy input proposal semantics should be valid
@@ -852,8 +854,12 @@ void make_v1_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1> normal_
     SpTxProposalV1 &tx_proposal_out)
 {
     // inputs should be sorted by key image
-    std::sort(legacy_input_proposals.begin(), legacy_input_proposals.end());
-    std::sort(sp_input_proposals.begin(), sp_input_proposals.end());
+    std::sort(legacy_input_proposals.begin(),
+        legacy_input_proposals.end(),
+        tools::compare_func<LegacyInputProposalV1>(compare_KI));
+    std::sort(sp_input_proposals.begin(),
+        sp_input_proposals.end(),
+        tools::compare_func<SpInputProposalV1>(compare_KI));
 
     // set fields
     tx_proposal_out.m_normal_payment_proposals = std::move(normal_payment_proposals);
@@ -1062,11 +1068,11 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     partial_tx_out = SpPartialTxV1{};
 
     // 1. sort the inputs by key image
-    std::sort(legacy_inputs.begin(), legacy_inputs.end());
-    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end());
+    std::sort(legacy_inputs.begin(), legacy_inputs.end(), tools::compare_func<LegacyInputV1>(compare_KI));
+    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // 2. sort the outputs by onetime address
-    std::sort(output_proposals.begin(), output_proposals.end());
+    std::sort(output_proposals.begin(), output_proposals.end(), tools::compare_func<SpOutputProposalV1>(compare_Ko));
 
     // 3. semantics checks for inputs and outputs
     for (const LegacyInputV1 &legacy_input : legacy_inputs)
@@ -1195,8 +1201,8 @@ void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
     check_v1_tx_proposal_semantics_v1(tx_proposal, legacy_spend_pubkey, jamtis_spend_pubkey, k_view_balance);
 
     // 2. sort the inputs by key image
-    std::sort(legacy_inputs.begin(), legacy_inputs.end());
-    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end());
+    std::sort(legacy_inputs.begin(), legacy_inputs.end(), tools::compare_func<LegacyInputV1>(compare_KI));
+    std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // 3. legacy inputs must line up with legacy input proposals in the tx proposal
     CHECK_AND_ASSERT_THROW_MES(legacy_inputs.size() == tx_proposal.m_legacy_input_proposals.size(),

@@ -63,20 +63,14 @@ struct JamtisDestinationV1 final
     /// addr_tag
     address_tag_t m_addr_tag;
 
-    /// equal operator: false on partial equality
-    bool operator==(const JamtisDestinationV1 &other) const
-    {
-        return (m_addr_K1 == other.m_addr_K1) &&
-            (m_addr_K2 == other.m_addr_K2) &&
-            (m_addr_K3 == other.m_addr_K3) &&
-            (m_addr_tag == other.m_addr_tag);
-    }
-
     /**
     * brief: gen - generate a random destination
     */
     void gen();
 };
+
+/// equivalence test (false on partial equality)
+bool operator==(const JamtisDestinationV1 &a, const JamtisDestinationV1 &b);
 
 /**
 * brief: make_jamtis_destination_v1 - make a destination address

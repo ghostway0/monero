@@ -60,6 +60,14 @@ void JamtisDestinationV1::gen()
     crypto::rand(sizeof(address_tag_t), m_addr_tag.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool operator==(const JamtisDestinationV1 &a, const JamtisDestinationV1 &b)
+{
+    return (a.m_addr_K1  == b.m_addr_K1) &&
+           (a.m_addr_K2  == b.m_addr_K2) &&
+           (a.m_addr_K3  == b.m_addr_K3) &&
+           (a.m_addr_tag == b.m_addr_tag);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_destination_v1(const rct::key &spend_pubkey,
     const crypto::x25519_pubkey &unlockamounts_pubkey,
     const crypto::x25519_pubkey &findreceived_pubkey,

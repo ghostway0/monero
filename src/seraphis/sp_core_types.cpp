@@ -198,4 +198,41 @@ void SpOutputProposalCore::gen(const rct::xmr_amount amount)
     m_amount = amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
+{
+    return a.m_onetime_address == b.m_onetime_address &&
+           a.m_amount          == b.m_amount;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpEnoteCore &a, const SpEnoteCore &b)
+{
+    return a.m_onetime_address    == b.m_onetime_address &&
+           a.m_amount_commitment  == b.m_amount_commitment;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
+{
+    return memcmp(a.m_onetime_address.bytes, b.m_onetime_address.bytes, sizeof(rct::key)) < 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpEnoteCore &a, const SpEnoteCore &b)
+{
+    return memcmp(a.m_onetime_address.bytes, b.m_onetime_address.bytes, sizeof(rct::key)) < 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpEnoteImageCore &a, const SpEnoteImageCore &b)
+{
+    return a.m_key_image < b.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b)
+{
+    return a.m_key_image < b.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_Ko(const SpOutputProposalCore &a, const SpOutputProposalCore &b)
+{
+    return memcmp(&a.m_onetime_address, &b.m_onetime_address, sizeof(rct::key)) < 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

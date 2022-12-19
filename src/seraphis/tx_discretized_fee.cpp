@@ -159,23 +159,33 @@ DiscretizedFee::DiscretizedFee(const rct::xmr_amount raw_fee_value)
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool DiscretizedFee::operator==(const rct::xmr_amount raw_fee_value) const
-{
-    rct::xmr_amount this_fee_value;
-    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(*this, this_fee_value), "discretized fee equality check with "
-        "a raw fee failed: the discretized fee is invalid.");
-
-    return this_fee_value == raw_fee_value;
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const DiscretizedFee &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("fee_level", container.m_fee_level);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &discretized_fee)
+bool operator==(const DiscretizedFee &a, const DiscretizedFee &b)
 {
-    return discretized_fee == fee_level;
+    return a.m_fee_level == b.m_fee_level;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const DiscretizedFee &fee, const discretized_fee_level_t fee_level)
+{
+    return fee.m_fee_level == fee_level;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &fee)
+{
+    return fee == fee_level;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const DiscretizedFee &fee, const rct::xmr_amount raw_fee_value)
+{
+    rct::xmr_amount fee_value;
+    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(fee, fee_value), "discretized fee equality check with "
+        "a raw fee failed: the discretized fee is invalid.");
+
+    return fee_value == raw_fee_value;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_fee_value(const DiscretizedFee &discretized_fee, std::uint64_t &fee_value_out)
