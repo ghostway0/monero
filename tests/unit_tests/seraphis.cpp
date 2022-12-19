@@ -608,7 +608,7 @@ TEST(seraphis, information_recovery_jamtisdestination)
 
     // test generating a random address
     JamtisDestinationV1 destination_unknown;
-    destination_unknown.gen();
+    destination_unknown = gen_jamtis_destination_v1();
     EXPECT_FALSE(try_get_jamtis_index_from_destination_v1(destination_unknown,
         keys.K_1_base,
         keys.xK_ua,

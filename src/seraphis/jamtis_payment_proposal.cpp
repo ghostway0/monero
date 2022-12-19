@@ -187,7 +187,7 @@ void JamtisPaymentProposalV1::get_output_proposal_v1(const rct::key &input_conte
 //-------------------------------------------------------------------------------------------------------------------
 void JamtisPaymentProposalV1::gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements)
 {
-    m_destination.gen();
+    m_destination = gen_jamtis_destination_v1();
     m_amount = amount;
     m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
 
@@ -290,7 +290,7 @@ void JamtisPaymentProposalSelfSendV1::gen(const rct::xmr_amount amount,
     const JamtisSelfSendType type,
     const std::size_t num_random_memo_elements)
 {
-    m_destination.gen();
+    m_destination = gen_jamtis_destination_v1();
     m_amount = amount;
     m_type = type;
     m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen();

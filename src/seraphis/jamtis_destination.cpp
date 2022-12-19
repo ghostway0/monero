@@ -52,14 +52,6 @@ namespace sp
 namespace jamtis
 {
 //-------------------------------------------------------------------------------------------------------------------
-void JamtisDestinationV1::gen()
-{
-    m_addr_K1 = rct::pkGen();
-    m_addr_K2 = crypto::x25519_pubkey_gen();
-    m_addr_K3 = crypto::x25519_pubkey_gen();
-    crypto::rand(sizeof(address_tag_t), m_addr_tag.bytes);
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool operator==(const JamtisDestinationV1 &a, const JamtisDestinationV1 &b)
 {
     return (a.m_addr_K1  == b.m_addr_K1) &&
@@ -127,6 +119,17 @@ bool try_get_jamtis_index_from_destination_v1(const JamtisDestinationV1 &destina
 
     j_out = nominal_address_index;
     return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+JamtisDestinationV1 gen_jamtis_destination_v1()
+{
+    JamtisDestinationV1 temp;
+    temp.m_addr_K1 = rct::pkGen();
+    temp.m_addr_K2 = crypto::x25519_pubkey_gen();
+    temp.m_addr_K3 = crypto::x25519_pubkey_gen();
+    crypto::rand(sizeof(address_tag_t), temp.m_addr_tag.bytes);
+
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace jamtis

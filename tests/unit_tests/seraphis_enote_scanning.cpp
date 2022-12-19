@@ -5002,7 +5002,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
 
     // 6. random user address
     JamtisDestinationV1 sp_destination_random;
-    sp_destination_random.gen();
+    sp_destination_random = gen_jamtis_destination_v1();
 
 
     /// test
@@ -6090,7 +6090,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
 
     // 6. random user address
     JamtisDestinationV1 sp_destination_random;
-    sp_destination_random.gen();
+    sp_destination_random = gen_jamtis_destination_v1();
 
 
     /// test
@@ -7103,7 +7103,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
 
     // 6. random user address
     JamtisDestinationV1 sp_destination_random;
-    sp_destination_random.gen();
+    sp_destination_random = gen_jamtis_destination_v1();
 
 
     /// test
@@ -7647,7 +7647,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
 
     // 6. random user address
     JamtisDestinationV1 sp_destination_random;
-    sp_destination_random.gen();
+    sp_destination_random = gen_jamtis_destination_v1();
 
 
     /// test
@@ -8266,7 +8266,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
 
     // 6. random user address
     JamtisDestinationV1 sp_destination_random;
-    sp_destination_random.gen();
+    sp_destination_random = gen_jamtis_destination_v1();
 
 
     /// test

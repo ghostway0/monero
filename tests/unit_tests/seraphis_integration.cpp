@@ -127,7 +127,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
             0
         );
     JamtisDestinationV1 fake_destination;
-    fake_destination.gen();
+    fake_destination = gen_jamtis_destination_v1();
 
     send_sp_coinbase_amounts_to_user(fake_sp_enote_amounts, fake_destination, ledger_context);
 

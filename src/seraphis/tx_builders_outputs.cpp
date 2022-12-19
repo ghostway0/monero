@@ -114,7 +114,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
 static void make_additional_output_normal_dummy_v1(jamtis::JamtisPaymentProposalV1 &dummy_proposal_out)
 {
     // make random payment proposal for a 'normal' dummy output
-    dummy_proposal_out.m_destination.gen();
+    dummy_proposal_out.m_destination = jamtis::gen_jamtis_destination_v1();
     dummy_proposal_out.m_amount = 0;
     dummy_proposal_out.m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
     dummy_proposal_out.m_partial_memo = TxExtra{};
@@ -125,7 +125,7 @@ static void make_additional_output_special_dummy_v1(const crypto::x25519_pubkey 
     jamtis::JamtisPaymentProposalV1 &dummy_proposal_out)
 {
     // make random payment proposal for a 'special' dummy output
-    dummy_proposal_out.m_destination.gen();
+    dummy_proposal_out.m_destination = jamtis::gen_jamtis_destination_v1();
     crypto::x25519_invmul_key({crypto::x25519_eight()},
         enote_ephemeral_pubkey,
         dummy_proposal_out.m_destination.m_addr_K3);  //(1/8) * xK_e_other

@@ -62,11 +62,6 @@ struct JamtisDestinationV1 final
     crypto::x25519_pubkey m_addr_K3;
     /// addr_tag
     address_tag_t m_addr_tag;
-
-    /**
-    * brief: gen - generate a random destination
-    */
-    void gen();
 };
 
 /// equivalence test (false on partial equality)
@@ -104,6 +99,11 @@ bool try_get_jamtis_index_from_destination_v1(const JamtisDestinationV1 &destina
     const crypto::x25519_pubkey &findreceived_pubkey,
     const crypto::secret_key &s_generate_address,
     address_index_t &j_out);
+/**
+* brief: gen_jamtis_destination_v1 - generate a random destination
+* return: a random destination
+*/
+JamtisDestinationV1 gen_jamtis_destination_v1();
 
 } //namespace jamtis
 } //namespace sp
