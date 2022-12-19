@@ -110,11 +110,12 @@ struct SpCompositionProof final
     // message m: not stored with proof
     // main proof key K: not stored with proof
     // key image KI: not stored with proof
-
-    static std::size_t size_bytes() { return 32*5; }
 };
 inline const boost::string_ref container_name(const SpCompositionProof&) { return "SpCompositionProof"; }
 void append_to_transcript(const SpCompositionProof &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_composition_size_bytes() { return 32*5; }
 
 /**
 * brief: make_sp_composition_proof - create a seraphis composition proof

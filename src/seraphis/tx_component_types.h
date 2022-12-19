@@ -177,7 +177,7 @@ struct SpImageProofV1 final
     /// a seraphis composition proof
     SpCompositionProof m_composition_proof;
 
-    static std::size_t size_bytes() { return SpCompositionProof::size_bytes(); }
+    static std::size_t size_bytes() { return sp_composition_size_bytes(); }
 };
 inline const boost::string_ref container_name(const SpImageProofV1&) { return "SpImageProofV1"; }
 void append_to_transcript(const SpImageProofV1 &container, SpTranscriptBuilder &transcript_inout);

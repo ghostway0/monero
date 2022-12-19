@@ -306,17 +306,17 @@ static void build_verification_multiexps_for_proof(const GrootleProof &proof,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t GrootleProof::size_bytes(const std::size_t n, const std::size_t m)
+std::size_t grootle_size_bytes(const std::size_t n, const std::size_t m)
 {
     return 32 * (m + m*(n-1) + 4);  // X + f + {A, B, zA, z}
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t GrootleProof::size_bytes() const
+std::size_t grootle_size_bytes(const GrootleProof &proof)
 {
-    const std::size_t n{f.size() ? f[0].size() : 0};
-    const std::size_t m{X.size()};
+    const std::size_t n{proof.f.size() ? proof.f[0].size() : 0};
+    const std::size_t m{proof.X.size()};
 
-    return GrootleProof::size_bytes(n, m);
+    return grootle_size_bytes(n, m);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const GrootleProof &container, SpTranscriptBuilder &transcript_inout)

@@ -167,7 +167,7 @@ std::size_t SpMembershipProofV1::size_bytes(const std::size_t n, const std::size
 {
     const std::size_t ref_set_size{size_from_decomposition(n, m)};
 
-    return sp::GrootleProof::size_bytes(n, m) +
+    return sp::grootle_size_bytes(n, m) +
         (num_bin_members > 0
         ? SpBinnedReferenceSetV1::size_bytes(ref_set_size / num_bin_members)
         : 0);

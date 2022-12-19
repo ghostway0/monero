@@ -82,12 +82,13 @@ struct GrootleProof
     rct::keyV X;
     rct::key zA;
     rct::key z;
-
-    static std::size_t size_bytes(const std::size_t n, const std::size_t m);
-    std::size_t size_bytes() const;
 };
 inline const boost::string_ref container_name(const GrootleProof&) { return "GrootleProof"; }
 void append_to_transcript(const GrootleProof &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+std::size_t grootle_size_bytes(const std::size_t n, const std::size_t m);
+std::size_t grootle_size_bytes(const GrootleProof &proof);
 
 /**
 * brief: make_grootle_proof - create a grootle proof
