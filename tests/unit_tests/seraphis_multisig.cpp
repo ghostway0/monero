@@ -431,7 +431,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
     // b) make a seraphis user address to receive funds
     address_index_t j;
-    j.gen();
+    j = sp::jamtis::gen_address_index();
     JamtisDestinationV1 sp_user_address;
 
     ASSERT_NO_THROW(make_jamtis_destination_v1(shared_sp_keys.K_1_base,

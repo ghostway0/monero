@@ -68,7 +68,7 @@ void make_jamtis_mock_keys(jamtis_mock_keys &keys_out)
 void make_random_address_for_user(const jamtis_mock_keys &user_keys, JamtisDestinationV1 &user_address_out)
 {
     address_index_t address_index;
-    address_index.gen();
+    address_index = gen_address_index();
 
     make_jamtis_destination_v1(user_keys.K_1_base,
         user_keys.xK_ua,

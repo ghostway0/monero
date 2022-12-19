@@ -265,7 +265,7 @@ void get_output_proposal_v1(const JamtisPaymentProposalSelfSendV1 &proposal,
         "Failed to create a self-send-type output proposal: could not decipher the destination's address tag.");
 
     // b. make a raw address tag (not ciphered)
-    const address_tag_t raw_address_tag{j, address_tag_hint_t{}};
+    const address_tag_t raw_address_tag{make_address_tag(j, address_tag_hint_t{})};
 
     // c. encrypt the raw address tag: addr_tag_enc = addr_tag{j || hint} ^ H(q, Ko)
     output_proposal_out.m_addr_tag_enc =

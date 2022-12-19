@@ -480,7 +480,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 static bool test_info_recovery_addressindex(const address_index_t j)
 {
     // convert the index to/from raw tag form
-    const address_tag_t raw_address_tag{j, address_tag_hint_t{}};
+    const address_tag_t raw_address_tag{make_address_tag(j, address_tag_hint_t{})};
     address_index_t j_recovered;
     if (!try_get_address_index_raw(raw_address_tag, j_recovered))
         return false;
@@ -574,13 +574,13 @@ TEST(seraphis, information_recovery_amountencoding)
 TEST(seraphis, information_recovery_addressindex)
 {
     // test address indices
-    EXPECT_TRUE(test_info_recovery_addressindex(0));
-    EXPECT_TRUE(test_info_recovery_addressindex(address_index_t::max()));
+    EXPECT_TRUE(test_info_recovery_addressindex(address_index_t{}));
+    EXPECT_TRUE(test_info_recovery_addressindex(max_address_index()));
 
     for (std::size_t i{0}; i < 10; ++i)
     {
         address_index_t temp_j;
-        temp_j.gen();
+        temp_j = gen_address_index();
         EXPECT_TRUE(test_info_recovery_addressindex(temp_j));
     }
 }
@@ -594,7 +594,7 @@ TEST(seraphis, information_recovery_jamtisdestination)
     // test making a jamtis destination then recovering the index
     JamtisDestinationV1 destination_known;
     address_index_t j;
-    j.gen();
+    j = gen_address_index();
     make_jamtis_destination_v1(keys.K_1_base, keys.xK_ua, keys.xK_fr, keys.s_ga, j, destination_known);
 
     address_index_t j_nominal;
@@ -625,7 +625,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
 
     // user address
     address_index_t j;
-    j.gen();
+    j = gen_address_index();
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
@@ -656,7 +656,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
 
     // user address
     address_index_t j;
-    j.gen();
+    j = gen_address_index();
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
@@ -686,7 +686,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
 
     // user address
     address_index_t j;
-    j.gen();
+    j = gen_address_index();
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
@@ -736,9 +736,9 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     address_index_t j_selfspend;
     address_index_t j_change;
     address_index_t j_dummy;
-    j_selfspend.gen();
-    j_change.gen();
-    j_dummy.gen();
+    j_selfspend = gen_address_index();
+    j_change = gen_address_index();
+    j_dummy = gen_address_index();
     JamtisDestinationV1 selfspend_dest;
     JamtisDestinationV1 change_dest;
     JamtisDestinationV1 dummy_dest;

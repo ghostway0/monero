@@ -214,7 +214,7 @@ public:
 
         // user address
         sp::jamtis::JamtisDestinationV1 user_address;
-        sp::jamtis::address_index_t j{0}; //address 0
+        sp::jamtis::address_index_t j{}; //address 0
 
         sp::jamtis::make_jamtis_destination_v1(m_keys.K_1_base,
             m_keys.xK_ua,
@@ -301,7 +301,7 @@ public:
 
         // user address
         sp::jamtis::JamtisDestinationV1 user_address;
-        m_real_address_index = sp::jamtis::address_index_t{0}; //address 0
+        m_real_address_index = sp::jamtis::address_index_t{}; //address 0
 
         sp::jamtis::make_jamtis_destination_v1(m_keys.K_1_base,
             m_keys.xK_ua,
@@ -453,14 +453,14 @@ public:
             {
                 do
                 {
-                    address_index_temp.gen();
-                    addr_tag = sp::jamtis::address_tag_t{address_index_temp, sp::jamtis::address_tag_hint_t{}};
+                    address_index_temp = sp::jamtis::gen_address_index();
+                    addr_tag = sp::jamtis::make_address_tag(address_index_temp, sp::jamtis::address_tag_hint_t{});
                 }
                 while (sp::jamtis::try_decipher_address_index(*m_cipher_context, addr_tag, address_index_temp));
             }
             else
             {
-                address_index_temp.gen();
+                address_index_temp = sp::jamtis::gen_address_index();
 
                 addr_tag = sp::jamtis::cipher_address_index(*m_cipher_context, address_index_temp);
             }

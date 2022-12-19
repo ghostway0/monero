@@ -147,7 +147,7 @@ address_tag_t jamtis_address_tag_cipher_context::cipher(const address_index_t &j
     Twofish_encrypt_block(&m_twofish_key, encrypted_j.bytes, encrypted_j.bytes);
 
     // make the address tag hint and complete the address tag
-    return address_tag_t{encrypted_j, get_address_tag_hint(m_cipher_key, encrypted_j)};
+    return make_address_tag(encrypted_j, get_address_tag_hint(m_cipher_key, encrypted_j));
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool jamtis_address_tag_cipher_context::try_decipher(const address_tag_t &addr_tag, address_index_t &j_out) const

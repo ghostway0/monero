@@ -52,14 +52,8 @@ struct address_index_t final
 {
     unsigned char bytes[ADDRESS_INDEX_BYTES];
 
+    /// default constructor: default initialize to 0
     address_index_t();
-    address_index_t(std::uint64_t half1, std::uint64_t half2);
-    address_index_t(std::uint64_t half1) : address_index_t{half1, 0} {}
-
-    void gen();
-
-    /// max address index
-    static address_index_t max();
 };
 
 /// hint for address tags: addr_tag_hint
@@ -68,7 +62,7 @@ struct address_tag_hint_t final
 {
     unsigned char bytes[ADDRESS_TAG_HINT_BYTES];
 
-    /// default constructor: default initializes hint to 0 bytes
+    /// default constructor: default initialize to 0
     address_tag_hint_t();
 };
 
@@ -76,9 +70,6 @@ struct address_tag_hint_t final
 struct address_tag_t final
 {
     unsigned char bytes[ADDRESS_INDEX_BYTES + ADDRESS_TAG_HINT_BYTES];
-
-    address_tag_t() = default;
-    address_tag_t(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint);
 };
 
 /// address tag XORd with a user-defined secret: addr_tag_enc = addr_tag XOR addr_tag_enc_secret
@@ -124,6 +115,16 @@ inline bool operator!=(const address_tag_hint_t &a, const address_tag_hint_t &b)
 bool operator==(const address_tag_t &a, const address_tag_t &b);
 inline bool operator!=(const address_tag_t &a, const address_tag_t &b) { return !(a == b); }
 address_tag_t operator^(const address_tag_t &a, const address_tag_t &b);
+
+/// max address index
+address_index_t max_address_index();
+/// make an address index
+address_index_t make_address_index(std::uint64_t half1, std::uint64_t half2);
+inline address_index_t make_address_index(std::uint64_t half1) { return make_address_index(half1, 0); }
+/// make an address tag
+address_tag_t make_address_tag(const address_index_t &enc_j, const address_tag_hint_t &addr_tag_hint);
+/// generate a random address index
+address_index_t gen_address_index();
 
 /// convert between jamtis enote types and self-send types
 bool try_get_jamtis_enote_type(const JamtisSelfSendType self_send_type, JamtisEnoteType &enote_type_out);

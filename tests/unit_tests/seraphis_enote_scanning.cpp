@@ -216,7 +216,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
 
     // make user address
     address_index_t j;
-    j.gen();
+    j = sp::jamtis::gen_address_index();
     JamtisDestinationV1 user_address;
 
     ASSERT_NO_THROW(make_jamtis_destination_v1(user_keys.K_1_base,
