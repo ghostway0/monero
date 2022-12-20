@@ -52,32 +52,10 @@ extern "C"
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool SpCoinbaseEnoteCore::onetime_address_is_canonical() const
-{
-    return key_domain_is_prime_subgroup(m_onetime_address);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpCoinbaseEnoteCore::gen()
-{
-    m_onetime_address = rct::pkGen();
-    crypto::rand(8, reinterpret_cast<unsigned char*>(&m_amount));
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpCoinbaseEnoteCore &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("Ko", container.m_onetime_address);
     transcript_inout.append("a", container.m_amount);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteCore::onetime_address_is_canonical() const
-{
-    return key_domain_is_prime_subgroup(m_onetime_address);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpEnoteCore::gen()
-{
-    m_onetime_address = rct::pkGen();
-    m_amount_commitment = rct::pkGen();
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &transcript_inout)
@@ -110,6 +88,35 @@ rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant)
     return variant.visit(visitor{});
 }
 //-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder &transcript_inout)
+{
+    transcript_inout.append("K_masked", container.m_masked_address);
+    transcript_inout.append("C_masked", container.m_masked_commitment);
+    transcript_inout.append("KI", container.m_key_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+const crypto::key_image& key_image_ref(const SpInputProposalCore &proposal)
+{
+    return proposal.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+const SpEnoteCoreVariant& enote_core_ref(const SpInputProposalCore &proposal)
+{
+    return proposal.m_enote_core;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
+{
+    return a.m_onetime_address == b.m_onetime_address &&
+           a.m_amount          == b.m_amount;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const SpEnoteCore &a, const SpEnoteCore &b)
+{
+    return a.m_onetime_address    == b.m_onetime_address &&
+           a.m_amount_commitment  == b.m_amount_commitment;
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2)
 {
     // check they have the same type
@@ -128,86 +135,6 @@ bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &va
     };
 
     return variant1.visit(visitor{variant2});
-}
-//-------------------------------------------------------------------------------------------------------------------
-void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder &transcript_inout)
-{
-    transcript_inout.append("K_masked", container.m_masked_address);
-    transcript_inout.append("C_masked", container.m_masked_commitment);
-    transcript_inout.append("KI", container.m_key_image);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpInputProposalCore::get_squash_prefix(rct::key &squash_prefix_out) const
-{
-    // H_n(Ko,C)
-    make_seraphis_squash_prefix(onetime_address_ref(m_enote_core), amount_commitment_ref(m_enote_core), squash_prefix_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpInputProposalCore::get_enote_image_core(SpEnoteImageCore &image_out) const
-{
-    // K" = t_k G + H_n(Ko,C) Ko
-    // C" = t_c G + C
-    make_seraphis_enote_image_masked_keys(onetime_address_ref(m_enote_core),
-        amount_commitment_ref(m_enote_core),
-        m_address_mask,
-        m_commitment_mask,
-        image_out.m_masked_address,
-        image_out.m_masked_commitment);
-
-    // KI = ((k_u + k_m) / k_x) U
-    image_out.m_key_image = this->key_image();
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpInputProposalCore::gen(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
-{
-    m_enote_view_privkey_g = rct::rct2sk(rct::skGen());
-    m_enote_view_privkey_x = rct::rct2sk(rct::skGen());
-    m_enote_view_privkey_u = rct::rct2sk(rct::skGen());
-    crypto::secret_key sp_spend_privkey_extended;
-    sc_add(to_bytes(sp_spend_privkey_extended), to_bytes(m_enote_view_privkey_u), to_bytes(sp_spend_privkey));
-    make_seraphis_key_image(m_enote_view_privkey_x, sp_spend_privkey_extended, m_key_image);
-    m_amount_blinding_factor = rct::rct2sk(rct::skGen());
-    m_amount = amount;
-    SpEnoteCore enote_core_temp;
-    make_seraphis_enote_core(m_enote_view_privkey_g,
-        m_enote_view_privkey_x,
-        m_enote_view_privkey_u,
-        sp_spend_privkey,
-        m_amount_blinding_factor,
-        m_amount,
-        enote_core_temp);
-    m_enote_core = enote_core_temp;
-    m_address_mask = rct::rct2sk(rct::skGen());;
-    m_commitment_mask = rct::rct2sk(rct::skGen());;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpOutputProposalCore::onetime_address_is_canonical() const
-{
-    return key_domain_is_prime_subgroup(m_onetime_address);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpOutputProposalCore::get_enote_core(SpEnoteCore &enote_out) const
-{
-    make_seraphis_enote_core(m_onetime_address, m_amount_blinding_factor, m_amount, enote_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpOutputProposalCore::gen(const rct::xmr_amount amount)
-{
-    m_onetime_address = rct::pkGen();
-    m_amount_blinding_factor = rct::rct2sk(rct::skGen());
-    m_amount = amount;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
-{
-    return a.m_onetime_address == b.m_onetime_address &&
-           a.m_amount          == b.m_amount;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool operator==(const SpEnoteCore &a, const SpEnoteCore &b)
-{
-    return a.m_onetime_address    == b.m_onetime_address &&
-           a.m_amount_commitment  == b.m_amount_commitment;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_Ko(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
@@ -233,6 +160,101 @@ bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b)
 bool compare_Ko(const SpOutputProposalCore &a, const SpOutputProposalCore &b)
 {
     return memcmp(&a.m_onetime_address, &b.m_onetime_address, sizeof(rct::key)) < 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool onetime_address_is_canonical(const SpCoinbaseEnoteCore &enote_core)
+{
+    return key_domain_is_prime_subgroup(enote_core.m_onetime_address);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool onetime_address_is_canonical(const SpEnoteCore &enote_core)
+{
+    return key_domain_is_prime_subgroup(enote_core.m_onetime_address);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool onetime_address_is_canonical(const SpOutputProposalCore &output_proposal)
+{
+    return key_domain_is_prime_subgroup(output_proposal.m_onetime_address);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_squash_prefix(const SpInputProposalCore &proposal, rct::key &squash_prefix_out)
+{
+    // H_n(Ko,C)
+    make_seraphis_squash_prefix(onetime_address_ref(proposal.m_enote_core),
+        amount_commitment_ref(proposal.m_enote_core),
+        squash_prefix_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_enote_image_core(const SpInputProposalCore &proposal, SpEnoteImageCore &image_out)
+{
+    // K" = t_k G + H_n(Ko,C) Ko
+    // C" = t_c G + C
+    make_seraphis_enote_image_masked_keys(onetime_address_ref(proposal.m_enote_core),
+        amount_commitment_ref(proposal.m_enote_core),
+        proposal.m_address_mask,
+        proposal.m_commitment_mask,
+        image_out.m_masked_address,
+        image_out.m_masked_commitment);
+
+    // KI = ((k_u + k_m) / k_x) U
+    image_out.m_key_image = key_image_ref(proposal);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_enote_core(const SpOutputProposalCore &proposal, SpEnoteCore &enote_out)
+{
+    make_seraphis_enote_core(proposal.m_onetime_address, proposal.m_amount_blinding_factor, proposal.m_amount, enote_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpCoinbaseEnoteCore gen_sp_coinbase_enote_core()
+{
+    SpCoinbaseEnoteCore temp;
+    temp.m_onetime_address = rct::pkGen();
+    crypto::rand(8, reinterpret_cast<unsigned char*>(&temp.m_amount));
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpEnoteCore gen_sp_enote_core()
+{
+    SpEnoteCore temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount_commitment = rct::pkGen();
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
+{
+    SpInputProposalCore temp;
+
+    temp.m_enote_view_privkey_g = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_privkey_x = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_privkey_u = rct::rct2sk(rct::skGen());
+    crypto::secret_key sp_spend_privkey_extended;
+    sc_add(to_bytes(sp_spend_privkey_extended), to_bytes(temp.m_enote_view_privkey_u), to_bytes(sp_spend_privkey));
+    make_seraphis_key_image(temp.m_enote_view_privkey_x, sp_spend_privkey_extended, temp.m_key_image);
+    temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
+    temp.m_amount = amount;
+    SpEnoteCore enote_core_temp;
+    make_seraphis_enote_core(temp.m_enote_view_privkey_g,
+        temp.m_enote_view_privkey_x,
+        temp.m_enote_view_privkey_u,
+        sp_spend_privkey,
+        temp.m_amount_blinding_factor,
+        temp.m_amount,
+        enote_core_temp);
+    temp.m_enote_core = enote_core_temp;
+    temp.m_address_mask = rct::rct2sk(rct::skGen());;
+    temp.m_commitment_mask = rct::rct2sk(rct::skGen());;
+
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpOutputProposalCore gen_sp_output_proposal_core(const rct::xmr_amount amount)
+{
+    SpOutputProposalCore temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
+    temp.m_amount = amount;
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

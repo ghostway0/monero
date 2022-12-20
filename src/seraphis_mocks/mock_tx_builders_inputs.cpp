@@ -243,7 +243,7 @@ std::vector<SpMembershipProofPrepV1> gen_mock_sp_membership_proof_preps_v1(
 
     for (const SpInputProposalV1 &input_proposal : input_proposals)
     {
-        input_enotes.emplace_back(input_proposal.m_core.enote_core());
+        input_enotes.emplace_back(enote_core_ref(input_proposal.m_core));
         address_masks.emplace_back(input_proposal.m_core.m_address_mask);
         commitment_masks.emplace_back(input_proposal.m_core.m_commitment_mask);
     }

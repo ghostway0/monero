@@ -294,7 +294,7 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
     {
-        CHECK_AND_ASSERT_THROW_MES(output_proposal.m_enote.m_core.onetime_address_is_canonical(),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.m_enote.m_core),
             "Semantics check output proposals v1: an output onetime address is not in the prime subgroup.");
     }
 }
@@ -330,7 +330,7 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     // proposal onetime addresses should be canonical (sanity check so our tx outputs don't have duplicate key images)
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
     {
-        CHECK_AND_ASSERT_THROW_MES(output_proposal.m_core.onetime_address_is_canonical(),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.m_core),
             "Semantics check output proposals v1: an output onetime address is not in the prime subgroup.");
     }
 }

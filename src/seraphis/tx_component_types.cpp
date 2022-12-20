@@ -37,6 +37,7 @@
 #include "int-util.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis/sp_core_types.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_legacy_proof_helpers.h"
 #include "seraphis_crypto/sp_transcript.h"
@@ -58,7 +59,7 @@ void SpCoinbaseEnoteV1::gen()
     // generate a dummy enote: random pieces, completely unspendable
 
     // gen base of enote
-    m_core.gen();
+    m_core = gen_sp_coinbase_enote_core();
 
     // memo
     m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
@@ -77,7 +78,7 @@ void SpEnoteV1::gen()
     // generate a dummy enote: random pieces, completely unspendable
 
     // gen base of enote
-    m_core.gen();
+    m_core = gen_sp_enote_core();
 
     // memo
     m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));

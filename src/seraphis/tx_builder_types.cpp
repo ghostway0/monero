@@ -86,7 +86,7 @@ void SpOutputProposalV1::get_enote_v1(SpEnoteV1 &enote_out) const
 void SpOutputProposalV1::gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements)
 {
     // gen base of destination
-    m_core.gen(amount);
+    m_core = gen_sp_output_proposal_core(amount);
 
     m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
     m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));

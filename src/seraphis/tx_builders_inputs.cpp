@@ -330,7 +330,7 @@ void make_standard_input_context_v1(const std::vector<LegacyInputProposalV1> &le
         legacy_key_images_collected.emplace_back(legacy_input_proposal.m_key_image);
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
-        sp_key_images_collected.emplace_back(sp_input_proposal.m_core.key_image());
+        sp_key_images_collected.emplace_back(key_image_ref(sp_input_proposal.m_core));
 
     // sort the key images
     std::sort(legacy_key_images_collected.begin(), legacy_key_images_collected.end());
@@ -348,11 +348,11 @@ void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     // make image proof
 
     // 1. the input enote
-    const SpEnoteCoreVariant &input_enote_core{input_proposal.enote_core()};
+    const SpEnoteCoreVariant &input_enote_core{enote_core_ref(input_proposal)};
 
     // 2. the input enote image
     SpEnoteImageCore input_enote_image_core;
-    input_proposal.get_enote_image_core(input_enote_image_core);
+    get_enote_image_core(input_proposal, input_enote_image_core);
 
     // 3. prepare for proof (squashed enote model): x, y, z
 
@@ -596,7 +596,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     partial_input_out.m_address_mask                 = input_proposal.m_core.m_address_mask;
     partial_input_out.m_commitment_mask              = input_proposal.m_core.m_commitment_mask;
     partial_input_out.m_proposal_prefix              = proposal_prefix;
-    partial_input_out.m_input_enote_core             = input_proposal.m_core.enote_core();
+    partial_input_out.m_input_enote_core             = enote_core_ref(input_proposal.m_core);
     partial_input_out.m_input_amount                 = input_proposal.amount();
     partial_input_out.m_input_amount_blinding_factor = input_proposal.m_core.m_amount_blinding_factor;
 }

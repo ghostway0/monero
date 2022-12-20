@@ -77,7 +77,7 @@ struct SpCoinbaseEnoteV1 final
 
     static std::size_t size_bytes()
     {
-        return SpCoinbaseEnoteCore::size_bytes() +
+        return sp_coinbase_enote_core_size_bytes() +
             sizeof(jamtis::encrypted_address_tag_t) +
             sizeof(jamtis::view_tag_t);
     }
@@ -105,7 +105,7 @@ struct SpEnoteV1 final
 
     static std::size_t size_bytes()
     {
-        return SpEnoteCore::size_bytes() +
+        return sp_enote_core_size_bytes() +
             sizeof(rct::xmr_amount) +
             sizeof(jamtis::encrypted_address_tag_t) +
             sizeof(jamtis::view_tag_t);
@@ -141,7 +141,7 @@ struct SpEnoteImageV1 final
     /// enote image core (masked address, masked amount commitment, key image)
     SpEnoteImageCore m_core;
 
-    static std::size_t size_bytes() { return SpEnoteImageCore::size_bytes(); }
+    static std::size_t size_bytes() { return sp_enote_image_core_size_bytes(); }
 };
 inline const boost::string_ref container_name(const SpEnoteImageV1&) { return "SpEnoteImageV1"; }
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout);

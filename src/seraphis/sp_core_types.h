@@ -57,21 +57,12 @@ struct SpCoinbaseEnoteCore final
     /// a
     /// note: C = 1 G + a H  (implied)
     rct::xmr_amount m_amount;
-
-    /**
-    * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
-    */
-    bool onetime_address_is_canonical() const;
-
-    static std::size_t size_bytes() { return 32 + 8; }
-
-    /**
-    * brief: gen() - generate a seraphis coinbase enote (all random)
-    */
-    void gen();
 };
 inline const boost::string_ref container_name(const SpCoinbaseEnoteCore&) { return "SpCoinbaseEnoteCore"; }
 void append_to_transcript(const SpCoinbaseEnoteCore &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_coinbase_enote_core_size_bytes() { return 32 + 8; }
 
 ////
 // SpEnoteCore
@@ -82,21 +73,12 @@ struct SpEnoteCore final
     rct::key m_onetime_address;
     /// C = x G + a H
     rct::key m_amount_commitment;
-
-    /**
-    * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
-    */
-    bool onetime_address_is_canonical() const;
-
-    static std::size_t size_bytes() { return 32*2; }
-
-    /**
-    * brief: gen() - generate a seraphis enote (all random)
-    */
-    void gen();
 };
 inline const boost::string_ref container_name(const SpEnoteCore&) { return "SpEnoteCore"; }
 void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_enote_core_size_bytes() { return 32*2; }
 
 ////
 // SpEnoteCoreVariant
@@ -105,12 +87,10 @@ void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &tra
 // onetime_address_ref(): get the enote's onetime address
 // amount_commitment_ref(): get the enote's amount commitment (this is a copy because coinbase enotes need to
 //                          compute the commitment)
-// operator==(): test equality of two enote cores
 ///
 using SpEnoteCoreVariant = tools::variant<SpCoinbaseEnoteCore, SpEnoteCore>;
 const rct::key& onetime_address_ref(const SpEnoteCoreVariant &variant);
 rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant);
-bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2);
 
 ////
 // SpEnoteImageCore
@@ -123,11 +103,12 @@ struct SpEnoteImageCore final
     rct::key m_masked_commitment;
     /// KI = ((k_u + k_m) / k_x) U
     crypto::key_image m_key_image;
-
-    static std::size_t size_bytes() { return 32*3; }
 };
 inline const boost::string_ref container_name(const SpEnoteImageCore&) { return "SpEnoteImageCore"; }
 void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_enote_image_core_size_bytes() { return 32*3; }
 
 ////
 // SpInputProposalCore
@@ -155,38 +136,12 @@ struct SpInputProposalCore final
     crypto::secret_key m_address_mask;
     /// t_c
     crypto::secret_key m_commitment_mask;
-
-    /**
-    * brief: key_image - get this input's key image
-    * outparam: key_image_out - KI
-    */
-    const crypto::key_image& key_image() const { return m_key_image; }
-
-    /**
-    * brief: enote_core - get the enote this input proposal represents
-    * outparam: enote_out -
-    */
-    const SpEnoteCoreVariant& enote_core() const { return m_enote_core; }
-
-    /**
-    * brief: get_squash_prefix - get this input's enote's squash prefix
-    * outparam: squash_prefix_out - H_n(Ko,C)
-    */
-    void get_squash_prefix(rct::key &squash_prefix_out) const;
-
-    /**
-    * brief: get_enote_image_core - get this input's enote image in the squashed enote model
-    * outparam: image_out -
-    */
-    void get_enote_image_core(SpEnoteImageCore &image_out) const;
-
-    /**
-    * brief: gen - generate random enote keys
-    * param: sp_spend_privkey -
-    * param: amount -
-    */
-    void gen(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount);
 };
+
+/// access the proposal's key image
+const crypto::key_image& key_image_ref(const SpInputProposalCore &proposal);
+/// access the proposal's enote core
+const SpEnoteCoreVariant& enote_core_ref(const SpInputProposalCore &proposal);
 
 ////
 // SpOutputProposalCore
@@ -200,29 +155,14 @@ struct SpOutputProposalCore final
     crypto::secret_key m_amount_blinding_factor;
     /// b
     rct::xmr_amount m_amount;
-
-    /**
-    * brief: onetime_address_is_canonical - check if the onetime address is canonical (prime subgroup)
-    */
-    bool onetime_address_is_canonical() const;
-
-    /**
-    * brief: get_enote_core - get the enote this input proposal represents
-    * outparam: enote_out -
-    */
-    void get_enote_core(SpEnoteCore &enote_out) const;
-
-    /**
-    * brief: gen - generate a random proposal
-    * param: amount -
-    */
-    void gen(const rct::xmr_amount amount);
 };
 
 /// equality operator for equivalence testing
 bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
 /// equality operator for equivalence testing
 bool operator==(const SpEnoteCore &a, const SpEnoteCore &b);
+/// equality operator for equivalence testing
+bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2);
 
 /// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
@@ -234,5 +174,52 @@ bool compare_KI(const SpEnoteImageCore &a, const SpEnoteImageCore &b);
 bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b);
 /// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpOutputProposalCore &a, const SpOutputProposalCore &b);
+/// check if the coinbase enote core has a canonical onetime address
+bool onetime_address_is_canonical(const SpCoinbaseEnoteCore &enote_core);
+/// check if the enote core has a canonical onetime address
+bool onetime_address_is_canonical(const SpEnoteCore &enote_core);
+/// check if the output proposal core has a canonical onetime address
+bool onetime_address_is_canonical(const SpOutputProposalCore &output_proposal);
+/**
+* brief: get_squash_prefix - get the input proposal's enote's squash prefix
+* param: proposal -
+* outparam: squash_prefix_out - H_n(Ko,C)
+*/
+void get_squash_prefix(const SpInputProposalCore &proposal, rct::key &squash_prefix_out);
+/**
+* brief: get_enote_image_core - get input proposal's enote image in the squashed enote model
+* param: proposal -
+* outparam: image_out -
+*/
+void get_enote_image_core(const SpInputProposalCore &proposal, SpEnoteImageCore &image_out);
+/**
+* brief: get_enote_core - get the output proposal's represented enote
+* param: proposal -
+* outparam: enote_out -
+*/
+void get_enote_core(const SpOutputProposalCore &proposal, SpEnoteCore &enote_out);
+/**
+* brief: gen() - generate a seraphis coinbase enote (all random)
+* return: generated proposal
+*/
+SpCoinbaseEnoteCore gen_sp_coinbase_enote_core();
+/**
+* brief: gen() - generate a seraphis enote (all random)
+* return: generated proposal
+*/
+SpEnoteCore gen_sp_enote_core();
+/**
+* brief: gen_sp_input_proposal_core - generate a random input proposal
+* param: sp_spend_privkey -
+* param: amount -
+* return: generated proposal
+*/
+SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount);
+/**
+* brief: gen - generate a random proposal
+* param: amount -
+* return: generated proposal
+*/
+SpOutputProposalCore gen_sp_output_proposal_core(const rct::xmr_amount amount);
 
 } //namespace sp
