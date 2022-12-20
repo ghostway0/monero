@@ -176,7 +176,7 @@ void prepare_input_commitment_factors_for_balance_proof_v1(const std::vector<SpI
             to_bytes(input_proposals[input_index].m_core.m_amount_blinding_factor));  // x
 
         // input amount: a
-        input_amounts_out.emplace_back(input_proposals[input_index].amount());
+        input_amounts_out.emplace_back(amount_ref(input_proposals[input_index]));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -589,7 +589,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     check_v1_input_proposal_semantics_v1(input_proposal, sp_core_spend_pubkey);
 
     // 2. prepare input image
-    input_proposal.get_enote_image_v1(partial_input_out.m_input_image);
+    get_enote_image_v1(input_proposal, partial_input_out.m_input_image);
 
     // 3. set partial input pieces
     partial_input_out.m_image_proof                  = std::move(sp_image_proof);
@@ -597,7 +597,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     partial_input_out.m_commitment_mask              = input_proposal.m_core.m_commitment_mask;
     partial_input_out.m_proposal_prefix              = proposal_prefix;
     partial_input_out.m_input_enote_core             = enote_core_ref(input_proposal.m_core);
-    partial_input_out.m_input_amount                 = input_proposal.amount();
+    partial_input_out.m_input_amount                 = amount_ref(input_proposal);
     partial_input_out.m_input_amount_blinding_factor = input_proposal.m_core.m_amount_blinding_factor;
 }
 //-------------------------------------------------------------------------------------------------------------------

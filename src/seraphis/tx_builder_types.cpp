@@ -54,118 +54,19 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void SpCoinbaseOutputProposalV1::gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements)
+rct::xmr_amount amount_ref(const SpInputProposalV1 &proposal)
 {
-    // enote
-    m_enote.gen();
-    m_enote.m_core.m_amount = amount;
-
-    // enote ephemeral pubkey
-    m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
-
-    // partial memo
-    std::vector<ExtraFieldElement> memo_elements;
-    memo_elements.resize(num_random_memo_elements);
-    for (ExtraFieldElement &element: memo_elements)
-        element.gen();
-    make_tx_extra(std::move(memo_elements), m_partial_memo);
+    return proposal.m_core.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpOutputProposalV1::get_enote_v1(SpEnoteV1 &enote_out) const
+rct::xmr_amount amount_ref(const SpCoinbaseOutputProposalV1 &proposal)
 {
-    // enote core
-    enote_out.m_core.m_onetime_address = m_core.m_onetime_address;
-    enote_out.m_core.m_amount_commitment = rct::commit(this->amount(), rct::sk2rct(m_core.m_amount_blinding_factor));
-
-    // enote misc. details
-    enote_out.m_encoded_amount = m_encoded_amount;
-    enote_out.m_addr_tag_enc = m_addr_tag_enc;
-    enote_out.m_view_tag = m_view_tag;
+    return proposal.m_enote.m_core.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpOutputProposalV1::gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements)
+rct::xmr_amount amount_ref(const SpOutputProposalV1 &proposal)
 {
-    // gen base of destination
-    m_core = gen_sp_output_proposal_core(amount);
-
-    m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
-    m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
-    crypto::rand(sizeof(m_addr_tag_enc), m_addr_tag_enc.bytes);
-    m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
-
-    std::vector<ExtraFieldElement> memo_elements;
-    memo_elements.resize(num_random_memo_elements);
-    for (ExtraFieldElement &element: memo_elements)
-        element.gen();
-    make_tx_extra(std::move(memo_elements), m_partial_memo);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpCoinbaseTxProposalV1::get_coinbase_output_proposals_v1(
-    std::vector<SpCoinbaseOutputProposalV1> &output_proposals_out) const
-{
-    // output proposals
-    output_proposals_out.clear();
-    output_proposals_out.reserve(m_normal_payment_proposals.size());
-
-    for (const jamtis::JamtisPaymentProposalV1 &payment_proposal : m_normal_payment_proposals)
-        get_coinbase_output_proposal_v1(payment_proposal, m_block_height, tools::add_element(output_proposals_out));
-
-    // sort output proposals
-    std::sort(output_proposals_out.begin(),
-        output_proposals_out.end(),
-        tools::compare_func<SpCoinbaseOutputProposalV1>(compare_Ko));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpTxProposalV1::get_output_proposals_v1(const crypto::secret_key &k_view_balance,
-    std::vector<SpOutputProposalV1> &output_proposals_out) const
-{
-    CHECK_AND_ASSERT_THROW_MES(m_normal_payment_proposals.size() + m_selfsend_payment_proposals.size() > 0,
-        "Tried to get output proposals for a tx proposal with no outputs!");
-
-    // input context
-    rct::key input_context;
-    make_standard_input_context_v1(m_legacy_input_proposals, m_sp_input_proposals, input_context);
-
-    // output proposals
-    output_proposals_out.clear();
-    output_proposals_out.reserve(m_normal_payment_proposals.size() + m_selfsend_payment_proposals.size());
-
-    for (const jamtis::JamtisPaymentProposalV1 &normal_payment_proposal : m_normal_payment_proposals)
-        get_output_proposal_v1(normal_payment_proposal, input_context, tools::add_element(output_proposals_out));
-
-    for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal : m_selfsend_payment_proposals)
-    {
-        get_output_proposal_v1(selfsend_payment_proposal,
-            k_view_balance,
-            input_context,
-            tools::add_element(output_proposals_out));
-    }
-
-    // sort output proposals
-    std::sort(output_proposals_out.begin(),
-        output_proposals_out.end(),
-        tools::compare_func<SpOutputProposalV1>(compare_Ko));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpTxProposalV1::get_proposal_prefix(const std::string &version_string,
-    const crypto::secret_key &k_view_balance,
-    rct::key &proposal_prefix_out) const
-{
-    // get output proposals
-    std::vector<SpOutputProposalV1> output_proposals;
-    this->get_output_proposals_v1(k_view_balance, output_proposals);
-
-    // sanity check semantics
-    check_v1_output_proposal_set_semantics_v1(output_proposals);
-
-    // make the proposal prefix
-    make_tx_proposal_prefix_v1(version_string,
-        m_legacy_input_proposals,
-        m_sp_input_proposals,
-        output_proposals,
-        m_partial_memo,
-        m_tx_fee,
-        proposal_prefix_out);
+    return proposal.m_core.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b)
@@ -196,6 +97,156 @@ bool alignment_check(const SpAlignableMembershipProofV1 &a, const SpAlignableMem
 bool alignment_check(const SpAlignableMembershipProofV1 &proof, const rct::key &masked_address)
 {
     return proof.m_masked_address == masked_address;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_enote_image_v1(const SpInputProposalV1 &proposal, SpEnoteImageV1 &image_out)
+{
+    get_enote_image_core(proposal.m_core, image_out.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_squash_prefix(const SpInputProposalV1 &proposal, rct::key &squash_prefix_out)
+{
+    get_squash_prefix(proposal.m_core, squash_prefix_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_enote_v1(const SpOutputProposalV1 &proposal, SpEnoteV1 &enote_out)
+{
+    // enote core
+    enote_out.m_core.m_onetime_address = proposal.m_core.m_onetime_address;
+    enote_out.m_core.m_amount_commitment =
+        rct::commit(amount_ref(proposal), rct::sk2rct(proposal.m_core.m_amount_blinding_factor));
+
+    // enote misc. details
+    enote_out.m_encoded_amount = proposal.m_encoded_amount;
+    enote_out.m_addr_tag_enc = proposal.m_addr_tag_enc;
+    enote_out.m_view_tag = proposal.m_view_tag;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_coinbase_output_proposals_v1(const SpCoinbaseTxProposalV1 &tx_proposal,
+    std::vector<SpCoinbaseOutputProposalV1> &output_proposals_out)
+{
+    // output proposals
+    output_proposals_out.clear();
+    output_proposals_out.reserve(tx_proposal.m_normal_payment_proposals.size());
+
+    for (const jamtis::JamtisPaymentProposalV1 &payment_proposal : tx_proposal.m_normal_payment_proposals)
+    {
+        get_coinbase_output_proposal_v1(payment_proposal,
+            tx_proposal.m_block_height,
+            tools::add_element(output_proposals_out));
+    }
+
+    // sort output proposals
+    std::sort(output_proposals_out.begin(),
+        output_proposals_out.end(),
+        tools::compare_func<SpCoinbaseOutputProposalV1>(compare_Ko));
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
+    const crypto::secret_key &k_view_balance,
+    std::vector<SpOutputProposalV1> &output_proposals_out)
+{
+    CHECK_AND_ASSERT_THROW_MES(tx_proposal.m_normal_payment_proposals.size() +
+            tx_proposal.m_selfsend_payment_proposals.size() > 0,
+        "Tried to get output proposals for a tx proposal with no outputs!");
+
+    // input context
+    rct::key input_context;
+    make_standard_input_context_v1(tx_proposal.m_legacy_input_proposals, tx_proposal.m_sp_input_proposals, input_context);
+
+    // output proposals
+    output_proposals_out.clear();
+    output_proposals_out.reserve(tx_proposal.m_normal_payment_proposals.size() +
+        tx_proposal.m_selfsend_payment_proposals.size());
+
+    for (const jamtis::JamtisPaymentProposalV1 &normal_payment_proposal : tx_proposal.m_normal_payment_proposals)
+        get_output_proposal_v1(normal_payment_proposal, input_context, tools::add_element(output_proposals_out));
+
+    for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal :
+        tx_proposal.m_selfsend_payment_proposals)
+    {
+        get_output_proposal_v1(selfsend_payment_proposal,
+            k_view_balance,
+            input_context,
+            tools::add_element(output_proposals_out));
+    }
+
+    // sort output proposals
+    std::sort(output_proposals_out.begin(),
+        output_proposals_out.end(),
+        tools::compare_func<SpOutputProposalV1>(compare_Ko));
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_proposal_prefix(const SpTxProposalV1 &tx_proposal,
+    const std::string &version_string,
+    const crypto::secret_key &k_view_balance,
+    rct::key &proposal_prefix_out)
+{
+    // get output proposals
+    std::vector<SpOutputProposalV1> output_proposals;
+    get_output_proposals_v1(tx_proposal, k_view_balance, output_proposals);
+
+    // sanity check semantics
+    check_v1_output_proposal_set_semantics_v1(output_proposals);
+
+    // make the proposal prefix
+    make_tx_proposal_prefix_v1(version_string,
+        tx_proposal.m_legacy_input_proposals,
+        tx_proposal.m_sp_input_proposals,
+        output_proposals,
+        tx_proposal.m_partial_memo,
+        tx_proposal.m_tx_fee,
+        proposal_prefix_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
+{
+    SpInputProposalV1 temp;
+    temp.m_core = gen_sp_input_proposal_core(sp_spend_privkey, amount);
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpCoinbaseOutputProposalV1 gen_sp_coinbase_output_proposal_v1(const rct::xmr_amount amount,
+    const std::size_t num_random_memo_elements)
+{
+    SpCoinbaseOutputProposalV1 temp;
+
+    // enote
+    temp.m_enote.gen();
+    temp.m_enote.m_core.m_amount = amount;
+
+    // enote ephemeral pubkey
+    temp.m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
+
+    // partial memo
+    std::vector<ExtraFieldElement> memo_elements;
+    memo_elements.resize(num_random_memo_elements);
+    for (ExtraFieldElement &element: memo_elements)
+        element.gen();
+    make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
+
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpOutputProposalV1 gen_sp_output_proposal_v1(const rct::xmr_amount amount, const std::size_t num_random_memo_elements)
+{
+    SpOutputProposalV1 temp;
+
+    // gen base of destination
+    temp.m_core = gen_sp_output_proposal_core(amount);
+
+    temp.m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
+    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    crypto::rand(sizeof(temp.m_addr_tag_enc), temp.m_addr_tag_enc.bytes);
+    temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
+
+    std::vector<ExtraFieldElement> memo_elements;
+    memo_elements.resize(num_random_memo_elements);
+    for (ExtraFieldElement &element: memo_elements)
+        element.gen();
+    make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
+
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

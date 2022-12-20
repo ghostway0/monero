@@ -663,7 +663,7 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
 {
     // 1. extract output proposals from tx proposal (and check their semantics)
     std::vector<SpCoinbaseOutputProposalV1> output_proposals;
-    tx_proposal.get_coinbase_output_proposals_v1(output_proposals);
+    get_coinbase_output_proposals_v1(tx_proposal, output_proposals);
 
     check_v1_coinbase_output_proposal_set_semantics_v1(output_proposals);
 
@@ -733,7 +733,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
 
     // 1. extract output proposals from tx proposal (and check their semantics)
     std::vector<SpOutputProposalV1> output_proposals;
-    tx_proposal.get_output_proposals_v1(k_view_balance, output_proposals);
+    get_output_proposals_v1(tx_proposal, k_view_balance, output_proposals);
 
     check_v1_output_proposal_set_semantics_v1(output_proposals);
 
@@ -825,7 +825,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
         in_amounts.emplace_back(legacy_input_proposal.amount());
 
     for (const SpInputProposalV1 &sp_input_proposal : tx_proposal.m_sp_input_proposals)
-        in_amounts.emplace_back(sp_input_proposal.amount());
+        in_amounts.emplace_back(amount_ref(sp_input_proposal));
 
     // 3. check: sum(input amnts) == sum(output amnts) + fee
     CHECK_AND_ASSERT_THROW_MES(balance_check_in_out_amnts(in_amounts, output_amounts, raw_transaction_fee),
@@ -961,7 +961,7 @@ bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
     out_amounts.reserve(output_proposals.size());
 
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
-        out_amounts.emplace_back(output_proposal.amount());
+        out_amounts.emplace_back(amount_ref(output_proposal));
 
     // balance check
     return balance_check_in_out_amnts({block_reward}, out_amounts, 0);
@@ -980,14 +980,14 @@ bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &leg
         in_amounts.emplace_back(legacy_input_proposal.amount());
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
-        in_amounts.emplace_back(sp_input_proposal.amount());
+        in_amounts.emplace_back(amount_ref(sp_input_proposal));
 
     // output amounts
     std::vector<rct::xmr_amount> out_amounts;
     out_amounts.reserve(output_proposals.size());
 
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
-        out_amounts.emplace_back(output_proposal.amount());
+        out_amounts.emplace_back(amount_ref(output_proposal));
 
     // fee
     rct::xmr_amount raw_transaction_fee;
@@ -1228,7 +1228,7 @@ void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
 
     // 5. extract output proposals from tx proposal
     std::vector<SpOutputProposalV1> output_proposals;
-    tx_proposal.get_output_proposals_v1(k_view_balance, output_proposals);
+    get_output_proposals_v1(tx_proposal, k_view_balance, output_proposals);
 
     // 6. construct partial tx
     make_v1_partial_tx_v1(std::move(legacy_inputs),

@@ -243,7 +243,7 @@ void SpMultisigTxProposalV1::get_proposal_prefix_v1(const rct::key &legacy_spend
         tx_proposal);
 
     // get prefix from proposal
-    tx_proposal.get_proposal_prefix(m_version_string, k_view_balance, proposal_prefix_out);
+    get_proposal_prefix(tx_proposal, m_version_string, k_view_balance, proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInputProposalV1 &b)

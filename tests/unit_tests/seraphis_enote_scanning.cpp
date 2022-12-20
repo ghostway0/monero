@@ -241,7 +241,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
     get_output_proposal_v1(payment_proposal, mock_input_context, output_proposal);
 
     SpEnoteV1 single_enote;
-    output_proposal.get_enote_v1(single_enote);
+    get_enote_v1(output_proposal, single_enote);
     mock_tx_supplement.m_output_enote_ephemeral_pubkeys.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
 
     // add enote to mock ledger context as a coinbase enote

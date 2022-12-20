@@ -293,7 +293,7 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(const JamtisPaymentProp
 
     // 2. extract enote from output proposal
     SpEnoteV1 temp_enote;
-    output_proposal.get_enote_v1(temp_enote);
+    get_enote_v1(output_proposal, temp_enote);
 
     // 3. try to get an enote record from the enote (via selfsend path)
     SpEnoteRecordV1 temp_enote_record;

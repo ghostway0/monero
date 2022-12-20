@@ -371,7 +371,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 
     // tx proposal prefix
     rct::key proposal_prefix;
-    tx_proposal.get_proposal_prefix(version_string, k_view_balance, proposal_prefix);
+    get_proposal_prefix(tx_proposal, version_string, k_view_balance, proposal_prefix);
 
     // legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;

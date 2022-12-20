@@ -219,7 +219,7 @@ static void check_is_owned(const SpOutputProposalV1 &test_proposal,
 {
     // convert to enote
     SpEnoteV1 enote;
-    test_proposal.get_enote_v1(enote);
+    get_enote_v1(test_proposal, enote);
 
     // check info
     check_is_owned(enote,
@@ -424,7 +424,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
     {
         sp_input_images.emplace_back();
-        sp_input_proposal.get_enote_image_v1(sp_input_images.back());
+        get_enote_image_v1(sp_input_proposal, sp_input_images.back());
     }
     make_tx_proposal_prefix_v1(version_string,
         legacy_input_images,

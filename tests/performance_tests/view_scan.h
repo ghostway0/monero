@@ -229,7 +229,7 @@ public:
         sp::SpOutputProposalV1 output_proposal;
         get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
         m_enote_ephemeral_pubkey = output_proposal.m_enote_ephemeral_pubkey;
-        output_proposal.get_enote_v1(m_enote);
+        get_enote_v1(output_proposal, m_enote);
 
         // invalidate the view tag to test the performance of short-circuiting on failed view tags
         if (m_test_view_tag_check)
@@ -319,7 +319,7 @@ public:
         sp::SpOutputProposalV1 output_proposal;
         get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
         sp::SpEnoteV1 real_enote;
-        output_proposal.get_enote_v1(real_enote);
+        get_enote_v1(output_proposal, real_enote);
 
         // convert to basic enote record (we will use a bunch of copies of this)
         sp::SpBasicEnoteRecordV1 basic_record;

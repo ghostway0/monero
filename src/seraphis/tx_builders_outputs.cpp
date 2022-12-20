@@ -428,10 +428,10 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
             "making v1 outputs: invalid amount blinding factor (non-canonical).");
 
         // convert to enote
-        output_proposal.get_enote_v1(tools::add_element(outputs_out));
+        get_enote_v1(output_proposal, tools::add_element(outputs_out));
 
         // prepare for range proofs
-        output_amounts_out.emplace_back(output_proposal.amount());
+        output_amounts_out.emplace_back(amount_ref(output_proposal));
         output_amount_commitment_blinding_factors_out.emplace_back(output_proposal.m_core.m_amount_blinding_factor);
 
         // copy non-duplicate enote pubkeys to tx supplement

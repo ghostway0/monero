@@ -59,7 +59,7 @@ std::vector<SpCoinbaseOutputProposalV1> gen_mock_sp_coinbase_output_proposals_v1
     output_proposals.reserve(out_amounts.size());
 
     for (const rct::xmr_amount out_amount : out_amounts)
-        tools::add_element(output_proposals).gen(out_amount, num_random_memo_elements);
+        tools::add_element(output_proposals) = gen_sp_coinbase_output_proposal_v1(out_amount, num_random_memo_elements);
 
     // sort them
     std::sort(output_proposals.begin(),
@@ -77,7 +77,7 @@ std::vector<SpOutputProposalV1> gen_mock_sp_output_proposals_v1(const std::vecto
     output_proposals.reserve(out_amounts.size());
 
     for (const rct::xmr_amount out_amount : out_amounts)
-        tools::add_element(output_proposals).gen(out_amount, num_random_memo_elements);
+        tools::add_element(output_proposals) = gen_sp_output_proposal_v1(out_amount, num_random_memo_elements);
 
     // sort them
     std::sort(output_proposals.begin(), output_proposals.end(), tools::compare_func<SpOutputProposalV1>(compare_Ko));

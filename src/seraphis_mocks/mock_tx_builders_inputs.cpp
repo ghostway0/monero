@@ -70,7 +70,7 @@ std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secr
     input_proposals.reserve(in_amounts.size());
 
     for (const rct::xmr_amount in_amount : in_amounts)
-        tools::add_element(input_proposals).gen(sp_spend_privkey, in_amount);
+        tools::add_element(input_proposals) = gen_sp_input_proposal_v1(sp_spend_privkey, in_amount);
 
     return input_proposals;
 }

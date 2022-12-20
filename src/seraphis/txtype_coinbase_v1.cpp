@@ -145,7 +145,7 @@ void make_seraphis_tx_coinbase_v1(const SpTxCoinbaseV1::SemanticRulesVersion sem
 
     // 2. extract outputs from the tx proposal
     std::vector<SpCoinbaseOutputProposalV1> output_proposals;
-    tx_proposal.get_coinbase_output_proposals_v1(output_proposals);
+    get_coinbase_output_proposals_v1(tx_proposal, output_proposals);
 
     // 3. extract info from output proposals
     std::vector<SpCoinbaseEnoteV1> output_enotes;

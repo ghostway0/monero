@@ -69,28 +69,10 @@ struct SpInputProposalV1 final
 {
     /// core of the proposal
     SpInputProposalCore m_core;
-
-    /**
-    * brief: get_enote_image_v1 - get this input's enote image in the squashed enote model
-    * outparam: image_out -
-    */
-    void get_enote_image_v1(SpEnoteImageV1 &image_out) const { get_enote_image_core(m_core, image_out.m_core); }
-
-    /**
-    * brief: get_squash_prefix - get this input's enote's squash prefix
-    * outparam: squash_prefix_out - H_n(Ko, C)
-    */
-    void get_squash_prefix(rct::key &squash_prefix_out) const { ::sp::get_squash_prefix(m_core, squash_prefix_out); }
-
-    /// get the amount of this proposal
-    rct::xmr_amount amount() const { return m_core.m_amount; }
-
-    /// generate a v1 input (does not support info recovery)
-    void gen(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
-    {
-        m_core = gen_sp_input_proposal_core(sp_spend_privkey, amount);
-    }
 };
+
+/// get the proposal's amount
+rct::xmr_amount amount_ref(const SpInputProposalV1 &proposal);
 
 ////
 // SpCoinbaseOutputProposalV1
@@ -104,17 +86,10 @@ struct SpCoinbaseOutputProposalV1 final
     crypto::x25519_pubkey m_enote_ephemeral_pubkey;
     /// memo elements to add to the tx memo
     TxExtra m_partial_memo;
-
-    /// get the amount of this proposal
-    rct::xmr_amount amount() const { return m_enote.m_core.m_amount; }
-
-    /**
-    * brief: gen - generate a V1 Destination (random)
-    * param: amount -
-    * param: num_random_memo_elements -
-    */
-    void gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements);
 };
+
+/// get the proposal's amount
+rct::xmr_amount amount_ref(const SpCoinbaseOutputProposalV1 &proposal);
 
 ////
 // SpOutputProposalV1
@@ -135,20 +110,10 @@ struct SpOutputProposalV1 final
 
     /// memo elements to add to the tx memo
     TxExtra m_partial_memo;
-
-    /// convert this destination into a v1 enote
-    void get_enote_v1(SpEnoteV1 &enote_out) const;
-
-    /// get the amount of this proposal
-    rct::xmr_amount amount() const { return m_core.m_amount; }
-
-    /**
-    * brief: gen - generate a V1 Destination (random)
-    * param: amount -
-    * param: num_random_memo_elements -
-    */
-    void gen(const rct::xmr_amount amount, const std::size_t num_random_memo_elements);
 };
+
+/// get the proposal's amount
+rct::xmr_amount amount_ref(const SpOutputProposalV1 &proposal);
 
 ////
 // SpMembershipProofPrepV1
@@ -197,9 +162,6 @@ struct SpCoinbaseTxProposalV1 final
     std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
     /// partial memo
     TxExtra m_partial_memo;
-
-    /// convert the tx proposal's payment proposals into coinbase output proposals
-    void get_coinbase_output_proposals_v1(std::vector<SpCoinbaseOutputProposalV1> &output_proposals_out) const;
 };
 
 ////
@@ -218,15 +180,6 @@ struct SpTxProposalV1 final
     std::vector<SpInputProposalV1> m_sp_input_proposals;
     /// partial memo
     TxExtra m_partial_memo;
-
-    /// convert the tx proposal's payment proposals into output proposals
-    void get_output_proposals_v1(const crypto::secret_key &k_view_balance,
-        std::vector<SpOutputProposalV1> &output_proposals_out) const;
-
-    /// get the message to be signed by input spend proofs
-    void get_proposal_prefix(const std::string &version_string,
-        const crypto::secret_key &k_view_balance,
-        rct::key &proposal_prefix_out) const;
 };
 
 ////
@@ -297,9 +250,75 @@ bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputPropo
 bool compare_Ko(const SpOutputProposalV1 &a, const SpOutputProposalV1 &b);
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const SpPartialInputV1 &a, const SpPartialInputV1 &b);
-
 /// alignment checks for aligning seraphis membership proofs: test if masked addresses are equal
 bool alignment_check(const SpAlignableMembershipProofV1 &a, const SpAlignableMembershipProofV1 &b);
 bool alignment_check(const SpAlignableMembershipProofV1 &proof, const rct::key &masked_address);
+/**
+* brief: get_enote_image_v1 - get the input proposal's enote image in the squashed enote model
+* param: proposal -
+* outparam: image_out -
+*/
+void get_enote_image_v1(const SpInputProposalV1 &proposal, SpEnoteImageV1 &image_out);
+/**
+* brief: get_squash_prefix - get the input proposal's enote's squash prefix
+* param: proposal -
+* outparam: squash_prefix_out - H_n(Ko, C)
+*/
+void get_squash_prefix(const SpInputProposalV1 &proposal, rct::key &squash_prefix_out);
+/**
+* brief: get_enote_v1 - extract the output proposal's enote
+* param: proposal -
+* outparam: enote_out -
+*/
+void get_enote_v1(const SpOutputProposalV1 &proposal, SpEnoteV1 &enote_out);
+/**
+* brief: get_coinbase_output_proposals_v1 - convert the tx proposal's payment proposals into coinbase output proposals
+* param: tx_proposal -
+* outparam: output_proposals_out -
+*/
+void get_coinbase_output_proposals_v1(const SpCoinbaseTxProposalV1 &tx_proposal,
+    std::vector<SpCoinbaseOutputProposalV1> &output_proposals_out);
+/**
+* brief: get_coinbase_output_proposals_v1 - convert the tx proposal's payment proposals into output proposals
+* param: tx_proposal -
+* param: k_view_balance -
+* outparam: output_proposals_out -
+*/
+void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
+    const crypto::secret_key &k_view_balance,
+    std::vector<SpOutputProposalV1> &output_proposals_out);
+/**
+* brief: get_proposal_prefix - get the message to be signed by input spend proofs
+* param: tx_proposal -
+* param: version_string -
+* param: k_view_balance -
+* outparam: proposal_prefix_out -
+*/
+void get_proposal_prefix(const SpTxProposalV1 &tx_proposal,
+    const std::string &version_string,
+    const crypto::secret_key &k_view_balance,
+    rct::key &proposal_prefix_out);
+/**
+* brief: gen_sp_input_proposal_v1 - generate an input proposal
+* param: sp_spend_privkey -
+* param: amount -
+* return: random input proposal
+*/
+SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount);
+/**
+* brief: gen_sp_coinbase_output_proposal_v1 - generate a coinbase output proposal
+* param: amount -
+* param: num_random_memo_elements -
+* return: random coinbase output proposal
+*/
+SpCoinbaseOutputProposalV1 gen_sp_coinbase_output_proposal_v1(const rct::xmr_amount amount,
+    const std::size_t num_random_memo_elements);
+/**
+* brief: gen_sp_coinbase_output_proposal_v1 - generate an output proposal
+* param: amount -
+* param: num_random_memo_elements -
+* return: random output proposal
+*/
+SpOutputProposalV1 gen_sp_output_proposal_v1(const rct::xmr_amount amount, const std::size_t num_random_memo_elements);
 
 } //namespace sp
