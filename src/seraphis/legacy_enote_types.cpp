@@ -47,35 +47,6 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void LegacyEnoteV1::gen()
-{
-    m_onetime_address = rct::pkGen();
-    m_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void LegacyEnoteV2::gen()
-{
-    m_onetime_address = rct::pkGen();
-    m_amount_commitment = rct::pkGen();
-    m_encoded_amount_blinding_factor = rct::skGen();
-    m_encoded_amount = rct::skGen();
-}
-//-------------------------------------------------------------------------------------------------------------------
-void LegacyEnoteV3::gen()
-{
-    m_onetime_address = rct::pkGen();
-    m_amount_commitment = rct::pkGen();
-    m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void LegacyEnoteV4::gen()
-{
-    m_onetime_address = rct::pkGen();
-    m_amount_commitment = rct::pkGen();
-    m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
-    m_view_tag.data = static_cast<char>(crypto::rand_idx(static_cast<unsigned char>(-1)));
-}
-//-------------------------------------------------------------------------------------------------------------------
 const rct::key& onetime_address_ref(const LegacyEnoteVariant &variant)
 {
     struct visitor : public tools::variant_static_visitor<const rct::key&>
@@ -102,6 +73,43 @@ rct::key amount_commitment_ref(const LegacyEnoteVariant &variant)
     };
 
     return variant.visit(visitor{});
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyEnoteV1 gen_legacy_enote_v1()
+{
+    LegacyEnoteV1 temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyEnoteV2 gen_legacy_enote_v2()
+{
+    LegacyEnoteV2 temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount_commitment = rct::pkGen();
+    temp.m_encoded_amount_blinding_factor = rct::skGen();
+    temp.m_encoded_amount = rct::skGen();
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyEnoteV3 gen_legacy_enote_v3()
+{
+    LegacyEnoteV3 temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount_commitment = rct::pkGen();
+    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyEnoteV4 gen_legacy_enote_v4()
+{
+    LegacyEnoteV4 temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount_commitment = rct::pkGen();
+    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    temp.m_view_tag.data = static_cast<char>(crypto::rand_idx(static_cast<unsigned char>(-1)));
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

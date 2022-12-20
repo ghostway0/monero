@@ -59,14 +59,10 @@ struct LegacyEnoteV1 final
     rct::key m_onetime_address;
     /// a
     rct::xmr_amount m_amount;
-
-    static std::size_t size_bytes() { return 32 + 8; }
-
-    /**
-    * brief: gen() - generate a legacy v1 enote (all random)
-    */
-    void gen();
 };
+
+/// get size in bytes
+inline std::size_t legacy_enote_v1_size_bytes() { return 32 + 8; }
 
 ////
 // LegacyEnoteV2
@@ -85,14 +81,10 @@ struct LegacyEnoteV2 final
     rct::key m_encoded_amount_blinding_factor;
     /// enc(a)
     rct::key m_encoded_amount;
-
-    static std::size_t size_bytes() { return 4*32; }
-
-    /**
-    * brief: gen() - generate a legacy v2 enote (all random)
-    */
-    void gen();
 };
+
+/// get size in bytes
+inline std::size_t legacy_enote_v2_size_bytes() { return 4*32; }
 
 ////
 // LegacyEnoteV3
@@ -108,14 +100,10 @@ struct LegacyEnoteV3 final
     rct::key m_amount_commitment;
     /// enc(a)
     rct::xmr_amount m_encoded_amount;
-
-    static std::size_t size_bytes() { return 2*32 + 8; }
-
-    /**
-    * brief: gen() - generate a legacy v3 enote (all random)
-    */
-    void gen();
 };
+
+/// get size in bytes
+inline std::size_t legacy_enote_v3_size_bytes() { return 2*32 + 8; }
 
 ////
 // LegacyEnoteV4
@@ -134,14 +122,10 @@ struct LegacyEnoteV4 final
     rct::xmr_amount m_encoded_amount;
     /// view_tag
     crypto::view_tag m_view_tag;
-
-    static std::size_t size_bytes() { return 2*32 + 8 + sizeof(crypto::view_tag); }
-
-    /**
-    * brief: gen() - generate a legacy v4 enote (all random)
-    */
-    void gen();
 };
+
+/// get size in bytes
+inline std::size_t legacy_enote_v4_size_bytes() { return 2*32 + 8 + sizeof(crypto::view_tag); }
 
 ////
 // LegacyEnoteVariant
@@ -154,5 +138,22 @@ struct LegacyEnoteV4 final
 using LegacyEnoteVariant = tools::variant<LegacyEnoteV1, LegacyEnoteV2, LegacyEnoteV3, LegacyEnoteV4>;
 const rct::key& onetime_address_ref(const LegacyEnoteVariant &variant);
 rct::key amount_commitment_ref(const LegacyEnoteVariant &variant);
+
+/**
+* brief: gen_legacy_enote_v1() - generate a legacy v1 enote (all random)
+*/
+LegacyEnoteV1 gen_legacy_enote_v1();
+/**
+* brief: gen_legacy_enote_v2() - generate a legacy v2 enote (all random)
+*/
+LegacyEnoteV2 gen_legacy_enote_v2();
+/**
+* brief: gen_legacy_enote_v3() - generate a legacy v3 enote (all random)
+*/
+LegacyEnoteV3 gen_legacy_enote_v3();
+/**
+* brief: gen_legacy_enote_v4() - generate a legacy v4 enote (all random)
+*/
+LegacyEnoteV4 gen_legacy_enote_v4();
 
 } //namespace sp
