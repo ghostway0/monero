@@ -51,16 +51,9 @@ void append_to_transcript(const SpBinnedReferenceSetConfigV1 &container, SpTrans
     transcript_inout.append("num_bin_members", container.m_num_bin_members);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBinnedReferenceSetV1::size_bytes(const std::size_t num_bins, const bool include_seed /*= false*/)
+std::size_t sp_binned_ref_set_config_v1_size_bytes()
 {
-    return num_bins * 8 +
-        sizeof(ref_set_bin_dimension_v1_t) +
-        (include_seed ? sizeof(m_bin_generator_seed) : 0);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBinnedReferenceSetV1::size_bytes(const bool include_seed /*= false*/) const
-{
-    return SpBinnedReferenceSetV1::size_bytes(m_bin_loci.size(), include_seed);
+    return sizeof(SpBinnedReferenceSetConfigV1::m_bin_radius) + sizeof(SpBinnedReferenceSetConfigV1::m_num_bin_members);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptBuilder &transcript_inout)
@@ -69,6 +62,29 @@ void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptB
     transcript_inout.append("bin_generator_seed", container.m_bin_generator_seed);
     transcript_inout.append("bin_rotation_factor", container.m_bin_rotation_factor);
     transcript_inout.append("bin_loci", container.m_bin_loci);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_binned_ref_set_v1_size_bytes(const std::size_t num_bins)
+{
+    return num_bins * 8 +
+        sizeof(ref_set_bin_dimension_v1_t) +
+        sizeof(SpBinnedReferenceSetV1::m_bin_generator_seed) +
+        sp_binned_ref_set_config_v1_size_bytes();
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_binned_ref_set_v1_size_bytes_compact(const std::size_t num_bins)
+{
+    return num_bins * 8 + sizeof(ref_set_bin_dimension_v1_t);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_binned_ref_set_v1_size_bytes(const SpBinnedReferenceSetV1 &reference_set)
+{
+    return sp_binned_ref_set_v1_size_bytes(reference_set.m_bin_loci.size());
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_binned_ref_set_v1_size_bytes_compact(const SpBinnedReferenceSetV1 &reference_set)
+{
+    return sp_binned_ref_set_v1_size_bytes_compact(reference_set.m_bin_loci.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b)
@@ -80,6 +96,11 @@ bool operator==(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSe
 bool operator!=(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b)
 {
     return !(a == b);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t reference_set_size(const SpBinnedReferenceSetV1 &reference_set)
+{
+    return reference_set.m_bin_config.m_num_bin_members * reference_set.m_bin_loci.size();
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

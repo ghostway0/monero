@@ -170,7 +170,7 @@ std::size_t SpMembershipProofV1::size_bytes(const std::size_t n, const std::size
 
     return sp::grootle_size_bytes(n, m) +
         (num_bin_members > 0
-        ? SpBinnedReferenceSetV1::size_bytes(ref_set_size / num_bin_members)
+        ? sp_binned_ref_set_v1_size_bytes_compact(ref_set_size / num_bin_members)
         : 0);
 }
 //-------------------------------------------------------------------------------------------------------------------

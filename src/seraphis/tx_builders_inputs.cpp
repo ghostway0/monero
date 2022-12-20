@@ -149,8 +149,8 @@ void make_tx_membership_proof_message_v1(const SpBinnedReferenceSetV1 &binned_re
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_MEMBERSHIP_PROOF_MESSAGE_V1,
             project_name.size() +
-                binned_reference_set.size_bytes(true) +
-                SpBinnedReferenceSetConfigV1::size_bytes()
+                sp_binned_ref_set_v1_size_bytes(binned_reference_set) +
+                sp_binned_ref_set_config_v1_size_bytes()
         };
     transcript.append("project_name", project_name);  //i.e. referenced enotes are members of what project's ledger?
     transcript.append("binned_reference_set", binned_reference_set);
@@ -418,7 +418,7 @@ void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
 
     CHECK_AND_ASSERT_THROW_MES(referenced_enotes_squashed.size() == ref_set_size,
         "make membership proof: ref set size doesn't match number of referenced enotes.");
-    CHECK_AND_ASSERT_THROW_MES(binned_reference_set.reference_set_size() == ref_set_size,
+    CHECK_AND_ASSERT_THROW_MES(reference_set_size(binned_reference_set) == ref_set_size,
         "make membership proof: ref set size doesn't number of references in the binned reference set.");
 
     // 2. make the real reference's squashed representation for later

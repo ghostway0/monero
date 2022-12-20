@@ -51,7 +51,8 @@ namespace sp { class SpTranscriptBuilder; }
 namespace sp
 {
 
-using ref_set_bin_dimension_v1_t = std::uint16_t;  //warning: changing this is not backward compatible! (struct sizes will change)
+/// WARNING: changing this is not backward compatible! (struct sizes will change)
+using ref_set_bin_dimension_v1_t = std::uint16_t;
 
 ////
 // SpBinnedReferenceSetConfigV1
@@ -62,11 +63,12 @@ struct SpBinnedReferenceSetConfigV1 final
     ref_set_bin_dimension_v1_t m_bin_radius;
     /// number of elements referenced by a bin
     ref_set_bin_dimension_v1_t m_num_bin_members;
-
-    static std::size_t size_bytes() { return sizeof(m_bin_radius) + sizeof(m_num_bin_members); }
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetConfigV1&) { return "SpBinnedReferenceSetConfigV1"; }
 void append_to_transcript(const SpBinnedReferenceSetConfigV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+std::size_t sp_binned_ref_set_config_v1_size_bytes();
 
 ////
 // SpBinnedReferenceSetV1
@@ -87,19 +89,22 @@ struct SpBinnedReferenceSetV1 final
     ref_set_bin_dimension_v1_t m_bin_rotation_factor;
     /// bin loci
     std::vector<std::uint64_t> m_bin_loci;
-
-    /// compute the reference set size
-    std::uint64_t reference_set_size() const { return m_bin_config.m_num_bin_members * m_bin_loci.size(); }
-
-    /// size of the binned reference set (does not include the config)
-    static std::size_t size_bytes(const std::size_t num_bins, const bool include_seed = false);
-    std::size_t size_bytes(const bool include_seed = false) const;
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetV1&) { return "SpBinnedReferenceSetV1"; }
 void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptBuilder &transcript_inout);
 
+/// get size in bytes
+/// - compact version does not include: config, seed
+std::size_t sp_binned_ref_set_v1_size_bytes(const std::size_t num_bins);
+std::size_t sp_binned_ref_set_v1_size_bytes_compact(const std::size_t num_bins);
+std::size_t sp_binned_ref_set_v1_size_bytes(const SpBinnedReferenceSetV1 &reference_set);
+std::size_t sp_binned_ref_set_v1_size_bytes_compact(const SpBinnedReferenceSetV1 &reference_set);
+
 /// equivalence operators for equality checks
 bool operator==(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b);
 bool operator!=(const SpBinnedReferenceSetConfigV1 &a, const SpBinnedReferenceSetConfigV1 &b);
+
+/// compute the reference set size of a binned reference set
+std::uint64_t reference_set_size(const SpBinnedReferenceSetV1 &reference_set);
 
 } //namespace sp
