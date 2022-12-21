@@ -63,18 +63,24 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void LegacyMultisigInputProposalV1::get_input_proposal_v1(const rct::key &legacy_spend_pubkey,
+bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInputProposalV1 &b)
+{
+    return a.m_key_image < b.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+    const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
-    LegacyInputProposalV1 &input_proposal_out) const
+    LegacyInputProposalV1 &input_proposal_out)
 {
     // extract legacy intermediate enote record from proposal
     LegacyIntermediateEnoteRecord legacy_intermediate_record;
 
-    CHECK_AND_ASSERT_THROW_MES(try_get_legacy_intermediate_enote_record(m_enote,
-            m_enote_ephemeral_pubkey,
-            m_tx_output_index,
-            m_unlock_time,
+    CHECK_AND_ASSERT_THROW_MES(try_get_legacy_intermediate_enote_record(multisig_input_proposal.m_enote,
+            multisig_input_proposal.m_enote_ephemeral_pubkey,
+            multisig_input_proposal.m_tx_output_index,
+            multisig_input_proposal.m_unlock_time,
             legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
@@ -84,118 +90,44 @@ void LegacyMultisigInputProposalV1::get_input_proposal_v1(const rct::key &legacy
 
     // upgrade to full legacy enote record
     LegacyEnoteRecord legacy_enote_record;
-    get_legacy_enote_record(legacy_intermediate_record, m_key_image, legacy_enote_record);
+    get_legacy_enote_record(legacy_intermediate_record, multisig_input_proposal.m_key_image, legacy_enote_record);
 
     // make the legacy input proposal
-    make_v1_legacy_input_proposal_v1(legacy_enote_record, m_commitment_mask, input_proposal_out);
+    make_v1_legacy_input_proposal_v1(legacy_enote_record, multisig_input_proposal.m_commitment_mask, input_proposal_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyMultisigInputProposalV1::matches_with(const multisig::CLSAGMultisigProposal &proof_proposal) const
-{
-    // onetime address to sign
-    if (!(main_proof_key_ref(proof_proposal) == onetime_address_ref(m_enote)))
-        return false;
-
-    // amount commitment to sign
-    const rct::key amount_commitment{amount_commitment_ref(m_enote)};
-    if (!(auxilliary_proof_key_ref(proof_proposal) == amount_commitment))
-        return false;
-
-    // pseudo-output commitment
-    rct::key masked_commitment;
-    mask_key(m_commitment_mask, amount_commitment, masked_commitment);
-    if (!(proof_proposal.masked_C == masked_commitment))
-        return false;
-
-    // key image
-    if (!(proof_proposal.KI == m_key_image))
-        return false;
-
-    // auxilliary key image
-    crypto::key_image auxilliary_key_image;
-    make_legacy_auxilliary_key_image_v1(m_commitment_mask, onetime_address_ref(m_enote), auxilliary_key_image);
-
-    if (!(proof_proposal.D == auxilliary_key_image))
-        return false;
-
-    // references line up 1:1
-    if (m_reference_set.size() != proof_proposal.ring_members.size())
-        return false;
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool LegacyMultisigInputProposalV1::matches_with(const LegacyEnoteRecord &enote_record) const
-{
-    // onetime address
-    if (!(onetime_address_ref(enote_record.m_enote) == onetime_address_ref(m_enote)))
-        return false;
-
-    // amount commitment
-    if (!(amount_commitment_ref(enote_record.m_enote) == amount_commitment_ref(m_enote)))
-        return false;
-
-    // key image
-    if (!(enote_record.m_key_image == m_key_image))
-        return false;
-
-    // misc
-    if (!(enote_record.m_enote_ephemeral_pubkey == m_enote_ephemeral_pubkey))
-        return false;
-    if (!(enote_record.m_tx_output_index == m_tx_output_index))
-        return false;
-    if (!(enote_record.m_unlock_time >= m_unlock_time))  //>= in case of duplicate enotes
-        return false;
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpMultisigInputProposalV1::matches_with(const SpEnoteRecordV1 &enote_record) const
-{
-    // enote
-    if (!(m_enote == enote_record.m_enote))
-        return false;
-
-    // enote ephemeral pubkey
-    if (!(m_enote_ephemeral_pubkey == enote_record.m_enote_ephemeral_pubkey))
-        return false;
-
-    // input context
-    if (!(m_input_context == enote_record.m_input_context))
-        return false;
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpMultisigInputProposalV1::get_input_proposal_v1(const rct::key &jamtis_spend_pubkey,
+void get_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal, const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    SpInputProposalV1 &input_proposal_out) const
+    SpInputProposalV1 &input_proposal_out)
 {
-    CHECK_AND_ASSERT_THROW_MES(try_make_v1_input_proposal_v1(m_enote,
-            m_enote_ephemeral_pubkey,
-            m_input_context,
+    CHECK_AND_ASSERT_THROW_MES(try_make_v1_input_proposal_v1(multisig_input_proposal.m_enote,
+            multisig_input_proposal.m_enote_ephemeral_pubkey,
+            multisig_input_proposal.m_input_context,
             jamtis_spend_pubkey,
             k_view_balance,
-            m_address_mask,
-            m_commitment_mask,
+            multisig_input_proposal.m_address_mask,
+            multisig_input_proposal.m_commitment_mask,
             input_proposal_out),
         "multisig seraphis public input proposal to seraphis input proposal: conversion failed (wallet may not own "
         "this input.");
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpMultisigTxProposalV1::get_v1_tx_proposal_v1(const rct::key &legacy_spend_pubkey,
+void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+    const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    SpTxProposalV1 &tx_proposal_out) const
+    SpTxProposalV1 &tx_proposal_out)
 {
     // extract legacy input proposals
     std::vector<LegacyInputProposalV1> legacy_input_proposals;
 
-    for (const LegacyMultisigInputProposalV1 &multisig_input_proposal : m_legacy_multisig_input_proposals)
+    for (const LegacyMultisigInputProposalV1 &multisig_input_proposal :
+        multisig_tx_proposal.m_legacy_multisig_input_proposals)
     {
-        multisig_input_proposal.get_input_proposal_v1(legacy_spend_pubkey,
+        get_input_proposal_v1(multisig_input_proposal,
+            legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
             tools::add_element(legacy_input_proposals));
@@ -204,38 +136,42 @@ void SpMultisigTxProposalV1::get_v1_tx_proposal_v1(const rct::key &legacy_spend_
     // extract seraphis input proposals
     std::vector<SpInputProposalV1> sp_input_proposals;
 
-    for (const SpMultisigInputProposalV1 &multisig_input_proposal : m_sp_multisig_input_proposals)
+    for (const SpMultisigInputProposalV1 &multisig_input_proposal : multisig_tx_proposal.m_sp_multisig_input_proposals)
     {
-        multisig_input_proposal.get_input_proposal_v1(jamtis_spend_pubkey,
+        get_input_proposal_v1(multisig_input_proposal,
+            jamtis_spend_pubkey,
             k_view_balance,
             tools::add_element(sp_input_proposals));
     }
 
     // extract memo field elements
     std::vector<ExtraFieldElement> additional_memo_elements;
-    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(m_partial_memo, additional_memo_elements),
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(multisig_tx_proposal.m_partial_memo,
+            additional_memo_elements),
         "multisig tx proposal: could not parse partial memo.");
 
     // make the tx proposal
-    make_v1_tx_proposal_v1(m_normal_payment_proposals,
-        m_selfsend_payment_proposals,
-        m_tx_fee,
+    make_v1_tx_proposal_v1(multisig_tx_proposal.m_normal_payment_proposals,
+        multisig_tx_proposal.m_selfsend_payment_proposals,
+        multisig_tx_proposal.m_tx_fee,
         std::move(legacy_input_proposals),
         std::move(sp_input_proposals),
         std::move(additional_memo_elements),
         tx_proposal_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpMultisigTxProposalV1::get_proposal_prefix_v1(const rct::key &legacy_spend_pubkey,
+void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+    const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    rct::key &proposal_prefix_out) const
+    rct::key &proposal_prefix_out)
 {
     // extract proposal
     SpTxProposalV1 tx_proposal;
-    this->get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -243,12 +179,87 @@ void SpMultisigTxProposalV1::get_proposal_prefix_v1(const rct::key &legacy_spend
         tx_proposal);
 
     // get prefix from proposal
-    get_proposal_prefix(tx_proposal, m_version_string, k_view_balance, proposal_prefix_out);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInputProposalV1 &b)
+bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+    const multisig::CLSAGMultisigProposal &proof_proposal)
 {
-    return a.m_key_image < b.m_key_image;
+    // onetime address to sign
+    if (!(main_proof_key_ref(proof_proposal) == onetime_address_ref(multisig_input_proposal.m_enote)))
+        return false;
+
+    // amount commitment to sign
+    const rct::key amount_commitment{amount_commitment_ref(multisig_input_proposal.m_enote)};
+    if (!(auxilliary_proof_key_ref(proof_proposal) == amount_commitment))
+        return false;
+
+    // pseudo-output commitment
+    rct::key masked_commitment;
+    mask_key(multisig_input_proposal.m_commitment_mask, amount_commitment, masked_commitment);
+    if (!(proof_proposal.masked_C == masked_commitment))
+        return false;
+
+    // key image
+    if (!(proof_proposal.KI == multisig_input_proposal.m_key_image))
+        return false;
+
+    // auxilliary key image
+    crypto::key_image auxilliary_key_image;
+    make_legacy_auxilliary_key_image_v1(multisig_input_proposal.m_commitment_mask,
+        onetime_address_ref(multisig_input_proposal.m_enote),
+        auxilliary_key_image);
+
+    if (!(proof_proposal.D == auxilliary_key_image))
+        return false;
+
+    // references line up 1:1
+    if (multisig_input_proposal.m_reference_set.size() != proof_proposal.ring_members.size())
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal, const LegacyEnoteRecord &enote_record)
+{
+    // onetime address
+    if (!(onetime_address_ref(multisig_input_proposal.m_enote) == onetime_address_ref(enote_record.m_enote)))
+        return false;
+
+    // amount commitment
+    if (!(amount_commitment_ref(multisig_input_proposal.m_enote) == amount_commitment_ref(enote_record.m_enote)))
+        return false;
+
+    // key image
+    if (!(multisig_input_proposal.m_key_image == enote_record.m_key_image))
+        return false;
+
+    // misc
+    if (!(multisig_input_proposal.m_enote_ephemeral_pubkey == enote_record.m_enote_ephemeral_pubkey))
+        return false;
+    if (!(multisig_input_proposal.m_tx_output_index == enote_record.m_tx_output_index))
+        return false;
+    if (!(multisig_input_proposal.m_unlock_time <= enote_record.m_unlock_time))  //<= in case of duplicate enotes
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool matches_with(const SpMultisigInputProposalV1 &multisig_input_proposal, const SpEnoteRecordV1 &enote_record)
+{
+    // enote
+    if (!(multisig_input_proposal.m_enote == enote_record.m_enote))
+        return false;
+
+    // enote ephemeral pubkey
+    if (!(multisig_input_proposal.m_enote_ephemeral_pubkey == enote_record.m_enote_ephemeral_pubkey))
+        return false;
+
+    // input context
+    if (!(multisig_input_proposal.m_input_context == enote_record.m_input_context))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

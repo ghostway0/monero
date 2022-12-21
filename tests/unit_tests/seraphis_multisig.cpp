@@ -180,7 +180,7 @@ static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputPro
         return false;
 
     // 2. expect the record obtained matches with the input proposal
-    if (!input_proposal.matches_with(contextual_record.m_record))
+    if (!matches_with(input_proposal, contextual_record.m_record))
         return false;
 
     // 3. expect that the enote is unspent
@@ -208,7 +208,7 @@ static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 
 {
     // 1. convert to a normal input proposal so the key image is available
     SpInputProposalV1 normal_input_proposal;
-    input_proposal.get_input_proposal_v1(jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
+    get_input_proposal_v1(input_proposal, jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
 
     // 2. get the legacy enote from the enote store
     SpContextualEnoteRecordV1 contextual_record;
@@ -216,7 +216,7 @@ static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 
         return false;
 
     // 3. expect the record obtained matches with the input proposal
-    if (!input_proposal.matches_with(contextual_record.m_record))
+    if (!matches_with(input_proposal, contextual_record.m_record))
         return false;
 
     // 4. expect that the enote has an allowed origin
@@ -742,7 +742,8 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
     // b) build partial tx
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
         legacy_subaddress_map,
         legacy_accounts[0].get_common_privkey(),
         shared_sp_keys.K_1_base,

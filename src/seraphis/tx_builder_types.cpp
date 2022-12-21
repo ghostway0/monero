@@ -177,7 +177,7 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
         tools::compare_func<SpOutputProposalV1>(compare_Ko));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_proposal_prefix(const SpTxProposalV1 &tx_proposal,
+void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
     const std::string &version_string,
     const crypto::secret_key &k_view_balance,
     rct::key &proposal_prefix_out)

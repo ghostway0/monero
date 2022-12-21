@@ -288,13 +288,13 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
     const crypto::secret_key &k_view_balance,
     std::vector<SpOutputProposalV1> &output_proposals_out);
 /**
-* brief: get_proposal_prefix - get the message to be signed by input spend proofs
+* brief: get_proposal_prefix_v1 - get the message to be signed by input spend proofs
 * param: tx_proposal -
 * param: version_string -
 * param: k_view_balance -
 * outparam: proposal_prefix_out -
 */
-void get_proposal_prefix(const SpTxProposalV1 &tx_proposal,
+void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
     const std::string &version_string,
     const crypto::secret_key &k_view_balance,
     rct::key &proposal_prefix_out);

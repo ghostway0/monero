@@ -86,26 +86,6 @@ struct LegacyMultisigInputProposalV1 final
 
     /// cached legacy enote indices for a legacy ring signature (should include a reference to this input proposal's enote)
     std::vector<std::uint64_t> m_reference_set;
-
-    /**
-    * brief: get_input_proposal_v1 - convert this input to a legacy input proposal (throws on failure to convert)
-    * param: legacy_spend_pubkey -
-    * param: legacy_subaddress_map -
-    * param: legacy_view_privkey -
-    * outparam: input_proposal_out -
-    */
-    void get_input_proposal_v1(const rct::key &legacy_spend_pubkey,
-        const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-        const crypto::secret_key &legacy_view_privkey,
-        LegacyInputProposalV1 &input_proposal_out) const;
-
-    /**
-    * brief: matches_with - check if this input proposal matches against other data types
-    * ...
-    * return: true if all alignment checks pass
-    */
-    bool matches_with(const multisig::CLSAGMultisigProposal &proof_proposal) const;
-    bool matches_with(const LegacyEnoteRecord &enote_record) const;
 };
 
 ////
@@ -125,23 +105,6 @@ struct SpMultisigInputProposalV1 final
     crypto::secret_key m_address_mask;
     /// t_c
     crypto::secret_key m_commitment_mask;
-
-    /**
-    * brief: get_input_proposal_v1 - convert this input to a seraphis input proposal (throws on failure to convert)
-    * param: jamtis_spend_pubkey -
-    * param: k_view_balance -
-    * outparam: input_proposal_out -
-    */
-    void get_input_proposal_v1(const rct::key &jamtis_spend_pubkey,
-        const crypto::secret_key &k_view_balance,
-        SpInputProposalV1 &input_proposal_out) const;
-
-    /**
-    * brief: matches_with - check if this input proposal matches against other data types
-    * ...
-    * return: true if all alignment checks pass
-    */
-    bool matches_with(const SpEnoteRecordV1 &enote_record) const;
 };
 
 ////
@@ -191,25 +154,77 @@ struct SpMultisigTxProposalV1 final
 
     /// encoding of intended tx version
     std::string m_version_string;
-
-    /// convert to plain tx proposal
-    void get_v1_tx_proposal_v1(const rct::key &legacy_spend_pubkey,
-        const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-        const crypto::secret_key &legacy_view_privkey,
-        const rct::key &jamtis_spend_pubkey,
-        const crypto::secret_key &k_view_balance,
-        SpTxProposalV1 &tx_proposal_out) const;
-
-    /// get the tx proposal prefix that will be signed by input composition proofs
-    void get_proposal_prefix_v1(const rct::key &legacy_spend_pubkey,
-        const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-        const crypto::secret_key &legacy_view_privkey,
-        const rct::key &jamtis_spend_pubkey,
-        const crypto::secret_key &k_view_balance,
-        rct::key &proposal_prefix_out) const;
 };
 
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInputProposalV1 &b);
+/**
+* brief: get_input_proposal_v1 - convert a multisig input proposal to a legacy input proposal
+* param: multisig_input_proposal -
+* param: legacy_spend_pubkey -
+* param: legacy_subaddress_map -
+* param: legacy_view_privkey -
+* outparam: input_proposal_out -
+*/
+void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+    const rct::key &legacy_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    LegacyInputProposalV1 &input_proposal_out);
+/**
+* brief: get_input_proposal_v1 - convert a multisig input proposal to a seraphis input proposal
+* param: multisig_input_proposal -
+* param: jamtis_spend_pubkey -
+* param: k_view_balance -
+* outparam: input_proposal_out -
+*/
+void get_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal,
+    const rct::key &jamtis_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
+    SpInputProposalV1 &input_proposal_out);
+/**
+* brief: get_input_proposal_v1 - convert a multisig tx proposal to a plain tx proposal
+* param: multisig_tx_proposal -
+* param: legacy_spend_pubkey -
+* param: legacy_subaddress_map -
+* param: legacy_view_privkey -
+* param: jamtis_spend_pubkey -
+* param: k_view_balance -
+* outparam: tx_proposal_out -
+*/
+void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+    const rct::key &legacy_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    const rct::key &jamtis_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
+    SpTxProposalV1 &tx_proposal_out);
+/**
+* brief: get_input_proposal_v1 - convert a multisig tx proposal to a plain tx proposal
+* param: multisig_tx_proposal -
+* param: legacy_spend_pubkey -
+* param: legacy_subaddress_map -
+* param: legacy_view_privkey -
+* param: jamtis_spend_pubkey -
+* param: k_view_balance -
+* outparam: proposal_prefix_out -
+*/
+/// get the tx proposal prefix that will be signed by input composition proofs
+void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+    const rct::key &legacy_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    const rct::key &jamtis_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
+    rct::key &proposal_prefix_out);
+/**
+* brief: matches_with - check if a multisig input proposal matches against other data types
+* ...
+* return: true if all alignment checks pass
+*/
+bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+    const multisig::CLSAGMultisigProposal &proof_proposal);
+bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal, const LegacyEnoteRecord &enote_record);
+bool matches_with(const SpMultisigInputProposalV1 &multisig_input_proposal, const SpEnoteRecordV1 &enote_record);
 
 } //namespace sp

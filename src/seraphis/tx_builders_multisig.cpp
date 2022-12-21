@@ -630,7 +630,8 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
 
     // 2. convert the proposal to a plain tx proposal and check its semantics (a comprehensive set of tests)
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -641,7 +642,7 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
 
     // - get prefix from proposal
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
 
     // 3. collect legacy ring signature messages
     std::unordered_map<rct::key, rct::key> legacy_proof_contexts;  //[ proof key : proof message ]
@@ -687,7 +688,7 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
             "multisig tx proposal: legacy input proof proposal does not match the tx proposal (unknown proof message).");
 
         // b. input proof proposals should match with multisig input proposals
-        CHECK_AND_ASSERT_THROW_MES(multisig_input_proposal.matches_with(input_proof_proposal),
+        CHECK_AND_ASSERT_THROW_MES(matches_with(multisig_input_proposal, input_proof_proposal),
             "multisig tx proposal: legacy multisig input proposal does not match input proof proposal.");
 
         // c. input proof proposals should be well formed
@@ -760,7 +761,8 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
         // convert to a regular tx proposal
         SpTxProposalV1 tx_proposal;
-        multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+        get_v1_tx_proposal_v1(multisig_tx_proposal,
+            legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
             jamtis_spend_pubkey,
@@ -899,7 +901,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
         // tx proposal prefix of modified tx proposal
         rct::key tx_proposal_prefix;
-        get_proposal_prefix(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
+        get_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
 
         // finish preparing the legacy ring signature preps
         for (LegacyRingSignaturePrepV1 &ring_signature_prep : legacy_ring_signature_preps)
@@ -982,7 +984,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     for (const LegacyMultisigInputProposalV1 &legacy_multisig_input_proposal : legacy_multisig_input_proposals)
     {
-        legacy_multisig_input_proposal.get_input_proposal_v1(legacy_spend_pubkey,
+        get_input_proposal_v1(legacy_multisig_input_proposal,
+            legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
             tools::add_element(legacy_input_proposals));
@@ -993,7 +996,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     for (const SpMultisigInputProposalV1 &sp_multisig_input_proposal : sp_multisig_input_proposals)
     {
-        sp_multisig_input_proposal.get_input_proposal_v1(jamtis_spend_pubkey,
+        get_input_proposal_v1(sp_multisig_input_proposal,
+            jamtis_spend_pubkey,
             k_view_balance,
             tools::add_element(sp_input_proposals));
     }
@@ -1013,7 +1017,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     // 6. get proposal prefix
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
 
     // 7. make sure the legacy proof preps align with legacy input proposals
     // note: if the legacy input proposals contain duplicates, then the call to check_v1_tx_proposal_semantics_v1()
@@ -1198,7 +1202,8 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 
     // 2. make tx proposal (for sorted inputs and the tx proposal prefix)
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -1207,7 +1212,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 
     // 3. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
 
     // 4. prepare proof contexts and multisig proof base points
     // a. legacy proof context     [ legacy Ko : legacy input message ]
@@ -1294,7 +1299,8 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 
     // 3. normal tx proposal (to get sorted inputs and the tx proposal prefix)
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -1303,7 +1309,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 
     // 4. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
 
     // 5. legacy proof contexts: [ onetime address : legacy input message ]
     std::unordered_map<rct::key, rct::key> input_proof_contexts;  //[ proof key : proof message ]
@@ -1393,7 +1399,8 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
 
     // 4. normal tx proposal (to get tx proposal prefix and sorted inputs)
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -1402,7 +1409,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
 
     // 5. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
 
     // 6. seraphis proof contexts: [ masked address : tx proposal prefix ]
     // note: for seraphis, all seraphis input image proofs sign the same message
@@ -1469,7 +1476,8 @@ bool try_make_inputs_for_multisig_v1(const SpMultisigTxProposalV1 &multisig_tx_p
 
     // 1. get tx proposal
     SpTxProposalV1 tx_proposal;
-    multisig_tx_proposal.get_v1_tx_proposal_v1(legacy_spend_pubkey,
+    get_v1_tx_proposal_v1(multisig_tx_proposal,
+        legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
@@ -1478,7 +1486,7 @@ bool try_make_inputs_for_multisig_v1(const SpMultisigTxProposalV1 &multisig_tx_p
 
     // 2. the expected proof message is the tx's proposal prefix
     rct::key tx_proposal_prefix;
-    get_proposal_prefix(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
 
     // 3. try to make legacy inputs
     if (!try_make_legacy_inputs_for_multisig_v1(tx_proposal_prefix,
