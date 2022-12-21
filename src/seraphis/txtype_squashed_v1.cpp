@@ -132,25 +132,25 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     size += num_legacy_inputs * LegacyEnoteImageV2::size_bytes();
 
     // seraphis input images
-    size += num_sp_inputs * SpEnoteImageV1::size_bytes();
+    size += num_sp_inputs * sp_enote_image_v1_size_bytes();
 
     // outputs
-    size += num_outputs * SpEnoteV1::size_bytes();
+    size += num_outputs * sp_enote_v1_size_bytes();
 
     // balance proof (note: only seraphis inputs are range proofed)
-    size += SpBalanceProofV1::size_bytes(num_sp_inputs, num_outputs);
+    size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
 
     // legacy ring signatures
     size += num_legacy_inputs * LegacyRingSignatureV3::size_bytes(legacy_ring_size);
 
     // ownership/key-image-legitimacy proof for all seraphis inputs
-    size += num_sp_inputs * SpImageProofV1::size_bytes();
+    size += num_sp_inputs * sp_image_proof_v1_size_bytes();
 
     // membership proofs for seraphis inputs
-    size += num_sp_inputs * SpMembershipProofV1::size_bytes(ref_set_decomp_n, ref_set_decomp_m, num_bin_members);
+    size += num_sp_inputs * sp_membership_proof_v1_size_bytes_compact(ref_set_decomp_n, ref_set_decomp_m, num_bin_members);
 
     // extra data in tx
-    size += SpTxSupplementV1::size_bytes(num_outputs, tx_extra, true);  //with shared ephemeral pubkey assumption
+    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra, true);  //with shared ephemeral pubkey assumption
 
     // tx fee
     size += DiscretizedFee::size_bytes();
@@ -213,8 +213,8 @@ std::size_t SpTxSquashedV1::weight(const std::size_t num_legacy_inputs,
         };
 
     // subtract balance proof size and add its weight
-    weight -= SpBalanceProofV1::size_bytes(num_sp_inputs, num_outputs);
-    weight += SpBalanceProofV1::weight(num_sp_inputs, num_outputs);
+    weight -= sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
+    weight += sp_balance_proof_v1_weight(num_sp_inputs, num_outputs);
 
     return weight;
 }

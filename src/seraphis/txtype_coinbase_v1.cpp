@@ -75,8 +75,8 @@ void SpTxCoinbaseV1::get_id(rct::key &tx_id_out) const
             project_name.size() +
                 version_string.size() +
                 16 +
-                m_outputs.size()*SpCoinbaseEnoteV1::size_bytes() +
-                m_tx_supplement.size_bytes()
+                m_outputs.size()*sp_coinbase_enote_v1_size_bytes() +
+                sp_tx_supplement_v1_size_bytes(m_tx_supplement)
         };
     transcript.append("project_name", project_name);
     transcript.append("version_string", version_string);
@@ -97,10 +97,10 @@ std::size_t SpTxCoinbaseV1::size_bytes(const std::size_t num_outputs, const TxEx
     size += 8 + 8;
 
     // outputs
-    size += num_outputs * SpCoinbaseEnoteV1::size_bytes();
+    size += num_outputs * sp_coinbase_enote_v1_size_bytes();
 
     // extra data in tx
-    size += SpTxSupplementV1::size_bytes(num_outputs, tx_extra, false);  //without shared ephemeral pubkey assumption
+    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra, false);  //without shared ephemeral pubkey assumption
 
     return size;
 }

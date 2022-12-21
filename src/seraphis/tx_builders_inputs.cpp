@@ -210,7 +210,7 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_INPUT_IMAGES_PREFIX_V1,
             legacy_enote_images.size() * LegacyEnoteImageV2::size_bytes() +
-            sp_enote_images.size() * SpEnoteImageV1::size_bytes()
+            sp_enote_images.size() * sp_enote_image_v1_size_bytes()
         };
     transcript.append("legacy_enote_images", legacy_enote_images);
     transcript.append("sp_enote_images", sp_enote_images);

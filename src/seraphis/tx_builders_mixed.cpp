@@ -400,8 +400,8 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
             project_name.size() +
                 version_string.size() +
                 (legacy_input_key_images.size() + sp_input_key_images.size())*sizeof(crypto::key_image) +
-                output_enotes.size()*SpEnoteV1::size_bytes() +
-                tx_supplement.size_bytes()
+                output_enotes.size()*sp_enote_v1_size_bytes() +
+                sp_tx_supplement_v1_size_bytes(tx_supplement)
         };
     transcript.append("project_name", project_name);
     transcript.append("version_string", version_string);
@@ -569,13 +569,13 @@ void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
     // H_32(balance proof, legacy ring signatures, seraphis image proofs, seraphis membership proofs)
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_TRANSACTION_PROOFS_PREFIX_V1,
-            balance_proof.size_bytes() +
+            sp_balance_proof_v1_size_bytes(balance_proof) +
                 (legacy_ring_signatures.size()
                     ? legacy_ring_signatures.size() * legacy_ring_signatures[0].size_bytes()
                     : 0) +
-                sp_image_proofs.size() * SpImageProofV1::size_bytes() +
+                sp_image_proofs.size() * sp_image_proof_v1_size_bytes() +
                 (sp_membership_proofs.size()
-                    ? sp_membership_proofs.size() * sp_membership_proofs[0].size_bytes()
+                    ? sp_membership_proofs.size() * sp_membership_proof_v1_size_bytes(sp_membership_proofs[0])
                     : 0)
         };
     transcript.append("balance_proof", balance_proof);

@@ -54,18 +54,6 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void SpCoinbaseEnoteV1::gen()
-{
-    // generate a dummy enote: random pieces, completely unspendable
-
-    // gen base of enote
-    m_core = gen_sp_coinbase_enote_core();
-
-    // memo
-    m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
-    crypto::rand(sizeof(jamtis::encrypted_address_tag_t), m_addr_tag_enc.bytes);
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("core", container.m_core);
@@ -73,17 +61,11 @@ void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilde
     transcript_inout.append("view_tag", container.m_view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteV1::gen()
+std::size_t sp_coinbase_enote_v1_size_bytes()
 {
-    // generate a dummy enote: random pieces, completely unspendable
-
-    // gen base of enote
-    m_core = gen_sp_enote_core();
-
-    // memo
-    m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
-    m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
-    crypto::rand(sizeof(jamtis::encrypted_address_tag_t), m_addr_tag_enc.bytes);
+    return sp_coinbase_enote_core_size_bytes() +
+        sizeof(jamtis::encrypted_address_tag_t) +
+        sizeof(jamtis::view_tag_t);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &transcript_inout)
@@ -95,6 +77,14 @@ void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &trans
     transcript_inout.append("encoded_amount", encoded_amount);
     transcript_inout.append("addr_tag_enc", container.m_addr_tag_enc.bytes);
     transcript_inout.append("view_tag", container.m_view_tag);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_enote_v1_size_bytes()
+{
+    return sp_enote_core_size_bytes() +
+        sizeof(rct::xmr_amount) +
+        sizeof(jamtis::encrypted_address_tag_t) +
+        sizeof(jamtis::view_tag_t);
 }
 //-------------------------------------------------------------------------------------------------------------------
 SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
@@ -164,23 +154,6 @@ void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &
     transcript_inout.append("core", container.m_core);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpMembershipProofV1::size_bytes(const std::size_t n, const std::size_t m, const std::size_t num_bin_members)
-{
-    const std::size_t ref_set_size{size_from_decomposition(n, m)};
-
-    return sp::grootle_size_bytes(n, m) +
-        (num_bin_members > 0
-        ? sp_binned_ref_set_v1_size_bytes_compact(ref_set_size / num_bin_members)
-        : 0);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpMembershipProofV1::size_bytes() const
-{
-    return SpMembershipProofV1::size_bytes(m_ref_set_decomp_n,
-        m_ref_set_decomp_m,
-        m_binned_reference_set.m_bin_config.m_num_bin_members);
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpMembershipProofV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("grootle_proof", container.m_grootle_proof);
@@ -189,49 +162,48 @@ void append_to_transcript(const SpMembershipProofV1 &container, SpTranscriptBuil
     transcript_inout.append("m", container.m_ref_set_decomp_m);
 }
 //-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_membership_proof_v1_size_bytes(const std::size_t n,
+    const std::size_t m,
+    const std::size_t num_bin_members)
+{
+    const std::size_t ref_set_size{size_from_decomposition(n, m)};
+
+    return grootle_size_bytes(n, m) +
+        (num_bin_members > 0
+            ? sp_binned_ref_set_v1_size_bytes(ref_set_size / num_bin_members)
+            : 0) +
+        4 * 2;  //decomposition parameters (assume these fit in 4 bytes each)
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_membership_proof_v1_size_bytes_compact(const std::size_t n,
+    const std::size_t m,
+    const std::size_t num_bin_members)
+{
+    const std::size_t ref_set_size{size_from_decomposition(n, m)};
+
+    return grootle_size_bytes(n, m) +
+        (num_bin_members > 0
+            ? sp_binned_ref_set_v1_size_bytes_compact(ref_set_size / num_bin_members)  //compact binned ref set
+            : 0);  //no decomposition parameters
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_membership_proof_v1_size_bytes(const SpMembershipProofV1 &proof)
+{
+    return sp_membership_proof_v1_size_bytes(proof.m_ref_set_decomp_n,
+        proof.m_ref_set_decomp_m,
+        proof.m_binned_reference_set.m_bin_config.m_num_bin_members);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_membership_proof_v1_size_bytes_compact(const SpMembershipProofV1 &proof)
+{
+    return sp_membership_proof_v1_size_bytes_compact(proof.m_ref_set_decomp_n,
+        proof.m_ref_set_decomp_m,
+        proof.m_binned_reference_set.m_bin_config.m_num_bin_members);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpImageProofV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("composition_proof", container.m_composition_proof);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBalanceProofV1::size_bytes(const std::size_t num_sp_inputs,
-    const std::size_t num_outputs,
-    const bool include_commitments /*=false*/)
-{
-    std::size_t size{0};
-
-    // BP+ proof
-    size += bpp_size_bytes(num_sp_inputs + num_outputs, include_commitments);
-
-    // remainder blinding factor
-    size += 32;
-
-    return size;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBalanceProofV1::size_bytes(const bool include_commitments /*=false*/) const
-{
-    return SpBalanceProofV1::size_bytes(m_bpp2_proof.V.size(), 0, include_commitments);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBalanceProofV1::weight(const std::size_t num_sp_inputs,
-    const std::size_t num_outputs,
-    const bool include_commitments /*=false*/)
-{
-    std::size_t weight{0};
-
-    // BP+ proof
-    weight += bpp_weight(num_sp_inputs + num_outputs, include_commitments);
-
-    // remainder blinding factor
-    weight += 32;
-
-    return weight;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpBalanceProofV1::weight(const bool include_commitments /*=false*/) const
-{
-    return SpBalanceProofV1::weight(m_bpp2_proof.V.size(), 0, include_commitments);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder &transcript_inout)
@@ -240,7 +212,60 @@ void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder
     transcript_inout.append("remainder_blinding_factor", container.m_remainder_blinding_factor);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSupplementV1::size_bytes(const std::size_t num_outputs,
+std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+{
+    std::size_t size{0};
+
+    // BP+ proof
+    size += bpp_size_bytes(num_sp_inputs + num_outputs, true);  //include commitments
+
+    // remainder blinding factor
+    size += 32;
+
+    return size;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_balance_proof_v1_size_bytes(const SpBalanceProofV1 &proof)
+{
+    return sp_balance_proof_v1_size_bytes(proof.m_bpp2_proof.V.size(), 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+{
+    // proof size minus cached amount commitments
+    return sp_balance_proof_v1_size_bytes(num_sp_inputs, num_outputs) - 32*(num_sp_inputs + num_outputs);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_balance_proof_v1_size_bytes_compact(const SpBalanceProofV1 &proof)
+{
+    return sp_balance_proof_v1_size_bytes_compact(proof.m_bpp2_proof.V.size(), 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_balance_proof_v1_weight(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+{
+    std::size_t weight{0};
+
+    // BP+ proof
+    weight += bpp_weight(num_sp_inputs + num_outputs, false);  //weight without cached amount commitments
+
+    // remainder blinding factor
+    weight += 32;
+
+    return weight;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_balance_proof_v1_weight(const SpBalanceProofV1 &proof)
+{
+    return sp_balance_proof_v1_weight(proof.m_bpp2_proof.V.size(), 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout)
+{
+    transcript_inout.append("output_xK_e_keys", container.m_output_enote_ephemeral_pubkeys);
+    transcript_inout.append("tx_extra", container.m_tx_extra);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t sp_tx_supplement_v1_size_bytes(const std::size_t num_outputs,
     const TxExtra &tx_extra,
     const bool use_shared_ephemeral_key_assumption)
 {
@@ -258,15 +283,9 @@ std::size_t SpTxSupplementV1::size_bytes(const std::size_t num_outputs,
     return size;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSupplementV1::size_bytes() const
+std::size_t sp_tx_supplement_v1_size_bytes(const SpTxSupplementV1 &tx_supplement)
 {
-    return 32 * m_output_enote_ephemeral_pubkeys.size() + m_tx_extra.size();
-}
-//-------------------------------------------------------------------------------------------------------------------
-void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout)
-{
-    transcript_inout.append("output_xK_e_keys", container.m_output_enote_ephemeral_pubkeys);
-    transcript_inout.append("tx_extra", container.m_tx_extra);
+    return 32 * tx_supplement.m_output_enote_ephemeral_pubkeys.size() + tx_supplement.m_tx_extra.size();
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b)
@@ -317,6 +336,35 @@ bool compare_Ko(const SpEnoteV1 &a, const SpEnoteV1 &b)
 bool compare_KI(const SpEnoteImageV1 &a, const SpEnoteImageV1 &b)
 {
     return compare_KI(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpCoinbaseEnoteV1 gen_sp_coinbase_enote_v1()
+{
+    SpCoinbaseEnoteV1 temp;
+
+    // gen base of enote
+    temp.m_core = gen_sp_coinbase_enote_core();
+
+    // memo
+    temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
+    crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
+
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+SpEnoteV1 gen_sp_enote_v1()
+{
+    SpEnoteV1 temp;
+
+    // gen base of enote
+    temp.m_core = gen_sp_enote_core();
+
+    // memo
+    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
+    crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
+
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

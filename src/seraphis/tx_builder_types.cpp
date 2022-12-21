@@ -212,7 +212,7 @@ SpCoinbaseOutputProposalV1 gen_sp_coinbase_output_proposal_v1(const rct::xmr_amo
     SpCoinbaseOutputProposalV1 temp;
 
     // enote
-    temp.m_enote.gen();
+    temp.m_enote = gen_sp_coinbase_enote_v1();
     temp.m_enote.m_core.m_amount = amount;
 
     // enote ephemeral pubkey

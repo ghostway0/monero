@@ -38,6 +38,7 @@
 #include "seraphis_mocks/seraphis_mocks.h"
 
 #include "boost/multiprecision/cpp_int.hpp"
+#include "tx_component_types.h"
 #include "gtest/gtest.h"
 
 #include <list>
@@ -70,9 +71,7 @@ static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amoun
     for (const rct::xmr_amount sp_amount : sp_amounts)
     {
         SpEnoteRecordV1 temp_record{};
-        SpEnoteV1 temp_enote;
-        temp_enote.gen();
-        temp_record.m_enote = temp_enote;
+        temp_record.m_enote = gen_sp_enote_v1();
         temp_record.m_amount = sp_amount;
         temp_record.m_key_image = rct::rct2ki(rct::pkGen());
 

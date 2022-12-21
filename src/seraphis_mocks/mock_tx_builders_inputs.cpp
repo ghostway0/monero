@@ -168,11 +168,7 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_v1(
                 CHECK_AND_ASSERT_THROW_MES(false, "gen mock sp membership proof prep: invalid real reference enote type.");
         }
         else
-        {
-            SpEnoteV1 temp;
-            temp.gen();
-            mock_enotes.emplace_back(temp);
-        }
+            mock_enotes.emplace_back(gen_sp_enote_v1());
     }
 
     // 2. clear any txs lingering unconfirmed

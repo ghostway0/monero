@@ -71,19 +71,12 @@ struct SpCoinbaseEnoteV1 final
     jamtis::encrypted_address_tag_t m_addr_tag_enc;
     /// view_tag
     jamtis::view_tag_t m_view_tag;
-
-    /// generate a dummy v1 coinbase enote (all random; completely unspendable)
-    void gen();
-
-    static std::size_t size_bytes()
-    {
-        return sp_coinbase_enote_core_size_bytes() +
-            sizeof(jamtis::encrypted_address_tag_t) +
-            sizeof(jamtis::view_tag_t);
-    }
 };
 inline const boost::string_ref container_name(const SpCoinbaseEnoteV1&) { return "SpCoinbaseEnoteV1"; }
 void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+std::size_t sp_coinbase_enote_v1_size_bytes();
 
 ////
 // SpEnoteV1
@@ -99,20 +92,12 @@ struct SpEnoteV1 final
     jamtis::encrypted_address_tag_t m_addr_tag_enc;
     /// view_tag
     jamtis::view_tag_t m_view_tag;
-
-    /// generate a dummy v1 enote (all random; completely unspendable)
-    void gen();
-
-    static std::size_t size_bytes()
-    {
-        return sp_enote_core_size_bytes() +
-            sizeof(rct::xmr_amount) +
-            sizeof(jamtis::encrypted_address_tag_t) +
-            sizeof(jamtis::view_tag_t);
-    }
 };
 inline const boost::string_ref container_name(const SpEnoteV1&) { return "SpEnoteV1"; }
 void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+std::size_t sp_enote_v1_size_bytes();
 
 ////
 // SpEnoteVariant
@@ -140,11 +125,12 @@ struct SpEnoteImageV1 final
 {
     /// enote image core (masked address, masked amount commitment, key image)
     SpEnoteImageCore m_core;
-
-    static std::size_t size_bytes() { return sp_enote_image_core_size_bytes(); }
 };
 inline const boost::string_ref container_name(const SpEnoteImageV1&) { return "SpEnoteImageV1"; }
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_enote_image_v1_size_bytes() { return sp_enote_image_core_size_bytes(); }
 
 ////
 // SpMembershipProofV1
@@ -159,13 +145,20 @@ struct SpMembershipProofV1 final
     /// ref set size = n^m
     std::size_t m_ref_set_decomp_n;
     std::size_t m_ref_set_decomp_m;
-
-    /// size of the membership proof (does not include the ref set decomp)
-    static std::size_t size_bytes(const std::size_t n, const std::size_t m, const std::size_t num_bin_members);
-    std::size_t size_bytes() const;
 };
 inline const boost::string_ref container_name(const SpMembershipProofV1&) { return "SpMembershipProofV1"; }
 void append_to_transcript(const SpMembershipProofV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+/// - note: compact version excludes the decomposition parameters, and uses the compact size of the binned ref set
+std::size_t sp_membership_proof_v1_size_bytes(const std::size_t n,
+    const std::size_t m,
+    const std::size_t num_bin_members);
+std::size_t sp_membership_proof_v1_size_bytes_compact(const std::size_t n,
+    const std::size_t m,
+    const std::size_t num_bin_members);
+std::size_t sp_membership_proof_v1_size_bytes(const SpMembershipProofV1 &proof);
+std::size_t sp_membership_proof_v1_size_bytes_compact(const SpMembershipProofV1 &proof);
 
 ////
 // SpImageProofV1
@@ -176,11 +169,12 @@ struct SpImageProofV1 final
 {
     /// a seraphis composition proof
     SpCompositionProof m_composition_proof;
-
-    static std::size_t size_bytes() { return sp_composition_size_bytes(); }
 };
 inline const boost::string_ref container_name(const SpImageProofV1&) { return "SpImageProofV1"; }
 void append_to_transcript(const SpImageProofV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t sp_image_proof_v1_size_bytes() { return sp_composition_size_bytes(); }
 
 ////
 // SpBalanceProofV1
@@ -194,18 +188,19 @@ struct SpBalanceProofV1 final
     BulletproofPlus2 m_bpp2_proof;
     /// the remainder blinding factor
     rct::key m_remainder_blinding_factor;
-
-    static std::size_t size_bytes(const std::size_t num_sp_inputs,
-        const std::size_t num_outputs,
-        const bool include_commitments = false);
-    std::size_t size_bytes(const bool include_commitments = false) const;
-    static std::size_t weight(const std::size_t num_sp_inputs,
-        const std::size_t num_outputs,
-        const bool include_commitments = false);
-    std::size_t weight(const bool include_commitments = false) const;
 };
 inline const boost::string_ref container_name(const SpBalanceProofV1&) { return "SpBalanceProofV1"; }
 void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+/// - note: the compact version does not include the bulletproof's cached amount commitments
+std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_size_bytes(const SpBalanceProofV1 &proof);
+std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_size_bytes_compact(const SpBalanceProofV1 &proof);
+/// get the proof weight (using compact size)
+std::size_t sp_balance_proof_v1_weight(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_weight(const SpBalanceProofV1 &proof);
 
 ////
 // SpTxSupplementV1
@@ -219,14 +214,15 @@ struct SpTxSupplementV1 final
     std::vector<crypto::x25519_pubkey> m_output_enote_ephemeral_pubkeys;
     /// tx memo
     TxExtra m_tx_extra;
-
-    static std::size_t size_bytes(const std::size_t num_outputs,
-        const TxExtra &tx_extra,
-        const bool use_shared_ephemeral_key_assumption);
-    std::size_t size_bytes() const;
 };
 inline const boost::string_ref container_name(const SpTxSupplementV1&) { return "SpTxSupplementV1"; }
 void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+std::size_t sp_tx_supplement_v1_size_bytes(const std::size_t num_outputs,
+    const TxExtra &tx_extra,
+    const bool use_shared_ephemeral_key_assumption);
+std::size_t sp_tx_supplement_v1_size_bytes(const SpTxSupplementV1 &tx_supplement);
 
 /// comparison operator for equivalence testing
 bool operator==(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
@@ -241,5 +237,9 @@ bool compare_Ko(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
 bool compare_Ko(const SpEnoteV1 &a, const SpEnoteV1 &b);
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const SpEnoteImageV1 &a, const SpEnoteImageV1 &b);
+/// generate a dummy v1 coinbase enote
+SpCoinbaseEnoteV1 gen_sp_coinbase_enote_v1();
+/// generate a dummy v1 enote
+SpEnoteV1 gen_sp_enote_v1();
 
 } //namespace sp
