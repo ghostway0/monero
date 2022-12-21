@@ -1154,14 +1154,14 @@ TEST(seraphis, discretized_fees)
 
     // fee value 0 (should perfectly discretize)
     test_fee_value = 0;
-    discretized_fee = DiscretizedFee{test_fee_value};
+    discretized_fee = discretize_fee(test_fee_value);
     EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
     // fee value 1 (should perfectly discretize)
     test_fee_value = 1;
-    discretized_fee = DiscretizedFee{test_fee_value};
+    discretized_fee = discretize_fee(test_fee_value);
     EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
@@ -1173,14 +1173,14 @@ TEST(seraphis, discretized_fees)
         test_fee_value *= 10;
         test_fee_value += 1;
     }
-    discretized_fee = DiscretizedFee{test_fee_value};
+    discretized_fee = discretize_fee(test_fee_value);
     EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value > test_fee_value);
     EXPECT_FALSE(discretized_fee == test_fee_value);
 
     // fee value MAX (should perfectly discretize)
     test_fee_value = std::numeric_limits<std::uint64_t>::max();
-    discretized_fee = DiscretizedFee{test_fee_value};
+    discretized_fee = discretize_fee(test_fee_value);
     EXPECT_TRUE(try_get_fee_value(discretized_fee, fee_value));
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);

@@ -59,17 +59,12 @@ using discretized_fee_level_t = unsigned char;
 struct DiscretizedFee final
 {
     discretized_fee_level_t m_fee_level;
-
-    /// default constructor
-    DiscretizedFee() = default;
-
-    /// normal constructor: discretize a raw fee value
-    DiscretizedFee(const rct::xmr_amount raw_fee_value);
-
-    static std::size_t size_bytes() { return sizeof(m_fee_level); }
 };
 inline const boost::string_ref container_name(const DiscretizedFee&) { return "DiscretizedFee"; }
 void append_to_transcript(const DiscretizedFee &container, SpTranscriptBuilder &transcript_inout);
+
+/// get size in bytes
+inline std::size_t discretized_fee_size_bytes() { return sizeof(discretized_fee_level_t); }
 
 /// equality operators
 bool operator==(const DiscretizedFee &a, const DiscretizedFee &b);
@@ -77,6 +72,12 @@ bool operator==(const DiscretizedFee &fee, const discretized_fee_level_t fee_lev
 bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &fee);
 bool operator==(const DiscretizedFee &fee, const rct::xmr_amount raw_fee_value);
 
+/**
+* brief: discretize_fee - convert a raw fee value to a discretized fee (the resulting real fee may differ from the raw fee)
+* param: raw_fee_value -
+* return: discretized fee
+*/
+DiscretizedFee discretize_fee(const rct::xmr_amount raw_fee_value);
 /**
 * brief: try_get_fee_value - try to extract a raw fee value from a discretized fee
 * param: discretized_fee -

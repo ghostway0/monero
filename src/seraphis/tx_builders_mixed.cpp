@@ -95,7 +95,7 @@ public:
     /**
     * brief: key_image_exists_v1 - checks if a key image (linking tag) exists in the mock ledger
     * param: key_image -
-    * return: true/false on check result
+    * return: always false
     */
     bool key_image_exists_v1(const crypto::key_image &key_image) const override
     {
@@ -625,7 +625,7 @@ bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinat
         return false;
 
     // 2. set transaction fee
-    discretized_transaction_fee_out = DiscretizedFee{reported_final_fee};
+    discretized_transaction_fee_out = discretize_fee(reported_final_fee);
     CHECK_AND_ASSERT_THROW_MES(discretized_transaction_fee_out == reported_final_fee,
         "prepare inputs and outputs for transfer (v1): the input selector fee was not properly discretized (bug).");
 

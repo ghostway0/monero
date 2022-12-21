@@ -60,7 +60,7 @@ struct SpTxGenData
     SpBinnedReferenceSetConfigV1 bin_config{0, 0};
     std::vector<rct::xmr_amount> alternate_input_amounts;  //alternate all-legacy then all-seraphis inputs
     std::vector<rct::xmr_amount> output_amounts;
-    DiscretizedFee discretized_transaction_fee{0};
+    DiscretizedFee discretized_transaction_fee{discretize_fee(0)};
     TestType expected_result{TestType::ExpectTrue};
     bool test_double_spend{false};
 };
@@ -249,7 +249,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.expected_result = TestType::ExpectTrue;
         temp.alternate_input_amounts.push_back(2);
         temp.output_amounts.push_back(1);
-        temp.discretized_transaction_fee = DiscretizedFee{1};
+        temp.discretized_transaction_fee = discretize_fee(1);
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
@@ -398,7 +398,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
         gen.alternate_input_amounts.push_back(1);
         gen.output_amounts.push_back(2);
         gen.output_amounts.push_back(1);
-        gen.discretized_transaction_fee = DiscretizedFee{1};
+        gen.discretized_transaction_fee = discretize_fee(1);
         gen.legacy_ring_size = 2;
         gen.ref_set_decomp_n = 2;
         gen.ref_set_decomp_m = 2;
@@ -421,7 +421,7 @@ TEST(seraphis_tx, seraphis_coinbase)
         {1},
         {},
         {1},
-        DiscretizedFee{0},
+        discretize_fee(0),
         TestType::ExpectTrue,
         false,
         ledger_context);
@@ -434,7 +434,7 @@ TEST(seraphis_tx, seraphis_coinbase)
         {2},
         {},
         {1, 1},
-        DiscretizedFee{0},
+        discretize_fee(0),
         TestType::ExpectTrue,
         false,
         ledger_context);
@@ -461,7 +461,7 @@ TEST(seraphis_tx, seraphis_squashed_multi_input_type)
         {2, 2},
         {1, 1},
         {5},
-        DiscretizedFee{1},
+        discretize_fee(1),
         TestType::ExpectTrue,
         true,
         ledger_context);

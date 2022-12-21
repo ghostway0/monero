@@ -830,8 +830,8 @@ TEST(seraphis_multisig, txtype_squashed_v1)
         };
 
     // prepare fees to use (these should discretize perfectly)
-    const DiscretizedFee fee_zero{0};
-    const DiscretizedFee fee_one{1};
+    const DiscretizedFee fee_zero{discretize_fee(0)};
+    const DiscretizedFee fee_one{discretize_fee(1)};
     EXPECT_TRUE(fee_zero == rct::xmr_amount{0});
     EXPECT_TRUE(fee_one == rct::xmr_amount{1});
 

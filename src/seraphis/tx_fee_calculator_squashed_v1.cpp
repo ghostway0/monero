@@ -60,7 +60,7 @@ FeeCalculatorSpTxSquashedV1::FeeCalculatorSpTxSquashedV1(const std::size_t legac
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_per_weight, const std::size_t weight)
 {
-    const DiscretizedFee fee_discretized{fee_per_weight * weight};
+    const DiscretizedFee fee_discretized{discretize_fee(fee_per_weight * weight)};
 
     rct::xmr_amount fee_value;
     CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(fee_discretized, fee_value),

@@ -116,7 +116,7 @@ TEST(seraphis_serialization_demo, seraphis_coinbase_standard)
 
     // make a tx
     SpTxCoinbaseV1 tx;
-    make_mock_tx<SpTxCoinbaseV1>(SpTxParamPackV1{}, {1}, {}, {1}, {0}, ledger_context, tx);
+    make_mock_tx<SpTxCoinbaseV1>(SpTxParamPackV1{}, {1}, {}, {1}, discretize_fee(0), ledger_context, tx);
 
     // convert the tx to serializable form
     sp::serialization::ser_SpTxCoinbaseV1 serializable_tx;
@@ -172,7 +172,7 @@ TEST(seraphis_serialization_demo, seraphis_squashed_standard)
         {1}, //legacy inputs
         {2, 3}, //seraphis inputs
         {3}, //outputs
-        {3}, //fee
+        discretize_fee(3), //fee
         ledger_context,
         tx);
 

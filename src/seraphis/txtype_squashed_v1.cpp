@@ -153,7 +153,7 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra, true);  //with shared ephemeral pubkey assumption
 
     // tx fee
-    size += DiscretizedFee::size_bytes();
+    size += discretized_fee_size_bytes();
 
     return size;
 }

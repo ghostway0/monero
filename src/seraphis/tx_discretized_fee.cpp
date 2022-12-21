@@ -135,30 +135,6 @@ static void generate_discretized_fee_context()
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-DiscretizedFee::DiscretizedFee(const rct::xmr_amount raw_fee_value)
-{
-    // find the closest discretized fee that is >= the specified fee value
-    generate_discretized_fee_context();
-
-    // start with the highest fee level (should be invalid)
-    m_fee_level = std::numeric_limits<discretized_fee_level_t>::max();
-
-    // start with the max discretized fee value, then reduce it as we get closer to the final solution
-    std::uint64_t closest_discretized_fee_value{static_cast<std::uint64_t>(-1)};
-
-    for (const auto &discretized_fee_setting : s_discretized_fee_map)
-    {
-        if (discretized_fee_setting.second < raw_fee_value)
-            continue;
-
-        if (discretized_fee_setting.second <= closest_discretized_fee_value)
-        {
-            m_fee_level = discretized_fee_setting.first;
-            closest_discretized_fee_value = discretized_fee_setting.second;
-        }
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const DiscretizedFee &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("fee_level", container.m_fee_level);
@@ -186,6 +162,32 @@ bool operator==(const DiscretizedFee &fee, const rct::xmr_amount raw_fee_value)
         "a raw fee failed: the discretized fee is invalid.");
 
     return fee_value == raw_fee_value;
+}
+//-------------------------------------------------------------------------------------------------------------------
+DiscretizedFee discretize_fee(const rct::xmr_amount raw_fee_value)
+{
+    // find the closest discretized fee that is >= the specified fee value
+    generate_discretized_fee_context();
+
+    // start with the highest fee level (should be invalid)
+    discretized_fee_level_t fee_level = std::numeric_limits<discretized_fee_level_t>::max();
+
+    // start with the max discretized fee value, then reduce it as we get closer to the final solution
+    std::uint64_t closest_discretized_fee_value{static_cast<std::uint64_t>(-1)};
+
+    for (const auto &discretized_fee_setting : s_discretized_fee_map)
+    {
+        if (discretized_fee_setting.second < raw_fee_value)
+            continue;
+
+        if (discretized_fee_setting.second <= closest_discretized_fee_value)
+        {
+            fee_level = discretized_fee_setting.first;
+            closest_discretized_fee_value = discretized_fee_setting.second;
+        }
+    }
+
+    return DiscretizedFee{fee_level};
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_fee_value(const DiscretizedFee &discretized_fee, std::uint64_t &fee_value_out)
