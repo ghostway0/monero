@@ -26,11 +26,8 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Miscellaneous legacy utilities.
 // Note: these are the bare minimum for unit testing and legacy enote recovery, so are not fully-featured.
-
 
 #pragma once
 
@@ -52,12 +49,12 @@ namespace sp
 
 /**
 * brief: make_legacy_subaddress_spendkey - make a legacy subaddress's spendkey
-*   - (Hn(k^v, i) + k^s) G
+*   - K^{s,i} = (Hn(k^v, i) + k^s) G
 *   - note: Hn(k^v, i) = Hn("SubAddr || k^v || index_major || index_minor)
 * param: legacy_base_spend_pubkey - k^s G
 * param: legacy_view_privkey - k^v
 * param: subaddress_index - i
-* outparam: subaddress_spendkey_out - (Hn(k^v, i) + k^s) G
+* outparam: subaddress_spendkey_out - K^{s,i} = (Hn(k^v, i) + k^s) G
 */
 void make_legacy_subaddress_spendkey(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
@@ -65,11 +62,11 @@ void make_legacy_subaddress_spendkey(const rct::key &legacy_base_spend_pubkey,
     rct::key &subaddress_spendkey_out);
 /**
 * brief: make_legacy_sender_receiver_secret - make a legacy sender-receiver secret
-*   - [sender: r_t K^v] [recipient: k^v R_t]
+*   - Hn([sender: r_t K^v] [recipient: k^v R_t], t)
 * param: base_key - [sender: K^v] [recipient: R_t]
 * param: tx_output_index - t
 * param: DH_privkey - [sender: r_t] [recipient: k^v]
-* outparam: legacy_sender_receiver_secret_out - [sender: r_t K^v] [recipient: k^v R_t]
+* outparam: legacy_sender_receiver_secret_out - Hn([sender: r_t K^v] [recipient: k^v R_t], t)
 */
 void make_legacy_sender_receiver_secret(const rct::key &base_key,
     const std::uint64_t tx_output_index,
@@ -106,14 +103,13 @@ void make_legacy_onetime_address(const rct::key &destination_spendkey,
     rct::key &onetime_address_out);
 /**
 * brief: make_legacy_key_image - make a legacy cryptonote-style key image
-*   - (k^{o,v} + k^s) * Hp(Ko)
-* 
+*   - KI = (k^{o,v} + k^s) * Hp(Ko)
 *   - note: we pass Ko by value instead of computing it (Ko = (k^{o,v} + k^s) G) for performance reasons (even though
-*     doing so is less robust)
+*     skipping that step is less robust)
 * param: enote_view_privkey - k^{o,v}
 * param: legacy_spend_privkey - k^s
 * param: onetime_address - Ko
-* outparam: key_image_out - (k^{o,v} + k^s) * Hp(Ko)
+* outparam: key_image_out - KI = (k^{o,v} + k^s) * Hp(Ko)
 */
 void make_legacy_key_image(const crypto::secret_key &enote_view_privkey,
     const crypto::secret_key &legacy_spend_privkey,
@@ -122,21 +118,20 @@ void make_legacy_key_image(const crypto::secret_key &enote_view_privkey,
 /**
 * brief: make_legacy_auxilliary_key_image_v1 - make a legacy cryptonote-style auxilliary key image (e.g. for use in a
 *      CLSAG proof)
-*   - (-z) * Hp(Ko)
-* 
-*   - note: in CLSAG proofs, the commitment to zero is computed as 'C - C_offset = z G', where 'C_offset = z G + C'
-* param: commitment_mask - z
+*   - KI_aux = z * Hp(Ko)
+*   - note: in CLSAG proofs, the commitment to zero is computed as 'C - C_offset = z G', where 'C_offset = -z G + C'
+* param: commitment_mask - (-z)
 * param: onetime_address - Ko
-* outparam: auxilliary_key_image_out - (-z) * Hp(Ko)
+* outparam: auxilliary_key_image_out - z * Hp(Ko)
 */
 void make_legacy_auxilliary_key_image_v1(const crypto::secret_key &commitment_mask,
     const rct::key &onetime_address,
     crypto::key_image &auxilliary_key_image_out);
 /**
-* brief: make_legacy_amount_blinding_factor_v2 - make a legacy amount blinding factor (v2 is deterministic)
-*   - Hn("commitment_mask", Hn(r K^v, t))
+* brief: make_legacy_amount_blinding_factor_v2 - make a legacy amount blinding factor (v2 is deterministic, v1 is not)
+*   - x = Hn("commitment_mask", Hn(r K^v, t))
 * param: sender_receiver_secret - Hn(r K^v, t)
-* outparam: amount_blinding_factor_out - Hn("commitment_mask", Hn(r K^v, t))
+* outparam: amount_blinding_factor_out - x = Hn("commitment_mask", Hn(r K^v, t))
 */
 void make_legacy_amount_blinding_factor_v2(const crypto::secret_key &sender_receiver_secret,
     crypto::secret_key &amount_blinding_factor_out);
@@ -162,7 +157,7 @@ void make_legacy_amount_encoding_factor_v2(const crypto::secret_key &sender_rece
 rct::xmr_amount legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor);
 /**
 * brief: legacy_xor_encoded_amount - decode a legacy amount (8-byte encoding)
-*   - little_endian(enc(a) XOR8 encoding_factor)
+*   - a = little_endian(enc(a) XOR8 encoding_factor)
 * param: encoded_amount - enc(a)
 * param: encoding_factor - H32("amount", Hn(r K^v, t)))
 * return: a
@@ -213,11 +208,15 @@ void make_legacy_view_tag(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
     crypto::view_tag &view_tag_out);
-//todo
+/**
+* brief: try_append_legacy_enote_ephemeral_pubkeys_to_tx_extra - try to add legacy enote ephemeral pubkeys to a tx extra
+* param: enote_ephemeral_pubkeys - {R_t}
+* outparam: tx_extra_inout - the tx extra to append to
+*/
 bool try_append_legacy_enote_ephemeral_pubkeys_to_tx_extra(const std::vector<rct::key> &enote_ephemeral_pubkeys,
     TxExtra &tx_extra_inout);
 /**
-* brief: extract_legacy_enote_ephemeral_pubkeys_from_tx_extra - find enote ephemeral pubkeys in a tx extra field
+* brief: extract_legacy_enote_ephemeral_pubkeys_from_tx_extra - find legacy enote ephemeral pubkeys in a tx extra field
 * param: tx_extra - memo field (byte vector)
 * outparam: legacy_enote_ephemeral_pubkeys_out - [r G] or [r_0 K^v_0, ..., r_n K^v_n; for n+1 outputs]
 */
