@@ -101,11 +101,11 @@ TEST(seraphis_serialization_demo, seraphis_squashed_empty)
     rct::key original_tx_id;
     rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_id(original_tx_id));
-    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
+    EXPECT_NO_THROW(get_sp_squashed_v1_txid(tx, original_tx_id));
+    EXPECT_NO_THROW(get_sp_squashed_v1_txid(recovered_tx, recovered_tx_id));
 
     EXPECT_TRUE(original_tx_id == recovered_tx_id);
-    EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
+    EXPECT_NO_THROW(EXPECT_TRUE(sp_tx_squashed_v1_size_bytes(tx) == sp_tx_squashed_v1_size_bytes(recovered_tx)));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_serialization_demo, seraphis_coinbase_standard)
@@ -201,11 +201,11 @@ TEST(seraphis_serialization_demo, seraphis_squashed_standard)
     rct::key original_tx_id;
     rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(tx.get_id(original_tx_id));
-    EXPECT_NO_THROW(recovered_tx.get_id(recovered_tx_id));
+    EXPECT_NO_THROW(get_sp_squashed_v1_txid(tx, original_tx_id));
+    EXPECT_NO_THROW(get_sp_squashed_v1_txid(recovered_tx, recovered_tx_id));
 
     EXPECT_TRUE(original_tx_id == recovered_tx_id);
-    EXPECT_NO_THROW(EXPECT_TRUE(tx.size_bytes() == recovered_tx.size_bytes()));
+    EXPECT_NO_THROW(EXPECT_TRUE(sp_tx_squashed_v1_size_bytes(tx) == sp_tx_squashed_v1_size_bytes(recovered_tx)));
     EXPECT_TRUE(validate_tx(tx, tx_validation_context));
     EXPECT_TRUE(validate_tx(recovered_tx, tx_validation_context));
 }

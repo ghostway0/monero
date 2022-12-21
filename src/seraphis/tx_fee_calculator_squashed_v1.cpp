@@ -71,7 +71,7 @@ rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_p
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_per_weight, const SpTxSquashedV1 &tx)
 {
-    return FeeCalculatorSpTxSquashedV1::compute_fee(fee_per_weight, tx.weight());
+    return FeeCalculatorSpTxSquashedV1::compute_fee(fee_per_weight, sp_tx_squashed_v1_weight(tx));
 }
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_per_weight,
@@ -80,7 +80,7 @@ rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_p
     const std::size_t num_outputs) const
 {
     const std::size_t weight{
-            SpTxSquashedV1::weight(num_legacy_inputs,
+            sp_tx_squashed_v1_weight(num_legacy_inputs,
                 num_sp_inputs,
                 num_outputs,
                 m_legacy_ring_size,

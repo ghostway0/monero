@@ -70,51 +70,7 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void SpTxSquashedV1::get_id(rct::key &tx_id_out) const
-{
-    // tx_id = H_32(tx_proposal_prefix, input images, proofs)
-
-    // 1. tx proposal
-    // H_32(crypto project name, version string, legacy input key images, sp input key images, output enotes,
-    //        tx supplement, fee)
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(m_tx_semantic_rules_version, version_string);
-
-    rct::key tx_proposal_prefix;
-    make_tx_proposal_prefix_v1(version_string,
-        m_legacy_input_images,
-        m_sp_input_images,
-        m_outputs,
-        m_tx_supplement,
-        m_tx_fee,
-        tx_proposal_prefix);
-
-    // 2. input images (note: key images are represented in the tx hash twice (image proofs message and input images))
-    // H_32({C", KI}((legacy)), {K", C", KI}((seraphis)))
-    rct::key input_images_prefix;
-    make_input_images_prefix_v1(m_legacy_input_images, m_sp_input_images, input_images_prefix);
-
-    // 3. proofs
-    // H_32(balance proof, legacy ring signatures, image proofs, seraphis membership proofs)
-    rct::key tx_proofs_prefix;
-    make_tx_proofs_prefix_v1(m_balance_proof,
-        m_legacy_ring_signatures,
-        m_sp_image_proofs,
-        m_sp_membership_proofs,
-        tx_proofs_prefix);
-
-    // 4. tx hash
-    // tx_hash = H_32(tx_proposal_prefix, input images, proofs)
-    SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_SQUASHED_V1, 3*sizeof(rct::key)};
-    transcript.append("tx_proposal_prefix", tx_proposal_prefix);
-    transcript.append("input_images_prefix", input_images_prefix);
-    transcript.append("tx_proofs_prefix", tx_proofs_prefix);
-
-    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
+std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t num_sp_inputs,
     const std::size_t num_outputs,
     const std::size_t legacy_ring_size,
@@ -158,40 +114,40 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     return size;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSquashedV1::size_bytes() const
+std::size_t sp_tx_squashed_v1_size_bytes(const SpTxSquashedV1 &tx)
 {
     const std::size_t legacy_ring_size{
-            m_legacy_ring_signatures.size()
-            ? m_legacy_ring_signatures[0].m_reference_set.size()
+            tx.m_legacy_ring_signatures.size()
+            ? tx.m_legacy_ring_signatures[0].m_reference_set.size()
             : 0
         };
     const std::size_t ref_set_decomp_n{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_ref_set_decomp_n
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_ref_set_decomp_n
             : 0
         };
     const std::size_t ref_set_decomp_m{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_ref_set_decomp_m
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_ref_set_decomp_m
             : 0
         };
     const std::size_t num_bin_members{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_binned_reference_set.m_bin_config.m_num_bin_members
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_binned_reference_set.m_bin_config.m_num_bin_members
             : 0u
         };
 
-    return SpTxSquashedV1::size_bytes(m_legacy_input_images.size(),
-        m_sp_input_images.size(),
-        m_outputs.size(),
+    return sp_tx_squashed_v1_size_bytes(tx.m_legacy_input_images.size(),
+        tx.m_sp_input_images.size(),
+        tx.m_outputs.size(),
         legacy_ring_size,
         ref_set_decomp_n,
         ref_set_decomp_m,
         num_bin_members,
-        m_tx_supplement.m_tx_extra);
+        tx.m_tx_supplement.m_tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSquashedV1::weight(const std::size_t num_legacy_inputs,
+std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
     const std::size_t num_sp_inputs,
     const std::size_t num_outputs,
     const std::size_t legacy_ring_size,
@@ -202,7 +158,7 @@ std::size_t SpTxSquashedV1::weight(const std::size_t num_legacy_inputs,
 {
     // tx weight = tx size + balance proof clawback
     std::size_t weight{
-            SpTxSquashedV1::size_bytes(num_legacy_inputs,
+            sp_tx_squashed_v1_size_bytes(num_legacy_inputs,
                 num_sp_inputs,
                 num_outputs,
                 legacy_ring_size,
@@ -219,37 +175,81 @@ std::size_t SpTxSquashedV1::weight(const std::size_t num_legacy_inputs,
     return weight;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxSquashedV1::weight() const
+std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx)
 {
     const std::size_t legacy_ring_size{
-            m_legacy_ring_signatures.size()
-            ? m_legacy_ring_signatures[0].m_reference_set.size()
+            tx.m_legacy_ring_signatures.size()
+            ? tx.m_legacy_ring_signatures[0].m_reference_set.size()
             : 0
         };
     const std::size_t ref_set_decomp_n{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_ref_set_decomp_n
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_ref_set_decomp_n
             : 0
         };
     const std::size_t ref_set_decomp_m{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_ref_set_decomp_m
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_ref_set_decomp_m
             : 0
         };
     const std::size_t num_bin_members{
-            m_sp_membership_proofs.size()
-            ? m_sp_membership_proofs[0].m_binned_reference_set.m_bin_config.m_num_bin_members
+            tx.m_sp_membership_proofs.size()
+            ? tx.m_sp_membership_proofs[0].m_binned_reference_set.m_bin_config.m_num_bin_members
             : 0u
         };
 
-    return SpTxSquashedV1::weight(m_legacy_input_images.size(),
-        m_sp_input_images.size(),
-        m_outputs.size(),
+    return sp_tx_squashed_v1_weight(tx.m_legacy_input_images.size(),
+        tx.m_sp_input_images.size(),
+        tx.m_outputs.size(),
         legacy_ring_size,
         ref_set_decomp_n,
         ref_set_decomp_m,
         num_bin_members,
-        m_tx_supplement.m_tx_extra);
+        tx.m_tx_supplement.m_tx_extra);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
+{
+    // tx_id = H_32(tx_proposal_prefix, input images, proofs)
+
+    // 1. tx proposal
+    // H_32(crypto project name, version string, legacy input key images, sp input key images, output enotes,
+    //        tx supplement, fee)
+    std::string version_string;
+    version_string.reserve(3);
+    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
+
+    rct::key tx_proposal_prefix;
+    make_tx_proposal_prefix_v1(version_string,
+        tx.m_legacy_input_images,
+        tx.m_sp_input_images,
+        tx.m_outputs,
+        tx.m_tx_supplement,
+        tx.m_tx_fee,
+        tx_proposal_prefix);
+
+    // 2. input images (note: key images are represented in the tx hash twice (image proofs message and input images))
+    // H_32({C", KI}((legacy)), {K", C", KI}((seraphis)))
+    rct::key input_images_prefix;
+    make_input_images_prefix_v1(tx.m_legacy_input_images, tx.m_sp_input_images, input_images_prefix);
+
+    // 3. proofs
+    // H_32(balance proof, legacy ring signatures, image proofs, seraphis membership proofs)
+    rct::key tx_proofs_prefix;
+    make_tx_proofs_prefix_v1(tx.m_balance_proof,
+        tx.m_legacy_ring_signatures,
+        tx.m_sp_image_proofs,
+        tx.m_sp_membership_proofs,
+        tx_proofs_prefix);
+
+    // 4. tx hash
+    // tx_hash = H_32(tx_proposal_prefix, input images, proofs)
+    SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_SQUASHED_V1, 3*sizeof(rct::key)};
+    transcript.append("tx_proposal_prefix", tx_proposal_prefix);
+    transcript.append("input_images_prefix", input_images_prefix);
+    transcript.append("tx_proofs_prefix", tx_proofs_prefix);
+
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,

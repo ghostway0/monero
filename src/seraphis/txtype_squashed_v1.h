@@ -101,34 +101,37 @@ struct SpTxSquashedV1 final
     SpTxSupplementV1 m_tx_supplement;
     /// the transaction fee (discretized representation)
     DiscretizedFee m_tx_fee;
-
-    /// get the tx id
-    void get_id(rct::key &tx_id_out) const;
-
-    /// get size of a possible tx
-    static std::size_t size_bytes(const std::size_t num_legacy_inputs,
-        const std::size_t num_sp_inputs,
-        const std::size_t num_outputs,
-        const std::size_t legacy_ring_size,
-        const std::size_t ref_set_decomp_n,
-        const std::size_t ref_set_decomp_m,
-        const std::size_t num_bin_members,
-        const TxExtra &tx_extra);
-    /// get size of the tx
-    std::size_t size_bytes() const;
-    /// get weight of a possible tx
-    static std::size_t weight(const std::size_t num_legacy_inputs,
-        const std::size_t num_sp_inputs,
-        const std::size_t num_outputs,
-        const std::size_t legacy_ring_size,
-        const std::size_t ref_set_decomp_n,
-        const std::size_t ref_set_decomp_m,
-        const std::size_t num_bin_members,
-        const TxExtra &tx_extra);
-    /// get weight of the tx
-    std::size_t weight() const;
 };
 
+/// get size of a possible tx (using compact components)
+std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
+    const std::size_t num_sp_inputs,
+    const std::size_t num_outputs,
+    const std::size_t legacy_ring_size,
+    const std::size_t ref_set_decomp_n,
+    const std::size_t ref_set_decomp_m,
+    const std::size_t num_bin_members,
+    const TxExtra &tx_extra);
+/// get size of the tx (using compact components)
+std::size_t sp_tx_squashed_v1_size_bytes(const SpTxSquashedV1 &tx);
+/// get weight of a possible tx (using compact components)
+std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
+    const std::size_t num_sp_inputs,
+    const std::size_t num_outputs,
+    const std::size_t legacy_ring_size,
+    const std::size_t ref_set_decomp_n,
+    const std::size_t ref_set_decomp_m,
+    const std::size_t num_bin_members,
+    const TxExtra &tx_extra);
+/// get weight of the tx (using compact components)
+std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx);
+
+/**
+* brief: get_sp_squashed_v1_txid - get the transaction id
+* param: tx -
+* outparam: tx_id_out -
+*/
+void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out);
 /**
 * brief: make_seraphis_tx_squashed_v1 - make an SpTxSquashedV1 transaction
 * ...
