@@ -91,43 +91,6 @@ static bool try_get_extra_field_element(const epee::span<const unsigned char> &t
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void ExtraFieldElement::append_bytes(TxExtra &bytes_inout) const
-{
-    //TODO: simplify this function?
-    // varint(type) || varint(length) || bytes
-    bytes_inout.reserve(bytes_inout.size() + 18 + m_value.size());
-
-    unsigned char v_variable[(sizeof(std::size_t) * 8 + 6) / 7];
-    unsigned char *v_variable_end = v_variable;
-    std::size_t v_length;
-
-    // type
-    tools::write_varint(v_variable_end, m_type);
-    assert(v_variable_end <= v_variable + sizeof(v_variable));
-    v_length = v_variable_end - v_variable;
-    bytes_inout.resize(bytes_inout.size() + v_length);
-    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
-
-    // length
-    v_variable_end = v_variable;
-    tools::write_varint(v_variable_end, m_value.size());
-    assert(v_variable_end <= v_variable + sizeof(v_variable));
-    v_length = v_variable_end - v_variable;
-    bytes_inout.resize(bytes_inout.size() + v_length);
-    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
-
-    // value
-    bytes_inout.resize(bytes_inout.size() + m_value.size());
-    memcpy(bytes_inout.data() + bytes_inout.size() - m_value.size(), m_value.data(), m_value.size());
-}
-//-------------------------------------------------------------------------------------------------------------------
-void ExtraFieldElement::gen()
-{
-    m_type = crypto::rand_idx(static_cast<std::size_t>(-1));
-    m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit random field to 100 bytes for performance
-    crypto::rand(m_value.size(), m_value.data());
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
 {
     if (a.m_type < b.m_type)
@@ -138,6 +101,43 @@ bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
         return a.m_value < b.m_value;
 }
 //-------------------------------------------------------------------------------------------------------------------
+std::size_t length(const ExtraFieldElement &element)
+{
+    return element.m_value.size();
+}
+//-------------------------------------------------------------------------------------------------------------------
+void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
+{
+    //TODO: simplify this function?
+    // varint(type) || varint(length) || bytes
+    bytes_inout.reserve(bytes_inout.size() + 18 + element.m_value.size());
+
+    unsigned char v_variable[(sizeof(std::size_t) * 8 + 6) / 7];
+    unsigned char *v_variable_end = v_variable;
+    std::size_t v_length;
+
+    // type
+    tools::write_varint(v_variable_end, element.m_type);
+    assert(v_variable_end <= v_variable + sizeof(v_variable));
+    v_length = v_variable_end - v_variable;
+    bytes_inout.resize(bytes_inout.size() + v_length);
+    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
+
+    // length
+    v_variable_end = v_variable;
+    tools::write_varint(v_variable_end, element.m_value.size());
+    assert(v_variable_end <= v_variable + sizeof(v_variable));
+    v_length = v_variable_end - v_variable;
+    bytes_inout.resize(bytes_inout.size() + v_length);
+    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
+
+    // value
+    bytes_inout.resize(bytes_inout.size() + element.m_value.size());
+    memcpy(bytes_inout.data() + bytes_inout.size() - element.m_value.size(),
+        element.m_value.data(),
+        element.m_value.size());
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_out)
 {
     tx_extra_out.clear();
@@ -146,7 +146,7 @@ void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_ou
     std::sort(elements.begin(), elements.end());
 
     for (const ExtraFieldElement &element : elements)
-        element.append_bytes(tx_extra_out);
+        append_bytes(element, tx_extra_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_extra_field_elements(const TxExtra &tx_extra, std::vector<ExtraFieldElement> &elements_out)
@@ -183,6 +183,15 @@ void accumulate_extra_field_elements(const TxExtra &partial_memo,
     CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(partial_memo, temp_memo_elements),
         "Could not accumulate extra field elements: malformed partial memo.");
     accumulate_extra_field_elements(temp_memo_elements, elements_inout);
+}
+//-------------------------------------------------------------------------------------------------------------------
+ExtraFieldElement gen_extra_field_element()
+{
+    ExtraFieldElement temp;
+    temp.m_type = crypto::rand_idx(static_cast<std::size_t>(-1));
+    temp.m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit random field to 100 bytes for performance
+    crypto::rand(temp.m_value.size(), temp.m_value.data());
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

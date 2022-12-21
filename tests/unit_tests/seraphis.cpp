@@ -377,7 +377,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     std::vector<ExtraFieldElement> additional_memo_elements;
     additional_memo_elements.resize(num_random_memo_elements);
     for (ExtraFieldElement &element : additional_memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
 
     // versioning for proofs
     std::string version_string;

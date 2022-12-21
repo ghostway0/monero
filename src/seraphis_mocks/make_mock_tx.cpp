@@ -47,6 +47,7 @@
 #include "seraphis/tx_builders_mixed.h"
 #include "seraphis/tx_builders_outputs.h"
 #include "seraphis/tx_discretized_fee.h"
+#include "seraphis/tx_extra.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
 
@@ -101,7 +102,7 @@ void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     additional_memo_elements.resize(params.num_random_memo_elements);
 
     for (ExtraFieldElement &element : additional_memo_elements)
-        element.gen();
+        element= gen_extra_field_element();
 
     TxExtra partial_memo;
     make_tx_extra(std::move(additional_memo_elements), partial_memo);
@@ -178,7 +179,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     additional_memo_elements.resize(params.num_random_memo_elements);
 
     for (ExtraFieldElement &element : additional_memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
 
     TxExtra partial_memo;
     make_tx_extra(std::move(additional_memo_elements), partial_memo);

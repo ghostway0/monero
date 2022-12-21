@@ -323,7 +323,7 @@ JamtisPaymentProposalV1 gen_jamtis_payment_proposal_v1(const rct::xmr_amount amo
     std::vector<ExtraFieldElement> memo_elements;
     memo_elements.resize(num_random_memo_elements);
     for (ExtraFieldElement &element: memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
     make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
 
     return temp;
@@ -343,7 +343,7 @@ JamtisPaymentProposalSelfSendV1 gen_jamtis_selfsend_payment_proposal_v1(const rc
     std::vector<ExtraFieldElement> memo_elements;
     memo_elements.resize(num_random_memo_elements);
     for (ExtraFieldElement &element: memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
     make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
 
     return temp;

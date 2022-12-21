@@ -58,18 +58,14 @@ struct ExtraFieldElement final
     /// value length: implicit
     /// value
     std::vector<unsigned char> m_value;
-
-    std::size_t length() const { return m_value.size(); }
-
-    /// convert to bytes and append to the input variable: varint(type) || varint(length) || value
-    void append_bytes(std::vector<unsigned char> &bytes_inout) const;
-
-    /// generate a random extra field element
-    void gen();
 };
 
 /// less-than operator for sorting: type, value length, value bytewise comparison
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b);
+/// get length of an extra field element
+std::size_t length(const ExtraFieldElement &element);
+/// convert an element to bytes and append to the input variable: varint(type) || varint(length) || value
+void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout);
 /**
 * brief: make_tx_extra - make a tx extra
 * param: elements -
@@ -92,5 +88,10 @@ void accumulate_extra_field_elements(const std::vector<ExtraFieldElement> &eleme
     std::vector<ExtraFieldElement> &elements_inout);
 void accumulate_extra_field_elements(const TxExtra &partial_memo,
     std::vector<ExtraFieldElement> &elements_inout);
+/**
+* brief: gen_extra_field_element - generate a random extra field element
+* return: make a random field element
+*/
+ExtraFieldElement gen_extra_field_element();
 
 } //namespace sp

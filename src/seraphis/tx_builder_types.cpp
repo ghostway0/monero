@@ -222,7 +222,7 @@ SpCoinbaseOutputProposalV1 gen_sp_coinbase_output_proposal_v1(const rct::xmr_amo
     std::vector<ExtraFieldElement> memo_elements;
     memo_elements.resize(num_random_memo_elements);
     for (ExtraFieldElement &element: memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
     make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
 
     return temp;
@@ -243,7 +243,7 @@ SpOutputProposalV1 gen_sp_output_proposal_v1(const rct::xmr_amount amount, const
     std::vector<ExtraFieldElement> memo_elements;
     memo_elements.resize(num_random_memo_elements);
     for (ExtraFieldElement &element: memo_elements)
-        element.gen();
+        element = gen_extra_field_element();
     make_tx_extra(std::move(memo_elements), temp.m_partial_memo);
 
     return temp;
