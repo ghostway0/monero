@@ -47,116 +47,44 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteOriginContextV1::is_older_than(const SpEnoteOriginContextV1 &other_context) const
+const rct::key& onetime_address_ref(const LegacyContextualIntermediateEnoteRecordV1 &record)
 {
-    // 1. origin status (higher statuses are assumed to be 'older')
-    if (m_origin_status > other_context.m_origin_status)
-        return true;
-
-    // 2. block height
-    if (m_block_height < other_context.m_block_height)
-        return true;
-
-    // note: don't assess the tx output index
-
-    // 3. enote ledger index
-    if (m_enote_ledger_index < other_context.m_enote_ledger_index)
-        return true;
-
-    // 4. block timestamp
-    if (m_block_timestamp < other_context.m_block_timestamp)
-        return true;
-
-    return false;
+    return onetime_address_ref(record.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteSpentContextV1::is_older_than(const SpEnoteSpentContextV1 &other_context) const
+rct::xmr_amount amount_ref(const LegacyContextualIntermediateEnoteRecordV1 &record)
 {
-    // 1. spent status (higher statuses are assumed to be 'older')
-    if (m_spent_status > other_context.m_spent_status)
-        return true;
-
-    // 2. block height
-    if (m_block_height < other_context.m_block_height)
-        return true;
-
-    // 3. block timestamp
-    if (m_block_timestamp < other_context.m_block_timestamp)
-        return true;
-
-    return false;
+    return record.m_record.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyContextualBasicEnoteRecordV1::have_same_destination(const LegacyContextualBasicEnoteRecordV1 &record1,
-    const LegacyContextualBasicEnoteRecordV1 &record2)
+const crypto::key_image& key_image_ref(const LegacyContextualEnoteRecordV1 &record)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return record.m_record.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void LegacyContextualIntermediateEnoteRecordV1::get_onetime_address(rct::key &onetime_address_out) const
+rct::xmr_amount amount_ref(const LegacyContextualEnoteRecordV1 &record)
 {
-    onetime_address_out = onetime_address_ref(m_record.m_enote);
+    return record.m_record.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyContextualIntermediateEnoteRecordV1::have_same_destination(
-    const LegacyContextualIntermediateEnoteRecordV1 &record1,
-    const LegacyContextualIntermediateEnoteRecordV1 &record2)
+const rct::key& onetime_address_ref(const SpContextualIntermediateEnoteRecordV1 &record)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(record.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyContextualEnoteRecordV1::have_same_destination(const LegacyContextualEnoteRecordV1 &record1,
-    const LegacyContextualEnoteRecordV1 &record2)
+rct::xmr_amount amount_ref(const SpContextualIntermediateEnoteRecordV1 &record)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return record.m_record.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyContextualEnoteRecordV1::has_origin_status(const SpEnoteOriginStatus test_status) const
+const crypto::key_image& key_image_ref(const SpContextualEnoteRecordV1 &record)
 {
-    return m_origin_context.m_origin_status == test_status;
+    return record.m_record.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool LegacyContextualEnoteRecordV1::has_spent_status(const SpEnoteSpentStatus test_status) const
+rct::xmr_amount amount_ref(const SpContextualEnoteRecordV1 &record)
 {
-    return m_spent_context.m_spent_status == test_status;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpContextualBasicEnoteRecordV1::have_same_destination(const SpContextualBasicEnoteRecordV1 &record1,
-    const SpContextualBasicEnoteRecordV1 &record2)
-{
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpContextualIntermediateEnoteRecordV1::get_onetime_address(rct::key &onetime_address_out) const
-{
-    onetime_address_out = onetime_address_ref(m_record.m_enote);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpContextualIntermediateEnoteRecordV1::have_same_destination(const SpContextualIntermediateEnoteRecordV1 &record1,
-    const SpContextualIntermediateEnoteRecordV1 &record2)
-{
-    rct::key onetime_address_1;
-    rct::key onetime_address_2;
-    record1.get_onetime_address(onetime_address_1);
-    record2.get_onetime_address(onetime_address_2);
-
-    return onetime_address_1 == onetime_address_2;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpContextualEnoteRecordV1::have_same_destination(const SpContextualEnoteRecordV1 &record1,
-    const SpContextualEnoteRecordV1 &record2)
-{
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpContextualEnoteRecordV1::has_origin_status(const SpEnoteOriginStatus test_status) const
-{
-    return m_origin_context.m_origin_status == test_status;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpContextualEnoteRecordV1::has_spent_status(const SpEnoteSpentStatus test_status) const
-{
-    return m_spent_context.m_spent_status == test_status;
+    return record.m_record.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 const SpEnoteOriginContextV1& origin_context_ref(const ContextualBasicRecordVariant &variant)
@@ -178,8 +106,8 @@ rct::xmr_amount amount_ref(const ContextualRecordVariant &variant)
     struct visitor : public tools::variant_static_visitor<rct::xmr_amount>
     {
         using variant_static_visitor::operator();  //for blank overload
-        rct::xmr_amount operator()(const LegacyContextualEnoteRecordV1 &record) const { return record.amount(); }
-        rct::xmr_amount operator()(const SpContextualEnoteRecordV1 &record) const { return record.amount(); }
+        rct::xmr_amount operator()(const LegacyContextualEnoteRecordV1 &record) const { return amount_ref(record); }
+        rct::xmr_amount operator()(const SpContextualEnoteRecordV1 &record) const { return amount_ref(record); }
     };
 
     return variant.visit(visitor{});
@@ -213,11 +141,105 @@ const SpEnoteSpentContextV1& spent_context_ref(const ContextualRecordVariant &va
     return variant.visit(visitor{});
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpContextualKeyImageSetV1::has_key_image(const crypto::key_image &test_key_image) const
+bool is_older_than(const SpEnoteOriginContextV1 &context, const SpEnoteOriginContextV1 &other_context)
 {
-    return std::find(m_legacy_key_images.begin(), m_legacy_key_images.end(), test_key_image) !=
-            m_legacy_key_images.end() ||
-        std::find(m_sp_key_images.begin(), m_sp_key_images.end(), test_key_image) != m_sp_key_images.end();
+    // 1. origin status (higher statuses are assumed to be 'older')
+    if (context.m_origin_status > other_context.m_origin_status)
+        return true;
+
+    // 2. block height
+    if (context.m_block_height < other_context.m_block_height)
+        return true;
+
+    // note: don't assess the tx output index
+
+    // 3. enote ledger index
+    if (context.m_enote_ledger_index < other_context.m_enote_ledger_index)
+        return true;
+
+    // 4. block timestamp
+    if (context.m_block_timestamp < other_context.m_block_timestamp)
+        return true;
+
+    return false;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool is_older_than(const SpEnoteSpentContextV1 &context, const SpEnoteSpentContextV1 &other_context)
+{
+    // 1. spent status (higher statuses are assumed to be 'older')
+    if (context.m_spent_status > other_context.m_spent_status)
+        return true;
+
+    // 2. block height
+    if (context.m_block_height < other_context.m_block_height)
+        return true;
+
+    // 3. block timestamp
+    if (context.m_block_timestamp < other_context.m_block_timestamp)
+        return true;
+
+    return false;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const LegacyContextualBasicEnoteRecordV1 &record1,
+    const LegacyContextualBasicEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const LegacyContextualIntermediateEnoteRecordV1 &record1,
+    const LegacyContextualIntermediateEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const LegacyContextualEnoteRecordV1 &record1, const LegacyContextualEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const SpContextualBasicEnoteRecordV1 &record1, const SpContextualBasicEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &record1,
+    const SpContextualIntermediateEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1) == onetime_address_ref(record2);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool have_same_destination(const SpContextualEnoteRecordV1 &record1, const SpContextualEnoteRecordV1 &record2)
+{
+    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
+{
+    return record.m_origin_context.m_origin_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool has_origin_status(const SpContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
+{
+    return record.m_origin_context.m_origin_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool has_spent_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteSpentStatus test_status)
+{
+    return record.m_spent_context.m_spent_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool has_spent_status(const SpContextualEnoteRecordV1 &record, const SpEnoteSpentStatus test_status)
+{
+    return record.m_spent_context.m_spent_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool has_key_image(const SpContextualKeyImageSetV1 &key_image_set, const crypto::key_image &test_key_image)
+{
+    return std::find(key_image_set.m_legacy_key_images.begin(), key_image_set.m_legacy_key_images.end(), test_key_image) !=
+            key_image_set.m_legacy_key_images.end() ||
+        std::find(key_image_set.m_sp_key_images.begin(), key_image_set.m_sp_key_images.end(), test_key_image) !=
+            key_image_set.m_sp_key_images.end();
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

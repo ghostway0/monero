@@ -175,11 +175,11 @@ bool try_get_membership_proof_real_reference_mappings(const std::list<LegacyCont
     for (const LegacyContextualEnoteRecordV1 &contextual_record : contextual_records)
     {
         // only onchain enotes have ledger indices
-        if (!contextual_record.has_origin_status(SpEnoteOriginStatus::ONCHAIN))
+        if (!has_origin_status(contextual_record, SpEnoteOriginStatus::ONCHAIN))
             return false;
 
         // save the [ KI : enote ledger index ] entry
-        ledger_mappings_out[contextual_record.key_image()] = contextual_record.m_origin_context.m_enote_ledger_index;
+        ledger_mappings_out[key_image_ref(contextual_record)] = contextual_record.m_origin_context.m_enote_ledger_index;
     }
 
     return true;
@@ -193,11 +193,11 @@ bool try_get_membership_proof_real_reference_mappings(const std::list<SpContextu
     for (const SpContextualEnoteRecordV1 &contextual_record : contextual_records)
     {
         // only onchain enotes have ledger indices
-        if (!contextual_record.has_origin_status(SpEnoteOriginStatus::ONCHAIN))
+        if (!has_origin_status(contextual_record, SpEnoteOriginStatus::ONCHAIN))
             return false;
 
         // save the [ KI : enote ledger index ] entry
-        ledger_mappings_out[contextual_record.key_image()] = contextual_record.m_origin_context.m_enote_ledger_index;
+        ledger_mappings_out[key_image_ref(contextual_record)] = contextual_record.m_origin_context.m_enote_ledger_index;
     }
 
     return true;
@@ -207,7 +207,7 @@ bool try_update_enote_origin_context_v1(const SpEnoteOriginContextV1 &fresh_orig
     SpEnoteOriginContextV1 &current_origin_context_inout)
 {
     // use the oldest origin context available (overwrite if apparently the same age)
-    if (current_origin_context_inout.is_older_than(fresh_origin_context))
+    if (is_older_than(current_origin_context_inout, fresh_origin_context))
         return false;
 
     current_origin_context_inout = fresh_origin_context;
@@ -219,7 +219,7 @@ bool try_update_enote_spent_context_v1(const SpEnoteSpentContextV1 &fresh_spent_
     SpEnoteSpentContextV1 &current_spent_context_inout)
 {
     // use the oldest origin context available (overwrite if apparently the same age)
-    if (current_spent_context_inout.is_older_than(fresh_spent_context))
+    if (is_older_than(current_spent_context_inout, fresh_spent_context))
         return false;
 
     current_spent_context_inout = fresh_spent_context;
@@ -230,7 +230,7 @@ bool try_update_enote_spent_context_v1(const SpEnoteSpentContextV1 &fresh_spent_
 bool try_update_contextual_enote_record_spent_context_v1(const SpContextualKeyImageSetV1 &contextual_key_image_set,
     SpContextualEnoteRecordV1 &contextual_enote_record_inout)
 {
-    if (!contextual_key_image_set.has_key_image(contextual_enote_record_inout.key_image()))
+    if (!has_key_image(contextual_key_image_set, key_image_ref(contextual_enote_record_inout)))
         return false;
 
     return try_update_enote_spent_context_v1(contextual_key_image_set.m_spent_context,

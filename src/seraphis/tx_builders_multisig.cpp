@@ -1115,19 +1115,19 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
 
     for (const LegacyContextualEnoteRecordV1 &legacy_contextual_input : legacy_contextual_inputs)
     {
-        CHECK_AND_ASSERT_THROW_MES(legacy_multisig_ring_signature_preps.find(legacy_contextual_input.key_image()) !=
+        CHECK_AND_ASSERT_THROW_MES(legacy_multisig_ring_signature_preps.find(key_image_ref(legacy_contextual_input)) !=
                 legacy_multisig_ring_signature_preps.end(),
             "make v1 multisig tx proposal (v1): a legacy ring signature prep doesn't line up with a contextual input.");
         CHECK_AND_ASSERT_THROW_MES(
-                legacy_multisig_ring_signature_preps.at(legacy_contextual_input.key_image()).m_key_image ==
-                    legacy_contextual_input.key_image(),
+                legacy_multisig_ring_signature_preps.at(key_image_ref(legacy_contextual_input)).m_key_image ==
+                    key_image_ref(legacy_contextual_input),
             "make v1 multisig tx proposal (v1): a legacy ring signature prep is mapped to the incorrect key image.");
 
         // convert inputs to input proposals
         make_v1_legacy_multisig_input_proposal_v1(legacy_contextual_input.m_record,
             rct::rct2sk(rct::skGen()),
             legacy_multisig_ring_signature_preps
-                    .at(legacy_contextual_input.key_image())
+                    .at(key_image_ref(legacy_contextual_input))
                     .m_reference_set,  //don't consume, the full prep needs to be consumed later
             tools::add_element(legacy_multisig_input_proposals));
     }

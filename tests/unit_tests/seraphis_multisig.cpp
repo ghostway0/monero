@@ -133,10 +133,7 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
 
     for (const auto &intermediate_record : legacy_intermediate_records)
     {
-        rct::key onetime_address_temp;
-        intermediate_record.second.get_onetime_address(onetime_address_temp);
-
-        saved_key_components[rct::rct2pk(onetime_address_temp)] =
+        saved_key_components[rct::rct2pk(onetime_address_ref(intermediate_record.second))] =
             intermediate_record.second.m_record.m_enote_view_privkey;
     }
 

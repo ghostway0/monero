@@ -80,7 +80,7 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
     for (const LegacyContextualEnoteRecordV1 &contextual_enote_record : m_enote_store.m_legacy_contextual_enote_records)
     {
         // only consider unspent enotes
-        if (!contextual_enote_record.has_spent_status(SpEnoteSpentStatus::UNSPENT))
+        if (!has_spent_status(contextual_enote_record, SpEnoteSpentStatus::UNSPENT))
             continue;
 
         // prepare record finder
@@ -90,7 +90,7 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
                 if (!comparison_record.second.is_type<LegacyContextualEnoteRecordV1>())
                     return false;
 
-                return LegacyContextualEnoteRecordV1::have_same_destination(contextual_enote_record,
+                return have_same_destination(contextual_enote_record,
                     comparison_record.second.unwrap<LegacyContextualEnoteRecordV1>());
             };
 
@@ -110,7 +110,7 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
     for (const SpContextualEnoteRecordV1 &contextual_enote_record : m_enote_store.m_sp_contextual_enote_records)
     {
         // only consider unspent enotes
-        if (!contextual_enote_record.has_spent_status(SpEnoteSpentStatus::UNSPENT))
+        if (!has_spent_status(contextual_enote_record, SpEnoteSpentStatus::UNSPENT))
             continue;
 
         // prepare record finder
@@ -120,7 +120,7 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
                 if (!comparison_record.second.is_type<SpContextualEnoteRecordV1>())
                     return false;
 
-                return SpContextualEnoteRecordV1::have_same_destination(contextual_enote_record,
+                return have_same_destination(contextual_enote_record,
                     comparison_record.second.unwrap<SpContextualEnoteRecordV1>());
             };
 
@@ -151,7 +151,7 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
     for (const auto &mapped_enote_record : mapped_legacy_contextual_enote_records)
     {
         // only consider unspent enotes
-        if (!mapped_enote_record.second.has_spent_status(SpEnoteSpentStatus::UNSPENT))
+        if (!has_spent_status(mapped_enote_record.second, SpEnoteSpentStatus::UNSPENT))
             continue;
 
         // prepare record finder
@@ -161,7 +161,7 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
                 if (!comparison_record.second.is_type<LegacyContextualEnoteRecordV1>())
                     return false;
 
-                return LegacyContextualEnoteRecordV1::have_same_destination(
+                return have_same_destination(
                         mapped_enote_record.second,
                         comparison_record.second.unwrap<LegacyContextualEnoteRecordV1>()
                     );
@@ -211,7 +211,7 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
     for (const auto &mapped_enote_record : m_enote_store.m_mapped_sp_contextual_enote_records)
     {
         // only consider unspent enotes
-        if (!mapped_enote_record.second.has_spent_status(SpEnoteSpentStatus::UNSPENT))
+        if (!has_spent_status(mapped_enote_record.second, SpEnoteSpentStatus::UNSPENT))
             continue;
 
         // prepare record finder
@@ -221,7 +221,7 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
                 if (!comparison_record.second.is_type<SpContextualEnoteRecordV1>())
                     return false;
 
-                return SpContextualEnoteRecordV1::have_same_destination(
+                return have_same_destination(
                         mapped_enote_record.second,
                         comparison_record.second.unwrap<SpContextualEnoteRecordV1>()
                     );

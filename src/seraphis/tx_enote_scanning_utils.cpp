@@ -126,7 +126,7 @@ static void process_chunk_new_record_update_legacy(const LegacyEnoteRecord &new_
             chunk_contextual_key_images.end(),
             [&](const SpContextualKeyImageSetV1 &contextual_key_image_set) -> bool
             {
-                return contextual_key_image_set.has_key_image(new_record_key_image);
+                return has_key_image(contextual_key_image_set, new_record_key_image);
             }
         );
 
@@ -174,7 +174,7 @@ static void process_chunk_new_record_update_sp(const SpEnoteRecordV1 &new_enote_
             chunk_contextual_key_images.end(),
             [&](const SpContextualKeyImageSetV1 &contextual_key_image_set) -> bool
             {
-                return contextual_key_image_set.has_key_image(new_record_key_image);
+                return has_key_image(contextual_key_image_set, new_record_key_image);
             }
         );
 

@@ -34,6 +34,7 @@
 //local headers
 #include "common/container_helpers.h"
 #include "misc_log_ex.h"
+#include "seraphis/legacy_enote_types.h"
 #include "seraphis/legacy_enote_utils.h"
 #include "seraphis/tx_contextual_enote_record_types.h"
 #include "seraphis/tx_contextual_enote_record_utils.h"
@@ -220,7 +221,7 @@ void SpEnoteStoreMockV1::add_record(const LegacyContextualEnoteRecordV1 &new_rec
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::add_record(const SpContextualEnoteRecordV1 &new_record)
 {
-    const crypto::key_image &record_key_image{new_record.key_image()};
+    const crypto::key_image &record_key_image{key_image_ref(new_record)};
 
     // add the record or update an existing record's contexts
     if (m_mapped_sp_contextual_enote_records.find(record_key_image) == m_mapped_sp_contextual_enote_records.end())
@@ -1167,8 +1168,7 @@ boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_seraphis(
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermediateEnoteRecordV1 &new_record)
 {
-    rct::key record_onetime_address;
-    new_record.get_onetime_address(record_onetime_address);
+    const rct::key record_onetime_address{onetime_address_ref(new_record)};
 
     // add the record or update an existing record's origin context
     if (m_mapped_sp_contextual_enote_records.find(record_onetime_address) == m_mapped_sp_contextual_enote_records.end())

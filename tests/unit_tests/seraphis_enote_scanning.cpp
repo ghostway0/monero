@@ -4779,12 +4779,9 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     for (const auto &legacy_intermediate_record : legacy_intermediate_records)
     {
-        rct::key onetime_address_temp;
-        legacy_intermediate_record.second.get_onetime_address(onetime_address_temp);
-
         ASSERT_TRUE(std::find(legacy_onetime_addresses_expected.begin(),
                 legacy_onetime_addresses_expected.end(),
-                onetime_address_temp)
+                onetime_address_ref(legacy_intermediate_record.second))
             != legacy_onetime_addresses_expected.end());
     }
 
