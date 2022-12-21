@@ -64,11 +64,12 @@ struct LegacyEnoteImageV2 final
     rct::key m_masked_commitment;
     /// legacy key image
     crypto::key_image m_key_image;
-
-    static std::size_t size_bytes() { return 32 + 32; }
 };
 inline const boost::string_ref container_name(const LegacyEnoteImageV2&) { return "LegacyEnoteImageV2"; }
 void append_to_transcript(const LegacyEnoteImageV2 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+inline std::size_t legacy_enote_image_v2_size_bytes() { return 32 + 32; }
 
 ////
 // LegacyRingSignatureV1: not used in seraphis
@@ -90,13 +91,13 @@ struct LegacyRingSignatureV3 final
     rct::clsag m_clsag_proof;
     /// on-chain indices of the proof's ring members
     std::vector<std::uint64_t> m_reference_set;
-
-    /// size of the membership proof (does not include the ref set decomp)
-    static std::size_t size_bytes(const std::size_t num_ring_members);
-    std::size_t size_bytes() const;
 };
 inline const boost::string_ref container_name(const LegacyRingSignatureV3&) { return "LegacyRingSignatureV3"; }
 void append_to_transcript(const LegacyRingSignatureV3 &container, SpTranscriptBuilder &transcript_inout);
+
+/// get the size in bytes
+std::size_t legacy_ring_signature_v3_size_bytes(const std::size_t num_ring_members);
+std::size_t legacy_ring_signature_v3_size_bytes(const LegacyRingSignatureV3 &ring_signature);
 
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b);

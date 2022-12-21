@@ -571,7 +571,7 @@ void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
             config::HASH_KEY_SERAPHIS_TRANSACTION_PROOFS_PREFIX_V1,
             sp_balance_proof_v1_size_bytes(balance_proof) +
                 (legacy_ring_signatures.size()
-                    ? legacy_ring_signatures.size() * legacy_ring_signatures[0].size_bytes()
+                    ? legacy_ring_signatures.size() * legacy_ring_signature_v3_size_bytes(legacy_ring_signatures[0])
                     : 0) +
                 sp_image_proofs.size() * sp_image_proof_v1_size_bytes() +
                 (sp_membership_proofs.size()

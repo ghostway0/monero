@@ -129,7 +129,7 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     std::size_t size{0};
 
     // legacy input images
-    size += num_legacy_inputs * LegacyEnoteImageV2::size_bytes();
+    size += num_legacy_inputs * legacy_enote_image_v2_size_bytes();
 
     // seraphis input images
     size += num_sp_inputs * sp_enote_image_v1_size_bytes();
@@ -141,7 +141,7 @@ std::size_t SpTxSquashedV1::size_bytes(const std::size_t num_legacy_inputs,
     size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
 
     // legacy ring signatures
-    size += num_legacy_inputs * LegacyRingSignatureV3::size_bytes(legacy_ring_size);
+    size += num_legacy_inputs * legacy_ring_signature_v3_size_bytes(legacy_ring_size);
 
     // ownership/key-image-legitimacy proof for all seraphis inputs
     size += num_sp_inputs * sp_image_proof_v1_size_bytes();

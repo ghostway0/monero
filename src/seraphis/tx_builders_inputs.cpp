@@ -209,7 +209,7 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     // input images prefix = H_32({C", KI}((legacy)), {K", C", KI})
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_INPUT_IMAGES_PREFIX_V1,
-            legacy_enote_images.size() * LegacyEnoteImageV2::size_bytes() +
+            legacy_enote_images.size() * legacy_enote_image_v2_size_bytes() +
             sp_enote_images.size() * sp_enote_image_v1_size_bytes()
         };
     transcript.append("legacy_enote_images", legacy_enote_images);

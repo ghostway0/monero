@@ -52,23 +52,23 @@ void append_to_transcript(const LegacyEnoteImageV2 &container, SpTranscriptBuild
     transcript_inout.append("KI", container.m_key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t LegacyRingSignatureV3::size_bytes(const std::size_t num_ring_members)
-{
-    return clsag_size_bytes(num_ring_members) + num_ring_members * 8;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t LegacyRingSignatureV3::size_bytes() const
-{
-    CHECK_AND_ASSERT_THROW_MES(m_clsag_proof.s.size() == m_reference_set.size(),
-        "legacy ring signature v3 size: clsag proof doesn't match reference set size.");
-
-    return LegacyRingSignatureV3::size_bytes(m_reference_set.size());
-}
-//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const LegacyRingSignatureV3 &container, SpTranscriptBuilder &transcript_inout)
 {
     append_clsag_to_transcript(container.m_clsag_proof, transcript_inout);
     transcript_inout.append("reference_set", container.m_reference_set);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t legacy_ring_signature_v3_size_bytes(const std::size_t num_ring_members)
+{
+    return clsag_size_bytes(num_ring_members) + num_ring_members * 8;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t legacy_ring_signature_v3_size_bytes(const LegacyRingSignatureV3 &ring_signature)
+{
+    CHECK_AND_ASSERT_THROW_MES(ring_signature.m_clsag_proof.s.size() == ring_signature.m_reference_set.size(),
+        "legacy ring signature v3 size: clsag proof doesn't match reference set size.");
+
+    return legacy_ring_signature_v3_size_bytes(ring_signature.m_reference_set.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b)
