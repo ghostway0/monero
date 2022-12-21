@@ -69,19 +69,10 @@ struct LegacyInputProposalV1 final
 
     /// z
     crypto::secret_key m_commitment_mask;
-
-    /**
-    * brief: get_enote_image_v2 - get this input's enote image
-    * outparam: image_out -
-    */
-    void get_enote_image_v2(LegacyEnoteImageV2 &image_out) const;
-
-    /// get the amount of this proposal
-    rct::xmr_amount amount() const { return m_amount; }
-
-    /// generate a v1 input (does not support info recovery)
-    void gen(const crypto::secret_key &legacy_spend_privkey, const rct::xmr_amount amount);
 };
+
+/// get the proposal's amount
+rct::xmr_amount amount_ref(const LegacyInputProposalV1 &proposal);
 
 ////
 // LegacyRingSignaturePrepV1
@@ -138,5 +129,18 @@ bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b);
 bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePrepV1 &b);
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b);
+/**
+* brief: get_enote_image_v2 - get this input's enote image
+* outparam: image_out -
+*/
+void get_enote_image_v2(const LegacyInputProposalV1 &proposal, LegacyEnoteImageV2 &image_out);
+/**
+* brief: gen_legacy_input_proposal_v1 - generate a legacy input proposal
+* param: legacy_spend_privkey -
+* param: amount -
+* return: random proposal
+*/
+LegacyInputProposalV1 gen_legacy_input_proposal_v1(const crypto::secret_key &legacy_spend_privkey,
+    const rct::xmr_amount amount);
 
 } //namespace sp

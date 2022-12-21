@@ -50,22 +50,9 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void LegacyInputProposalV1::get_enote_image_v2(LegacyEnoteImageV2 &image_out) const
+rct::xmr_amount amount_ref(const LegacyInputProposalV1 &proposal)
 {
-    mask_key(m_commitment_mask, m_amount_commitment, image_out.m_masked_commitment);
-    image_out.m_key_image = m_key_image;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void LegacyInputProposalV1::gen(const crypto::secret_key &legacy_spend_privkey, const rct::xmr_amount amount)
-{
-    m_enote_view_privkey = rct::rct2sk(rct::skGen());
-    m_amount_blinding_factor = rct::rct2sk(rct::skGen());
-    m_amount = amount;
-    m_commitment_mask = rct::rct2sk(rct::skGen());
-    m_onetime_address = rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey));
-    rct::addKeys1(m_onetime_address, rct::sk2rct(m_enote_view_privkey), m_onetime_address);
-    m_amount_commitment = rct::commit(m_amount, rct::sk2rct(m_amount_blinding_factor));
-    make_legacy_key_image(m_enote_view_privkey, legacy_spend_privkey, m_onetime_address, m_key_image);
+    return proposal.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b)
@@ -81,6 +68,29 @@ bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePre
 bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b)
 {
     return compare_KI(a.m_input_image, b.m_input_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_enote_image_v2(const LegacyInputProposalV1 &proposal, LegacyEnoteImageV2 &image_out)
+{
+    mask_key(proposal.m_commitment_mask, proposal.m_amount_commitment, image_out.m_masked_commitment);
+    image_out.m_key_image = proposal.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyInputProposalV1 gen_legacy_input_proposal_v1(const crypto::secret_key &legacy_spend_privkey,
+    const rct::xmr_amount amount)
+{
+    LegacyInputProposalV1 temp;
+
+    temp.m_enote_view_privkey = rct::rct2sk(rct::skGen());
+    temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
+    temp.m_amount = amount;
+    temp.m_commitment_mask = rct::rct2sk(rct::skGen());
+    temp.m_onetime_address = rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey));
+    rct::addKeys1(temp.m_onetime_address, rct::sk2rct(temp.m_enote_view_privkey), temp.m_onetime_address);
+    temp.m_amount_commitment = rct::commit(temp.m_amount, rct::sk2rct(temp.m_amount_blinding_factor));
+    make_legacy_key_image(temp.m_enote_view_privkey, legacy_spend_privkey, temp.m_onetime_address, temp.m_key_image);
+
+    return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

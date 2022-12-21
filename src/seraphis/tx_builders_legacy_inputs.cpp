@@ -376,7 +376,7 @@ void make_v1_legacy_input_v1(const rct::key &proposal_prefix,
     check_v1_legacy_input_proposal_semantics_v1(input_proposal, legacy_spend_pubkey);
 
     // 2. prepare input image
-    input_proposal.get_enote_image_v2(input_out.m_input_image);
+    get_enote_image_v2(input_proposal, input_out.m_input_image);
 
     // 3. set remaining legacy input info
     input_out.m_input_amount    = input_proposal.m_amount;

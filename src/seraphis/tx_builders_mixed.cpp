@@ -822,7 +822,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
     in_amounts.reserve(tx_proposal.m_legacy_input_proposals.size() + tx_proposal.m_sp_input_proposals.size());
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : tx_proposal.m_legacy_input_proposals)
-        in_amounts.emplace_back(legacy_input_proposal.amount());
+        in_amounts.emplace_back(amount_ref(legacy_input_proposal));
 
     for (const SpInputProposalV1 &sp_input_proposal : tx_proposal.m_sp_input_proposals)
         in_amounts.emplace_back(amount_ref(sp_input_proposal));
@@ -977,7 +977,7 @@ bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &leg
     in_amounts.reserve(legacy_input_proposals.size() + sp_input_proposals.size());
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
-        in_amounts.emplace_back(legacy_input_proposal.amount());
+        in_amounts.emplace_back(amount_ref(legacy_input_proposal));
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
         in_amounts.emplace_back(amount_ref(sp_input_proposal));

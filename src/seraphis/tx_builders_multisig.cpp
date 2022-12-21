@@ -1041,7 +1041,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
             legacy_ring_signature_message_temp);
 
         // legacy enote image
-        legacy_input_proposal.get_enote_image_v2(legacy_enote_image_temp);
+        get_enote_image_v2(legacy_input_proposal, legacy_enote_image_temp);
 
         // legacy auxilliary key image: D
         make_legacy_auxilliary_key_image_v1(

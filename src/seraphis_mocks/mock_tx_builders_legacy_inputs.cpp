@@ -68,7 +68,7 @@ std::vector<LegacyInputProposalV1> gen_mock_legacy_input_proposals_v1(const cryp
     input_proposals.reserve(input_amounts.size());
 
     for (const rct::xmr_amount in_amount : input_amounts)
-        tools::add_element(input_proposals).gen(legacy_spend_privkey, in_amount);
+        tools::add_element(input_proposals) = gen_legacy_input_proposal_v1(legacy_spend_privkey, in_amount);
 
     return input_proposals;
 }

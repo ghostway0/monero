@@ -419,7 +419,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
     {
         legacy_input_images.emplace_back();
-        legacy_input_proposal.get_enote_image_v2(legacy_input_images.back());
+        get_enote_image_v2(legacy_input_proposal, legacy_input_images.back());
     }
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
     {
