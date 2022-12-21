@@ -82,20 +82,23 @@ struct SpTxCoinbaseV1 final
     std::vector<SpCoinbaseEnoteV1> m_outputs;
     /// supplemental data for tx
     SpTxSupplementV1 m_tx_supplement;
-
-    /// get the tx id
-    void get_id(rct::key &tx_id_out) const;
-
-    /// get size of a possible tx
-    static std::size_t size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra);
-    /// get size of the tx
-    std::size_t size_bytes() const;
-    /// get weight of a possible tx
-    static std::size_t weight(const std::size_t num_outputs, const TxExtra &tx_extra);
-    /// get weight of the tx
-    std::size_t weight() const;
 };
 
+/// get size of a possible tx
+std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra);
+/// get size of the tx
+std::size_t sp_tx_coinbase_v1_size_bytes(const SpTxCoinbaseV1 &tx);
+/// get weight of a possible tx (weight == size)
+std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtra &tx_extra);
+/// get weight of the tx (weight == size)
+std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx);
+
+/**
+* brief: get_sp_coinbase_v1_txid - get the transaction id
+* param: tx -
+* outparam: tx_id_out -
+*/
+void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out);
 /**
 * brief: make_seraphis_tx_coinbase_v1 - make an SpTxCoinbaseV1 transaction
 * ...

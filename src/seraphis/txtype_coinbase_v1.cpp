@@ -61,34 +61,7 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-void SpTxCoinbaseV1::get_id(rct::key &tx_id_out) const
-{
-    static const std::string project_name{CRYPTONOTE_NAME};
-
-    // tx_id = H_32(crypto project name, version string, block height, block reward, output enotes, tx supplement)
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(m_tx_semantic_rules_version, version_string);
-
-    SpFSTranscript transcript{
-            config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1,
-            project_name.size() +
-                version_string.size() +
-                16 +
-                m_outputs.size()*sp_coinbase_enote_v1_size_bytes() +
-                sp_tx_supplement_v1_size_bytes(m_tx_supplement)
-        };
-    transcript.append("project_name", project_name);
-    transcript.append("version_string", version_string);
-    transcript.append("block_height", m_block_height);
-    transcript.append("block_reward", m_block_reward);
-    transcript.append("output_enotes", m_outputs);
-    transcript.append("tx_supplement", m_tx_supplement);
-
-    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxCoinbaseV1::size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra)
+std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra)
 {
     // size of the transaction as represented in C++
     std::size_t size{0};
@@ -105,19 +78,46 @@ std::size_t SpTxCoinbaseV1::size_bytes(const std::size_t num_outputs, const TxEx
     return size;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxCoinbaseV1::size_bytes() const
+std::size_t sp_tx_coinbase_v1_size_bytes(const SpTxCoinbaseV1 &tx)
 {
-    return SpTxCoinbaseV1::size_bytes(m_outputs.size(), m_tx_supplement.m_tx_extra);
+    return sp_tx_coinbase_v1_size_bytes(tx.m_outputs.size(), tx.m_tx_supplement.m_tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxCoinbaseV1::weight(const std::size_t num_outputs, const TxExtra &tx_extra)
+std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtra &tx_extra)
 {
-    return SpTxCoinbaseV1::size_bytes(num_outputs, tx_extra);
+    return sp_tx_coinbase_v1_size_bytes(num_outputs, tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t SpTxCoinbaseV1::weight() const
+std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
 {
-    return SpTxCoinbaseV1::weight(m_outputs.size(), m_tx_supplement.m_tx_extra);
+    return sp_tx_coinbase_v1_weight(tx.m_outputs.size(), tx.m_tx_supplement.m_tx_extra);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
+{
+    static const std::string project_name{CRYPTONOTE_NAME};
+
+    // tx_id = H_32(crypto project name, version string, block height, block reward, output enotes, tx supplement)
+    std::string version_string;
+    version_string.reserve(3);
+    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
+
+    SpFSTranscript transcript{
+            config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1,
+            project_name.size() +
+                version_string.size() +
+                16 +
+                tx.m_outputs.size()*sp_coinbase_enote_v1_size_bytes() +
+                sp_tx_supplement_v1_size_bytes(tx.m_tx_supplement)
+        };
+    transcript.append("project_name", project_name);
+    transcript.append("version_string", version_string);
+    transcript.append("block_height", tx.m_block_height);
+    transcript.append("block_reward", tx.m_block_reward);
+    transcript.append("output_enotes", tx.m_outputs);
+    transcript.append("tx_supplement", tx.m_tx_supplement);
+
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_tx_coinbase_v1(const SpTxCoinbaseV1::SemanticRulesVersion semantic_rules_version,
