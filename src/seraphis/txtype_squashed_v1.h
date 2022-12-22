@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// A Seraphis transaction implemented in the 'squashed enote' model.
-
+// A normal Seraphis transaction implemented in the 'squashed enote' model.
 
 #pragma once
 
@@ -60,15 +57,15 @@ namespace sp
 {
 
 ////
-// Seraphis tx in the squashed enote model
-// - membership/ownership/key image validity (legacy): clsag proofs (one per input)
-// - membership (seraphis): grootle proofs (one per input)
-// - ownership (seraphis): seraphis composition proofs (one per input)
-// - key image validity (seraphis): seraphis composition proofs (one per input)
-// - range proofs: Bulletproof+ (aggregated range proofs for all seraphis input masked commitments and new output
-//   commitments)
-// - reference sets (legacy): set of on-chain indices
-// - reference sets (seraphis): binned reference sets
+// Normal Seraphis tx in the squashed enote model
+// - input membership/ownership/key image validity (legacy): clsag proofs (one per input)
+// - input membership (seraphis): grootle proofs (one per input)
+// - input ownership/key image validity (seraphis): seraphis composition proofs (one per input)
+// - input reference sets (legacy): set of on-chain indices
+// - input reference sets (seraphis): binned reference sets
+// - outputs: seraphis enotes
+// - range proofs: Bulletproof+ (aggregated range proofs for all seraphis inputs' masked commitments and new output
+//   enotes' commitments)
 // - fees: discretized
 // - memo field: sorted TLV format
 ///
@@ -87,7 +84,7 @@ struct SpTxSquashedV1 final
     std::vector<LegacyEnoteImageV2> m_legacy_input_images;
     /// seraphis tx input images (spent seraphis enotes)
     std::vector<SpEnoteImageV1> m_sp_input_images;
-    /// tx outputs (new enotes)
+    /// tx outputs (new seraphis enotes)
     std::vector<SpEnoteV1> m_outputs;
     /// balance proof (balance proof and range proofs)
     SpBalanceProofV1 m_balance_proof;
@@ -103,7 +100,7 @@ struct SpTxSquashedV1 final
     DiscretizedFee m_tx_fee;
 };
 
-/// get size of a possible tx (using compact components)
+/// get size of a possible tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t num_sp_inputs,
     const std::size_t num_outputs,
@@ -112,9 +109,9 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
     const TxExtra &tx_extra);
-/// get size of the tx (using compact components)
+/// get size of the tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_size_bytes(const SpTxSquashedV1 &tx);
-/// get weight of a possible tx (using compact components)
+/// get weight of a possible tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
     const std::size_t num_sp_inputs,
     const std::size_t num_outputs,
@@ -123,7 +120,7 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
     const TxExtra &tx_extra);
-/// get weight of the tx (using compact components)
+/// get weight of the tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx);
 
 /**

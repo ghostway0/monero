@@ -57,6 +57,8 @@ namespace sp
 
 ////
 // LegacyEnoteImageV2
+// - masked commitment
+// - key image
 ///
 struct LegacyEnoteImageV2 final
 {

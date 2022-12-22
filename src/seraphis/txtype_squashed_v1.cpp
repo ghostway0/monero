@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "txtype_squashed_v1.h"
 
@@ -93,7 +91,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     // outputs
     size += num_outputs * sp_enote_v1_size_bytes();
 
-    // balance proof (note: only seraphis inputs are range proofed)
+    // balance proof (note: only seraphis inputs and outputs are range proofed)
     size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
 
     // legacy ring signatures
@@ -212,9 +210,9 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
 {
     // tx_id = H_32(tx_proposal_prefix, input images, proofs)
 
-    // 1. tx proposal
-    // H_32(crypto project name, version string, legacy input key images, sp input key images, output enotes,
-    //        tx supplement, fee)
+    // 1. tx proposal prefix
+    // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
+    //         tx supplement, fee)
     std::string version_string;
     version_string.reserve(3);
     make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
@@ -228,12 +226,13 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
         tx.m_tx_fee,
         tx_proposal_prefix);
 
-    // 2. input images (note: key images are represented in the tx hash twice (image proofs message and input images))
+    // 2. input images prefix (note: key images are represented in the tx hash twice (tx proposal prefix and input
+    //    images))
     // H_32({C", KI}((legacy)), {K", C", KI}((seraphis)))
     rct::key input_images_prefix;
     make_input_images_prefix_v1(tx.m_legacy_input_images, tx.m_sp_input_images, input_images_prefix);
 
-    // 3. proofs
+    // 3. proofs prefix
     // H_32(balance proof, legacy ring signatures, image proofs, seraphis membership proofs)
     rct::key tx_proofs_prefix;
     make_tx_proofs_prefix_v1(tx.m_balance_proof,
@@ -375,7 +374,6 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 
     // legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;
-
     make_v1_legacy_inputs_v1(proposal_prefix,
         tx_proposal.m_legacy_input_proposals,
         std::move(legacy_ring_signature_preps),
@@ -580,7 +578,7 @@ bool validate_tx_semantics<SpTxSquashedV1>(const SpTxSquashedV1 &tx)
 template <>
 bool validate_tx_key_images<SpTxSquashedV1>(const SpTxSquashedV1 &tx, const TxValidationContext &tx_validation_context)
 {
-    // unspentness proof (key images not in ledger)
+    // unspentness proof: check that key images are not in the ledger
     if (!validate_sp_key_images_v1(tx.m_legacy_input_images, tx.m_sp_input_images, tx_validation_context))
         return false;
 
@@ -643,7 +641,7 @@ bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashed
     std::vector<const SpMembershipProofV1*> sp_membership_proof_ptrs;
     std::vector<const SpEnoteImageCore*> sp_input_image_ptrs;
     std::vector<const BulletproofPlus2*> range_proof_ptrs;
-    sp_membership_proof_ptrs.reserve(txs.size()*20);  //heuristic... (most tx have 1-2 seraphis inputs)
+    sp_membership_proof_ptrs.reserve(txs.size()*20);  //heuristic... (most txs have 1-2 seraphis inputs)
     sp_input_image_ptrs.reserve(txs.size()*20);
     range_proof_ptrs.reserve(txs.size());
 
@@ -654,10 +652,10 @@ bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashed
             return false;
 
         // gather membership proof pieces
-        for (const auto &sp_membership_proof : tx->m_sp_membership_proofs)
+        for (const SpMembershipProofV1 &sp_membership_proof : tx->m_sp_membership_proofs)
             sp_membership_proof_ptrs.push_back(&sp_membership_proof);
 
-        for (const auto &sp_input_image : tx->m_sp_input_images)
+        for (const SpEnoteImageV1 &sp_input_image : tx->m_sp_input_images)
             sp_input_image_ptrs.push_back(&(sp_input_image.m_core));
 
         // gather range proofs
