@@ -26,11 +26,8 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Base tx interface for Seraphis.
-// WARNING: this file MUST NOT acquire more includes (may open a hole for overload injection)
-
+// WARNING: This file MUST NOT acquire more includes (may open a hole for overload injection).
 
 #pragma once
 
@@ -46,12 +43,11 @@
 namespace rct { using xmr_amount = uint64_t; }
 namespace sp
 {
-    class TxValidationContext;
+    struct DiscretizedFee;
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
-    struct DiscretizedFee;
+    class TxValidationContext;
 }
-
 
 namespace sp
 {
@@ -89,7 +85,7 @@ enum class TxStructureVersionSp : unsigned char
 {
     /// coinbase transaction
     TxTypeSpCoinbaseV1 = 0,
-    /// grootle in the squashed enote model + seraphis composition proofs + BP+ range proofs with p > 0 balance proof
+    /// normal transaction: squashed v1
     TxTypeSpSquashedV1 = 1
 };
 
@@ -133,9 +129,9 @@ void make_versioning_string(const unsigned char tx_semantic_rules_version, std::
 
 /**
 * brief: validate_txs_impl - validate a set of tx (use batching if possible)
-* type: SpTxType - 
-* param: txs -
-* param: tx_validation_context -
+* type: SpTxType - transaction type
+* param: txs - set of tx pointers
+* param: tx_validation_context - injected validation context (e.g. for obtaining ledger-related information)
 * return: true/false on verification result
 */
 template <typename SpTxType>
