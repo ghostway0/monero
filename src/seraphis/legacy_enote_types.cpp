@@ -26,13 +26,11 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
-#include "common/variant.h"
 #include "legacy_enote_types.h"
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -40,6 +38,7 @@
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
