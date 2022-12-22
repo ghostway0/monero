@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis tx validator implementations.
-
 
 #pragma once
 
@@ -54,7 +51,6 @@ namespace sp
     class SpMultiexpBuilder;
     class TxValidationContext;
 }
-
 
 namespace sp
 {
@@ -201,7 +197,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
 *   - serpahis membership proof binned reference set bins are sorted (ascending)
 *   - legacy input images sorted by key image with byte-wise comparisons (ascending)
 *   - seraphis input images sorted by key image with byte-wise comparisons (ascending)
-*   - input key images are all unique
+*   - legacy and seraphis input key images are all unique
 *   - output enotes sorted by onetime addresses with byte-wise comparisons (ascending)
 *   - onetime addresses are all unique
 *   - enote ephemeral pubkeys are unique
@@ -240,7 +236,7 @@ bool validate_sp_key_images_v1(const std::vector<LegacyEnoteImageV2> &legacy_inp
     const std::vector<SpEnoteImageV1> &sp_input_images,
     const TxValidationContext &tx_validation_context);
 /**
-* brief: validate_sp_coinbase_amount_balance_v1 - check that amounts balance in the coinbase tx (block reward = outputs)
+* brief: validate_sp_coinbase_amount_balance_v1 - check that amounts balance in the coinbase tx (block reward == outputs)
 *   - check block_reward == sum(output amounts)
 * param: block_reward -
 * param: outputs -
@@ -249,7 +245,7 @@ bool validate_sp_key_images_v1(const std::vector<LegacyEnoteImageV2> &legacy_inp
 bool validate_sp_coinbase_amount_balance_v1(const rct::xmr_amount block_reward,
     const std::vector<SpCoinbaseEnoteV1> &outputs);
 /**
-* brief: validate_sp_amount_balance_v1 - check that amounts balance in the tx (inputs = outputs)
+* brief: validate_sp_amount_balance_v1 - check that amounts balance in the tx (inputs == outputs)
 *   - check sum(input image masked commitments) == sum(output commitments) + fee*H + remainder*G
 *   - note: BP+ verification is NOT done here (deferred for batch-verification)
 * param: legacy_input_images -
@@ -265,23 +261,9 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
     const DiscretizedFee &discretized_transaction_fee,
     const SpBalanceProofV1 &balance_proof);
 /**
-* brief: try_get_sp_membership_proofs_v1_validation_data - get verification data to verify that tx inputs exist in the
-*     ledger
-*   - try to get referenced enotes from ledger in 'squashed enote' form (TODO: NOT txpool)
-*   - get verification data for grootle proofs (membership proofs)
-* param: membership_proofs -
-* param: input_images -
-* param: tx_validation_context -
-* outparam: validation_data_out -
-*/
-bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpMembershipProofV1*> &membership_proofs,
-    const std::vector<const SpEnoteImageCore*> &input_images,
-    const TxValidationContext &tx_validation_context,
-    std::list<SpMultiexpBuilder> &validation_data_out);
-/**
 * brief: validate_sp_composition_proofs_v1 - check that spending legacy tx inputs is authorized by their owners,
-*        key images are properly constructed, and the legacy inputs exist in the ledger
-*   - check Seraphis composition proofs
+*   key images are properly constructed, and the legacy inputs exist in the ledger
+*   - check legacy CLSAG proofs
 * param: legacy_ring_signatures -
 * param: legacy_input_images -
 * param: tx_proposal_prefix -
@@ -293,9 +275,9 @@ bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV3>
     const rct::key &tx_proposal_prefix,
     const TxValidationContext &tx_validation_context);
 /**
-* brief: validate_sp_composition_proofs_v1 - check that spending tx inputs is authorized by their owners,
-*        and key images are properly constructed
-*   - check Seraphis composition proofs
+* brief: validate_sp_composition_proofs_v1 - check that spending seraphis tx inputs is authorized by their owners,
+*   and that key images are properly constructed
+*   - check seraphis composition proofs
 * param: sp_image_proofs -
 * param: sp_input_images -
 * param: tx_proposal_prefix -
@@ -304,5 +286,19 @@ bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV3>
 bool validate_sp_composition_proofs_v1(const std::vector<SpImageProofV1> &sp_image_proofs,
     const std::vector<SpEnoteImageV1> &sp_input_images,
     const rct::key &tx_proposal_prefix);
+/**
+* brief: try_get_sp_membership_proofs_v1_validation_data - get verification data to verify that seraphis tx inputs
+*   exist in the ledger
+*   - try to get referenced enotes from the ledger in 'squashed enote' form
+*   - get verification data for grootle proofs (membership proofs)
+* param: membership_proofs -
+* param: input_images -
+* param: tx_validation_context -
+* outparam: validation_data_out -
+*/
+bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpMembershipProofV1*> &membership_proofs,
+    const std::vector<const SpEnoteImageCore*> &input_images,
+    const TxValidationContext &tx_validation_context,
+    std::list<SpMultiexpBuilder> &validation_data_out);
 
 } //namespace sp

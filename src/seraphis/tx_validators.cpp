@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_validators.h"
 
@@ -284,9 +282,9 @@ bool validate_sp_semantics_input_images_v1(const std::vector<LegacyEnoteImageV2>
             return false;
 
         // image parts must not be identity
-        if (rct::ki2rct(legacy_image.m_key_image) == rct::identity())
-            return false;
         if (legacy_image.m_masked_commitment == rct::identity())
+            return false;
+        if (rct::ki2rct(legacy_image.m_key_image) == rct::identity())
             return false;
     }
 
@@ -297,11 +295,11 @@ bool validate_sp_semantics_input_images_v1(const std::vector<LegacyEnoteImageV2>
             return false;
 
         // image parts must not be identity
-        if (rct::ki2rct(sp_image.m_core.m_key_image) == rct::identity())
-            return false;
         if (sp_image.m_core.m_masked_address == rct::identity())
             return false;
         if (sp_image.m_core.m_masked_commitment == rct::identity())
+            return false;
+        if (rct::ki2rct(sp_image.m_core.m_key_image) == rct::identity())
             return false;
     }
 
@@ -363,15 +361,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
         return false;
 
     // legacy and seraphis input images should not have any matching key images
-    // note: this is just a sanity check, it should not be possible to return false here if the proofs are valid
-    if (legacy_input_images.size() > 0)
-    {
-        for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
-        {
-            if (legacy_input_images[0].m_key_image == sp_input_image.m_core.m_key_image)
-                return false;
-        }
-    }
+    // note: it is not necessary to check this because overlapping key images is impossible if the input proofs are valid
 
     // output enotes should be sorted by onetime address with byte-wise comparisons (ascending), and unique
     if (!tools::is_sorted_and_unique(outputs, compare_Ko))
@@ -394,8 +384,10 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
 bool validate_sp_semantics_fee_v1(const DiscretizedFee &discretized_transaction_fee)
 {
     rct::xmr_amount raw_transaction_fee;
+    if (!try_get_fee_value(discretized_transaction_fee, raw_transaction_fee))
+        return false;
 
-    return try_get_fee_value(discretized_transaction_fee, raw_transaction_fee);
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool validate_sp_key_images_v1(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
@@ -467,96 +459,20 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
     for (std::size_t input_commitment_index{0}; input_commitment_index < sp_input_images.size(); ++input_commitment_index)
     {
         // the two stored copies of input image commitments must match
-        if (sp_input_images[input_commitment_index].m_core.m_masked_commitment !=
-                rct::rct2pk(rct::scalarmult8(range_proofs.V[input_commitment_index])))
+        if (!(sp_input_images[input_commitment_index].m_core.m_masked_commitment ==
+                rct::scalarmult8(range_proofs.V[input_commitment_index])))
             return false;
     }
 
     for (std::size_t output_commitment_index{0}; output_commitment_index < outputs.size(); ++output_commitment_index)
     {
         // the two stored copies of output commitments must match
-        if (outputs[output_commitment_index].m_core.m_amount_commitment !=
-                rct::rct2pk(rct::scalarmult8(range_proofs.V[sp_input_images.size() + output_commitment_index])))
+        if (!(outputs[output_commitment_index].m_core.m_amount_commitment ==
+                rct::scalarmult8(range_proofs.V[sp_input_images.size() + output_commitment_index])))
             return false;
     }
 
     // BP+: deferred for batch-verification
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpMembershipProofV1*> &sp_membership_proofs,
-    const std::vector<const SpEnoteImageCore*> &sp_input_images,
-    const TxValidationContext &tx_validation_context,
-    std::list<SpMultiexpBuilder> &validation_data_out)
-{
-    const std::size_t num_proofs{sp_membership_proofs.size()};
-
-    // sanity check
-    if (num_proofs != sp_input_images.size())
-        return false;
-
-    // assume true of no proofs
-    if (num_proofs == 0)
-        return true;
-
-    // get batched validation data
-    std::vector<const sp::GrootleProof*> proofs;
-    std::vector<rct::keyV> membership_proof_keys;
-    rct::keyV offsets;
-    rct::keyV messages;
-    proofs.reserve(num_proofs);
-    membership_proof_keys.resize(num_proofs);
-    offsets.resize(num_proofs);
-    messages.reserve(num_proofs);
-
-    rct::key generator_seed_reproduced;
-    std::vector<std::uint64_t> reference_indices;
-
-    for (std::size_t proof_index{0}; proof_index < num_proofs; ++proof_index)
-    {
-        // sanity check
-        if (!sp_membership_proofs[proof_index] ||
-            !sp_input_images[proof_index])
-            return false;
-
-        // the binned reference set's generator seed should be reproducible
-        make_binned_ref_set_generator_seed_v1(sp_input_images[proof_index]->m_masked_address,
-            sp_input_images[proof_index]->m_masked_commitment,
-            generator_seed_reproduced);
-
-        if (!(generator_seed_reproduced == sp_membership_proofs[proof_index]->m_binned_reference_set.m_bin_generator_seed))
-            return false;
-
-        // extract the references
-        if(!try_get_reference_indices_from_binned_reference_set_v1(sp_membership_proofs[proof_index]->m_binned_reference_set,
-                reference_indices))
-            return false;
-
-        // get proof keys from enotes stored in the ledger
-        tx_validation_context.get_reference_set_proof_elements_v2(reference_indices, membership_proof_keys[proof_index]);
-
-        // offset (input image masked keys squashed: Q" = K" + C")
-        rct::addKeys(offsets[proof_index],
-            sp_input_images[proof_index]->m_masked_address,
-            sp_input_images[proof_index]->m_masked_commitment);
-
-        // proof message
-        make_tx_membership_proof_message_v1(sp_membership_proofs[proof_index]->m_binned_reference_set,
-            tools::add_element(messages));
-
-        // save the proof
-        proofs.emplace_back(&(sp_membership_proofs[proof_index]->m_grootle_proof));
-    }
-
-    // get verification data
-    sp::get_grootle_verification_data(proofs,
-        messages,
-        membership_proof_keys,
-        offsets,
-        sp_membership_proofs[0]->m_ref_set_decomp_n,
-        sp_membership_proofs[0]->m_ref_set_decomp_m,
-        validation_data_out);
 
     return true;
 }
@@ -623,6 +539,83 @@ bool validate_sp_composition_proofs_v1(const std::vector<SpImageProofV1> &sp_ima
                 sp_input_images[input_index].m_core.m_key_image))
             return false;
     }
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpMembershipProofV1*> &sp_membership_proofs,
+    const std::vector<const SpEnoteImageCore*> &sp_input_images,
+    const TxValidationContext &tx_validation_context,
+    std::list<SpMultiexpBuilder> &validation_data_out)
+{
+    const std::size_t num_proofs{sp_membership_proofs.size()};
+    validation_data_out.clear();
+
+    // sanity check
+    if (num_proofs != sp_input_images.size())
+        return false;
+
+    // assume valid if no proofs
+    if (num_proofs == 0)
+        return true;
+
+    // get batched validation data
+    std::vector<const sp::GrootleProof*> proofs;
+    std::vector<rct::keyV> membership_proof_keys;
+    rct::keyV offsets;
+    rct::keyV messages;
+    proofs.reserve(num_proofs);
+    membership_proof_keys.resize(num_proofs);
+    offsets.resize(num_proofs);
+    messages.reserve(num_proofs);
+
+    rct::key generator_seed_reproduced;
+    std::vector<std::uint64_t> reference_indices;
+
+    for (std::size_t proof_index{0}; proof_index < num_proofs; ++proof_index)
+    {
+        // sanity check
+        if (!sp_membership_proofs[proof_index] ||
+            !sp_input_images[proof_index])
+            return false;
+
+        // the binned reference set's generator seed should be reproducible
+        make_binned_ref_set_generator_seed_v1(sp_input_images[proof_index]->m_masked_address,
+            sp_input_images[proof_index]->m_masked_commitment,
+            generator_seed_reproduced);
+
+        if (!(generator_seed_reproduced == sp_membership_proofs[proof_index]->m_binned_reference_set.m_bin_generator_seed))
+            return false;
+
+        // extract the references
+        if(!try_get_reference_indices_from_binned_reference_set_v1(sp_membership_proofs[proof_index]->m_binned_reference_set,
+                reference_indices))
+            return false;
+
+        // get proof keys from enotes stored in the ledger
+        tx_validation_context.get_reference_set_proof_elements_v2(reference_indices, membership_proof_keys[proof_index]);
+
+        // offset (input image masked keys squashed: Q" = K" + C")
+        rct::addKeys(offsets[proof_index],
+            sp_input_images[proof_index]->m_masked_address,
+            sp_input_images[proof_index]->m_masked_commitment);
+
+        // proof message
+        make_tx_membership_proof_message_v1(sp_membership_proofs[proof_index]->m_binned_reference_set,
+            tools::add_element(messages));
+
+        // save the proof
+        proofs.emplace_back(&(sp_membership_proofs[proof_index]->m_grootle_proof));
+    }
+
+    // get verification data
+    sp::get_grootle_verification_data(proofs,
+        messages,
+        membership_proof_keys,
+        offsets,
+        sp_membership_proofs[0]->m_ref_set_decomp_n,
+        sp_membership_proofs[0]->m_ref_set_decomp_m,
+        validation_data_out);
 
     return true;
 }
