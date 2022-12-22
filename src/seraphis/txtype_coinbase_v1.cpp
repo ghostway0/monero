@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "txtype_coinbase_v1.h"
 
@@ -209,7 +207,7 @@ SemanticConfigCoinbaseComponentCountsV1 semantic_config_coinbase_component_count
 template <>
 bool validate_tx_semantics<SpTxCoinbaseV1>(const SpTxCoinbaseV1 &tx)
 {
-    // validate component counts (num inputs/outputs/etc.)
+    // validate component counts (num outputs, etc.)
     if (!validate_sp_semantics_coinbase_component_counts_v1(
             semantic_config_coinbase_component_counts_v1(tx.m_tx_semantic_rules_version),
             tx.m_outputs.size(),
