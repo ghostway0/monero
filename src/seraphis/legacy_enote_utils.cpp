@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "legacy_enote_utils.h"
 
@@ -52,7 +50,7 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 void get_legacy_enote_identifier(const rct::key &onetime_address, const rct::xmr_amount amount, rct::key &identifier_out)
 {
-    // identifier = H32(Ko, a)
+    // identifier = H_32(Ko, a)
     SpKDFTranscript transcript{config::HASH_KEY_LEGACY_ENOTE_IDENTIFIER, sizeof(onetime_address) + sizeof(amount)};
     transcript.append("Ko", onetime_address);
     transcript.append("a", amount);
@@ -67,7 +65,7 @@ void make_legacy_enote_v1(const rct::key &destination_spendkey,
     const crypto::secret_key &enote_ephemeral_privkey,
     LegacyEnoteV1 &enote_out)
 {
-    // onetime address (normal address): K^o = Hn(r K^v, t) G + K^s
+    // onetime address: K^o = Hn(r K^v, t) G + K^s
     make_legacy_onetime_address(destination_spendkey,
         destination_viewkey,
         output_index,
@@ -85,7 +83,7 @@ void make_legacy_enote_v2(const rct::key &destination_spendkey,
     const crypto::secret_key &enote_ephemeral_privkey,
     LegacyEnoteV2 &enote_out)
 {
-    // onetime address (normal address): K^o = Hn(r K^v, t) G + K^s
+    // onetime address: K^o = Hn(r K^v, t) G + K^s
     make_legacy_onetime_address(destination_spendkey,
         destination_viewkey,
         output_index,
@@ -114,7 +112,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
     const crypto::secret_key &enote_ephemeral_privkey,
     LegacyEnoteV3 &enote_out)
 {
-    // onetime address (normal address): K^o = Hn(r K^v, t) G + K^s
+    // onetime address: K^o = Hn(r K^v, t) G + K^s
     make_legacy_onetime_address(destination_spendkey,
         destination_viewkey,
         output_index,
@@ -142,7 +140,7 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
     const crypto::secret_key &enote_ephemeral_privkey,
     LegacyEnoteV4 &enote_out)
 {
-    // onetime address (normal address): K^o = Hn(r K^v, t) G + K^s
+    // onetime address: K^o = Hn(r K^v, t) G + K^s
     make_legacy_onetime_address(destination_spendkey,
         destination_viewkey,
         output_index,

@@ -26,14 +26,11 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Utilities for making legacy (cryptonote) enotes.
-// Note: these are for unit testing purposes, so are not fully-featured.
+// These are not fully-featured.
 // - does not support encrypted payment ids
 // - does not support nuanced output creation rules (w.r.t. change outputs and subaddresses in txs with normal addresses)
-// Note2: the legacy hash functions Hn(), Hx(), Hp() are built on the keccak hash function.
-
+// Note: The legacy hash functions Hn(), Hx(), Hp() are built on the keccak hash function.
 
 #pragma once
 
@@ -54,11 +51,11 @@ namespace sp
 
 /**
 * brief: get_legacy_enote_identifier - identifier for legacy enotes (for handling enotes with duplicate onetime addresses)
-*   identifier = H32(Ko, a)
-*   note: any legacy enote with identical Ko and a are assumed to be interchangeable
+*   identifier = H_32(Ko, a)
+*   note: legacy enotes with identical Ko and a are assumed to be interchangeable
 * param: onetime_address - Ko
 * param: amount - a
-* outparam: identifier_out - H32(Ko, a)
+* outparam: identifier_out - H_32(Ko, a)
 */
 void get_legacy_enote_identifier(const rct::key &onetime_address, const rct::xmr_amount amount, rct::key &identifier_out);
 /**
@@ -114,7 +111,8 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
 * param: enote_ephemeral_privkey - r
 * outparam: enote_ephemeral_pubkey_out - r G
 */
-void make_legacy_ephemeral_pubkey_shared(const crypto::secret_key &enote_ephemeral_privkey);
+void make_legacy_ephemeral_pubkey_shared(const crypto::secret_key &enote_ephemeral_privkey,
+    rct::key &enote_ephemeral_pubkey_out);
 /**
 * brief: make_legacy_ephemeral_pubkey_subaddress - make an ephemeral pubkey for a single enote in a tx
 * param: destination_spendkey - [address: K^s = k^s G] [subaddress: K^{s,i} = (Hn(k^v, i) + k^s) G]
@@ -122,6 +120,7 @@ void make_legacy_ephemeral_pubkey_shared(const crypto::secret_key &enote_ephemer
 * outparam: enote_ephemeral_pubkey_out - r_t K^s
 */
 void make_legacy_ephemeral_pubkey_single(const rct::key &destination_spendkey,
-    const crypto::secret_key &enote_ephemeral_privkey);
+    const crypto::secret_key &enote_ephemeral_privkey,
+    rct::key &enote_ephemeral_pubkey_out);
 
 } //namespace sp
