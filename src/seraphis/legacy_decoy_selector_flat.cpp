@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "legacy_decoy_selector_flat.h"
 
@@ -87,6 +85,7 @@ void LegacyDecoySelectorFlat::get_ring_members(const std::uint64_t real_ring_mem
     std::sort(ring_members_out.begin(), ring_members_out.end());
 
     // find location in reference set where the real reference sits
+    // note: the reference set does not contain duplicates, so we don't have to handle the case of multiple real references
     real_ring_member_index_in_ref_set_out = 0;
 
     for (const std::uint64_t reference : ring_members_out)

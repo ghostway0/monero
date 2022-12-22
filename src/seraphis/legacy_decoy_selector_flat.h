@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Implementation of legacy decoy selector: select unique decoys uniformly from the set of available legacy enote indices.
-
 
 #pragma once
 
@@ -50,21 +47,20 @@ namespace sp
 
 ////
 // LegacyDecoySelectorFlat
-// - get a set of legacy ring members, selected uniquely from a flat distribution across the range of available enotes
+// - get a set of unique legacy ring members, selected from a flat distribution across the range of available enotes
 ///
 class LegacyDecoySelectorFlat final : public LegacyDecoySelector
 {
 public:
 //constructors
     /// default constructor: disabled
-
     /// normal constructor
     LegacyDecoySelectorFlat(const std::uint64_t min_index, const std::uint64_t max_index);
 
 //destructor: default
 
 //member functions
-    /// request a set of ring members
+    /// request a set of ring members from range [min_index, max_index]
     void get_ring_members(const std::uint64_t real_ring_member_index,
         const std::uint64_t num_ring_members,
         std::vector<std::uint64_t> &ring_members_out,

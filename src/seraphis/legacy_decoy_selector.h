@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Interface for obtaining legacy ring member sets.
-
 
 #pragma once
 
@@ -49,7 +46,7 @@ namespace sp
 
 ////
 // LegacyDecoySelector
-// - interface for requesting a ring member set for legacy ring signatures (represented as on-chain legacy enote indices)
+// - interface for requesting a ring member set for legacy ring signatures (represented as legacy on-chain enote indices)
 ///
 class LegacyDecoySelector
 {
@@ -62,7 +59,7 @@ public:
     LegacyDecoySelector& operator=(LegacyDecoySelector&&) = delete;
 
 //member functions
-    /// request a set of ring members
+    /// request a set of ring members as on-chain enote indices
     virtual void get_ring_members(const std::uint64_t real_ring_member_index,
         const std::uint64_t num_ring_members,
         std::vector<std::uint64_t> &ring_members_out,
