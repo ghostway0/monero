@@ -86,6 +86,15 @@ extern "C" {
         1 / !!(sizeof(blake2b_param) == sizeof(uint64_t) * CHAR_BIT)
     };
 
+    // crypto namespace (fixes naming collisions with libsodium)
+#define blake2b_init        crypto_blake2b_init
+#define blake2b_init_key    crypto_blake2b_init_key
+#define blake2b_init_param  crypto_blake2b_init_param
+#define blake2b_update      crypto_blake2b_update
+#define blake2b_final       crypto_blake2b_final
+#define blake2b             crypto_blake2b
+#define blake2b_long        crypto_blake2b_long
+
     /* Streaming API */
     int blake2b_init(blake2b_state *S, size_t outlen);
     int blake2b_init_key(blake2b_state *S, size_t outlen, const void *key,

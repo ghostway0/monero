@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // A reference set using deterministic bins.
-
 
 #pragma once
 
@@ -46,7 +43,6 @@
 
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
-
 
 namespace sp
 {
