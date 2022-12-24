@@ -34,6 +34,10 @@
 
 //third party headers
 #include <boost/blank.hpp>
+#include <boost/mpl/begin_end.hpp>
+#include <boost/mpl/distance.hpp>
+#include <boost/mpl/find.hpp>
+#include <boost/mpl/vector.hpp>
 #include <boost/none_t.hpp>
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/get.hpp>
@@ -43,12 +47,18 @@
 //standard headers
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 //forward declarations
 
 
 namespace tools
 {
+
+[[noreturn]] inline void variant_static_visitor_blank_err()
+{ throw std::runtime_error("variant: tried to visit an empty variant."); }
+[[noreturn]] inline void variant_unwrap_err()
+{ throw std::runtime_error("variant: tried to access value of incorrect type."); }
 
 ////
 // variant: convenience wrapper around boost::variant with a cleaner interface
@@ -60,12 +70,7 @@ struct variant_static_visitor : public boost::static_visitor<ResultT>
 {
     /// provide visitation for empty variants
     /// - add this to your visitor with: using variant_static_visitor::operator();
-    ResultT operator()(const boost::blank) const
-    {
-        throw std::runtime_error("variant: tried to visit an empty variant.");
-        static const ResultT dummy{};
-        return dummy;
-    }
+    [[noreturn]] ResultT operator()(const boost::blank) const { variant_static_visitor_blank_err(); }
 };
 
 template <typename... Types>
@@ -79,51 +84,60 @@ public:
     variant() = default;
     variant(boost::none_t) : variant{} {}  //act like boost::optional
 
-    /// construct from variant type
-    template <typename T>
-    variant(const T &value) : m_value{value} {}
+    /// construct from variant type (use enable_if to avoid issues with copy/move constructor)
+    template <typename T,
+        typename std::enable_if<
+                !std::is_same<
+                        std::remove_cv_t<std::remove_reference_t<T>>,
+                        variant<Types...>
+                    >::value,
+                bool
+            >::type = true>
+    variant(T &&value) : m_value{std::forward<T>(value)} {}
 
 //overloaded operators
     /// boolean operator: true if the variant isn't empty/uninitialized
-    operator bool() const { return m_value.which() != 0; }
+    explicit operator bool() const noexcept { return !this->is_empty(); }
 
 //member functions
     /// check if empty/uninitialized
-    bool is_empty() const { return !static_cast<bool>(*this); }
+    bool is_empty() const noexcept { return m_value.which() != 0; }
 
     /// check the variant type
     template <typename T>
-    bool is_type() const { return boost::strict_get<T>(&m_value) != nullptr; }
+    bool is_type() const noexcept { return boost::strict_get<T>(&m_value) != nullptr; }
 
     /// get a read-only handle to the embedded value
     template <typename T>
     const T& unwrap() const
     {
         const T *value_ptr{boost::strict_get<T>(&m_value)};
-        if (!value_ptr) throw std::runtime_error("variant: tried to access value of incorrect type.");
+        if (!value_ptr) variant_unwrap_err();
         return *value_ptr;
     }
 
-    /// get the type index of the current partial signature
-    int type_index() const { return m_value.which(); }
+    /// get the type index of the currently stored type
+    int index() const { return m_value.which(); }
 
     /// get the type index of a requested type (compile error for invalid types)
     template <typename T>
     static int type_index_of()
     {
-        static const int type_index_of_T{VType{T{}}.which()};  //todo: this is slower than it needs to be
-        return type_index_of_T;
+        using types = boost::mpl::vector<boost::blank, Types...>;
+        using elem = typename boost::mpl::find<types, T>::type;
+        using begin = typename boost::mpl::begin<types>::type;
+        return boost::mpl::distance<begin, elem>::value;
     }
 
     /// check if two variants have the same type
-    static bool same_type(const variant<Types...> &v1, const variant<Types...> &v2)
-    { return v1.type_index() == v2.type_index(); }
+    static bool same_type(const variant<Types...> &v1, const variant<Types...> &v2) noexcept
+    { return v1.index() == v2.index(); }
 
     /// apply a visitor to the variant
     template <typename VisitorT>
-    typename VisitorT::result_type visit(const VisitorT &visitor) const
+    typename VisitorT::result_type visit(VisitorT &&visitor) const
     {
-        return boost::apply_visitor(visitor, m_value);
+        return boost::apply_visitor(std::forward<VisitorT>(visitor), m_value);
     }
 
 private:

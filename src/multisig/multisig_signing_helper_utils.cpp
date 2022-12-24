@@ -1004,7 +1004,7 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 }
 
                 // iii. skip partial sigs with unexpected internal variant type
-                if (partial_sig.second.type_index() != expected_partial_sig_variant_index)
+                if (partial_sig.second.index() != expected_partial_sig_variant_index)
                 {
                     multisig_errors_inout.emplace_back(
                             MultisigSigningErrorBadPartialSig{
