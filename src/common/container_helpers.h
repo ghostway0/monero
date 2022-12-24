@@ -49,23 +49,23 @@ namespace tools
 
 /// convert a binary comparison function to a functor
 template <typename T, typename ComparisonOpT = bool(const T &a, const T &b)>
-inline auto compare_func(const ComparisonOpT &comparison_function)
+inline auto compare_func(const ComparisonOpT &comparison_op_func)
 {
-    return [&comparison_function](const T &a, const T &b) -> bool { return comparison_function(a, b); };
+    return std::cref(comparison_op_func);
 }
 /// test if a container is sorted and unique according to a comparison criteria (defaults to operator<)
 /// NOTE: ComparisonOpT must establish 'strict weak ordering' https://en.cppreference.com/w/cpp/named_req/Compare
 template <typename T, typename ComparisonOpT = std::less<typename T::value_type>>
-bool is_sorted_and_unique(const T &container, const ComparisonOpT &ComparisonOp = ComparisonOpT{})
+bool is_sorted_and_unique(const T &container, const ComparisonOpT &comparison_op = ComparisonOpT{})
 {
-    if (!std::is_sorted(container.begin(), container.end(), ComparisonOp))
+    if (!std::is_sorted(container.begin(), container.end(), comparison_op))
         return false;
 
     if (std::adjacent_find(container.begin(),
                 container.end(),
-                [&ComparisonOp](const typename T::value_type &a, const typename T::value_type &b) -> bool
+                [&comparison_op](const typename T::value_type &a, const typename T::value_type &b) -> bool
                 {
-                    return !ComparisonOp(a, b) && !ComparisonOp(b, a);
+                    return !comparison_op(a, b) && !comparison_op(b, a);
                 })
             != container.end())
         return false;
@@ -75,9 +75,9 @@ bool is_sorted_and_unique(const T &container, const ComparisonOpT &ComparisonOp 
 /// specialization for raw function pointers
 template <typename T>
 bool is_sorted_and_unique(const T &container,
-    bool (*const ComparisonOpFunc)(const typename T::value_type &a, const typename T::value_type &b))
+    bool (*const comparison_op_func)(const typename T::value_type &a, const typename T::value_type &b))
 {
-    return is_sorted_and_unique(container, compare_func<typename T::value_type>(ComparisonOpFunc));
+    return is_sorted_and_unique(container, compare_func<typename T::value_type>(comparison_op_func));
 }
 /// convenience wrapper for checking if a mapped object is mapped to a key embedded in that object
 /// example: std::unorderd_map<rct::key, std::pair<rct::key, rct::xmr_amount>> where the map key is supposed to
