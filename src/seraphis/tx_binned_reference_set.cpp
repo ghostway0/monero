@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_binned_reference_set.h"
 
@@ -66,15 +64,15 @@ void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptB
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_binned_ref_set_v1_size_bytes(const std::size_t num_bins)
 {
-    return num_bins * 8 +
-        sizeof(ref_set_bin_dimension_v1_t) +
+    return sp_binned_ref_set_config_v1_size_bytes() +
         sizeof(SpBinnedReferenceSetV1::m_bin_generator_seed) +
-        sp_binned_ref_set_config_v1_size_bytes();
+        sizeof(ref_set_bin_dimension_v1_t) +
+        num_bins * 8;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_binned_ref_set_v1_size_bytes_compact(const std::size_t num_bins)
 {
-    return num_bins * 8 + sizeof(ref_set_bin_dimension_v1_t);
+    return sizeof(ref_set_bin_dimension_v1_t) + num_bins * 8;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_binned_ref_set_v1_size_bytes(const SpBinnedReferenceSetV1 &reference_set)

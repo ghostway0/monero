@@ -119,7 +119,7 @@ public:
     /// get the type index of the currently stored type
     int index() const { return m_value.which(); }
 
-    /// get the type index of a requested type (compile error for invalid types)
+    /// get the type index of a requested type (compile error for invalid types) (boost::mp11 is boost 1.66.0)
     template <typename T>
     static int type_index_of()
     {

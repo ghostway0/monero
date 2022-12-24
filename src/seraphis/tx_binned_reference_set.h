@@ -68,12 +68,13 @@ std::size_t sp_binned_ref_set_config_v1_size_bytes();
 
 ////
 // SpBinnedReferenceSetV1
-// - reference set: a set of elements that are in a larger set
-// - binned: the reference set is split into 'bins'
-// - bin: a selection of elements from a range of elements in a larger set
-// - bin locus: the center of the bin range, as an index into that larger set
-// - rotation factor: rotates deterministically-generated bin members within each bin, so that a pre-selected
-//                    member of the larger set becomes a member of one of the bins
+// - reference set: a set of elements that are selected from a larger set; all elements except one are decoys (random)
+// - binned: the reference set is split into subsets of elements that are located in 'bins'
+// - bin: a specific range of elements in a larger set
+// - bin locus: the center of the bin range, as an index into that larger set; the range is
+//   [bin_locus - bin_radius, bin_locus + bin-radius]
+// - rotation factor: reference set elements are deterministically selected from bins; the rotation factor rotates all
+//   bin members within their bins so that one bin member in one of the bins lines up with a pre-selected non-decoy element
 ///
 struct SpBinnedReferenceSetV1 final
 {
