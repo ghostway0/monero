@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_binned_reference_set_utils.h"
 
@@ -141,7 +139,7 @@ static void denormalize_elements(const std::uint64_t normalization_factor, std::
         element += normalization_factor;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// deterministically generate unique members of a bin
+// deterministically generate unique members of a bin (return indices within the bin)
 //-------------------------------------------------------------------------------------------------------------------
 static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_config,
     const rct::key &bin_generator_seed,
@@ -154,6 +152,8 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
 
     CHECK_AND_ASSERT_THROW_MES(bin_config.m_num_bin_members > 0,
         "making normalized bin members: zero bin members were requested (at least one expected).");
+    CHECK_AND_ASSERT_THROW_MES(bin_config.m_num_bin_members <= bin_width,
+        "making normalized bin members: too many bin members were requested (cannot exceed bin width).");
 
     // early return case
     if (bin_width == 1)
@@ -163,18 +163,19 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
         return;
     }
 
-    // set clip allowed max to be a large multiple of the bin width (minus 1 since we are zero-basis),
+    // we will discard randomly generated bin members that don't land in a multiple of the bin width
+    // - set clip allowed max to be a large multiple of the bin width (minus 1 since we are zero-basis),
     //   to avoid bias in the bin members
     // example 1:
-    //   max = 15  (e.g. 4 bits)
-    //   width = 4
+    //   max = 15  (e.g. 4 bits instead of uint64_t)
+    //   bin width = 4
     //   15 = 15 - ((15 mod 4) + 1 mod 4)
     //   15 = 15 - ((3) + 1 mod 4)
     //   15 = 15 - 0
     //   perfect partitioning: [0..3][4..7][8..11][12..15]
     // example 2:
     //   max = 15  (e.g. 4 bits)
-    //   width = 6
+    //   bin width = 6
     //   11 = 15 - ((15 mod 6) + 1 mod 6)
     //   11 = 15 - ((3) + 1 mod 6)
     //   11 = 15 - 4
@@ -184,9 +185,9 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
                 mod(mod(std::numeric_limits<std::uint64_t>::max(), bin_width) + 1, bin_width)
         };
 
-    // make each bin member (as unique indices within the bin)
+    // generate each bin member (as a unique index within the bin)
     // - make 64-byte blobs via hashing, then use each 8-byte block to try to generate a bin member
-    //   - this minimizes the amount of time spent in the hash function by calling it fewer times
+    //   - getting 8 blocks at a time reduces calls to the hash function
     unsigned char member_generator[64];
     std::size_t member_generator_offset_blocks{0};
     std::uint64_t generator_clip{};
@@ -227,7 +228,7 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
                 ++member_generator_offset_blocks;
             } while (generator_clip > clip_allowed_max);
 
-            // compute the bin member: slice_8_bytes(generator) mod bin_width
+            // compute the candidate bin member: generator mod bin_width
             member_candidate = mod(generator_clip, bin_width);
         } while (std::find(members_of_bin_out.begin(), members_of_bin_out.end(), member_candidate) !=
             members_of_bin_out.end());
@@ -257,7 +258,7 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
     CHECK_AND_ASSERT_THROW_MES(distribution_min_index <= distribution_max_index,
         "generating bin loci: invalid distribution range.");
     CHECK_AND_ASSERT_THROW_MES(distribution_max_index - distribution_min_index >= 
-            compute_bin_width(bin_config.m_bin_radius) - 1,
+            compute_bin_width(bin_config.m_bin_radius) - 1,  //note: range may span uint64_t
         "generating bin loci: bin width is too large for the distribution range.");
     CHECK_AND_ASSERT_THROW_MES(validate_bin_config_v1(reference_set_size, bin_config),
         "generating bin loci: invalid config.");
@@ -310,6 +311,8 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
         bin_locus = index_mapper.uniform_index_to_element_index(bin_locus);
 
     // 2) find the bin locus closest to the real locus (the index mapper might have precision loss)
+    // WARNING: all possible values in the element distribution space should map to values in uniform space,
+    //   otherwise decoy bin loci could be 'ruled out'
     std::uint64_t locus_closest_to_real{0};
     std::uint64_t locus_gap{distribution_width - 1};  //all gaps will be <= the range of locus values
     std::uint64_t smallest_gap;
@@ -386,15 +389,17 @@ bool validate_bin_config_v1(const std::uint64_t reference_set_size, const SpBinn
     // too many bin members
     if (bin_config.m_num_bin_members > std::numeric_limits<ref_set_bin_dimension_v1_t>::max())
         return false;
-    // can't fit bin members in bin (note: bin can't contain more than std::uint64_t::max members)
+    // can't fit bin members uniquely in bin (note: bin can't contain more than std::uint64_t::max members)
     if (bin_config.m_num_bin_members > compute_bin_width(bin_config.m_bin_radius))
         return false;
     // no bin members
     if (bin_config.m_num_bin_members < 1)
         return false;
-
     // reference set can't be perfectly divided into bins
-    return bin_config.m_num_bin_members * (reference_set_size / bin_config.m_num_bin_members) == reference_set_size;
+    if (bin_config.m_num_bin_members * (reference_set_size / bin_config.m_num_bin_members) != reference_set_size)
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_binned_reference_set_v1(const SpRefSetIndexMapper &index_mapper,
@@ -415,11 +420,11 @@ void make_binned_reference_set_v1(const SpRefSetIndexMapper &index_mapper,
     /// checks and initialization
     const std::uint64_t bin_width{compute_bin_width(bin_config.m_bin_radius)};
 
-    CHECK_AND_ASSERT_THROW_MES(validate_bin_config_v1(bin_config.m_num_bin_members * bin_loci.size(), bin_config),
+    CHECK_AND_ASSERT_THROW_MES(validate_bin_config_v1(bin_loci.size() * bin_config.m_num_bin_members, bin_config),
         "binned reference set: invalid bin config.");
-
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(bin_loci.begin(), bin_loci.end()),
         "binned reference set: bin loci aren't sorted.");
+
     for (const std::uint64_t bin_locus : bin_loci)
     {
         CHECK_AND_ASSERT_THROW_MES(bin_locus >= bin_config.m_bin_radius,
@@ -438,7 +443,7 @@ void make_binned_reference_set_v1(const SpRefSetIndexMapper &index_mapper,
 
     /// set real reference's bin rotation factor
 
-    // 1) generate the bin members' element set indices (normalized and not rotated)
+    // 1) generate the real bin's bin members' element set indices (normalized and not rotated)
     std::vector<std::uint64_t> members_of_real_bin;
     make_normalized_bin_members(bin_config,
         generator_seed,
@@ -458,7 +463,8 @@ void make_binned_reference_set_v1(const SpRefSetIndexMapper &index_mapper,
 
     // 4) compute rotation factor
     binned_reference_set_out.m_bin_rotation_factor = static_cast<ref_set_bin_dimension_v1_t>(
-        mod_sub(normalized_real_reference, members_of_real_bin[designated_real_bin_member], bin_width));
+            mod_sub(normalized_real_reference, members_of_real_bin[designated_real_bin_member], bin_width)
+        );
 
 
     /// set remaining pieces of the output reference set
@@ -485,7 +491,7 @@ bool try_get_reference_indices_from_binned_reference_set_v1(const SpBinnedRefere
         return false;
 
     // validate bins
-    for (const std::uint64_t &bin_locus : binned_reference_set.m_bin_loci)
+    for (const std::uint64_t bin_locus : binned_reference_set.m_bin_loci)
     {
         // bins must all fit in the range [0, 2^64 - 1]
         if (bin_locus < binned_reference_set.m_bin_config.m_bin_radius)
@@ -498,7 +504,7 @@ bool try_get_reference_indices_from_binned_reference_set_v1(const SpBinnedRefere
     reference_indices_out.clear();
     reference_indices_out.reserve(reference_set_size);
 
-    std::vector<std::uint64_t> bin_members;
+    std::vector<std::uint64_t> bin_members_temp;
 
     for (std::size_t bin_index{0}; bin_index < binned_reference_set.m_bin_loci.size(); ++bin_index)
     {
@@ -507,18 +513,18 @@ bool try_get_reference_indices_from_binned_reference_set_v1(const SpBinnedRefere
             binned_reference_set.m_bin_generator_seed,
             binned_reference_set.m_bin_loci[bin_index],
             bin_index,
-            bin_members);
+            bin_members_temp);
 
         // 2) rotate the bin members by the rotation factor
-        rotate_elements(bin_width, binned_reference_set.m_bin_rotation_factor, bin_members);
+        rotate_elements(bin_width, binned_reference_set.m_bin_rotation_factor, bin_members_temp);
 
         // 3) de-normalize the bin members
         denormalize_elements(
             binned_reference_set.m_bin_loci[bin_index] - binned_reference_set.m_bin_config.m_bin_radius,
-            bin_members);
+            bin_members_temp);
 
         // 4) save the bin members
-        reference_indices_out.insert(reference_indices_out.end(), bin_members.begin(), bin_members.end());
+        reference_indices_out.insert(reference_indices_out.end(), bin_members_temp.begin(), bin_members_temp.end());
     }
 
     return true;
