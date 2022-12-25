@@ -101,7 +101,7 @@ public:
 
 //member functions
     /// check if empty/uninitialized
-    bool is_empty() const noexcept { return m_value.which() != 0; }
+    bool is_empty() const noexcept { return m_value.which() == 0; }
 
     /// check the variant type
     template <typename T>
