@@ -53,7 +53,7 @@ inline auto as_functor(F f)
 }
 /// convert a binary comparison function to a functor
 /// note: for most use-cases 'const T&' will work because only non-trivial types need a user-defined comparison operation
-template <typename T, typename ComparisonOpT = bool(const T &a, const T &b)>
+template <typename T, typename ComparisonOpT = bool(const T&, const T&)>
 inline auto compare_func(ComparisonOpT comparison_op_func)
 {
     static_assert(
@@ -107,31 +107,32 @@ bool is_sorted_and_unique(const T &container, ComparisonOpT comparison_op = Comp
 /// specialization for raw function pointers
 template <typename T>
 bool is_sorted_and_unique(const T &container,
-    bool (*const comparison_op_func)(const typename T::value_type &a, const typename T::value_type &b))
+    bool (*const comparison_op_func)(const typename T::value_type&, const typename T::value_type&))
 {
     return is_sorted_and_unique(container, compare_func<typename T::value_type>(comparison_op_func));
 }
-/// convenience wrapper for checking if a mapped object is mapped to a key embedded in that object
+/// convenience wrapper for checking if the key to a mapped object is correct for that object
 /// example: std::unorderd_map<rct::key, std::pair<rct::key, rct::xmr_amount>> where the map key is supposed to
-///   reproduce the pair's rct::key; use the predicate to get the pair's rct::key element
+///   reproduce the pair's rct::key; use the predicate to check that relationship
 template <typename KeyT, typename ValueT, typename PredT>
-bool keys_match_internal_values(const std::unordered_map<KeyT, ValueT> &map, PredT get_internal_key_func)
+bool keys_match_internal_values(const std::unordered_map<KeyT, ValueT> &map, PredT check_key_func)
 {
     static_assert(
             std::is_same<
-                    std::remove_cv_t<std::remove_reference_t<
-                        KeyT
-                    >>,
-                    std::remove_cv_t<std::remove_reference_t<
-                        decltype(get_internal_key_func(std::declval<std::remove_cv_t<std::remove_reference_t<ValueT>>>()))
-                    >>
+                    bool,
+                    decltype(
+                        check_key_func(
+                            std::declval<std::remove_cv_t<KeyT>>(),
+                            std::declval<std::remove_cv_t<ValueT>>()
+                        )
+                    )
                 >::value,
-            "invalid callable - expected callable in form Key(Value)"
+            "invalid callable - expected callable in form bool(KeyT, ValueT)"
         );
 
     for (const auto &map_element : map)
     {
-        if (!(map_element.first == get_internal_key_func(map_element.second)))
+        if (!check_key_func(map_element.first, map_element.second))
             return false;
     }
 
@@ -152,7 +153,7 @@ void for_all_in_map_erase_if(std::unordered_map<KeyT, ValueT> &map_inout, PredT 
     static_assert(
             std::is_same<
                     bool,
-                    decltype(predicate(std::declval<std::remove_cv_t<std::remove_reference_t<MapValueT>>>()))
+                    decltype(predicate(std::declval<std::remove_cv_t<MapValueT>>()))
                 >::value,
             "invalid callable - expected callable in form bool(Value)"
         );

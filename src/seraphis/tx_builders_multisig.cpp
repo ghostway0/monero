@@ -967,9 +967,9 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
     SpMultisigTxProposalV1 &proposal_out)
 {
     CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(legacy_multisig_ring_signature_preps,
-            [](const LegacyMultisigRingSignaturePrepV1 &prep) -> const crypto::key_image&
+            [](const crypto::key_image &key, const LegacyMultisigRingSignaturePrepV1 &prep) -> bool
             {
-                return prep.m_key_image;
+                return key == prep.m_key_image;
             }),
         "make v1 multisig tx proposal (v1): a legacy ring signature prep is mapped to the incorrect key image.");
 

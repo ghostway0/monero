@@ -617,9 +617,9 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
 
     // 3. check that the init set collection maps to its internal proof keys correctly
     if (!tools::keys_match_internal_values(init_set_collection,
-                [](const MultisigProofInitSetV1 &init_set) -> const rct::key&
+                [](const rct::key &key, const MultisigProofInitSetV1 &init_set) -> bool
                 {
-                    return init_set.m_proof_key;
+                    return key == init_set.m_proof_key;
                 }
             ))
     {
@@ -773,9 +773,9 @@ void check_v1_multisig_partial_sig_set_semantics_v1(const MultisigPartialSigSetV
 
     // 2. the partial signatures map to their proof keys properly
     CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(partial_sig_set.m_partial_signatures,
-                [](const MultisigPartialSigVariant &partial_sig) -> const rct::key&
+                [](const rct::key &key, const MultisigPartialSigVariant &partial_sig) -> bool
                 {
-                    return proof_key_ref(partial_sig);
+                    return key == proof_key_ref(partial_sig);
                 }
             ),
         "multisig partial sig set semantics: a partial signature's mapped proof key does not match its stored key.");
