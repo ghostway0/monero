@@ -45,7 +45,14 @@
 namespace tools
 {
 
+/// convert an arbitrary function to functor
+template <typename F>
+inline auto as_functor(F f)
+{
+    return [f = std::move(f)](auto... args) { return f(std::forward<decltype(args)>(args)...); };
+}
 /// convert a binary comparison function to a functor
+/// note: for most use-cases 'const T&' will work because only non-trivial types need a user-defined comparison operation
 template <typename T, typename ComparisonOpT = bool(const T &a, const T &b)>
 inline auto compare_func(ComparisonOpT comparison_op_func)
 {
@@ -62,7 +69,7 @@ inline auto compare_func(ComparisonOpT comparison_op_func)
             "invalid callable - expected callable in form bool(T, T)"
         );
 
-    return [func = std::move(comparison_op_func)] (const T &a, const T &b) -> bool { return func(a, b); };
+    return as_functor(std::move(comparison_op_func));
 }
 /// test if a container is sorted and unique according to a comparison criteria (defaults to operator<)
 /// NOTE: ComparisonOpT must establish 'strict weak ordering' https://en.cppreference.com/w/cpp/named_req/Compare
