@@ -937,8 +937,8 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
         make_v1_partial_tx_v1(std::move(legacy_inputs),
             std::move(sp_partial_inputs),
             std::move(output_proposals),
-            tx_proposal.m_partial_memo,
             tx_proposal.m_tx_fee,
+            tx_proposal.m_partial_memo,
             version_string,
             partial_tx);
 
@@ -1004,11 +1004,11 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     // 4. make a temporary normal tx proposal
     SpTxProposalV1 tx_proposal;
-    make_v1_tx_proposal_v1(normal_payment_proposals,
+    make_v1_tx_proposal_v1(std::move(legacy_input_proposals),
+        std::move(sp_input_proposals),
+        normal_payment_proposals,
         selfsend_payment_proposals,
         tx_fee,
-        std::move(legacy_input_proposals),
-        std::move(sp_input_proposals),
         additional_memo_elements,
         tx_proposal);
 

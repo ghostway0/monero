@@ -430,8 +430,8 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         legacy_input_images,
         sp_input_images,
         outputs,
-        tx_supplement,
         discretized_transaction_fee,
+        tx_supplement,
         tx_proposal_prefix);
     std::vector<LegacyRingSignaturePrepV1> legacy_ring_signature_preps{
             gen_mock_legacy_ring_signature_preps_v1(tx_proposal_prefix,

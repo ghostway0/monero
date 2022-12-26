@@ -212,7 +212,7 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
 
     // 1. tx proposal prefix
     // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
-    //         tx supplement, fee)
+    //         fee, tx supplement)
     std::string version_string;
     version_string.reserve(3);
     make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
@@ -222,8 +222,8 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
         tx.m_legacy_input_images,
         tx.m_sp_input_images,
         tx.m_outputs,
-        tx.m_tx_supplement,
         tx.m_tx_fee,
+        tx.m_tx_supplement,
         tx_proposal_prefix);
 
     // 2. input images prefix (note: key images are represented in the tx hash twice (tx proposal prefix and input
@@ -419,11 +419,11 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 {
     // tx proposal
     SpTxProposalV1 tx_proposal;
-    make_v1_tx_proposal_v1(std::move(normal_payment_proposals),
+    make_v1_tx_proposal_v1(std::move(legacy_input_proposals),
+        std::move(sp_input_proposals),
+        std::move(normal_payment_proposals),
         std::move(selfsend_payment_proposals),
         tx_fee,
-        std::move(legacy_input_proposals),
-        std::move(sp_input_proposals),
         std::move(additional_memo_elements),
         tx_proposal);
 
@@ -614,8 +614,8 @@ bool validate_tx_input_proofs<SpTxSquashedV1>(const SpTxSquashedV1 &tx, const Tx
         tx.m_legacy_input_images,
         tx.m_sp_input_images,
         tx.m_outputs,
-        tx.m_tx_supplement,
         tx.m_tx_fee,
+        tx.m_tx_supplement,
         tx_proposal_prefix);
 
     // ownership, membership, and key image validity of legacy inputs

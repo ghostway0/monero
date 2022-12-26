@@ -195,8 +195,8 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         legacy_input_proposals,
         sp_input_proposals,
         output_proposals,
-        partial_memo,
         tx_fee,
+        partial_memo,
         proposal_prefix);
 
     // make legacy ring signature preps
@@ -232,8 +232,8 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     make_v1_partial_tx_v1(std::move(legacy_inputs),
         std::move(sp_partial_inputs),
         std::move(output_proposals),
-        partial_memo,
         tx_fee,
+        partial_memo,
         version_string,
         partial_tx);
 

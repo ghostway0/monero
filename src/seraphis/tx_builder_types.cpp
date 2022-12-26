@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_builder_types.h"
 
@@ -194,8 +192,8 @@ void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
         tx_proposal.m_legacy_input_proposals,
         tx_proposal.m_sp_input_proposals,
         output_proposals,
-        tx_proposal.m_partial_memo,
         tx_proposal.m_tx_fee,
+        tx_proposal.m_partial_memo,
         proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------

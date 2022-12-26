@@ -26,18 +26,15 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis transaction-builder helper types.
-
 
 #pragma once
 
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "ringct/rctTypes.h"
 #include "jamtis_payment_proposal.h"
+#include "ringct/rctTypes.h"
 #include "sp_core_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
@@ -137,20 +134,21 @@ struct SpMembershipProofPrepV1 final
 };
 
 ////
-// SpAlignableMembershipProofV1 - Alignable Membership Proof V1
-// - the masked address can be used to match this membership proof with its input image
+// SpAlignableMembershipProofV1
+// - the masked address can be used to match this membership proof with the corresponding input image
 //   - note: matching can fail if a masked address is reused in a tx, but that is almost definitely an implementation error!
 ///
 struct SpAlignableMembershipProofV1 final
 {
-    /// masked address used in the membership proof (for matching with actual input image)
+    /// masked address used in the membership proof (for matching with corresponding input image)
     rct::key m_masked_address;
     /// the membership proof
     SpMembershipProofV1 m_membership_proof;
 };
 
 ////
-// SpCoinbaseTxProposalV1: the proposed block height, reward, outputs, and miscellaneous memos
+// SpCoinbaseTxProposalV1
+// - the proposed block height, reward, outputs, and miscellaneous memos
 ///
 struct SpCoinbaseTxProposalV1 final
 {
@@ -165,19 +163,20 @@ struct SpCoinbaseTxProposalV1 final
 };
 
 ////
-// SpTxProposalV1: the proposed set of inputs and outputs, with tx fee and miscellaneous memos
+// SpTxProposalV1
+// - the proposed set of inputs and outputs, with tx fee and miscellaneous memos
 ///
 struct SpTxProposalV1 final
 {
+    /// legacy input proposals (SORTED)
+    std::vector<LegacyInputProposalV1> m_legacy_input_proposals;
+    /// seraphis input proposals (SORTED)
+    std::vector<SpInputProposalV1> m_sp_input_proposals;
     /// outputs (SORTED)
     std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> m_selfsend_payment_proposals;
     /// tx fee
     DiscretizedFee m_tx_fee;
-    /// legacy input proposals (SORTED)
-    std::vector<LegacyInputProposalV1> m_legacy_input_proposals;
-    /// seraphis input proposals (SORTED)
-    std::vector<SpInputProposalV1> m_sp_input_proposals;
     /// partial memo
     TxExtra m_partial_memo;
 };
@@ -185,7 +184,7 @@ struct SpTxProposalV1 final
 ////
 // SpPartialInputV1
 // - enote spent
-// - cached amount and amount blinding factor, image masks (for balance and membership proofs)
+// - cached amount and amount blinding factor, and image masks (for balance and membership proofs)
 // - spend proof for input (and proof the input's key image is properly constructed)
 // - proposal prefix (spend proof msg) [for consistency checks when handling this object]
 ///
@@ -193,13 +192,13 @@ struct SpPartialInputV1 final
 {
     /// input's image
     SpEnoteImageV1 m_input_image;
-    /// input image's proof (demonstrates ownership of the underlying enote, and that the key image is correct)
+    /// input image's proof (demonstrates ownership of the underlying enote and that the key image is correct)
     SpImageProofV1 m_image_proof;
     /// image masks
     crypto::secret_key m_address_mask;
     crypto::secret_key m_commitment_mask;
 
-    /// tx proposal prefix (represents the inputs/outputs/fee/memo; signed by this partial input's image proof)
+    /// tx proposal prefix (represents the tx inputs/outputs/fee/memo; signed by this partial input's image proof)
     rct::key m_proposal_prefix;
 
     /// the input enote's core; used for making a membership proof
@@ -211,7 +210,8 @@ struct SpPartialInputV1 final
 };
 
 ////
-// SpPartialTxV1: everything needed for a tx except input membership proofs
+// SpPartialTxV1
+// - everything needed for a tx except seraphis input membership proofs
 ///
 struct SpPartialTxV1 final
 {
@@ -227,10 +227,10 @@ struct SpPartialTxV1 final
     std::vector<LegacyRingSignatureV3> m_legacy_ring_signatures;
     /// composition proofs: ownership/unspentness for each seraphis input (ALIGNED TO SERAPHIS INPUTS)
     std::vector<SpImageProofV1> m_sp_image_proofs;
-    /// supplemental data for tx
-    SpTxSupplementV1 m_tx_supplement;
     /// tx fee (discretized representation)
     DiscretizedFee m_tx_fee;
+    /// supplemental data for tx
+    SpTxSupplementV1 m_tx_supplement;
 
     /// ring members for each legacy input; for validating ring signatures stored here (ALIGNED TO LEGACY INPUTS)
     std::vector<rct::ctkeyV> m_legacy_ring_signature_rings;
@@ -314,7 +314,7 @@ SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_pr
 SpCoinbaseOutputProposalV1 gen_sp_coinbase_output_proposal_v1(const rct::xmr_amount amount,
     const std::size_t num_random_memo_elements);
 /**
-* brief: gen_sp_coinbase_output_proposal_v1 - generate an output proposal
+* brief: gen_sp_output_proposal_v1 - generate an output proposal
 * param: amount -
 * param: num_random_memo_elements -
 * return: random output proposal
