@@ -560,6 +560,23 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &proposal_prefix_out)
+{
+    // version string
+    std::string version_string;
+    version_string.reserve(3);
+    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
+
+    // get proposal prefix
+    make_tx_proposal_prefix_v1(version_string,
+        tx.m_legacy_input_images,
+        tx.m_sp_input_images,
+        tx.m_outputs,
+        tx.m_tx_fee,
+        tx.m_tx_supplement,
+        proposal_prefix_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
     const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
     const std::vector<SpImageProofV1> &sp_image_proofs,

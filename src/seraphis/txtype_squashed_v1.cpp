@@ -213,18 +213,8 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
     // 1. tx proposal prefix
     // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
     //         fee, tx supplement)
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
-
     rct::key tx_proposal_prefix;
-    make_tx_proposal_prefix_v1(version_string,
-        tx.m_legacy_input_images,
-        tx.m_sp_input_images,
-        tx.m_outputs,
-        tx.m_tx_fee,
-        tx.m_tx_supplement,
-        tx_proposal_prefix);
+    make_tx_proposal_prefix_v1(tx, tx_proposal_prefix);
 
     // 2. input images prefix (note: key images are represented in the tx hash twice (tx proposal prefix and input
     //    images))
@@ -605,18 +595,8 @@ template <>
 bool validate_tx_input_proofs<SpTxSquashedV1>(const SpTxSquashedV1 &tx, const TxValidationContext &tx_validation_context)
 {
     // prepare image proofs message
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
-
     rct::key tx_proposal_prefix;
-    make_tx_proposal_prefix_v1(version_string,
-        tx.m_legacy_input_images,
-        tx.m_sp_input_images,
-        tx.m_outputs,
-        tx.m_tx_fee,
-        tx.m_tx_supplement,
-        tx_proposal_prefix);
+    make_tx_proposal_prefix_v1(tx, tx_proposal_prefix);
 
     // ownership, membership, and key image validity of legacy inputs
     if (!validate_sp_legacy_input_proofs_v1(tx.m_legacy_ring_signatures,

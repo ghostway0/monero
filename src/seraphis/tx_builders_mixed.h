@@ -111,6 +111,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
     rct::key &proposal_prefix_out);
+void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &proposal_prefix_out);
 /**
 * brief: make_tx_proofs_prefix_v1 - hash of all proofs in a tx (for tx hashes)
 *   - H_32(balance proof, image proofs, membership proofs)
