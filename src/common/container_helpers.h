@@ -49,7 +49,7 @@ namespace tools
 template <typename F>
 inline auto as_functor(F f)
 {
-    return [f = std::move(f)](auto... args) { return f(std::forward<decltype(args)>(args)...); };
+    return [f = std::move(f)](auto&&... args) { return f(std::forward<decltype(args)>(args)...); };
 }
 /// convert a binary comparison function to a functor
 /// note: for most use-cases 'const T&' will work because only non-trivial types need a user-defined comparison operation
