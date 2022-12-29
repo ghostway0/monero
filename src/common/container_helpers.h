@@ -95,7 +95,7 @@ bool is_sorted_and_unique(const T &container, ComparisonOpT comparison_op = Comp
 
     if (std::adjacent_find(container.begin(),
                 container.end(),
-                [comparison_op](const ValueT &a, const ValueT &b) -> bool
+                [comparison_op = std::move(comparison_op)](const ValueT &a, const ValueT &b) -> bool
                 {
                     return !comparison_op(a, b) && !comparison_op(b, a);
                 })
