@@ -242,17 +242,16 @@ struct SpPartialTxV1 final
     std::vector<crypto::secret_key> m_sp_commitment_masks;
 };
 
-/// comparison method for sorting: a.KI < b.KI
-bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b);
 /// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputProposalV1 &b);
-/// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpOutputProposalV1 &a, const SpOutputProposalV1 &b);
 /// comparison method for sorting: a.KI < b.KI
+bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b);
 bool compare_KI(const SpPartialInputV1 &a, const SpPartialInputV1 &b);
 /// alignment checks for aligning seraphis membership proofs: test if masked addresses are equal
 bool alignment_check(const SpAlignableMembershipProofV1 &a, const SpAlignableMembershipProofV1 &b);
 bool alignment_check(const SpAlignableMembershipProofV1 &proof, const rct::key &masked_address);
+
 /**
 * brief: get_enote_image_v1 - get the input proposal's enote image in the squashed enote model
 * param: proposal -

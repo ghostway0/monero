@@ -118,7 +118,7 @@ struct LegacyMultisigRingSignaturePrepV1 final
 {
     /// ledger indices of legacy enotes referenced by the proof
     std::vector<std::uint64_t> m_reference_set;
-    /// the referenced enotes ({Ko, C"}((legacy)) representation)
+    /// the referenced enotes ({Ko, C}((legacy)) representation)
     rct::ctkeyV m_referenced_enotes;
     /// the index of the real enote being referenced within the reference set
     std::uint64_t m_real_reference_index;

@@ -67,11 +67,6 @@ rct::xmr_amount amount_ref(const SpOutputProposalV1 &proposal)
     return proposal.m_core.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b)
-{
-    return compare_KI(a.m_core, b.m_core);
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputProposalV1 &b)
 {
     return compare_Ko(a.m_enote, b.m_enote);
@@ -80,6 +75,11 @@ bool compare_Ko(const SpCoinbaseOutputProposalV1 &a, const SpCoinbaseOutputPropo
 bool compare_Ko(const SpOutputProposalV1 &a, const SpOutputProposalV1 &b)
 {
     return compare_Ko(a.m_core, b.m_core);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool compare_KI(const SpInputProposalV1 &a, const SpInputProposalV1 &b)
+{
+    return compare_KI(a.m_core, b.m_core);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const SpPartialInputV1 &a, const SpPartialInputV1 &b)

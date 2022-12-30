@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Legacy transaction-builder helper types.
-
 
 #pragma once
 
@@ -82,9 +79,9 @@ struct LegacyRingSignaturePrepV1 final
 {
     /// tx proposal prefix (message to sign in the proof)
     rct::key m_proposal_prefix;
-    /// ledger indices of legacy enotes referenced by the proof
+    /// ledger indices of legacy enotes to be referenced by the proof
     std::vector<std::uint64_t> m_reference_set;
-    /// the referenced enotes ({Ko, C"}((legacy)) representation)
+    /// the referenced enotes ({Ko, C}((legacy)) representation)
     rct::ctkeyV m_referenced_enotes;
     /// the index of the real enote being referenced within the reference set
     std::uint64_t m_real_reference_index;
@@ -97,17 +94,18 @@ struct LegacyRingSignaturePrepV1 final
 };
 
 ////
-// LegacyInputV1: todo
-// - enote spent
+// LegacyInputV1
+// - legacy enote spent
 // - legacy ring signature for the input
 // - cached amount and masked amount commitment's blinding factor (for balance proof)
+// - cached ring members (for validating the ring signature)
 // - proposal prefix (spend proof msg) [for consistency checks when handling this object]
 ///
 struct LegacyInputV1 final
 {
     /// input's image
     LegacyEnoteImageV2 m_input_image;
-    /// input's ring signature (demonstrates ownership and membership of the underlying enote, and that the key image
+    /// input's ring signature (demonstrates ownership and membership of the underlying enote, and that the enote image
     ///   is correct)
     LegacyRingSignatureV3 m_ring_signature;
 
@@ -125,10 +123,9 @@ struct LegacyInputV1 final
 
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b);
-/// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePrepV1 &b);
-/// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b);
+
 /**
 * brief: get_enote_image_v2 - get this input's enote image
 * outparam: image_out -

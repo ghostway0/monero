@@ -157,29 +157,22 @@ struct SpOutputProposalCore final
     rct::xmr_amount m_amount;
 };
 
-/// equality operator for equivalence testing
+/// equality operators for equivalence testing
 bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
-/// equality operator for equivalence testing
 bool operator==(const SpEnoteCore &a, const SpEnoteCore &b);
-/// equality operator for equivalence testing
 bool operator==(const SpEnoteCoreVariant &variant1, const SpEnoteCoreVariant &variant2);
-
-/// comparison method for sorting: a.Ko < b.Ko
+/// comparison methods for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b);
-/// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpEnoteCore &a, const SpEnoteCore &b);
-/// comparison method for sorting: a.KI < b.KI
-bool compare_KI(const SpEnoteImageCore &a, const SpEnoteImageCore &b);
-/// comparison method for sorting: a.KI < b.KI
-bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b);
-/// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpOutputProposalCore &a, const SpOutputProposalCore &b);
-/// check if the coinbase enote core has a canonical onetime address
+/// comparison methods for sorting: a.KI < b.KI
+bool compare_KI(const SpEnoteImageCore &a, const SpEnoteImageCore &b);
+bool compare_KI(const SpInputProposalCore &a, const SpInputProposalCore &b);
+/// check if the type has a canonical onetime address
 bool onetime_address_is_canonical(const SpCoinbaseEnoteCore &enote_core);
-/// check if the enote core has a canonical onetime address
 bool onetime_address_is_canonical(const SpEnoteCore &enote_core);
-/// check if the output proposal core has a canonical onetime address
 bool onetime_address_is_canonical(const SpOutputProposalCore &output_proposal);
+
 /**
 * brief: get_squash_prefix - get the input proposal's enote's squash prefix
 * param: proposal -
