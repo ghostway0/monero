@@ -109,7 +109,7 @@ static encoded_amount_t enc_amount(const rct::xmr_amount amount, const encoded_a
 
     // little_endian(amount) XOR mask
     encoded_amount_t amount_LE;
-    memcpy_swap64le(amount_LE.bytes, &amount, sizeof(amount));
+    memcpy_swap64le(amount_LE.bytes, &amount, 1);
     return amount_LE ^ mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ static rct::xmr_amount dec_amount(const encoded_amount_t &encoded_amount, const 
     // system_endian(encoded_amount XOR H_8(q, xr xG))
     const encoded_amount_t decoded_amount{encoded_amount ^ mask};
     rct::xmr_amount amount;
-    memcpy_swap64le(&amount, &decoded_amount, sizeof(decoded_amount));
+    memcpy_swap64le(&amount, &decoded_amount, 1);
     return amount;
 }
 //-------------------------------------------------------------------------------------------------------------------

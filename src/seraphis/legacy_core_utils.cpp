@@ -198,7 +198,7 @@ jamtis::encoded_amount_t legacy_xor_amount(const rct::xmr_amount amount, const r
     memcpy(factor.bytes, encoding_factor.bytes, sizeof(jamtis::encoded_amount_t));
 
     jamtis::encoded_amount_t amount_LE;
-    memcpy_swap64le(amount_LE.bytes, &amount, sizeof(jamtis::encoded_amount_t));
+    memcpy_swap64le(amount_LE.bytes, &amount, 1);
 
     return amount_LE ^ factor;
 }
@@ -211,7 +211,7 @@ rct::xmr_amount legacy_xor_encoded_amount(const jamtis::encoded_amount_t &encode
 
     const jamtis::encoded_amount_t decoded_amount{encoded_amount ^ factor};
     rct::xmr_amount amount;
-    memcpy_swap64le(&amount, decoded_amount.bytes, sizeof(jamtis::encoded_amount_t));
+    memcpy_swap64le(&amount, decoded_amount.bytes, 1);
 
     return amount;
 }
