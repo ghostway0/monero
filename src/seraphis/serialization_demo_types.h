@@ -64,6 +64,12 @@ struct ser_encrypted_address_tag_t final
     unsigned char bytes[sizeof(jamtis::encrypted_address_tag_t)];
 };
 
+/// serializable jamtis::encoded_amount_t
+struct ser_encoded_amount_t final
+{
+    unsigned char bytes[sizeof(jamtis::encoded_amount_t)];
+};
+
 /// serializable SpCoinbaseEnoteCore
 struct ser_SpCoinbaseEnoteCore final
 {
@@ -74,7 +80,7 @@ struct ser_SpCoinbaseEnoteCore final
 
     BEGIN_SERIALIZE()
         FIELD(m_onetime_address)
-        FIELD(m_amount)
+        VARINT_FIELD(m_amount)
     END_SERIALIZE()
 };
 
@@ -255,7 +261,7 @@ struct ser_SpEnoteV1 final
     ser_SpEnoteCore m_core;
 
     /// enc(a)
-    rct::xmr_amount m_encoded_amount;
+    ser_encoded_amount_t m_encoded_amount;
     /// addr_tag_enc
     ser_encrypted_address_tag_t m_addr_tag_enc;
     /// view_tag
@@ -263,7 +269,7 @@ struct ser_SpEnoteV1 final
 
     BEGIN_SERIALIZE()
         FIELD(m_core)
-        VARINT_FIELD(m_encoded_amount)
+        FIELD(m_encoded_amount)  static_assert(sizeof(m_encoded_amount) == sizeof(jamtis::encoded_amount_t), "");
         FIELD(m_addr_tag_enc)    static_assert(sizeof(m_addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
         VARINT_FIELD(m_view_tag) static_assert(sizeof(m_view_tag) == sizeof(jamtis::view_tag_t), "");
     END_SERIALIZE()
@@ -406,3 +412,4 @@ struct ser_SpTxSquashedV1 final
 } //namespace sp
 
 BLOB_SERIALIZER(sp::serialization::ser_encrypted_address_tag_t);
+BLOB_SERIALIZER(sp::serialization::ser_encoded_amount_t);

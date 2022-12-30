@@ -71,10 +71,7 @@ std::size_t sp_coinbase_enote_v1_size_bytes()
 void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("core", container.m_core);
-    const std::uint64_t le_encoded_amount{SWAP64LE(container.m_encoded_amount)};
-    unsigned char encoded_amount[8];
-    memcpy(encoded_amount, &le_encoded_amount, 8);  //encoded amounts are semantically 8-byte buffers
-    transcript_inout.append("encoded_amount", encoded_amount);
+    transcript_inout.append("encoded_amount", container.m_encoded_amount.bytes);
     transcript_inout.append("addr_tag_enc", container.m_addr_tag_enc.bytes);
     transcript_inout.append("view_tag", container.m_view_tag);
 }
@@ -360,7 +357,7 @@ SpEnoteV1 gen_sp_enote_v1()
     temp.m_core = gen_sp_enote_core();
 
     // memo
-    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
     temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
     crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
 

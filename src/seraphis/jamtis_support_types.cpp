@@ -45,6 +45,24 @@ namespace sp
 namespace jamtis
 {
 //-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <std::size_t Sz>
+static void xor_bytes(const unsigned char(&a)[Sz], const unsigned char(&b)[Sz], unsigned char(&c_out)[Sz])
+{
+    for (std::size_t i{0}; i < Sz; ++i)
+        c_out[i] = a[i] ^ b[i];
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename T>
+static T xor_bytes(const T &a, const T &b)
+{
+    T temp;
+    xor_bytes(a.bytes, b.bytes, temp.bytes);
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 address_index_t::address_index_t()
 {
     std::memset(this->bytes, 0, ADDRESS_INDEX_BYTES);
@@ -72,11 +90,17 @@ bool operator==(const address_tag_t &a, const address_tag_t &b)
 //-------------------------------------------------------------------------------------------------------------------
 address_tag_t operator^(const address_tag_t &a, const address_tag_t &b)
 {
-    address_tag_t temp;
-    for (std::size_t i{0}; i < sizeof(address_tag_t); ++i)
-        temp.bytes[i] = a.bytes[i] ^ b.bytes[i];
-
-    return temp;
+    return xor_bytes(a, b);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool operator==(const encoded_amount_t &a, const encoded_amount_t &b)
+{
+    return memcmp(a.bytes, b.bytes, sizeof(encoded_amount_t)) == 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+encoded_amount_t operator^(const encoded_amount_t &a, const encoded_amount_t &b)
+{
+    return xor_bytes(a, b);
 }
 //-------------------------------------------------------------------------------------------------------------------
 address_index_t max_address_index()

@@ -556,18 +556,18 @@ TEST(seraphis, information_recovery_amountencoding)
     crypto::x25519_pubkey fake_baked_key;
     memcpy(&fake_baked_key, rct::zero().bytes, sizeof(rct::key));
 
-    rct::xmr_amount encoded_amount{
+    jamtis::encoded_amount_t encoded_amount{
             encode_jamtis_amount_plain(amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
         };
     rct::xmr_amount decoded_amount{
             decode_jamtis_amount_plain(encoded_amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
         };
-    EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
+    //EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
     EXPECT_TRUE(decoded_amount == amount);
 
     encoded_amount = encode_jamtis_amount_selfsend(amount, rct::sk2rct(sender_receiver_secret));
     decoded_amount = decode_jamtis_amount_selfsend(encoded_amount, rct::sk2rct(sender_receiver_secret));
-    EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
+    //EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
     EXPECT_TRUE(decoded_amount == amount);
 }
 //-------------------------------------------------------------------------------------------------------------------

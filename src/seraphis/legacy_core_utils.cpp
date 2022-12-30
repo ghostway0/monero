@@ -39,6 +39,7 @@ extern "C"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
 #include "int-util.h"
+#include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "tx_extra.h"
@@ -190,22 +191,29 @@ void make_legacy_amount_encoding_factor_v2(const crypto::secret_key &sender_rece
     rct::cn_fast_hash(amount_encoding_factor_out, data, sizeof(data));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor)
+jamtis::encoded_amount_t legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor)
 {
     // a XOR_8 factor
-    rct::xmr_amount factor;
-    memcpy(&factor, encoding_factor.bytes, 8);
+    jamtis::encoded_amount_t factor;
+    memcpy(factor.bytes, encoding_factor.bytes, sizeof(jamtis::encoded_amount_t));
 
-    return SWAP64LE(amount) ^ factor;
+    jamtis::encoded_amount_t amount_LE;
+    memcpy_swap64le(amount_LE.bytes, &amount, sizeof(jamtis::encoded_amount_t));
+
+    return amount_LE ^ factor;
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount legacy_xor_encoded_amount(const rct::xmr_amount encoded_amount, const rct::key &encoding_factor)
+rct::xmr_amount legacy_xor_encoded_amount(const jamtis::encoded_amount_t &encoded_amount, const rct::key &encoding_factor)
 {
-    // a XOR_8 factor
-    rct::xmr_amount factor;
-    memcpy(&factor, encoding_factor.bytes, 8);
+    // enc(a) XOR_8 factor
+    jamtis::encoded_amount_t factor;
+    memcpy(factor.bytes, encoding_factor.bytes, sizeof(jamtis::encoded_amount_t));
 
-    return SWAP64LE(encoded_amount ^ factor);
+    const jamtis::encoded_amount_t decoded_amount{encoded_amount ^ factor};
+    rct::xmr_amount amount;
+    memcpy_swap64le(&amount, decoded_amount.bytes, sizeof(jamtis::encoded_amount_t));
+
+    return amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_encoded_amount_v1(const rct::key &destination_viewkey,
@@ -237,7 +245,7 @@ void make_legacy_encoded_amount_v2(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
     const rct::xmr_amount amount,
-    rct::xmr_amount &encoded_amount_out)
+    jamtis::encoded_amount_t &encoded_amount_out)
 {
     // Hn(r K^v, t)
     crypto::secret_key sender_receiver_secret;

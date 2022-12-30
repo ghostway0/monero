@@ -102,6 +102,13 @@ enum class JamtisSelfSendType : unsigned char
     MAX = SELF_SPEND
 };
 
+/// jamtis encoded amount
+constexpr std::size_t ENCODED_AMOUNT_BYTES{8};
+struct encoded_amount_t final
+{
+    unsigned char bytes[ENCODED_AMOUNT_BYTES];
+};
+
 /// jamtis view tags
 using view_tag_t = unsigned char;
 
@@ -115,6 +122,11 @@ inline bool operator!=(const address_tag_hint_t &a, const address_tag_hint_t &b)
 bool operator==(const address_tag_t &a, const address_tag_t &b);
 inline bool operator!=(const address_tag_t &a, const address_tag_t &b) { return !(a == b); }
 address_tag_t operator^(const address_tag_t &a, const address_tag_t &b);
+
+/// overloaded operators: encoded amount
+bool operator==(const encoded_amount_t &a, const encoded_amount_t &b);
+inline bool operator!=(const encoded_amount_t &a, const encoded_amount_t &b) { return !(a == b); }
+encoded_amount_t operator^(const encoded_amount_t &a, const encoded_amount_t &b);
 
 /// max address index
 address_index_t max_address_index();

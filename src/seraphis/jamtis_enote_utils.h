@@ -138,7 +138,7 @@ void make_jamtis_sender_receiver_secret_plain(const crypto::x25519_secret_key &p
 void make_jamtis_sender_receiver_secret_selfsend(const crypto::secret_key &k_view_balance,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
-    const jamtis::JamtisSelfSendType self_send_type,
+    const JamtisSelfSendType self_send_type,
     rct::key &sender_receiver_secret_out);
 /**
 * brief: make_jamtis_onetime_address_extension_g - extension for transforming a recipient spendkey into an
@@ -232,7 +232,7 @@ void make_jamtis_amount_blinding_factor_selfsend(const rct::key &sender_receiver
 * param: baked_key - xr xG
 * return: a_enc
 */
-rct::xmr_amount encode_jamtis_amount_plain(const rct::xmr_amount amount,
+encoded_amount_t encode_jamtis_amount_plain(const rct::xmr_amount amount,
     const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key);
 /**
@@ -243,7 +243,7 @@ rct::xmr_amount encode_jamtis_amount_plain(const rct::xmr_amount amount,
 * param: baked_key - xr xG
 * return: a
 */
-rct::xmr_amount decode_jamtis_amount_plain(const rct::xmr_amount encoded_amount,
+rct::xmr_amount decode_jamtis_amount_plain(const encoded_amount_t &encoded_amount,
     const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key);
 /**
@@ -253,7 +253,7 @@ rct::xmr_amount decode_jamtis_amount_plain(const rct::xmr_amount encoded_amount,
 * param: sender_receiver_secret - q
 * return: a_enc
 */
-rct::xmr_amount encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret);
+encoded_amount_t encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret);
 /**
 * brief: decode_jamtis_amount_selfsend - decode an amount from a self-send enote
 *   a = a_enc XOR H_8(q)
@@ -261,7 +261,7 @@ rct::xmr_amount encode_jamtis_amount_selfsend(const rct::xmr_amount amount, cons
 * param: sender_receiver_secret - q
 * return: a
 */
-rct::xmr_amount decode_jamtis_amount_selfsend(const rct::xmr_amount encoded_amount,
+rct::xmr_amount decode_jamtis_amount_selfsend(const encoded_amount_t &encoded_amount,
     const rct::key &sender_receiver_secret);
 /**
 * brief: make_jamtis_nominal_spend_key - make a nominal spend key from a onetime address
@@ -306,7 +306,7 @@ bool try_get_jamtis_sender_receiver_secret_plain(const crypto::x25519_pubkey &se
 bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key,
     const rct::key &amount_commitment,
-    const rct::xmr_amount encoded_amount,
+    const encoded_amount_t &encoded_amount,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out);
 /**
@@ -321,7 +321,7 @@ bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
 */
 bool try_get_jamtis_amount_selfsend(const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::xmr_amount encoded_amount,
+    const encoded_amount_t &encoded_amount,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out);
 

@@ -234,7 +234,7 @@ SpOutputProposalV1 gen_sp_output_proposal_v1(const rct::xmr_amount amount, const
     temp.m_core = gen_sp_output_proposal_core(amount);
 
     temp.m_enote_ephemeral_pubkey = crypto::x25519_pubkey_gen();
-    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
     crypto::rand(sizeof(temp.m_addr_tag_enc), temp.m_addr_tag_enc.bytes);
     temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(-1));
 

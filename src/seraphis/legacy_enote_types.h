@@ -33,6 +33,7 @@
 //local headers
 #include "common/variant.h"
 #include "crypto/crypto.h"
+#include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
@@ -96,7 +97,7 @@ struct LegacyEnoteV3 final
     /// C
     rct::key m_amount_commitment;
     /// enc(a)
-    rct::xmr_amount m_encoded_amount;
+    jamtis::encoded_amount_t m_encoded_amount;
 };
 
 /// get size in bytes
@@ -116,7 +117,7 @@ struct LegacyEnoteV4 final
     /// C
     rct::key m_amount_commitment;
     /// enc(a)
-    rct::xmr_amount m_encoded_amount;
+    jamtis::encoded_amount_t m_encoded_amount;
     /// view_tag
     crypto::view_tag m_view_tag;
 };

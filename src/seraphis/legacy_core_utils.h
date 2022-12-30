@@ -34,6 +34,7 @@
 //local headers
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
+#include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
 #include "tx_extra.h"
 
@@ -154,7 +155,7 @@ void make_legacy_amount_encoding_factor_v2(const crypto::secret_key &sender_rece
 * param: encoding_factor - H32("amount", Hn(r K^v, t)))
 * return: enc(a)
 */
-rct::xmr_amount legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor);
+jamtis::encoded_amount_t legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor);
 /**
 * brief: legacy_xor_encoded_amount - decode a legacy amount (8-byte encoding)
 *   - a = little_endian(enc(a) XOR8 encoding_factor)
@@ -162,7 +163,7 @@ rct::xmr_amount legacy_xor_amount(const rct::xmr_amount amount, const rct::key &
 * param: encoding_factor - H32("amount", Hn(r K^v, t)))
 * return: a
 */
-rct::xmr_amount legacy_xor_encoded_amount(const rct::xmr_amount encoded_amount, const rct::key &encoding_factor);
+rct::xmr_amount legacy_xor_encoded_amount(const jamtis::encoded_amount_t &encoded_amount, const rct::key &encoding_factor);
 /**
 * brief: make_legacy_encoded_amount_v1 - make a legacy encoded amount with encoded amount mask (v1: 32 byte encodings)
 *   - enc(x) = x + Hn(Hn(r_t K^v, t))
@@ -195,7 +196,7 @@ void make_legacy_encoded_amount_v2(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
     const rct::xmr_amount amount,
-    rct::xmr_amount &encoded_amount_out);
+    jamtis::encoded_amount_t &encoded_amount_out);
 /**
 * brief: make_legacy_view_tag - make a legacy view tag
 *   - view_tag = H1("view_tag", r_t K^v, t)

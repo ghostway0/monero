@@ -99,7 +99,7 @@ struct SpOutputProposalV1 final
     /// xK_e: enote ephemeral pubkey
     crypto::x25519_pubkey m_enote_ephemeral_pubkey;
     /// enc_a
-    rct::xmr_amount m_encoded_amount;
+    jamtis::encoded_amount_t m_encoded_amount;
     /// addr_tag_enc
     jamtis::encrypted_address_tag_t m_addr_tag_enc;
     /// view_tag

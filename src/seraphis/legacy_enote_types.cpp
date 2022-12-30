@@ -97,7 +97,7 @@ LegacyEnoteV3 gen_legacy_enote_v3()
     LegacyEnoteV3 temp;
     temp.m_onetime_address = rct::pkGen();
     temp.m_amount_commitment = rct::pkGen();
-    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
     return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ LegacyEnoteV4 gen_legacy_enote_v4()
     LegacyEnoteV4 temp;
     temp.m_onetime_address = rct::pkGen();
     temp.m_amount_commitment = rct::pkGen();
-    temp.m_encoded_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
     temp.m_view_tag.data = static_cast<char>(crypto::rand_idx(static_cast<unsigned char>(-1)));
     return temp;
 }

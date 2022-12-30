@@ -152,7 +152,7 @@ static bool try_get_amount_commitment_information_v2(const rct::key &amount_comm
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool try_get_amount_commitment_information_v3(const rct::key &amount_commitment,
-    const rct::xmr_amount &encoded_amount,
+    const jamtis::encoded_amount_t &encoded_amount,
     const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
     rct::xmr_amount &amount_out,

@@ -81,65 +81,80 @@ static auto make_derivation_with_wiper(const crypto::x25519_secret_key &privkey,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static const boost::string_ref sender_receiver_secret_domain_separator(const jamtis::JamtisSelfSendType self_send_type)
+static const boost::string_ref sender_receiver_secret_domain_separator(const JamtisSelfSendType self_send_type)
 {
-    CHECK_AND_ASSERT_THROW_MES(self_send_type <= jamtis::JamtisSelfSendType::MAX,
+    CHECK_AND_ASSERT_THROW_MES(self_send_type <= JamtisSelfSendType::MAX,
         "jamtis self-send sender-receiver secret: unknown self-send type.");
 
     // dummy self-send
-    if (self_send_type == jamtis::JamtisSelfSendType::DUMMY)
+    if (self_send_type == JamtisSelfSendType::DUMMY)
         return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_DUMMY;
 
     // change self-send
-    if (self_send_type == jamtis::JamtisSelfSendType::CHANGE)
+    if (self_send_type == JamtisSelfSendType::CHANGE)
         return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_CHANGE;
 
     // self-spend self-send
-    if (self_send_type == jamtis::JamtisSelfSendType::SELF_SPEND)
+    if (self_send_type == JamtisSelfSendType::SELF_SPEND)
         return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_SELF_SPEND;
 
     CHECK_AND_ASSERT_THROW_MES(false, "jamtis self-send sender-receiver secret domain separator error.");
     return "";
 }
 //-------------------------------------------------------------------------------------------------------------------
-// a = a_enc XOR H_8(q, xr xG)  note: a is returned little-endian
-// a_enc = a XOR H_8(q, xr xG)  note: a must be little-endian
 //-------------------------------------------------------------------------------------------------------------------
-static rct::xmr_amount enc_dec_jamtis_amount_plain(const rct::xmr_amount original,
-    const rct::key &sender_receiver_secret,
+static encoded_amount_t enc_amount(const rct::xmr_amount amount, const encoded_amount_t &mask)
+{
+    static_assert(sizeof(rct::xmr_amount) == sizeof(encoded_amount_t), "");
+
+    // little_endian(amount) XOR mask
+    encoded_amount_t amount_LE;
+    memcpy_swap64le(amount_LE.bytes, &amount, sizeof(amount));
+    return amount_LE ^ mask;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static rct::xmr_amount dec_amount(const encoded_amount_t &encoded_amount, const encoded_amount_t &mask)
+{
+    static_assert(sizeof(rct::xmr_amount) == sizeof(encoded_amount_t), "");
+
+    // system_endian(encoded_amount XOR H_8(q, xr xG))
+    const encoded_amount_t decoded_amount{encoded_amount ^ mask};
+    rct::xmr_amount amount;
+    memcpy_swap64le(&amount, &decoded_amount, sizeof(decoded_amount));
+    return amount;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static encoded_amount_t jamtis_encoded_amount_mask_plain(const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key)
 {
-    static_assert(sizeof(rct::xmr_amount) == 8, "");
+    static_assert(sizeof(encoded_amount_t) == 8, "");
 
     // H_8(q, xr xG)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_ENC_PLAIN, 2*sizeof(rct::key)};
     transcript.append("q", sender_receiver_secret);
     transcript.append("baked_key", baked_key);
 
-    rct::xmr_amount mask;
-    sp_hash_to_8(transcript.data(), transcript.size(), &mask);
+    encoded_amount_t mask;
+    sp_hash_to_8(transcript.data(), transcript.size(), mask.bytes);
 
-    // original XOR H_8(q, xr xG)
-    return original ^ mask;
+    return mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// a = a_enc XOR H_8(q)  note: a is returned little-endian
-// a_enc = a XOR H_8(q)  note: a must be little-endian
 //-------------------------------------------------------------------------------------------------------------------
-static rct::xmr_amount enc_dec_jamtis_amount_selfsend(const rct::xmr_amount original,
-    const rct::key &sender_receiver_secret)
+static encoded_amount_t jamtis_encoded_amount_mask_selfsend(const rct::key &sender_receiver_secret)
 {
-    static_assert(sizeof(rct::xmr_amount) == 8, "");
+    static_assert(sizeof(encoded_amount_t) == 8, "");
 
     // H_8(q)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_AMOUNT_ENC_SELF, sizeof(sender_receiver_secret)};
     transcript.append("q", sender_receiver_secret);
 
-    rct::xmr_amount mask;
-    sp_hash_to_8(transcript.data(), transcript.size(), &mask);
+    encoded_amount_t mask;
+    sp_hash_to_8(transcript.data(), transcript.size(), mask.bytes);
 
-    // original XOR H_8(q)
-    return original ^ mask;
+    return mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -243,7 +258,7 @@ void make_jamtis_sender_receiver_secret_plain(const crypto::x25519_secret_key &p
 void make_jamtis_sender_receiver_secret_selfsend(const crypto::secret_key &k_view_balance,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
-    const jamtis::JamtisSelfSendType self_send_type,
+    const JamtisSelfSendType self_send_type,
     rct::key &sender_receiver_secret_out)
 {
     // q = H_32[k_vb](xK_e, input_context)
@@ -348,33 +363,33 @@ void make_jamtis_amount_blinding_factor_selfsend(const rct::key &sender_receiver
     sp_hash_to_scalar(transcript.data(), transcript.size(), to_bytes(mask_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount encode_jamtis_amount_plain(const rct::xmr_amount amount,
+encoded_amount_t encode_jamtis_amount_plain(const rct::xmr_amount amount,
     const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key)
 {
     // a_enc = little_endian(a) XOR H_8(q, xr xG)
-    return enc_dec_jamtis_amount_plain(SWAP64LE(amount), sender_receiver_secret, baked_key);
+    return enc_amount(amount, jamtis_encoded_amount_mask_plain(sender_receiver_secret, baked_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount decode_jamtis_amount_plain(const rct::xmr_amount encoded_amount,
+rct::xmr_amount decode_jamtis_amount_plain(const encoded_amount_t &encoded_amount,
     const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key)
 {
     // a = system_endian( a_enc XOR H_8(q, xr xG) )
-    return SWAP64LE(enc_dec_jamtis_amount_plain(encoded_amount, sender_receiver_secret, baked_key));
+    return dec_amount(encoded_amount, jamtis_encoded_amount_mask_plain(sender_receiver_secret, baked_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret)
+encoded_amount_t encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret)
 {
     // a_enc = little_endian(a) XOR H_8(q)
-    return enc_dec_jamtis_amount_selfsend(SWAP64LE(amount), sender_receiver_secret);
+    return enc_amount(amount, jamtis_encoded_amount_mask_selfsend(sender_receiver_secret));
 }
 //-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount decode_jamtis_amount_selfsend(const rct::xmr_amount encoded_amount,
+rct::xmr_amount decode_jamtis_amount_selfsend(const encoded_amount_t &encoded_amount,
     const rct::key &sender_receiver_secret)
 {
     // a = system_endian( a_enc XOR H_8(q) )
-    return SWAP64LE(enc_dec_jamtis_amount_selfsend(encoded_amount, sender_receiver_secret));
+    return dec_amount(encoded_amount, jamtis_encoded_amount_mask_selfsend(sender_receiver_secret));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_nominal_spend_key(const rct::key &onetime_address,
@@ -422,7 +437,7 @@ bool try_get_jamtis_sender_receiver_secret_plain(const crypto::x25519_pubkey &se
 bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
     const crypto::x25519_pubkey &baked_key,
     const rct::key &amount_commitment,
-    const rct::xmr_amount encoded_amount,
+    const encoded_amount_t &encoded_amount,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
@@ -445,7 +460,7 @@ bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_jamtis_amount_selfsend(const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::xmr_amount encoded_amount,
+    const encoded_amount_t &encoded_amount,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {

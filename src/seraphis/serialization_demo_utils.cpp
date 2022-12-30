@@ -270,17 +270,19 @@ void make_serializable_sp_coinbase_enote_v1(const SpCoinbaseEnoteV1 &enote, ser_
     make_serializable_sp_coinbase_enote_core(enote.m_core, serializable_enote_out.m_core);
     memcpy(serializable_enote_out.m_addr_tag_enc.bytes,
         enote.m_addr_tag_enc.bytes,
-        sizeof(enote.m_addr_tag_enc.bytes));
+        sizeof(enote.m_addr_tag_enc));
     serializable_enote_out.m_view_tag = enote.m_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_enote_v1(const SpEnoteV1 &enote, ser_SpEnoteV1 &serializable_enote_out)
 {
     make_serializable_sp_enote_core(enote.m_core, serializable_enote_out.m_core);
-    serializable_enote_out.m_encoded_amount = enote.m_encoded_amount;
+    memcpy(serializable_enote_out.m_encoded_amount.bytes,
+        enote.m_encoded_amount.bytes,
+        sizeof(enote.m_encoded_amount));
     memcpy(serializable_enote_out.m_addr_tag_enc.bytes,
         enote.m_addr_tag_enc.bytes,
-        sizeof(enote.m_addr_tag_enc.bytes));
+        sizeof(enote.m_addr_tag_enc));
     serializable_enote_out.m_view_tag = enote.m_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -478,17 +480,19 @@ void recover_sp_coinbase_enote_v1(const ser_SpCoinbaseEnoteV1 &serializable_enot
     memcpy(enote_out.m_addr_tag_enc.bytes,
         serializable_enote.m_addr_tag_enc.bytes,
         sizeof(serializable_enote.m_addr_tag_enc));
-    enote_out.m_view_tag           = serializable_enote.m_view_tag;
+    enote_out.m_view_tag = serializable_enote.m_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_enote_v1(const ser_SpEnoteV1 &serializable_enote, SpEnoteV1 &enote_out)
 {
     recover_sp_enote_core(serializable_enote.m_core, enote_out.m_core);
-    enote_out.m_encoded_amount     = serializable_enote.m_encoded_amount;
+    memcpy(enote_out.m_encoded_amount.bytes,
+        serializable_enote.m_encoded_amount.bytes,
+        sizeof(serializable_enote.m_encoded_amount));
     memcpy(enote_out.m_addr_tag_enc.bytes,
         serializable_enote.m_addr_tag_enc.bytes,
         sizeof(serializable_enote.m_addr_tag_enc));
-    enote_out.m_view_tag           = serializable_enote.m_view_tag;
+    enote_out.m_view_tag = serializable_enote.m_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_enote_image_v1(const ser_SpEnoteImageV1 &serializable_image, SpEnoteImageV1 &image_out)
