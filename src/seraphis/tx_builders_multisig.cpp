@@ -700,7 +700,8 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
     }
 
     // 3. assess each seraphis input proof proposal (iterate through sorted input vectors; note that multisig
-    //    input proposals are NOT sorted)
+    //    input proposals are NOT sorted, but input proof proposals and input proposals obtained from
+    //    a normal tx proposal ARE sorted)
     SpEnoteImageV1 sp_enote_image_temp;
 
     for (std::size_t sp_input_index{0};
@@ -950,15 +951,15 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
+void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> legacy_multisig_input_proposals,
+    std::vector<SpMultisigInputProposalV1> sp_multisig_input_proposals,
+    std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_multisig_ring_signature_preps,
+    const multisig::signer_set_filter aggregate_signer_set_filter,
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const DiscretizedFee &tx_fee,
     std::string version_string,
-    std::vector<LegacyMultisigInputProposalV1> legacy_multisig_input_proposals,
-    std::vector<SpMultisigInputProposalV1> sp_multisig_input_proposals,
-    std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_multisig_ring_signature_preps,
-    const multisig::signer_set_filter aggregate_signer_set_filter,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -984,7 +985,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     for (const LegacyMultisigInputProposalV1 &legacy_multisig_input_proposal : legacy_multisig_input_proposals)
     {
-        get_input_proposal_v1(legacy_multisig_input_proposal,
+        get_legacy_input_proposal_v1(legacy_multisig_input_proposal,
             legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
@@ -996,7 +997,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
 
     for (const SpMultisigInputProposalV1 &sp_multisig_input_proposal : sp_multisig_input_proposals)
     {
-        get_input_proposal_v1(sp_multisig_input_proposal,
+        get_sp_input_proposal_v1(sp_multisig_input_proposal,
             jamtis_spend_pubkey,
             k_view_balance,
             tools::add_element(sp_input_proposals));
@@ -1082,11 +1083,11 @@ void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1
     // 10. add miscellaneous components
     proposal_out.m_legacy_multisig_input_proposals = std::move(legacy_multisig_input_proposals);
     proposal_out.m_sp_multisig_input_proposals = std::move(sp_multisig_input_proposals);
+    proposal_out.m_aggregate_signer_set_filter = aggregate_signer_set_filter;
     proposal_out.m_normal_payment_proposals = std::move(normal_payment_proposals);
     proposal_out.m_selfsend_payment_proposals = std::move(selfsend_payment_proposals);
     make_tx_extra(std::move(additional_memo_elements), proposal_out.m_partial_memo);
     proposal_out.m_tx_fee = tx_fee;
-    proposal_out.m_aggregate_signer_set_filter = aggregate_signer_set_filter;
     proposal_out.m_version_string = std::move(version_string);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -1154,15 +1155,15 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
     std::string version_string;
     make_versioning_string(semantic_rules_version, version_string);
 
-    make_v1_multisig_tx_proposal_v1(std::move(normal_payment_proposals),
+    make_v1_multisig_tx_proposal_v1(std::move(legacy_multisig_input_proposals),
+        std::move(sp_multisig_input_proposals),
+        std::move(legacy_multisig_ring_signature_preps),
+        aggregate_filter_of_requested_multisig_signers,
+        std::move(normal_payment_proposals),
         std::move(selfsend_payment_proposals),
         std::move(extra_field_elements),
         tx_fee,
         version_string,
-        std::move(legacy_multisig_input_proposals),
-        std::move(sp_multisig_input_proposals),
-        std::move(legacy_multisig_ring_signature_preps),
-        aggregate_filter_of_requested_multisig_signers,
         legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,

@@ -371,7 +371,7 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
                     };
 
             // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
-            //       upstream caller will be able to handle that case without problems
+            //       upstream caller will be able to handle those without problems
             basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
 
             found_an_enote = true;
@@ -435,7 +435,7 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
                     };
 
             // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
-            //       upstream caller will be able to handle that case without problems
+            //       upstream caller will be able to handle those without problems
             basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
 
             found_an_enote = true;

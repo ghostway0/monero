@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis transaction-builder helper types (multisig).
-
 
 #pragma once
 
@@ -57,12 +54,29 @@
 #include <vector>
 
 //forward declarations
-namespace multisig { struct CLSAGMultisigProposal; }
-namespace sp { struct LegacyEnoteRecord; }
 
 
 namespace sp
 {
+
+////
+// LegacyMultisigRingSignaturePrepV1
+// - data for producing a legacy ring signature using multisig
+// - this struct contains a subset of data found in LegacyRingSignaturePrepV1 because, in multisig, legacy ring signature
+//   preps need to be created before a tx proposal is available (this information is used to build multisig input proposals
+//   and multisig tx proposals)
+///
+struct LegacyMultisigRingSignaturePrepV1 final
+{
+    /// ledger indices of legacy enotes referenced by the proof
+    std::vector<std::uint64_t> m_reference_set;
+    /// the referenced enotes ({Ko, C}((legacy)) representation)
+    rct::ctkeyV m_referenced_enotes;
+    /// the index of the real enote being referenced within the reference set
+    std::uint64_t m_real_reference_index;
+    /// key image of the real reference
+    crypto::key_image m_key_image;
+};
 
 ////
 // LegacyMultisigInputProposalV1
@@ -108,30 +122,24 @@ struct SpMultisigInputProposalV1 final
 };
 
 ////
-// LegacyMultisigRingSignaturePrepV1
-// - data for producing a legacy ring signature using multisig
-// - this struct contains a subset of data found in LegacyRingSignaturePrepV1 because in multisig, legacy ring signature
-//   preps need to be created before a tx proposal is available (this information is used to build multisig input proposals
-//   and multisig tx proposals)
-///
-struct LegacyMultisigRingSignaturePrepV1 final
-{
-    /// ledger indices of legacy enotes referenced by the proof
-    std::vector<std::uint64_t> m_reference_set;
-    /// the referenced enotes ({Ko, C}((legacy)) representation)
-    rct::ctkeyV m_referenced_enotes;
-    /// the index of the real enote being referenced within the reference set
-    std::uint64_t m_real_reference_index;
-    /// key image of the real reference
-    crypto::key_image m_key_image;
-};
-
-////
 // SpMultisigTxProposalV1
 // - propose to fund a set of outputs with multisig inputs
 ///
 struct SpMultisigTxProposalV1 final
 {
+    /// legacy tx inputs to sign with multisig (SORTED)
+    std::vector<LegacyMultisigInputProposalV1> m_legacy_multisig_input_proposals;
+    /// seraphis tx inputs to sign with multisig (NOT SORTED; get sorted seraphis input proposals by converting to
+    ///   a normal tx proposal)
+    std::vector<SpMultisigInputProposalV1> m_sp_multisig_input_proposals;
+    /// legacy ring signature proposals (CLSAGs) for each legacy input proposal (ALIGNED TO SORTED LEGACY INPUTS)
+    std::vector<multisig::CLSAGMultisigProposal> m_legacy_input_proof_proposals;
+    /// composition proof proposals for each seraphis input proposal (ALIGNED TO SORTED SERAPHIS INPUTS)
+    std::vector<multisig::SpCompositionProofMultisigProposal> m_sp_input_proof_proposals;
+    /// all multisig signers who may participate in signing this proposal
+    /// - the set may be larger than 'threshold', in which case every permutation of 'threshold' signers will attempt to sign
+    multisig::signer_set_filter m_aggregate_signer_set_filter;
+
     /// normal tx outputs (NOT SORTED)
     std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
     /// self-send tx outputs (NOT SORTED)
@@ -140,17 +148,6 @@ struct SpMultisigTxProposalV1 final
     TxExtra m_partial_memo;
     /// proposed transaction fee
     DiscretizedFee m_tx_fee;
-    /// legacy tx inputs to sign with multisig (SORTED)
-    std::vector<LegacyMultisigInputProposalV1> m_legacy_multisig_input_proposals;
-    /// seraphis tx inputs to sign with multisig (NOT SORTED)
-    std::vector<SpMultisigInputProposalV1> m_sp_multisig_input_proposals;
-    /// legacy ring signature proposals (CLSAGs) for each legacy input proposal (ALIGNED TO SORTED LEGACY INPUTS)
-    std::vector<multisig::CLSAGMultisigProposal> m_legacy_input_proof_proposals;
-    /// composition proof proposals for each seraphis input proposal (ALIGNED TO SORTED LEGACY INPUTS)
-    std::vector<multisig::SpCompositionProofMultisigProposal> m_sp_input_proof_proposals;
-    /// all multisig signers who should participate in signing this proposal
-    /// - the set may be larger than 'threshold', in which case every permutation of 'threshold' signers will attempt to sign
-    multisig::signer_set_filter m_aggregate_signer_set_filter;
 
     /// encoding of intended tx version
     std::string m_version_string;
@@ -158,32 +155,33 @@ struct SpMultisigTxProposalV1 final
 
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInputProposalV1 &b);
+
 /**
-* brief: get_input_proposal_v1 - convert a multisig input proposal to a legacy input proposal
+* brief: get_legacy_input_proposal_v1 - convert a multisig input proposal to a legacy input proposal
 * param: multisig_input_proposal -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
 * param: legacy_view_privkey -
 * outparam: input_proposal_out -
 */
-void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+void get_legacy_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     LegacyInputProposalV1 &input_proposal_out);
 /**
-* brief: get_input_proposal_v1 - convert a multisig input proposal to a seraphis input proposal
+* brief: get_sp_input_proposal_v1 - convert a multisig input proposal to a seraphis input proposal
 * param: multisig_input_proposal -
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
 * outparam: input_proposal_out -
 */
-void get_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal,
+void get_sp_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     SpInputProposalV1 &input_proposal_out);
 /**
-* brief: get_input_proposal_v1 - convert a multisig tx proposal to a plain tx proposal
+* brief: get_v1_tx_proposal_v1 - convert a multisig tx proposal to a plain tx proposal
 * param: multisig_tx_proposal -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
@@ -200,7 +198,7 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const crypto::secret_key &k_view_balance,
     SpTxProposalV1 &tx_proposal_out);
 /**
-* brief: get_input_proposal_v1 - convert a multisig tx proposal to a plain tx proposal
+* brief: get_proposal_prefix_v1 - get the tx proposal prefix of a multisig tx proposal
 * param: multisig_tx_proposal -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
@@ -209,7 +207,6 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
 * param: k_view_balance -
 * outparam: proposal_prefix_out -
 */
-/// get the tx proposal prefix that will be signed by input composition proofs
 void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,

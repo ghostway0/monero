@@ -205,7 +205,7 @@ static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 
 {
     // 1. convert to a normal input proposal so the key image is available
     SpInputProposalV1 normal_input_proposal;
-    get_input_proposal_v1(input_proposal, jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
+    get_sp_input_proposal_v1(input_proposal, jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
 
     // 2. get the legacy enote from the enote store
     SpContextualEnoteRecordV1 contextual_record;

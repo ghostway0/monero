@@ -186,15 +186,15 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 * param: k_view_balance -
 * outparam: proposal_out -
 */
-void make_v1_multisig_tx_proposal_v1(std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
+void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> legacy_multisig_input_proposals,
+    std::vector<SpMultisigInputProposalV1> sp_multisig_input_proposals,
+    std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_ring_signature_preps,
+    const multisig::signer_set_filter aggregate_signer_set_filter,
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const DiscretizedFee &tx_fee,
     std::string version_string,
-    std::vector<LegacyMultisigInputProposalV1> legacy_multisig_input_proposals,
-    std::vector<SpMultisigInputProposalV1> sp_multisig_input_proposals,
-    std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_ring_signature_preps,
-    const multisig::signer_set_filter aggregate_signer_set_filter,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,

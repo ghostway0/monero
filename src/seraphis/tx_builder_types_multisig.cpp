@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_builder_types_multisig.h"
 
@@ -68,7 +66,7 @@ bool compare_KI(const LegacyMultisigInputProposalV1 &a, const LegacyMultisigInpu
     return a.m_key_image < b.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
+void get_legacy_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -85,8 +83,8 @@ void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_p
             legacy_subaddress_map,
             legacy_view_privkey,
             legacy_intermediate_record),
-        "legacy multisig public input proposal to legacy input proposal: could not recover intermediate enote record for "
-        "input proposal's enote.");
+        "legacy multisig input proposal to legacy input proposal: could not recover intermediate enote record for input"
+        "proposal's enote.");
 
     // upgrade to full legacy enote record
     LegacyEnoteRecord legacy_enote_record;
@@ -96,7 +94,8 @@ void get_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_input_p
     make_v1_legacy_input_proposal_v1(legacy_enote_record, multisig_input_proposal.m_commitment_mask, input_proposal_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal, const rct::key &jamtis_spend_pubkey,
+void get_sp_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_proposal,
+    const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     SpInputProposalV1 &input_proposal_out)
 {
@@ -108,8 +107,7 @@ void get_input_proposal_v1(const SpMultisigInputProposalV1 &multisig_input_propo
             multisig_input_proposal.m_address_mask,
             multisig_input_proposal.m_commitment_mask,
             input_proposal_out),
-        "multisig seraphis public input proposal to seraphis input proposal: conversion failed (wallet may not own "
-        "this input.");
+        "seraphis multisig input proposal to seraphis input proposal: conversion failed (wallet may not own this input).");
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
@@ -122,11 +120,12 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
 {
     // extract legacy input proposals
     std::vector<LegacyInputProposalV1> legacy_input_proposals;
+    legacy_input_proposals.reserve(multisig_tx_proposal.m_legacy_multisig_input_proposals.size());
 
     for (const LegacyMultisigInputProposalV1 &multisig_input_proposal :
         multisig_tx_proposal.m_legacy_multisig_input_proposals)
     {
-        get_input_proposal_v1(multisig_input_proposal,
+        get_legacy_input_proposal_v1(multisig_input_proposal,
             legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
@@ -135,10 +134,11 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
 
     // extract seraphis input proposals
     std::vector<SpInputProposalV1> sp_input_proposals;
+    sp_input_proposals.reserve(multisig_tx_proposal.m_sp_multisig_input_proposals.size());
 
     for (const SpMultisigInputProposalV1 &multisig_input_proposal : multisig_tx_proposal.m_sp_multisig_input_proposals)
     {
-        get_input_proposal_v1(multisig_input_proposal,
+        get_sp_input_proposal_v1(multisig_input_proposal,
             jamtis_spend_pubkey,
             k_view_balance,
             tools::add_element(sp_input_proposals));
@@ -186,22 +186,22 @@ bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
     const multisig::CLSAGMultisigProposal &proof_proposal)
 {
     // onetime address to sign
-    if (!(main_proof_key_ref(proof_proposal) == onetime_address_ref(multisig_input_proposal.m_enote)))
+    if (!(onetime_address_ref(multisig_input_proposal.m_enote) == main_proof_key_ref(proof_proposal)))
         return false;
 
     // amount commitment to sign
     const rct::key amount_commitment{amount_commitment_ref(multisig_input_proposal.m_enote)};
-    if (!(auxilliary_proof_key_ref(proof_proposal) == amount_commitment))
+    if (!(amount_commitment == auxilliary_proof_key_ref(proof_proposal)))
         return false;
 
     // pseudo-output commitment
     rct::key masked_commitment;
     mask_key(multisig_input_proposal.m_commitment_mask, amount_commitment, masked_commitment);
-    if (!(proof_proposal.masked_C == masked_commitment))
+    if (!(masked_commitment == proof_proposal.masked_C))
         return false;
 
     // key image
-    if (!(proof_proposal.KI == multisig_input_proposal.m_key_image))
+    if (!(multisig_input_proposal.m_key_image == proof_proposal.KI))
         return false;
 
     // auxilliary key image
@@ -210,7 +210,7 @@ bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
         onetime_address_ref(multisig_input_proposal.m_enote),
         auxilliary_key_image);
 
-    if (!(proof_proposal.D == auxilliary_key_image))
+    if (!(auxilliary_key_image == proof_proposal.D))
         return false;
 
     // references line up 1:1
