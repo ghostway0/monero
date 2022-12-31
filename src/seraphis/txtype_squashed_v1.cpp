@@ -211,8 +211,7 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
     // tx_id = H_32(tx_proposal_prefix, input images, proofs)
 
     // 1. tx proposal prefix
-    // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
-    //         fee, tx supplement)
+    // H_32(version string, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
     rct::key tx_proposal_prefix;
     make_tx_proposal_prefix_v1(tx, tx_proposal_prefix);
 

@@ -382,8 +382,6 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &proposal_prefix_out)
 {
-    static const std::string project_name{CRYPTONOTE_NAME};
-
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(legacy_input_key_images.begin(), legacy_input_key_images.end()),
         "tx proposal prefix (v1): legacy input key images are not sorted.");
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(sp_input_key_images.begin(), sp_input_key_images.end()),
@@ -393,17 +391,14 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
             tools::compare_func<SpEnoteV1>(compare_Ko)),
         "tx proposal prefix (v1): output enotes are not sorted.");
 
-    // H_32(crypto project name, version string, legacy input key images, seraphis input key images, output enotes,
-    //         fee, tx supplement)
+    // H_32(version string, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_TX_PROPOSAL_MESSAGE_V1,
-            project_name.size() +
-                version_string.size() +
+            version_string.size() +
                 (legacy_input_key_images.size() + sp_input_key_images.size())*sizeof(crypto::key_image) +
                 output_enotes.size()*sp_enote_v1_size_bytes() +
                 sp_tx_supplement_v1_size_bytes(tx_supplement)
         };
-    transcript.append("project_name", project_name);
     transcript.append("version_string", version_string);
     transcript.append("legacy_input_key_images", legacy_input_key_images);
     transcript.append("sp_input_key_images", sp_input_key_images);

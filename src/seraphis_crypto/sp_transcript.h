@@ -305,7 +305,7 @@ private:
 ////
 // SpFSTranscript
 // - build a Fiat-Shamir transcript
-// - main format: "monero" || "FS" || domain_separator || object1_label || object1 || object2_label || object2 || ...
+// - main format: "monero" || domain_separator || object1_label || object1 || object2_label || object2 || ...
 ///
 class SpFSTranscript final
 {
@@ -315,9 +315,8 @@ public:
     SpFSTranscript(const boost::string_ref domain_separator, const std::size_t estimated_data_size) :
         m_transcript_builder{15 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::FULL}
     {
-        // transcript = "monero" || "FS" || domain_separator
-        m_transcript_builder.append("prefix", config::TRANSCRIPT_PREFIX);
-        m_transcript_builder.append("FS_prefix", config::FIAT_SHAMIR_PREFIX);
+        // transcript = "monero" || domain_separator
+        m_transcript_builder.append("FS_prefix", config::TRANSCRIPT_PREFIX);
         m_transcript_builder.append("domain_separator", domain_separator);
     }
 

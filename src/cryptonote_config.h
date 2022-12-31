@@ -266,7 +266,6 @@ namespace config
   const constexpr char HASH_KEY_SERAPHIS_U[] = "seraphis_U";
 
   const constexpr char TRANSCRIPT_PREFIX[] = "monero";
-  const constexpr char FIAT_SHAMIR_PREFIX[] = "FS";
 
   const constexpr char HASH_KEY_LEGACY_ENOTE_IDENTIFIER[] = "legacy_enote_identifier";
   const constexpr char HASH_KEY_LEGACY_RING_SIGNATURES_MESSAGE_V1[] = "legacy_ring_signatures_message_v1";
