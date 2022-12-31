@@ -95,10 +95,13 @@ bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
 {
     if (a.m_type < b.m_type)
         return true;
-    else if (a.m_type > b.m_type)
+    if (a.m_type > b.m_type)
         return false;
-    else //(a.m_type == b.m_type)
-        return a.m_value < b.m_value;
+    if (a.m_value.size() < b.m_value.size())
+        return true;
+    if (a.m_value.size() > b.m_value.size())
+        return false;
+    return a.m_value < b.m_value;  //same type, same length
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t length(const ExtraFieldElement &element)
