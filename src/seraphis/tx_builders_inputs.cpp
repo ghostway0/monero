@@ -608,7 +608,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
 {
     // 1. initialization
     rct::key sp_core_spend_pubkey;
-    make_seraphis_spendbase(sp_spend_privkey, sp_core_spend_pubkey);
+    make_seraphis_core_spendkey(sp_spend_privkey, sp_core_spend_pubkey);
 
     // 2. construct image proof
     SpImageProofV1 sp_image_proof;

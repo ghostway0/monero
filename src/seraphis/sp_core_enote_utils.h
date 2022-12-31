@@ -66,12 +66,12 @@ void make_seraphis_key_image(const crypto::secret_key &y, const crypto::public_k
 */
 void make_seraphis_key_image(const crypto::secret_key &y, const crypto::secret_key &z, crypto::key_image &key_image_out);
 /**
-* brief: make_seraphis_spendbase - create the base part of a seraphis spendkey
+* brief: make_seraphis_core_spendkey - create the core part of a seraphis spendkey
 *   spendbase = k_m U
 * param: sp_spend_privkey - k_m
-* outparam: spendbase_pubkey_out - k_m U
+* outparam: core_spend_pubkey_out - k_m U
 */
-void make_seraphis_spendbase(const crypto::secret_key &sp_spend_privkey, rct::key &spendbase_pubkey_out);
+void make_seraphis_core_spendkey(const crypto::secret_key &sp_spend_privkey, rct::key &core_spend_pubkey_out);
 /**
 * brief: extend_seraphis_spendkey_x - extend a seraphis spendkey (or onetime address) on generator X
 *   K = k_extender_x X + K_original

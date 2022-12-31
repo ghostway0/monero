@@ -522,8 +522,8 @@ TEST(seraphis, information_recovery_keyimage)
     k_a_recipient_x = y;
     sc_add(to_bytes(y), to_bytes(y), to_bytes(y));
     make_secret_key(z);
-    make_seraphis_spendbase(z, zU);
-    make_seraphis_spendbase(z, k_bU);
+    make_seraphis_core_spendkey(z, zU);
+    make_seraphis_core_spendkey(z, k_bU);
 
     make_seraphis_key_image(y, z, key_image1);  // y X + y X + z U -> (z/2y) U
     make_seraphis_key_image(y, rct::rct2pk(zU), key_image2);
