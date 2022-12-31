@@ -305,7 +305,7 @@ private:
 ////
 // SpFSTranscript
 // - build a Fiat-Shamir transcript
-// - main format: transcript_prefix || domain_separator || object1_label || object1 || object2_label || object2 || ...
+// - main format: "monero" || "FS" || domain_separator || object1_label || object1 || object2_label || object2 || ...
 ///
 class SpFSTranscript final
 {
@@ -315,8 +315,9 @@ public:
     SpFSTranscript(const boost::string_ref domain_separator, const std::size_t estimated_data_size) :
         m_transcript_builder{15 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::FULL}
     {
-        // transcript = sp_FS_transcript || domain_separator
-        m_transcript_builder.append("FS_transcript", config::SERAPHIS_FS_TRANSCRIPT_PREFIX);
+        // transcript = "monero" || "FS" || domain_separator
+        m_transcript_builder.append("prefix", config::TRANSCRIPT_PREFIX);
+        m_transcript_builder.append("FS_prefix", config::FIAT_SHAMIR_PREFIX);
         m_transcript_builder.append("domain_separator", domain_separator);
     }
 
@@ -343,9 +344,9 @@ private:
 };
 
 ////
-// SpFSTranscript
+// SpKDFTranscript
 // - build a data string for a key-derivation function
-// - main format: domain_separator || object1 || object2 || ...
+// - main format: "monero" || domain_separator || object1 || object2 || ...
 // - simple transcript mode: no labels, flags, or lengths
 ///
 class SpKDFTranscript final
@@ -354,9 +355,10 @@ public:
 //constructors
     /// normal constructor: start building a transcript with the domain separator
     SpKDFTranscript(const boost::string_ref domain_separator, const std::size_t estimated_data_size) :
-        m_transcript_builder{domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::SIMPLE}
+        m_transcript_builder{10 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::SIMPLE}
     {
-        // transcript = domain_separator
+        // transcript = "monero" || domain_separator
+        m_transcript_builder.append("", config::TRANSCRIPT_PREFIX);
         m_transcript_builder.append("", domain_separator);
     }
 

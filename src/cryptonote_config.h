@@ -265,7 +265,8 @@ namespace config
   const constexpr char HASH_KEY_SERAPHIS_X[] = "seraphis_X";
   const constexpr char HASH_KEY_SERAPHIS_U[] = "seraphis_U";
 
-  const constexpr char SERAPHIS_FS_TRANSCRIPT_PREFIX[] = "sp_FS_transcript";
+  const constexpr char TRANSCRIPT_PREFIX[] = "monero";
+  const constexpr char FIAT_SHAMIR_PREFIX[] = "FS";
 
   const constexpr char HASH_KEY_LEGACY_ENOTE_IDENTIFIER[] = "legacy_enote_identifier";
   const constexpr char HASH_KEY_LEGACY_RING_SIGNATURES_MESSAGE_V1[] = "legacy_ring_signatures_message_v1";
@@ -304,7 +305,7 @@ namespace config
   const constexpr char HASH_KEY_JAMTIS_ADDRESS_TAG_HINT[] = "jamtis_address_tag_hint";
   const constexpr char HASH_KEY_JAMTIS_ENCRYPTED_ADDRESS_TAG[] = "jamtis_encrypted_address_tag";
   const constexpr char HASH_KEY_JAMTIS_VIEW_TAG[] = "jamtis_view_tag";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_PLAIN[] = "jamtis_sender_receiver_secret_plain";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_PLAIN[] = "jamtis_sr_secret_plain";
   const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_G[] = "jamtis_sender_onetime_address_extension_g";
   const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_X[] = "jamtis_sender_onetime_address_extension_x";
   const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_U[] = "jamtis_sender_onetime_address_extension_u";
