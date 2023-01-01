@@ -305,18 +305,21 @@ private:
 ////
 // SpFSTranscript
 // - build a Fiat-Shamir transcript
-// - main format: "monero" || domain_separator || object1_label || object1 || object2_label || object2 || ...
+// - main format: prefix || domain_separator || object1_label || object1 || object2_label || object2 || ...
+// note: prefix defaults to "monero"
 ///
 class SpFSTranscript final
 {
 public:
 //constructors
     /// normal constructor: start building a transcript with the domain separator
-    SpFSTranscript(const boost::string_ref domain_separator, const std::size_t estimated_data_size) :
+    SpFSTranscript(const boost::string_ref domain_separator,
+        const std::size_t estimated_data_size,
+        const boost::string_ref prefix = config::TRANSCRIPT_PREFIX) :
         m_transcript_builder{15 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::FULL}
     {
-        // transcript = "monero" || domain_separator
-        m_transcript_builder.append("FS_prefix", config::TRANSCRIPT_PREFIX);
+        // transcript = prefix || domain_separator
+        m_transcript_builder.append("FS_prefix", prefix);
         m_transcript_builder.append("domain_separator", domain_separator);
     }
 
@@ -345,19 +348,22 @@ private:
 ////
 // SpKDFTranscript
 // - build a data string for a key-derivation function
-// - main format: "monero" || domain_separator || object1 || object2 || ...
+// - main format: prefix || domain_separator || object1 || object2 || ...
 // - simple transcript mode: no labels, flags, or lengths
+// note: prefix defaults to "monero"
 ///
 class SpKDFTranscript final
 {
 public:
 //constructors
     /// normal constructor: start building a transcript with the domain separator
-    SpKDFTranscript(const boost::string_ref domain_separator, const std::size_t estimated_data_size) :
+    SpKDFTranscript(const boost::string_ref domain_separator,
+        const std::size_t estimated_data_size,
+        const boost::string_ref prefix = config::TRANSCRIPT_PREFIX) :
         m_transcript_builder{10 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::SIMPLE}
     {
-        // transcript = "monero" || domain_separator
-        m_transcript_builder.append("", config::TRANSCRIPT_PREFIX);
+        // transcript = prefix || domain_separator
+        m_transcript_builder.append("", prefix);
         m_transcript_builder.append("", domain_separator);
     }
 
