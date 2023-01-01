@@ -91,7 +91,7 @@ static void prepare_clsag_proof_keys(const rct::ctkeyV &referenced_enotes,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void prepare_legacy_input_commitment_factors_for_balance_proof_v1(const std::vector<LegacyInputProposalV1> &input_proposals,
+void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputProposalV1> &input_proposals,
     std::vector<rct::xmr_amount> &input_amounts_out,
     std::vector<crypto::secret_key> &blinding_factors_out)
 {
@@ -113,7 +113,7 @@ void prepare_legacy_input_commitment_factors_for_balance_proof_v1(const std::vec
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void prepare_legacy_input_commitment_factors_for_balance_proof_v1(const std::vector<LegacyInputV1> &inputs,
+void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputV1> &inputs,
     std::vector<rct::xmr_amount> &input_amounts_out,
     std::vector<crypto::secret_key> &blinding_factors_out)
 {

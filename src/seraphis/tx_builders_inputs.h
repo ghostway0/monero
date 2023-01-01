@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis tx-builder/component-builder implementations (tx inputs).
-
 
 #pragma once
 
@@ -56,51 +53,6 @@ namespace sp
 {
 
 /**
-* brief: make_binned_ref_set_generator_seed_v1 - compute a generator seed for making a binned reference set
-*   s = H_32(K", C")
-* param: masked_address -
-* param: masked_commitment -
-* outparam: generator_seed_out -
-*/
-void make_binned_ref_set_generator_seed_v1(const rct::key &masked_address,
-    const rct::key &masked_commitment,
-    rct::key &generator_seed_out);
-void make_binned_ref_set_generator_seed_v1(const rct::key &onetime_address,
-    const rct::key &amount_commitment,
-    const crypto::secret_key &address_mask,
-    const crypto::secret_key &commitment_mask,
-    rct::key &generator_seed_out);
-/**
-* brief: align_v1_membership_proofs_v1 - rearrange membership proofs so they line up with a set of input images
-*   sort order: key images ascending with byte-wise comparisons
-* param: input_images -
-* param: membership_proofs_sortable -
-* outparam: membership_proofs_out -
-*/
-void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_images,
-    std::vector<SpAlignableMembershipProofV1> membership_proofs_sortable,
-    std::vector<SpMembershipProofV1> &membership_proofs_out);
-/**
-* brief: make_tx_membership_proof_message_v1 - message for membership proofs
-*   - H_32(crypto project name, {binned reference set})
-* param: binned_reference_set -
-* outparam: message_out - the message to sign in a membership proof
-*/
-void make_tx_membership_proof_message_v1(const SpBinnedReferenceSetV1 &binned_reference_set, rct::key &message_out);
-/**
-* brief: prepare_input_commitment_factors_for_balance_proof_v1 - collect input amounts and input image amount
-*   commitment blinding factors
-* param: input_proposals -
-* outparam: input_amounts_out -
-* outparam: blinding_factors_out -
-*/
-void prepare_input_commitment_factors_for_balance_proof_v1(const std::vector<SpInputProposalV1> &input_proposals,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out);
-void prepare_input_commitment_factors_for_balance_proof_v1(const std::vector<SpPartialInputV1> &partial_inputs,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out);
-/**
 * brief: make_input_images_prefix_v1 - hash of enote images (for tx hashes)
 *   - H_32({C", KI}((legacy)), {K", C", KI})
 * param: legacy_enote_images -
@@ -110,10 +62,15 @@ void prepare_input_commitment_factors_for_balance_proof_v1(const std::vector<SpP
 void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_enote_images,
     const std::vector<SpEnoteImageV1> &sp_enote_images,
     rct::key &input_images_prefix_out);
-//todo
+/**
+* brief: check_v1_input_proposal_semantics_v1 - check the semantics of a seraphis input proposal
+*   - throws on failure
+* param: input_proposal -
+* param: sp_core_spend_pubkey -
+*/
 void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_core_spend_pubkey);
 /**
-* brief: make_input_proposal - make the core of an input proposal
+* brief: make_input_proposal - make the core of a seraphis input proposal
 * param: enote_core -
 * param: key_image -
 * param: enote_view_privkey_g -
@@ -136,7 +93,7 @@ void make_input_proposal(const SpEnoteCore &enote_core,
     const crypto::secret_key &commitment_mask,
     SpInputProposalCore &proposal_out);
 /**
-* brief: make_v1_input_proposal_v1 - make an input proposal
+* brief: make_v1_input_proposal_v1 - make a seraphis input proposal
 * param: enote_record -
 * param: address_mask -
 * param: commitment_mask -
@@ -147,7 +104,7 @@ void make_v1_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
     const crypto::secret_key &commitment_mask,
     SpInputProposalV1 &proposal_out);
 /**
-* brief: try_make_v1_input_proposal_v1 - try to make an input proposal from an enote
+* brief: try_make_v1_input_proposal_v1 - try to make a seraphis input proposal from an enote
 * param: enote -
 * param: enote_ephemeral_pubkey -
 * param: input_context -
@@ -165,12 +122,17 @@ bool try_make_v1_input_proposal_v1(const SpEnoteVariant &enote,
     const crypto::secret_key &address_mask,
     const crypto::secret_key &commitment_mask,
     SpInputProposalV1 &proposal_out);
-//todo
+/**
+* brief: make_standard_input_context_v1 - compute an input context for non-coinbase transactions
+* param: legacy_input_proposals -
+* param: sp_input_proposals -
+* outparam: input_context_out -
+*/
 void make_standard_input_context_v1(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     rct::key &input_context_out);
 /**
-* brief: make_v1_image_proof_v1 - make a seraphis composition proof in the squashed enote model
+* brief: make_v1_image_proof_v1 - make a seraphis composition proof for an enote image in the squashed enote model
 * param: input_proposal -
 * param: message -
 * param: sp_spend_privkey -
@@ -181,7 +143,7 @@ void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     const crypto::secret_key &sp_spend_privkey,
     SpImageProofV1 &image_proof_out);
 /**
-* brief: make_v1_image_proofs_v1 - make a set of seraphis composition proofs in the squashed enote model
+* brief: make_v1_image_proofs_v1 - make a set of seraphis composition proofs for enote images in the squashed enote model
 * param: input_proposals -
 * param: message -
 * param: sp_spend_privkey -
@@ -191,6 +153,32 @@ void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposa
     const rct::key &message,
     const crypto::secret_key &sp_spend_privkey,
     std::vector<SpImageProofV1> &image_proofs_out);
+/**
+* brief: make_binned_ref_set_generator_seed_v1 - compute a generator seed for making a binned reference set
+*   seed = H_32(K", C")
+*   note: depending on the enote image ensures the seed is a function of some 'random' information that is always
+*         available to both tx authors and validators (i.e. the masks, which are embedded in the image); seraphis
+*         membership proofs can be constructed in isolation, in which case only the real reference and the masks are
+*         available
+* param: masked_address -
+* param: masked_commitment -
+* outparam: generator_seed_out -
+*/
+void make_binned_ref_set_generator_seed_v1(const rct::key &masked_address,
+    const rct::key &masked_commitment,
+    rct::key &generator_seed_out);
+void make_binned_ref_set_generator_seed_v1(const rct::key &onetime_address,
+    const rct::key &amount_commitment,
+    const crypto::secret_key &address_mask,
+    const crypto::secret_key &commitment_mask,
+    rct::key &generator_seed_out);
+/**
+* brief: make_tx_membership_proof_message_v1 - message for membership proofs
+*   - H_32({binned reference set})
+* param: binned_reference_set -
+* outparam: message_out - the message to sign in a membership proof
+*/
+void make_tx_membership_proof_message_v1(const SpBinnedReferenceSetV1 &binned_reference_set, rct::key &message_out);
 /**
 * brief: make_v1_membership_proof_v1 - make a grootle membership proof in the squashed enote model
 * param: ref_set_decomp_n -
@@ -213,21 +201,35 @@ void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
     const crypto::secret_key &image_commitment_mask,
     SpMembershipProofV1 &membership_proof_out);
 void make_v1_membership_proof_v1(SpMembershipProofPrepV1 membership_proof_prep, SpMembershipProofV1 &membership_proof_out);
-void make_v1_membership_proof_v1(SpMembershipProofPrepV1 membership_proof_prep,
-    SpAlignableMembershipProofV1 &alignable_membership_proof_out);
-/**
-* brief: make_v1_membership_proofs_v1 - make a set of grootle membership proofs in the squashed enote model
-* param: membership_proof_preps -
-* outparam: membership_proofs_out -
-*/
 void make_v1_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membership_proof_preps,
     std::vector<SpMembershipProofV1> &membership_proofs_out);
-void make_v1_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membership_proof_preps,
+/**
+* brief: make_v1_alignable_membership_proof_v1 - make an alignable membership proof (alignable means it can be aligned
+*   with the corresponding enote image at a later time)
+* param: membership_proof_prep -
+* outparam: alignable_membership_proof_out -
+*/
+void make_v1_alignable_membership_proof_v1(SpMembershipProofPrepV1 membership_proof_prep,
+    SpAlignableMembershipProofV1 &alignable_membership_proof_out);
+void make_v1_alignable_membership_proofs_v1(std::vector<SpMembershipProofPrepV1> membership_proof_preps,
     std::vector<SpAlignableMembershipProofV1> &alignable_membership_proof_out);
-//todo
+/**
+* brief: align_v1_membership_proofs_v1 - rearrange seraphis membership proofs so they line up with a set of input images
+* param: input_images -
+* param: membership_proofs_alignable -
+* outparam: membership_proofs_out -
+*/
+void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_images,
+    std::vector<SpAlignableMembershipProofV1> membership_proofs_alignable,
+    std::vector<SpMembershipProofV1> &membership_proofs_out);
+/**
+* brief: check_v1_partial_input_semantics_v1 - check the semantics of a partial seraphis input
+*   - throws on failure
+* param: partial_input -
+*/
 void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input);
 /**
-* brief: make_v1_partial_input_v1 - make a v1 partial input
+* brief: make_v1_partial_input_v1 - make a v1 partial seraphis input
 * param: input_proposal -
 * param: proposal_prefix -
 * param: sp_image_proof -
@@ -254,5 +256,17 @@ void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_propo
     const rct::key &proposal_prefix,
     const crypto::secret_key &sp_spend_privkey,
     std::vector<SpPartialInputV1> &partial_inputs_out);
+/**
+* brief: get_input_commitment_factors_v1 - collect input amounts and input image amount commitment blinding factors
+* param: input_proposals -
+* outparam: input_amounts_out -
+* outparam: blinding_factors_out -
+*/
+void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input_proposals,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out);
+void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partial_inputs,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out);
 
 } //namespace sp

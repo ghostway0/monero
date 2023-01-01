@@ -776,7 +776,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     // e) make membership proofs
     std::vector<SpAlignableMembershipProofV1> alignable_membership_proofs;
 
-    ASSERT_NO_THROW(make_v1_membership_proofs_v1(std::move(membership_proof_preps),
+    ASSERT_NO_THROW(make_v1_alignable_membership_proofs_v1(std::move(membership_proof_preps),
         alignable_membership_proofs));
 
     // f) complete tx

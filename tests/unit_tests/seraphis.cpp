@@ -446,10 +446,10 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         tx_proposal_prefix,
         sp_spend_privkey,
         tx_sp_image_proofs);
-    prepare_legacy_input_commitment_factors_for_balance_proof_v1(legacy_input_proposals,
+    get_legacy_input_commitment_factors_v1(legacy_input_proposals,
         input_legacy_amounts,
         legacy_input_image_amount_commitment_blinding_factors);
-    prepare_input_commitment_factors_for_balance_proof_v1(sp_input_proposals,
+    get_input_commitment_factors_v1(sp_input_proposals,
         input_sp_amounts,
         sp_input_image_amount_commitment_blinding_factors);
     make_v1_balance_proof_v1(input_legacy_amounts,
@@ -467,7 +467,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
                 bin_config,
                 ledger_context_inout)
         };
-    make_v1_membership_proofs_v1(std::move(sp_membership_proof_preps),
+    make_v1_alignable_membership_proofs_v1(std::move(sp_membership_proof_preps),
         tx_sp_alignable_membership_proofs);  //alignable membership proofs could theoretically be user inputs as well
     align_v1_membership_proofs_v1(sp_input_images, std::move(tx_sp_alignable_membership_proofs), tx_sp_membership_proofs);
 

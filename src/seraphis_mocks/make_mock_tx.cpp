@@ -248,7 +248,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
 
     // seraphis membership proofs (assumes the caller prepared to make a membership proof for each input)
     std::vector<SpAlignableMembershipProofV1> sp_alignable_membership_proofs;
-    make_v1_membership_proofs_v1(std::move(sp_membership_proof_preps), sp_alignable_membership_proofs);
+    make_v1_alignable_membership_proofs_v1(std::move(sp_membership_proof_preps), sp_alignable_membership_proofs);
 
     // make tx
     make_seraphis_tx_squashed_v1(semantic_rules_version,

@@ -348,6 +348,7 @@ private:
 ////
 // SpKDFTranscript
 // - build a data string for a key-derivation function
+// - mainly intended for short transcripts (~128 bytes or less) with fixed-length and statically ordered components
 // - main format: prefix || domain_separator || object1 || object2 || ...
 // - simple transcript mode: no labels, flags, or lengths
 // note: prefix defaults to "monero"

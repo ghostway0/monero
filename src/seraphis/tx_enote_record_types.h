@@ -129,7 +129,7 @@ struct LegacyEnoteRecord final
 
 ////
 // SpBasicEnoteRecordV1  (jamtis 'plain' enote type only)
-// - nominal address tag extracted from a v1 enote using a jamtis find-received key
+// - nominal address tag extracted from a seraphis enote using a jamtis find-received key
 ///
 struct SpBasicEnoteRecordV1 final
 {
@@ -145,7 +145,7 @@ struct SpBasicEnoteRecordV1 final
 
 ////
 // SpIntermediateEnoteRecordV1  (jamtis 'plain' enote type only)
-// - info extracted from a v1 enote using a jamtis find-received key and generate-address secret
+// - info extracted from a seraphis enote using a jamtis find-received key and generate-address secret
 ///
 struct SpIntermediateEnoteRecordV1 final
 {
@@ -165,7 +165,7 @@ struct SpIntermediateEnoteRecordV1 final
 
 ////
 // SpEnoteRecordV1
-// - info extracted from a v1 enote
+// - info extracted from a seraphis enote
 ///
 struct SpEnoteRecordV1 final
 {
@@ -177,7 +177,7 @@ struct SpEnoteRecordV1 final
     rct::key m_input_context;
     /// k_mask: enote view privkey for G component
     crypto::secret_key m_enote_view_privkey_g;
-    /// k_a: enote view privkey for X component
+    /// k_a: enote view privkey for X component (includes k_vb)
     crypto::secret_key m_enote_view_privkey_x;
     /// k_b_view: enote view privkey for U component
     crypto::secret_key m_enote_view_privkey_u;

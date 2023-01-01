@@ -83,7 +83,7 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-// legacy proof context  [ legacy Ko : legacy input message ]
+// legacy proof context = [ legacy Ko : legacy input message ]
 //-------------------------------------------------------------------------------------------------------------------
 static void get_legacy_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     const std::vector<LegacyMultisigInputProposalV1> &legacy_multisig_input_proposals,
@@ -99,7 +99,7 @@ static void get_legacy_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// seraphis proof context  [ seraphis K" : tx proposal prefix ]
+// seraphis proof context = [ seraphis K" : tx proposal prefix ]
 //-------------------------------------------------------------------------------------------------------------------
 static void get_seraphis_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
@@ -115,7 +115,7 @@ static void get_seraphis_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// legacy proof base points  [ legacy Ko : {G, Hp(legacy Ko)} ]
+// legacy proof base points = [ legacy Ko : {G, Hp(legacy Ko)} ]
 //-------------------------------------------------------------------------------------------------------------------
 static void get_legacy_proof_base_keys_v1(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     std::unordered_map<rct::key, rct::keyV> &legacy_proof_key_base_points_out)
@@ -137,7 +137,7 @@ static void get_legacy_proof_base_keys_v1(const std::vector<LegacyInputProposalV
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// seraphis proof keys  [ seraphis K" : {U} ]
+// seraphis proof keys = [ seraphis K" : {U} ]
 //-------------------------------------------------------------------------------------------------------------------
 static void get_sp_proof_base_keys_v1(const std::vector<SpInputProposalV1> &sp_input_proposals,
     std::unordered_map<rct::key, rct::keyV> &sp_proof_key_base_points_out)
@@ -203,21 +203,21 @@ static void prepare_sp_composition_proof_privkeys_for_multisig(const crypto::sec
     crypto::secret_key &z_offset_out,
     crypto::secret_key &z_multiplier_out)
 {
-    // prepare x: t_k + Hn(Ko, C) * k_mask
+    // prepare x: t_k + Hn(Ko,C) * k_mask
     sc_mul(to_bytes(x_out), squash_prefix.bytes, to_bytes(enote_view_privkey_g));
     sc_add(to_bytes(x_out), to_bytes(address_mask), to_bytes(x_out));
 
-    // prepare y: Hn(Ko, C) * k_a
+    // prepare y: Hn(Ko,C) * k_a
     sc_mul(to_bytes(y_out), squash_prefix.bytes, to_bytes(enote_view_privkey_x));
 
     // prepare z_offset: k_view_u
     z_offset_out = enote_view_privkey_u;
 
-    // prepare z_multiplier: Hn(Ko, C)
+    // prepare z_multiplier: Hn(Ko,C)
     z_multiplier_out = rct::rct2sk(squash_prefix);
 
     // note: z = z_multiplier * (z_offset + sum_e(z_e))
-    //         = Hn(Ko, C)    * (k_view_u + k_spend_u )
+    //         = Hn(Ko,C)     * (k_view_u + k_spend_u )
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
     {
-        // Hn(Ko, C)
+        // Hn(Ko,C)
         get_squash_prefix(sp_input_proposal, squash_prefix_temp);
 
         // x, y, z_offset, z_multiplier

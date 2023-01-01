@@ -334,7 +334,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 
     // seraphis membership proofs (assumes the caller prepared to make a membership proof for each input)
     std::vector<SpAlignableMembershipProofV1> alignable_membership_proofs;
-    make_v1_membership_proofs_v1(std::move(sp_membership_proof_preps), alignable_membership_proofs);
+    make_v1_alignable_membership_proofs_v1(std::move(sp_membership_proof_preps), alignable_membership_proofs);
 
     // finish tx
     make_seraphis_tx_squashed_v1(semantic_rules_version,

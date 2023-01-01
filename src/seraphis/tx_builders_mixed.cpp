@@ -1138,13 +1138,13 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     // 1. get input amounts and image amount commitment blinding factors
     std::vector<rct::xmr_amount> legacy_input_amounts;
     std::vector<crypto::secret_key> legacy_input_image_amount_commitment_blinding_factors;
-    prepare_legacy_input_commitment_factors_for_balance_proof_v1(legacy_inputs,
+    get_legacy_input_commitment_factors_v1(legacy_inputs,
         legacy_input_amounts,
         legacy_input_image_amount_commitment_blinding_factors);
 
     std::vector<rct::xmr_amount> sp_input_amounts;
     std::vector<crypto::secret_key> sp_input_image_amount_commitment_blinding_factors;
-    prepare_input_commitment_factors_for_balance_proof_v1(sp_partial_inputs,
+    get_input_commitment_factors_v1(sp_partial_inputs,
         sp_input_amounts,
         sp_input_image_amount_commitment_blinding_factors);
 

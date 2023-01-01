@@ -183,15 +183,16 @@ void make_sp_composition_proof(const rct::key &message,
     CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(z)) == 0, "make sp composition proof: bad private key (z)!");
 
     // verify the input key matches the input private keys: K = x G + y X + z U
-    rct::key temp_K{
+    rct::key reconstructed_K{
             rct::addKeys(
                     rct::scalarmultKey(rct::pk2rct(crypto::get_X()), rct::sk2rct(y)),
                     rct::scalarmultKey(rct::pk2rct(crypto::get_U()), rct::sk2rct(z))
                 )
         };
-    mask_key(x, temp_K, temp_K);
+    mask_key(x, reconstructed_K, reconstructed_K);
 
-    CHECK_AND_ASSERT_THROW_MES(K == temp_K, "make sp composition proof: bad proof key (K doesn't match privkeys)!");
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_K == K,
+        "make sp composition proof: bad proof key (K doesn't match privkeys)!");
 
 
     /// make K_t1 and KI
