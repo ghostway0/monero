@@ -91,28 +91,31 @@ static address_tag_hint_t get_address_tag_hint(const crypto::secret_key &cipher_
     const address_index_t &encrypted_address_index)
 {
     static_assert(sizeof(address_tag_hint_t) == 2, "");
+    static_assert(sizeof(config::TRANSCRIPT_PREFIX) != 0, "");
+    static_assert(sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT) != 0, "");
 
     // assemble hash contents: prefix || 'domain-sep' || k || cipher[k](j)
     // note: use a raw C-style struct here instead of SpKDFTranscript for maximal performance (the string produced is
     //       equivalent to what you'd get from SpKDFTranscript)
+    // note2: '-1' removes the null terminator
     struct hash_context_t {
-        char prefix[sizeof(config::TRANSCRIPT_PREFIX)];
-        char domain_separator[sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT)];
+        unsigned char prefix[sizeof(config::TRANSCRIPT_PREFIX) - 1];
+        unsigned char domain_separator[sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT) - 1];
         rct::key cipher_key;  //not crypto::secret_key, which has significant construction cost
         address_index_t enc_j;
     } hash_context;
     static_assert(!epee::has_padding<hash_context_t>(), "");
 
-    memcpy(hash_context.prefix, config::TRANSCRIPT_PREFIX, sizeof(config::TRANSCRIPT_PREFIX));
+    memcpy(hash_context.prefix, config::TRANSCRIPT_PREFIX, sizeof(config::TRANSCRIPT_PREFIX) - 1);
     memcpy(hash_context.domain_separator,
         config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT,
-        sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT));
+        sizeof(config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT) - 1);
     hash_context.cipher_key = rct::sk2rct(cipher_key);
     hash_context.enc_j = encrypted_address_index;
 
     // address_tag_hint = H_2(k, cipher[k](j))
     address_tag_hint_t address_tag_hint;
-    sp_hash_to_2(&hash_context, sizeof(hash_context_t), address_tag_hint.bytes);
+    sp_hash_to_2(&hash_context, sizeof(hash_context), address_tag_hint.bytes);
 
     // clean up cipher key bytes
     memwipe(hash_context.cipher_key.bytes, 32);

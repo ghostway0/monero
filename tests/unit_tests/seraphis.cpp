@@ -65,6 +65,8 @@ extern "C"
 #include "seraphis/txtype_squashed_v1.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_crypto/sp_hash_functions.h"
+#include "seraphis_crypto/sp_transcript.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
 #include "boost/multiprecision/cpp_int.hpp"
@@ -490,9 +492,9 @@ static bool test_info_recovery_addressindex(const address_index_t j)
     // cipher and decipher the index
     crypto::secret_key cipher_key;
     make_secret_key(cipher_key);
-    const address_tag_t ciphered_tag{cipher_address_index(cipher_key, j)};
+    const address_tag_t address_tag{cipher_address_index(cipher_key, j)};
     address_index_t decipher_j;
-    if (!try_decipher_address_index(cipher_key, ciphered_tag, decipher_j))
+    if (!try_decipher_address_index(cipher_key, address_tag, decipher_j))
         return false;
     if (decipher_j != j)
         return false;
@@ -500,10 +502,10 @@ static bool test_info_recovery_addressindex(const address_index_t j)
     // encrypt and decrypt an address tag
     const rct::key sender_receiver_secret{rct::skGen()};
     const rct::key onetime_address{rct::pkGen()};
-    const encrypted_address_tag_t encrypted_ciphered_tag{
-            encrypt_address_tag(sender_receiver_secret, onetime_address, ciphered_tag)
+    const encrypted_address_tag_t encrypted_address_tag{
+            encrypt_address_tag(sender_receiver_secret, onetime_address, address_tag)
         };
-    if (decrypt_address_tag(sender_receiver_secret, onetime_address, encrypted_ciphered_tag) != ciphered_tag)
+    if (decrypt_address_tag(sender_receiver_secret, onetime_address, encrypted_address_tag) != address_tag)
         return false;
 
     return true;
@@ -571,6 +573,32 @@ TEST(seraphis, information_recovery_amountencoding)
     EXPECT_TRUE(decoded_amount == amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
+TEST(seraphis, information_recovery_jamtisaddresstaghint)
+{
+    // cipher an index
+    const address_index_t j{gen_address_index()};
+    crypto::secret_key cipher_key;
+    make_secret_key(cipher_key);
+    const address_tag_t address_tag{cipher_address_index(cipher_key, j)};
+
+    // split the tag into encrypted index and tag hint
+    address_index_t enc_j;
+    address_tag_hint_t hint;
+    memcpy(enc_j.bytes, address_tag.bytes, sizeof(address_index_t));
+    memcpy(hint.bytes, address_tag.bytes + sizeof(address_index_t), sizeof(address_tag_hint_t));
+
+    // make a tag hint using SpKDFTranscript: H_2(k, cipher[k](j))
+    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_ADDRESS_TAG_HINT, sizeof(rct::key) + sizeof(address_index_t)};
+    transcript.append("cipher_key", cipher_key);
+    transcript.append("enc_j", enc_j.bytes);
+
+    address_tag_hint_t reconstructed_hint;
+    sp_hash_to_2(transcript.data(), transcript.size(), reconstructed_hint.bytes);
+
+    // verify that the hint can be reproduced using the SpKDFTranscript utility
+    ASSERT_TRUE(memcmp(hint.bytes, reconstructed_hint.bytes, sizeof(address_tag_hint_t)) == 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis, information_recovery_addressindex)
 {
     // test address indices
@@ -593,8 +621,7 @@ TEST(seraphis, information_recovery_jamtisdestination)
 
     // test making a jamtis destination then recovering the index
     JamtisDestinationV1 destination_known;
-    address_index_t j;
-    j = gen_address_index();
+    const address_index_t j{gen_address_index()};
     make_jamtis_destination_v1(keys.K_1_base, keys.xK_ua, keys.xK_fr, keys.s_ga, j, destination_known);
 
     address_index_t j_nominal;
@@ -624,8 +651,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
     make_jamtis_mock_keys(keys);
 
     // user address
-    address_index_t j;
-    j = gen_address_index();
+    const address_index_t j{gen_address_index()};
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
@@ -655,8 +681,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
     make_jamtis_mock_keys(keys);
 
     // user address
-    address_index_t j;
-    j = gen_address_index();
+    const address_index_t j{gen_address_index()};
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
@@ -685,8 +710,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
     make_jamtis_mock_keys(keys);
 
     // user address
-    address_index_t j;
-    j = gen_address_index();
+    const address_index_t j{gen_address_index()};
     JamtisDestinationV1 user_address;
 
     make_jamtis_destination_v1(keys.K_1_base,
