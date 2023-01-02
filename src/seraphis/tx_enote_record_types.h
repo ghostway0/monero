@@ -88,7 +88,7 @@ struct LegacyIntermediateEnoteRecord final
     /// the enote's ephemeral pubkey
     rct::key m_enote_ephemeral_pubkey;
     /// enote view privkey = [address: Hn(r K^v, t)] [subaddress: Hn(r K^{v,i}, t) + Hn(k^v, i)]
-    crypto::secret_key m_enote_view_privkey;
+    crypto::secret_key m_enote_view_extension;
     /// a: amount
     rct::xmr_amount m_amount;
     /// x: amount blinding factor
@@ -112,7 +112,7 @@ struct LegacyEnoteRecord final
     /// the enote's ephemeral pubkey
     rct::key m_enote_ephemeral_pubkey;
     /// enote view privkey = [address: Hn(r K^v, t)] [subaddress: Hn(r K^{v,i}, t) + Hn(k^v, i)]
-    crypto::secret_key m_enote_view_privkey;
+    crypto::secret_key m_enote_view_extension;
     /// a: amount
     rct::xmr_amount m_amount;
     /// x: amount blinding factor
@@ -175,12 +175,12 @@ struct SpEnoteRecordV1 final
     crypto::x25519_pubkey m_enote_ephemeral_pubkey;
     /// context of the tx input(s) associated with this enote
     rct::key m_input_context;
-    /// k_mask: enote view privkey for G component
-    crypto::secret_key m_enote_view_privkey_g;
-    /// k_a: enote view privkey for X component (includes k_vb)
-    crypto::secret_key m_enote_view_privkey_x;
-    /// k_b_view: enote view privkey for U component
-    crypto::secret_key m_enote_view_privkey_u;
+    /// k_{g, sender} + k_{g, address}: enote view extension for G component
+    crypto::secret_key m_enote_view_extension_g;
+    /// k_{x, sender} + k_{x, address}: enote view extension for X component (excludes k_vb)
+    crypto::secret_key m_enote_view_extension_x;
+    /// k_{u, sender} + k_{u, address}: enote view extension for U component (excludes k_m)
+    crypto::secret_key m_enote_view_extension_u;
     /// a: amount
     rct::xmr_amount m_amount;
     /// x: amount blinding factor

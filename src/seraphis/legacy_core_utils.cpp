@@ -86,14 +86,14 @@ void make_legacy_sender_receiver_secret(const rct::key &base_key,
     hw::get_device("default").derivation_to_scalar(derivation, tx_output_index, legacy_sender_receiver_secret_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_legacy_enote_view_privkey(const std::uint64_t tx_output_index,
+void make_legacy_enote_view_extension(const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
     const crypto::secret_key &legacy_view_privkey,
     const boost::optional<cryptonote::subaddress_index> &subaddress_index,
-    crypto::secret_key &enote_view_privkey_out)
+    crypto::secret_key &enote_view_extension_out)
 {
     // Hn(r K^v, t)
-    crypto::derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, enote_view_privkey_out);
+    crypto::derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, enote_view_extension_out);
 
     // subaddress index modifier
     if (subaddress_index)
@@ -104,7 +104,7 @@ void make_legacy_enote_view_privkey(const std::uint64_t tx_output_index,
             };
 
         // Hn(r K^v, t) + Hn(k^v, i)
-        sc_add(to_bytes(enote_view_privkey_out), to_bytes(enote_view_privkey_out), to_bytes(subaddress_modifier));
+        sc_add(to_bytes(enote_view_extension_out), to_bytes(enote_view_extension_out), to_bytes(subaddress_modifier));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -130,14 +130,14 @@ void make_legacy_onetime_address(const rct::key &destination_spendkey,
     onetime_address_out = rct::pk2rct(onetime_address_temp);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_legacy_key_image(const crypto::secret_key &enote_view_privkey,
+void make_legacy_key_image(const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &legacy_spend_privkey,
     const rct::key &onetime_address,
     crypto::key_image &key_image_out)
 {
     // KI = (view_key_stuff + k^s) * Hp(Ko)
     crypto::secret_key onetime_address_privkey;
-    sc_add(to_bytes(onetime_address_privkey), to_bytes(enote_view_privkey), to_bytes(legacy_spend_privkey));
+    sc_add(to_bytes(onetime_address_privkey), to_bytes(enote_view_extension), to_bytes(legacy_spend_privkey));
 
     crypto::generate_key_image(rct::rct2pk(onetime_address), onetime_address_privkey, key_image_out);
 }

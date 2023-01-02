@@ -300,10 +300,13 @@ void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
 /**
 * brief: gen_sp_input_proposal_v1 - generate an input proposal
 * param: sp_spend_privkey -
+* param: k_view_balance -
 * param: amount -
 * return: random input proposal
 */
-SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount);
+SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    const rct::xmr_amount amount);
 /**
 * brief: gen_sp_coinbase_output_proposal_v1 - generate a coinbase output proposal
 * param: amount -

@@ -79,14 +79,14 @@ LegacyInputProposalV1 gen_legacy_input_proposal_v1(const crypto::secret_key &leg
 {
     LegacyInputProposalV1 temp;
 
-    temp.m_enote_view_privkey = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_extension = rct::rct2sk(rct::skGen());
     temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
     temp.m_amount = amount;
     temp.m_commitment_mask = rct::rct2sk(rct::skGen());
     temp.m_onetime_address = rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey));
-    rct::addKeys1(temp.m_onetime_address, rct::sk2rct(temp.m_enote_view_privkey), temp.m_onetime_address);
+    rct::addKeys1(temp.m_onetime_address, rct::sk2rct(temp.m_enote_view_extension), temp.m_onetime_address);
     temp.m_amount_commitment = rct::commit(temp.m_amount, rct::sk2rct(temp.m_amount_blinding_factor));
-    make_legacy_key_image(temp.m_enote_view_privkey, legacy_spend_privkey, temp.m_onetime_address, temp.m_key_image);
+    make_legacy_key_image(temp.m_enote_view_extension, legacy_spend_privkey, temp.m_onetime_address, temp.m_key_image);
 
     return temp;
 }

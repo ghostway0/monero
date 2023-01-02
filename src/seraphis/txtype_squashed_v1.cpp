@@ -371,7 +371,11 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 
     // seraphis partial inputs
     std::vector<SpPartialInputV1> sp_partial_inputs;
-    make_v1_partial_inputs_v1(tx_proposal.m_sp_input_proposals, proposal_prefix, sp_spend_privkey, sp_partial_inputs);
+    make_v1_partial_inputs_v1(tx_proposal.m_sp_input_proposals,
+        proposal_prefix,
+        sp_spend_privkey,
+        k_view_balance,
+        sp_partial_inputs);
 
     // legacy spend pubkey
     const rct::key legacy_spend_pubkey{rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey))};

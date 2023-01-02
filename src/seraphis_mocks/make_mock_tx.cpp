@@ -143,8 +143,9 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     // make legacy spend privkey
     const crypto::secret_key legacy_spend_privkey{rct::rct2sk(rct::skGen())};
 
-    // make seraphis spendbase privkey (master key)
+    // make seraphis core privkeys (spend and view key)
     const crypto::secret_key sp_spend_privkey{rct::rct2sk(rct::skGen())};
+    const crypto::secret_key k_view_balance{rct::rct2sk(rct::skGen())};
 
     // make mock legacy inputs
     std::vector<LegacyInputProposalV1> legacy_input_proposals{
@@ -155,7 +156,9 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         tools::compare_func<LegacyInputProposalV1>(compare_KI));
 
     // make mock seraphis inputs
-    std::vector<SpInputProposalV1> sp_input_proposals{gen_mock_sp_input_proposals_v1(sp_spend_privkey, sp_in_amounts)};
+    std::vector<SpInputProposalV1> sp_input_proposals{
+            gen_mock_sp_input_proposals_v1(sp_spend_privkey, k_view_balance, sp_in_amounts)
+        };
     std::sort(sp_input_proposals.begin(), sp_input_proposals.end(), tools::compare_func<SpInputProposalV1>(compare_KI));
 
     // make mock outputs
@@ -223,7 +226,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     // make seraphis partial inputs
     std::vector<SpPartialInputV1> sp_partial_inputs;
 
-    make_v1_partial_inputs_v1(sp_input_proposals, proposal_prefix, sp_spend_privkey, sp_partial_inputs);
+    make_v1_partial_inputs_v1(sp_input_proposals, proposal_prefix, sp_spend_privkey, k_view_balance, sp_partial_inputs);
     std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // prepare partial tx

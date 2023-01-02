@@ -153,13 +153,13 @@ static void get_sp_proof_base_keys_v1(const std::vector<SpInputProposalV1> &sp_i
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void prepare_legacy_clsag_privkeys_for_multisig(const crypto::secret_key &enote_view_privkey,
+static void prepare_legacy_clsag_privkeys_for_multisig(const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &commitment_mask,
     crypto::secret_key &k_offset_out,
     crypto::secret_key &z_out)
 {
     // prepare k_offset: legacy enote view prifkey
-    k_offset_out = enote_view_privkey;
+    k_offset_out = enote_view_extension;
 
     // prepare z: - commitment mask
     // note: legacy commitments to zero are
@@ -185,7 +185,7 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
     {
-        prepare_legacy_clsag_privkeys_for_multisig(legacy_input_proposal.m_enote_view_privkey,
+        prepare_legacy_clsag_privkeys_for_multisig(legacy_input_proposal.m_enote_view_extension,
             legacy_input_proposal.m_commitment_mask,
             tools::add_element(proof_privkeys_k_offset_out),
             tools::add_element(proof_privkeys_z));
@@ -193,9 +193,10 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void prepare_sp_composition_proof_privkeys_for_multisig(const crypto::secret_key &enote_view_privkey_g,
-    const crypto::secret_key &enote_view_privkey_x,
-    const crypto::secret_key &enote_view_privkey_u,
+static void prepare_sp_composition_proof_privkeys_for_multisig(const crypto::secret_key &k_view_balance,
+    const crypto::secret_key &enote_view_extension_g,
+    const crypto::secret_key &enote_view_extension_x,
+    const crypto::secret_key &enote_view_extension_u,
     const crypto::secret_key &address_mask,
     const rct::key &squash_prefix,
     crypto::secret_key &x_out,
@@ -203,25 +204,27 @@ static void prepare_sp_composition_proof_privkeys_for_multisig(const crypto::sec
     crypto::secret_key &z_offset_out,
     crypto::secret_key &z_multiplier_out)
 {
-    // prepare x: t_k + Hn(Ko,C) * k_mask
-    sc_mul(to_bytes(x_out), squash_prefix.bytes, to_bytes(enote_view_privkey_g));
+    // prepare x: t_k + Hn(Ko,C) * k_g
+    sc_mul(to_bytes(x_out), squash_prefix.bytes, to_bytes(enote_view_extension_g));
     sc_add(to_bytes(x_out), to_bytes(address_mask), to_bytes(x_out));
 
-    // prepare y: Hn(Ko,C) * k_a
-    sc_mul(to_bytes(y_out), squash_prefix.bytes, to_bytes(enote_view_privkey_x));
+    // prepare y: Hn(Ko,C) * (k_x + k_vb)
+    sc_add(to_bytes(y_out), to_bytes(enote_view_extension_x), to_bytes(k_view_balance));
+    sc_mul(to_bytes(y_out), squash_prefix.bytes, to_bytes(y_out));
 
-    // prepare z_offset: k_view_u
-    z_offset_out = enote_view_privkey_u;
+    // prepare z_offset: k_u
+    z_offset_out = enote_view_extension_u;
 
     // prepare z_multiplier: Hn(Ko,C)
     z_multiplier_out = rct::rct2sk(squash_prefix);
 
     // note: z = z_multiplier * (z_offset + sum_e(z_e))
-    //         = Hn(Ko,C)     * (k_view_u + k_spend_u )
+    //         = Hn(Ko,C)     * (k_u      + k_m       )
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector<SpInputProposalV1> &sp_input_proposals,
+    const crypto::secret_key &k_view_balance,
     std::vector<crypto::secret_key> &proof_privkeys_x_out,
     std::vector<crypto::secret_key> &proof_privkeys_y_out,
     std::vector<crypto::secret_key> &proof_privkeys_z_offset_out,
@@ -246,9 +249,10 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
         get_squash_prefix(sp_input_proposal, squash_prefix_temp);
 
         // x, y, z_offset, z_multiplier
-        prepare_sp_composition_proof_privkeys_for_multisig(sp_input_proposal.m_core.m_enote_view_privkey_g,
-            sp_input_proposal.m_core.m_enote_view_privkey_x,
-            sp_input_proposal.m_core.m_enote_view_privkey_u,
+        prepare_sp_composition_proof_privkeys_for_multisig(k_view_balance,
+            sp_input_proposal.m_core.m_enote_view_extension_g,
+            sp_input_proposal.m_core.m_enote_view_extension_x,
+            sp_input_proposal.m_core.m_enote_view_extension_u,
             sp_input_proposal.m_core.m_address_mask,
             squash_prefix_temp,
             tools::add_element(proof_privkeys_x_out),
@@ -311,6 +315,7 @@ static bool try_make_v1_sp_partial_input_v1(const rct::key &expected_proposal_pr
     const SpInputProposalV1 &input_proposal,
     const std::vector<multisig::SpCompositionProofMultisigPartial> &input_proof_partial_sigs,
     const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
     SpPartialInputV1 &partial_input_out)
 {
     try
@@ -331,6 +336,7 @@ static bool try_make_v1_sp_partial_input_v1(const rct::key &expected_proposal_pr
             expected_proposal_prefix,
             std::move(sp_image_proof),
             sp_core_spend_pubkey,
+            k_view_balance,
             partial_input_out);
 
         // validate semantics to minimize failure modes
@@ -443,6 +449,7 @@ static bool try_make_sp_partial_inputs_for_multisig_v1(const rct::key &tx_propos
     const std::unordered_map<crypto::public_key, std::vector<multisig::MultisigPartialSigSetV1>>
         &sp_input_partial_sigs_per_signer,
     const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
     std::list<multisig::MultisigSigningErrorVariant> &multisig_errors_inout,
     std::vector<SpPartialInputV1> &sp_partial_inputs_out)
 {
@@ -488,6 +495,7 @@ static bool try_make_sp_partial_inputs_for_multisig_v1(const rct::key &tx_propos
                         mapped_sp_input_proposals.at(proof_key),
                         partial_sigs,
                         sp_core_spend_pubkey,
+                        k_view_balance,
                         sp_partial_input_out);
                 },
                 multisig_errors_inout,
@@ -798,7 +806,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
             // new onetime address privkey: k_view_stuff + k^s_mock
             sc_add(to_bytes(legacy_onetime_address_privkey_temp),
-                to_bytes(legacy_input_proposal.m_enote_view_privkey),
+                to_bytes(legacy_input_proposal.m_enote_view_extension),
                 to_bytes(legacy_spend_privkey_mock));
 
             // replace onetime address
@@ -806,7 +814,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
                 rct::scalarmultBase(rct::sk2rct(legacy_onetime_address_privkey_temp));
 
             // update key image for new onetime address
-            make_legacy_key_image(legacy_input_proposal.m_enote_view_privkey,
+            make_legacy_key_image(legacy_input_proposal.m_enote_view_extension,
                 legacy_spend_privkey_mock,
                 legacy_input_proposal.m_onetime_address,
                 legacy_input_proposal.m_key_image);
@@ -823,7 +831,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
                                         .m_masked_commitment = legacy_multisig_input_proof_proposal.masked_C,
                                         .m_key_image = legacy_input_proposal.m_key_image
                                     },
-                            .m_reference_view_privkey = legacy_input_proposal.m_enote_view_privkey,
+                            .m_reference_view_privkey = legacy_input_proposal.m_enote_view_extension,
                             .m_reference_commitment_mask = legacy_input_proposal.m_commitment_mask
                         }
                 );
@@ -878,10 +886,11 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
             // new onetime address
             seraphis_extended_spendkey_temp = rct::pk2rct(sp_core_spend_pubkey_mock);
-            extend_seraphis_spendkey_u(sp_input_proposal.m_core.m_enote_view_privkey_u, seraphis_extended_spendkey_temp);
+            extend_seraphis_spendkey_u(sp_input_proposal.m_core.m_enote_view_extension_u, seraphis_extended_spendkey_temp);
             seraphis_onetime_address_temp = seraphis_extended_spendkey_temp;
-            extend_seraphis_spendkey_x(sp_input_proposal.m_core.m_enote_view_privkey_x, seraphis_onetime_address_temp);
-            mask_key(sp_input_proposal.m_core.m_enote_view_privkey_g,
+            extend_seraphis_spendkey_x(k_view_balance, seraphis_onetime_address_temp);
+            extend_seraphis_spendkey_x(sp_input_proposal.m_core.m_enote_view_extension_x, seraphis_onetime_address_temp);
+            mask_key(sp_input_proposal.m_core.m_enote_view_extension_g,
                 seraphis_onetime_address_temp,
                 temp_enote_core.m_onetime_address);
 
@@ -889,7 +898,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
             sp_input_proposal.m_core.m_enote_core = temp_enote_core;
 
             // update key image for new onetime address
-            make_seraphis_key_image(sp_input_proposal.m_core.m_enote_view_privkey_x,
+            make_seraphis_key_image(add_secrets(sp_input_proposal.m_core.m_enote_view_extension_x, k_view_balance),
                 rct::rct2pk(seraphis_extended_spendkey_temp),
                 sp_input_proposal.m_core.m_key_image);
         }
@@ -926,6 +935,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
         make_v1_partial_inputs_v1(tx_proposal.m_sp_input_proposals,
             tx_proposal_prefix,
             sp_spend_privkey_mock,
+            k_view_balance,
             sp_partial_inputs);
 
         // convert the tx proposal payment proposals to output proposals (we can't use the tx proposal directly to
@@ -1424,6 +1434,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
     std::vector<crypto::secret_key> proof_privkeys_z_multiplier;
 
     collect_sp_composition_proof_privkeys_for_multisig(tx_proposal.m_sp_input_proposals,
+        k_view_balance,
         proof_privkeys_x,
         proof_privkeys_y,
         proof_privkeys_z_offset,
@@ -1510,6 +1521,7 @@ bool try_make_inputs_for_multisig_v1(const SpMultisigTxProposalV1 &multisig_tx_p
             multisig_signers,
             sp_input_partial_sigs_per_signer,
             sp_core_spend_pubkey,
+            k_view_balance,
             multisig_errors_inout,
             sp_partial_inputs_out))
         return false;

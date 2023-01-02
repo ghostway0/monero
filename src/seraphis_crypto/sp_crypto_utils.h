@@ -163,6 +163,14 @@ void subtract_secret_key_vectors(const std::vector<crypto::secret_key> &keys_A,
 */
 void mask_key(const crypto::secret_key &mask, const rct::key &key, rct::key &masked_key_out);
 /**
+* brief: add_secrets - v = a + b
+*   K" = mask G + K
+* param: mask - commitment mask/blinding factor
+* param: key - EC key to commit to
+* outparam: masked_key_out - K", the masked key
+*/
+crypto::secret_key add_secrets(const crypto::secret_key &a, const crypto::secret_key &b);
+/**
 * brief: key_domain_is_prime_subgroup - check that input key is in the prime order EC subgroup
 *   l*K ?= identity
 * param: check_key - key to check

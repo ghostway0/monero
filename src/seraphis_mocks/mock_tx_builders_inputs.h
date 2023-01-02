@@ -57,10 +57,12 @@ namespace mocks
 /**
 * brief: gen_mock_sp_input_proposals_v1 - create random mock inputs
 * param: sp_spend_privkey -
+* param: k_view_balance -
 * param: in_amounts -
 * return: set of transaction inputs ready to spend
 */
 std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
     const std::vector<rct::xmr_amount> &in_amounts);
 /**
 * brief: gen_mock_sp_membership_proof_prep_v1 - create a random reference set for an enote, with real spend at a random index,

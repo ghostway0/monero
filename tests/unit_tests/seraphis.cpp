@@ -137,9 +137,9 @@ static void check_is_owned_with_intermediate_record(const SpEnoteVariant &enote,
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
     reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.m_enote_view_extension_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
+    make_seraphis_key_image(add_secrets(enote_record.m_enote_view_extension_x, keys.k_vb),
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
     EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
@@ -171,9 +171,9 @@ static void check_is_owned(const SpEnoteVariant &enote,
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
     reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    extend_seraphis_spendkey_u(enote_record.m_enote_view_privkey_u, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.m_enote_view_extension_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    make_seraphis_key_image(enote_record.m_enote_view_privkey_x,
+    make_seraphis_key_image(add_secrets(enote_record.m_enote_view_extension_x, keys.k_vb),
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
     EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
@@ -343,9 +343,10 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     CHECK_AND_ASSERT_THROW_MES(balance_check_in_out_amnts(all_in_amounts, out_amounts, raw_transaction_fee),
         "SpTxSquashedV1 (unit test): tried to raw make tx with unbalanced amounts.");
 
-    // make wallet spendbase privkeys (master keys for legacy and seraphis)
+    // make wallet core privkeys (spend keys for legacy and seraphis, view key for seraphis)
     const crypto::secret_key legacy_spend_privkey{rct::rct2sk(rct::skGen())};
     const crypto::secret_key sp_spend_privkey{rct::rct2sk(rct::skGen())};
+    const crypto::secret_key k_view_balance{rct::rct2sk(rct::skGen())};
 
     // make mock legacy input proposals
     std::vector<LegacyInputProposalV1> legacy_input_proposals{
@@ -353,7 +354,9 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         };
 
     // make mock seraphis input proposals
-    std::vector<SpInputProposalV1> sp_input_proposals{gen_mock_sp_input_proposals_v1(sp_spend_privkey, in_sp_amounts)};
+    std::vector<SpInputProposalV1> sp_input_proposals{
+            gen_mock_sp_input_proposals_v1(sp_spend_privkey, k_view_balance, in_sp_amounts)
+        };
 
     // make mock output proposals
     std::vector<SpOutputProposalV1> output_proposals{
@@ -447,6 +450,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     make_v1_image_proofs_v1(sp_input_proposals,
         tx_proposal_prefix,
         sp_spend_privkey,
+        k_view_balance,
         tx_sp_image_proofs);
     get_legacy_input_commitment_factors_v1(legacy_input_proposals,
         input_legacy_amounts,

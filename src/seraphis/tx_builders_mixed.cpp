@@ -819,7 +819,7 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
     reduce_seraphis_spendkey_x(k_view_balance, sp_core_spend_pubkey);
 
     for (const SpInputProposalV1 &sp_input_proposal : tx_proposal.m_sp_input_proposals)
-        check_v1_input_proposal_semantics_v1(sp_input_proposal, sp_core_spend_pubkey);
+        check_v1_input_proposal_semantics_v1(sp_input_proposal, sp_core_spend_pubkey, k_view_balance);
 
 
     /// check that amounts balance in the proposal

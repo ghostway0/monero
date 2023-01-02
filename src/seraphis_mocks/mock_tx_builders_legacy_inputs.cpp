@@ -222,11 +222,11 @@ std::vector<LegacyRingSignaturePrepV1> gen_mock_legacy_ring_signature_preps_v1(c
     // make mock legacy ring signatures from input proposals
     rct::ctkeyV input_enotes;
     std::vector<LegacyEnoteImageV2> input_images;
-    std::vector<crypto::secret_key> input_enote_view_privkeys;
+    std::vector<crypto::secret_key> input_enote_view_extensions;
     std::vector<crypto::secret_key> commitment_masks;
     input_enotes.reserve(input_proposals.size());
     input_images.reserve(input_proposals.size());
-    input_enote_view_privkeys.reserve(input_proposals.size());
+    input_enote_view_extensions.reserve(input_proposals.size());
     commitment_masks.reserve(input_proposals.size());
 
     for (const LegacyInputProposalV1 &input_proposal : input_proposals)
@@ -241,14 +241,14 @@ std::vector<LegacyRingSignaturePrepV1> gen_mock_legacy_ring_signature_preps_v1(c
             input_proposal.m_amount_commitment,
             input_images.back().m_masked_commitment);
 
-        input_enote_view_privkeys.emplace_back(input_proposal.m_enote_view_privkey);
+        input_enote_view_extensions.emplace_back(input_proposal.m_enote_view_extension);
         commitment_masks.emplace_back(input_proposal.m_commitment_mask);
     }
 
     return gen_mock_legacy_ring_signature_preps_v1(proposal_prefix,
         input_enotes,
         input_images,
-        input_enote_view_privkeys,
+        input_enote_view_extensions,
         commitment_masks,
         ring_size,
         ledger_context_inout);
@@ -279,7 +279,7 @@ void make_mock_legacy_ring_signature_preps_for_inputs_v1(const rct::key &proposa
                 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v1(proposal_prefix,
                         input_ledger_mappings.at(input_proposal.m_key_image),
                         LegacyEnoteImageV2{masked_commitment, input_proposal.m_key_image},
-                        input_proposal.m_enote_view_privkey,
+                        input_proposal.m_enote_view_extension,
                         input_proposal.m_commitment_mask,
                         ring_size,
                         ledger_context)

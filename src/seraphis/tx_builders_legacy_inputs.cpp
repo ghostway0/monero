@@ -154,7 +154,7 @@ void check_v1_legacy_input_proposal_semantics_v1(const LegacyInputProposalV1 &in
     // 1. the onetime address must be reproducible
     // Ko ?= k_v_stuff + k^s G
     rct::key onetime_address_reproduced{legacy_spend_pubkey};
-    mask_key(input_proposal.m_enote_view_privkey, onetime_address_reproduced, onetime_address_reproduced);
+    mask_key(input_proposal.m_enote_view_extension, onetime_address_reproduced, onetime_address_reproduced);
 
     CHECK_AND_ASSERT_THROW_MES(onetime_address_reproduced == input_proposal.m_onetime_address,
         "legacy input proposal v1 semantics check: could not reproduce the one-time address.");
@@ -176,7 +176,7 @@ void check_v1_legacy_input_proposal_semantics_v1(const LegacyInputProposalV1 &in
 void make_v1_legacy_input_proposal_v1(const rct::key &onetime_address,
     const rct::key &amount_commitment,
     const crypto::key_image &key_image,
-    const crypto::secret_key &enote_view_privkey,
+    const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &input_amount_blinding_factor,
     const rct::xmr_amount &input_amount,
     const crypto::secret_key &commitment_mask,
@@ -186,7 +186,7 @@ void make_v1_legacy_input_proposal_v1(const rct::key &onetime_address,
     proposal_out.m_onetime_address        = onetime_address;
     proposal_out.m_amount_commitment      = amount_commitment;
     proposal_out.m_key_image              = key_image;
-    proposal_out.m_enote_view_privkey     = enote_view_privkey;
+    proposal_out.m_enote_view_extension     = enote_view_extension;
     proposal_out.m_amount_blinding_factor = input_amount_blinding_factor;
     proposal_out.m_amount                 = input_amount;
     proposal_out.m_commitment_mask        = commitment_mask;
@@ -200,7 +200,7 @@ void make_v1_legacy_input_proposal_v1(const LegacyEnoteRecord &enote_record,
     make_v1_legacy_input_proposal_v1(onetime_address_ref(enote_record.m_enote),
         amount_commitment_ref(enote_record.m_enote),
         enote_record.m_key_image,
-        enote_record.m_enote_view_privkey,
+        enote_record.m_enote_view_extension,
         enote_record.m_amount_blinding_factor,
         enote_record.m_amount,
         commitment_mask,

@@ -80,7 +80,7 @@ void make_seraphis_key_image(const crypto::secret_key &y, const crypto::secret_k
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_core_spendkey(const crypto::secret_key &sp_spend_privkey, rct::key &core_spend_pubkey_out)
 {
-    // k_m U
+    // k_b U
     rct::scalarmultKey(core_spend_pubkey_out, rct::pk2rct(crypto::get_U()), rct::sk2rct(sp_spend_privkey));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ void reduce_seraphis_spendkey_u(const crypto::secret_key &k_reducer_u, rct::key 
 void make_seraphis_spendkey(const crypto::secret_key &k_a, const crypto::secret_key &k_b, rct::key &spendkey_out)
 {
     // K = k_a X + k_b U
-    make_seraphis_core_spendkey(k_b, spendkey_out);     //k_b U
+    make_seraphis_core_spendkey(k_b, spendkey_out); //k_b U
     extend_seraphis_spendkey_x(k_a, spendkey_out);  //k_a X + k_b U
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -178,8 +178,8 @@ void make_seraphis_squashed_enote_Q(const rct::key &onetime_address,
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_enote_core(const rct::key &onetime_address,
-    const crypto::secret_key &amount_blinding_factor,
     const rct::xmr_amount amount,
+    const crypto::secret_key &amount_blinding_factor,
     SpEnoteCore &enote_core_out)
 {
     // Ko
@@ -193,39 +193,45 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     const crypto::secret_key &extension_privkey_x,
     const crypto::secret_key &extension_privkey_u,
     const rct::key &core_spend_pubkey,
-    const crypto::secret_key &amount_blinding_factor,
+    const crypto::secret_key &sp_view_privkey,
     const rct::xmr_amount amount,
+    const crypto::secret_key &amount_blinding_factor,
     SpEnoteCore &enote_core_out)
 {
-    // Ko = k_extension_g G + k_extension_x X + k_extension_u U + K
+    // K_s = k_a X + k_b U
     enote_core_out.m_onetime_address = core_spend_pubkey;
+    extend_seraphis_spendkey_x(sp_view_privkey, enote_core_out.m_onetime_address);
+
+    // Ko = k_extension_g G + k_extension_x X + k_extension_u U + K_s
     extend_seraphis_spendkey_u(extension_privkey_u, enote_core_out.m_onetime_address);
     extend_seraphis_spendkey_x(extension_privkey_x, enote_core_out.m_onetime_address);
     mask_key(extension_privkey_g, enote_core_out.m_onetime_address, enote_core_out.m_onetime_address);
 
     // finish making the enote
-    make_seraphis_enote_core(enote_core_out.m_onetime_address, amount_blinding_factor, amount, enote_core_out);
+    make_seraphis_enote_core(enote_core_out.m_onetime_address, amount, amount_blinding_factor, enote_core_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_seraphis_enote_core(const crypto::secret_key &enote_view_privkey_g,
-    const crypto::secret_key &enote_view_privkey_x,
-    const crypto::secret_key &enote_view_privkey_u,
+void make_seraphis_enote_core(const crypto::secret_key &enote_view_extension_g,
+    const crypto::secret_key &enote_view_extension_x,
+    const crypto::secret_key &enote_view_extension_u,
     const crypto::secret_key &sp_spend_privkey,
-    const crypto::secret_key &amount_blinding_factor,
+    const crypto::secret_key &sp_view_privkey,
     const rct::xmr_amount amount,
+    const crypto::secret_key &amount_blinding_factor,
     SpEnoteCore &enote_core_out)
 {
-    // k_m U
+    // k_b U
     rct::key core_spend_pubkey;
     make_seraphis_core_spendkey(sp_spend_privkey, core_spend_pubkey);
 
     // finish making the enote
-    make_seraphis_enote_core(enote_view_privkey_g,  //k_g
-        enote_view_privkey_x,  //k_x
-        enote_view_privkey_u,  //k_u
+    make_seraphis_enote_core(enote_view_extension_g,  //k_g
+        enote_view_extension_x,  //k_x
+        enote_view_extension_u,  //k_u
         core_spend_pubkey,
-        amount_blinding_factor,
+        sp_view_privkey,
         amount,
+        amount_blinding_factor,
         enote_core_out);
 }
 //-------------------------------------------------------------------------------------------------------------------

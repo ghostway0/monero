@@ -245,6 +245,13 @@ void mask_key(const crypto::secret_key &mask, const rct::key &key, rct::key &mas
     rct::addKeys1(masked_key_out, rct::sk2rct(mask), key);
 }
 //-------------------------------------------------------------------------------------------------------------------
+crypto::secret_key add_secrets(const crypto::secret_key &a, const crypto::secret_key &b)
+{
+    crypto::secret_key temp;
+    sc_add(to_bytes(temp), to_bytes(a), to_bytes(b));
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool key_domain_is_prime_subgroup(const rct::key &check_key)
 {
     // l*K ?= identity

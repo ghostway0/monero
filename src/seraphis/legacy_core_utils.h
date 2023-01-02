@@ -74,20 +74,20 @@ void make_legacy_sender_receiver_secret(const rct::key &base_key,
     const crypto::secret_key &DH_privkey,
     crypto::secret_key &legacy_sender_receiver_secret_out);
 /**
-* brief: make_legacy_enote_view_privkey - make a legacy enote's view privkey
+* brief: make_legacy_enote_view_extension - make a legacy enote's view extension
 *   - component of onetime address privkey involving view key
-*   - Hn(k^v R_t, t) + (if subaddress enote owner then Hn(k^v, i) else 0)
+*   - Hn(k^v R_t, t) + (IF subaddress enote owner THEN Hn(k^v, i) ELSE 0)
 * param: tx_output_index - t
 * param: sender_receiver_DH_derivation - k^v R_t
 * param: legacy_view_privkey - k^v
 * param: subaddress_index - optional(i)
-* outparam: enote_view_privkey_out - Hn(k^v R_t, t) + (if (i) then Hn(k^v, i) else 0)
+* outparam: enote_view_extension_out - Hn(k^v R_t, t) + (IF (i) THEN Hn(k^v, i) ELSE 0)
 */
-void make_legacy_enote_view_privkey(const std::uint64_t tx_output_index,
+void make_legacy_enote_view_extension(const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
     const crypto::secret_key &legacy_view_privkey,
     const boost::optional<cryptonote::subaddress_index> &subaddress_index,
-    crypto::secret_key &enote_view_privkey_out);
+    crypto::secret_key &enote_view_extension_out);
 /**
 * brief: make_legacy_onetime_address - make a legacy onetime address for the enote at index 't' in a tx's output set
 *   - Ko_t = Hn(r_t K^v, t) G + K^s
@@ -107,12 +107,12 @@ void make_legacy_onetime_address(const rct::key &destination_spendkey,
 *   - KI = (k^{o,v} + k^s) * Hp(Ko)
 *   - note: we pass Ko by value instead of computing it (Ko = (k^{o,v} + k^s) G) for performance reasons (even though
 *     skipping that step is less robust)
-* param: enote_view_privkey - k^{o,v}
+* param: enote_view_extension - k^{o,v}
 * param: legacy_spend_privkey - k^s
 * param: onetime_address - Ko
 * outparam: key_image_out - KI = (k^{o,v} + k^s) * Hp(Ko)
 */
-void make_legacy_key_image(const crypto::secret_key &enote_view_privkey,
+void make_legacy_key_image(const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &legacy_spend_privkey,
     const rct::key &onetime_address,
     crypto::key_image &key_image_out);

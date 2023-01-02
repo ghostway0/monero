@@ -197,10 +197,12 @@ void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
         proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
+SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    const rct::xmr_amount amount)
 {
     SpInputProposalV1 temp;
-    temp.m_core = gen_sp_input_proposal_core(sp_spend_privkey, amount);
+    temp.m_core = gen_sp_input_proposal_core(sp_spend_privkey, k_view_balance, amount);
     return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------

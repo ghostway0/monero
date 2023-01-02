@@ -75,7 +75,7 @@ void check_v1_legacy_input_proposal_semantics_v1(const LegacyInputProposalV1 &in
 void make_v1_legacy_input_proposal_v1(const rct::key &onetime_address,
     const rct::key &amount_commitment,
     const crypto::key_image &key_image,
-    const crypto::secret_key &enote_view_privkey,
+    const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &input_amount_blinding_factor,
     const rct::xmr_amount &input_amount,
     const crypto::secret_key &commitment_mask,

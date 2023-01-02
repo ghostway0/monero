@@ -227,7 +227,7 @@ static bool try_get_intermediate_legacy_enote_record_info(const LegacyEnoteVaria
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
-    crypto::secret_key &enote_view_privkey_out,
+    crypto::secret_key &enote_view_extension_out,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out,
     boost::optional<cryptonote::subaddress_index> &subaddress_index_out)
@@ -256,11 +256,11 @@ static bool try_get_intermediate_legacy_enote_record_info(const LegacyEnoteVaria
         return false;
 
     // compute enote view privkey
-    make_legacy_enote_view_privkey(tx_output_index,
+    make_legacy_enote_view_extension(tx_output_index,
         sender_receiver_DH_derivation,
         legacy_view_privkey,
         subaddress_index_out,
-        enote_view_privkey_out);
+        enote_view_extension_out);
 
     // try to get amount commitment information
     if (!try_get_amount_commitment_information(enote,
@@ -352,7 +352,7 @@ bool try_get_legacy_intermediate_enote_record(const LegacyEnoteVariant &enote,
             legacy_base_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
-            record_out.m_enote_view_privkey,
+            record_out.m_enote_view_extension,
             record_out.m_amount,
             record_out.m_amount_blinding_factor,
             record_out.m_address_index))
@@ -414,14 +414,14 @@ bool try_get_legacy_enote_record(const LegacyEnoteVariant &enote,
             legacy_base_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
-            record_out.m_enote_view_privkey,
+            record_out.m_enote_view_extension,
             record_out.m_amount,
             record_out.m_amount_blinding_factor,
             record_out.m_address_index))
         return false;
 
     // compute the key image
-    make_legacy_key_image(record_out.m_enote_view_privkey,
+    make_legacy_key_image(record_out.m_enote_view_extension,
         legacy_spend_privkey,
         onetime_address_ref(enote),
         record_out.m_key_image);
@@ -473,7 +473,7 @@ void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_r
 {
     record_out.m_enote = intermediate_record.m_enote;
     record_out.m_enote_ephemeral_pubkey = intermediate_record.m_enote_ephemeral_pubkey;
-    record_out.m_enote_view_privkey = intermediate_record.m_enote_view_privkey;
+    record_out.m_enote_view_extension = intermediate_record.m_enote_view_extension;
     record_out.m_amount = intermediate_record.m_amount;
     record_out.m_amount_blinding_factor = intermediate_record.m_amount_blinding_factor;
     record_out.m_key_image = key_image;
@@ -488,7 +488,7 @@ void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_r
 {
     // make key image: ((view key stuff) + k^s) * Hp(Ko)
     crypto::key_image key_image;
-    make_legacy_key_image(intermediate_record.m_enote_view_privkey,
+    make_legacy_key_image(intermediate_record.m_enote_view_extension,
         legacy_spend_privkey,
         onetime_address_ref(intermediate_record.m_enote),
         key_image);

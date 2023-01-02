@@ -58,7 +58,7 @@ struct LegacyInputProposalV1 final
     crypto::key_image m_key_image;
 
     /// Hn(k_v R_t, t) + [subaddresses: Hn(k_v, i)]  (does not include legacy spend privkey k_s)
-    crypto::secret_key m_enote_view_privkey;
+    crypto::secret_key m_enote_view_extension;
     /// x
     crypto::secret_key m_amount_blinding_factor;
     /// a

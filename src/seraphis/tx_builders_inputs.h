@@ -67,15 +67,18 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
 *   - throws on failure
 * param: input_proposal -
 * param: sp_core_spend_pubkey -
+* param: k_view_balance -
 */
-void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal, const rct::key &sp_core_spend_pubkey);
+void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance);
 /**
 * brief: make_input_proposal - make the core of a seraphis input proposal
 * param: enote_core -
 * param: key_image -
-* param: enote_view_privkey_g -
-* param: enote_view_privkey_x -
-* param: enote_view_privkey_u -
+* param: enote_view_extension_g -
+* param: enote_view_extension_x -
+* param: enote_view_extension_u -
 * param: input_amount_blinding_factor -
 * param: input_amount -
 * param: address_mask -
@@ -84,9 +87,9 @@ void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposa
 */
 void make_input_proposal(const SpEnoteCore &enote_core,
     const crypto::key_image &key_image,
-    const crypto::secret_key &enote_view_privkey_g,
-    const crypto::secret_key &enote_view_privkey_x,
-    const crypto::secret_key &enote_view_privkey_u,
+    const crypto::secret_key &enote_view_extension_g,
+    const crypto::secret_key &enote_view_extension_x,
+    const crypto::secret_key &enote_view_extension_u,
     const crypto::secret_key &input_amount_blinding_factor,
     const rct::xmr_amount &input_amount,
     const crypto::secret_key &address_mask,
@@ -136,22 +139,26 @@ void make_standard_input_context_v1(const std::vector<LegacyInputProposalV1> &le
 * param: input_proposal -
 * param: message -
 * param: sp_spend_privkey -
+* param: k_view_balance -
 * outparam: image_proof_out -
 */
 void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     const rct::key &message,
     const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
     SpImageProofV1 &image_proof_out);
 /**
 * brief: make_v1_image_proofs_v1 - make a set of seraphis composition proofs for enote images in the squashed enote model
 * param: input_proposals -
 * param: message -
 * param: sp_spend_privkey -
+* param: k_view_balance -
 * outparam: image_proofs_out -
 */
 void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposals,
     const rct::key &message,
     const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
     std::vector<SpImageProofV1> &image_proofs_out);
 /**
 * brief: make_binned_ref_set_generator_seed_v1 - compute a generator seed for making a binned reference set
@@ -234,27 +241,32 @@ void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input);
 * param: proposal_prefix -
 * param: sp_image_proof -
 * param: sp_core_spend_pubkey -
+* param: k_view_balance -
 * outparam: partial_input_out -
 */
 void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &proposal_prefix,
     SpImageProofV1 sp_image_proof,
     const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
     SpPartialInputV1 &partial_input_out);
 void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &proposal_prefix,
     const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
     SpPartialInputV1 &partial_input_out);
 /**
 * brief: make_v1_partial_inputs_v1 - make a full set of v1 partial inputs
 * param: input_proposals -
 * param: proposal_prefix -
 * param: sp_spend_privkey -
+* param: k_view_balance -
 * outparam: partial_inputs_out -
 */
 void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_proposals,
     const rct::key &proposal_prefix,
     const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
     std::vector<SpPartialInputV1> &partial_inputs_out);
 /**
 * brief: get_input_commitment_factors_v1 - collect input amounts and input image amount commitment blinding factors

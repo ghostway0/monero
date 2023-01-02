@@ -202,7 +202,7 @@ void get_enote_image_core(const SpInputProposalCore &proposal, SpEnoteImageCore 
 //-------------------------------------------------------------------------------------------------------------------
 void get_enote_core(const SpOutputProposalCore &proposal, SpEnoteCore &enote_out)
 {
-    make_seraphis_enote_core(proposal.m_onetime_address, proposal.m_amount_blinding_factor, proposal.m_amount, enote_out);
+    make_seraphis_enote_core(proposal.m_onetime_address, proposal.m_amount, proposal.m_amount_blinding_factor, enote_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 SpCoinbaseEnoteCore gen_sp_coinbase_enote_core()
@@ -221,25 +221,30 @@ SpEnoteCore gen_sp_enote_core()
     return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
-SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount)
+SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &sp_view_privkey,
+    const rct::xmr_amount amount)
 {
     SpInputProposalCore temp;
 
-    temp.m_enote_view_privkey_g = rct::rct2sk(rct::skGen());
-    temp.m_enote_view_privkey_x = rct::rct2sk(rct::skGen());
-    temp.m_enote_view_privkey_u = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_extension_g = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_extension_x = rct::rct2sk(rct::skGen());
+    temp.m_enote_view_extension_u = rct::rct2sk(rct::skGen());
     crypto::secret_key sp_spend_privkey_extended;
-    sc_add(to_bytes(sp_spend_privkey_extended), to_bytes(temp.m_enote_view_privkey_u), to_bytes(sp_spend_privkey));
-    make_seraphis_key_image(temp.m_enote_view_privkey_x, sp_spend_privkey_extended, temp.m_key_image);
+    sc_add(to_bytes(sp_spend_privkey_extended), to_bytes(temp.m_enote_view_extension_u), to_bytes(sp_spend_privkey));
+    make_seraphis_key_image(add_secrets(temp.m_enote_view_extension_x, sp_view_privkey),
+        sp_spend_privkey_extended,
+        temp.m_key_image);
     temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
     temp.m_amount = amount;
     SpEnoteCore enote_core_temp;
-    make_seraphis_enote_core(temp.m_enote_view_privkey_g,
-        temp.m_enote_view_privkey_x,
-        temp.m_enote_view_privkey_u,
+    make_seraphis_enote_core(temp.m_enote_view_extension_g,
+        temp.m_enote_view_extension_x,
+        temp.m_enote_view_extension_u,
         sp_spend_privkey,
-        temp.m_amount_blinding_factor,
+        sp_view_privkey,
         temp.m_amount,
+        temp.m_amount_blinding_factor,
         enote_core_temp);
     temp.m_enote_core = enote_core_temp;
     temp.m_address_mask = rct::rct2sk(rct::skGen());;

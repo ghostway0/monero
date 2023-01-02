@@ -52,7 +52,7 @@ namespace sp
 ///
 struct SpCoinbaseEnoteCore final
 {
-    /// Ko = k_g G + k_x X + (k_u + k_m) U
+    //// Ko = k_g G + (k_x + k_a) X + (k_u + k_b) U
     rct::key m_onetime_address;
     /// a
     /// note: C = 1 G + a H  (implied)
@@ -69,7 +69,7 @@ inline std::size_t sp_coinbase_enote_core_size_bytes() { return 32 + 8; }
 ///
 struct SpEnoteCore final
 {
-    /// Ko = k_g G + k_x X + (k_u + k_m) U
+    /// Ko = k_g G + (k_x + k_a) X + (k_u + k_b) U
     rct::key m_onetime_address;
     /// C = x G + a H
     rct::key m_amount_commitment;
@@ -101,7 +101,7 @@ struct SpEnoteImageCore final
     rct::key m_masked_address;
     /// C" = (t_c + x) G + a H
     rct::key m_masked_commitment;
-    /// KI = ((k_u + k_m) / k_x) U
+    /// KI = ((k_u + k_b) / (k_x + k_a)) U
     crypto::key_image m_key_image;
 };
 inline const boost::string_ref container_name(const SpEnoteImageCore&) { return "SpEnoteImageCore"; }
@@ -121,12 +121,12 @@ struct SpInputProposalCore final
     /// the enote's key image
     crypto::key_image m_key_image;
 
-    /// k_g = k_{g, sender} + k_{g, recipient}
-    crypto::secret_key m_enote_view_privkey_g;
-    /// k_x = k_{x, sender} + k_{x, recipient}
-    crypto::secret_key m_enote_view_privkey_x;
-    /// k_u = k_{u, sender} + k_{u, recipient}  (does not include k_m)
-    crypto::secret_key m_enote_view_privkey_u;
+    /// k_g = k_{g, sender} + k_{g, address}
+    crypto::secret_key m_enote_view_extension_g;
+    /// k_x = k_{x, sender} + k_{x, address}  (does not include k_a)
+    crypto::secret_key m_enote_view_extension_x;
+    /// k_u = k_{u, sender} + k_{u, address}  (does not include k_b)
+    crypto::secret_key m_enote_view_extension_u;
     /// x
     crypto::secret_key m_amount_blinding_factor;
     /// a
@@ -204,10 +204,13 @@ SpEnoteCore gen_sp_enote_core();
 /**
 * brief: gen_sp_input_proposal_core - generate a random input proposal
 * param: sp_spend_privkey -
+* param: sp_view_privkey -
 * param: amount -
 * return: generated proposal
 */
-SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey, const rct::xmr_amount amount);
+SpInputProposalCore gen_sp_input_proposal_core(const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &sp_view_privkey,
+    const rct::xmr_amount amount);
 /**
 * brief: gen - generate a random proposal
 * param: amount -
