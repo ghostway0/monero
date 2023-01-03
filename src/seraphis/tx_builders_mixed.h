@@ -59,8 +59,8 @@ namespace sp
 
 /**
 * brief: make_tx_proposal_prefix_v1 - hash representing a tx proposal
-*   - H_32(version string, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
-* param: version_string -
+*   - H_32(tx version, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
+* param: tx_version -
 * param: legacy_input_key_images -
 * param: sp_input_key_images -
 * param: output_enotes -
@@ -68,42 +68,42 @@ namespace sp
 * param: transaction_fee -
 * outparam: tx_proposal_prefix_out - hash representing a tx proposal
 */
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpEnoteV1> &output_enotes,
     const rct::xmr_amount transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyEnoteImageV2> &input_legacy_enote_images,
     const std::vector<SpEnoteImageV1> &input_sp_enote_images,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputV1> &legacy_inputs,
     const std::vector<SpPartialInputV1> &sp_partial_inputs,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const std::string &version_string,
+void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
@@ -278,7 +278,7 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
 * param: tx_proposal -
 * param: legacy_inputs -
 * param: sp_partial_inputs -
-* param: version_string -
+* param: tx_version -
 * param: k_view_balance -
 * outparam: partial_tx_out -
 */
@@ -287,12 +287,12 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     std::vector<SpOutputProposalV1> output_proposals,
     const DiscretizedFee &tx_fee,
     const TxExtra &partial_memo,
-    const std::string &version_string,
+    const tx_version_t &tx_version,
     SpPartialTxV1 &partial_tx_out);
 void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
     std::vector<LegacyInputV1> legacy_inputs,
     std::vector<SpPartialInputV1> sp_partial_inputs,
-    const std::string &version_string,
+    const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,

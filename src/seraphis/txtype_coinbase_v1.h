@@ -139,11 +139,11 @@ inline unsigned char tx_structure_version<SpTxCoinbaseV1>()
     return static_cast<unsigned char>(TxStructureVersionSp::TxTypeSpCoinbaseV1);
 }
 
-/// versioning string for an SpTxCoinbaseV1 tx
-inline void make_versioning_string(const SpTxCoinbaseV1::SemanticRulesVersion tx_semantic_rules_version,
-    std::string &version_string_out)
+/// versioning for an SpTxCoinbaseV1 tx
+inline void make_tx_version(const SpTxCoinbaseV1::SemanticRulesVersion tx_semantic_rules_version,
+    tx_version_t &tx_version_out)
 {
-    make_versioning_string<SpTxCoinbaseV1>(static_cast<unsigned char>(tx_semantic_rules_version), version_string_out);
+    make_tx_version<SpTxCoinbaseV1>(static_cast<unsigned char>(tx_semantic_rules_version), tx_version_out);
 }
 
 /// transaction validators

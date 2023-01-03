@@ -89,34 +89,40 @@ enum class TxStructureVersionSp : unsigned char
     TxTypeSpSquashedV1 = 1
 };
 
-/// get the tx version string: era | format | semantic rules
-inline void make_versioning_string_tx_base(const unsigned char tx_era_version,
+/// get the tx version: era | format | semantic rules
+struct tx_version_t final
+{
+    unsigned char bytes[3];
+};
+inline bool operator==(const tx_version_t &a, const tx_version_t &b)
+{ return (a.bytes[0] == b.bytes[0]) && (a.bytes[1] == b.bytes[1]) && (a.bytes[2] == b.bytes[2]); }
+
+inline void make_tx_version_tx_base(const unsigned char tx_era_version,
     const unsigned char tx_structure_version,
     const unsigned char tx_semantic_rules_version,
-    std::string &version_string_out)
+    tx_version_t &tx_version_out)
 {
-    version_string_out.clear();
     /// era of the tx (e.g. CryptoNote/RingCT/Seraphis)
-    version_string_out += static_cast<char>(tx_era_version);
+    tx_version_out.bytes[0] = tx_era_version;
     /// structure version of the tx within its era
-    version_string_out += static_cast<char>(tx_structure_version);
+    tx_version_out.bytes[1] = tx_structure_version;
     /// a tx format's validation rules version
-    version_string_out += static_cast<char>(tx_semantic_rules_version);
+    tx_version_out.bytes[2] = tx_semantic_rules_version;
 }
 
-/// get the tx version string for seraphis txs: TxEraSp | format | semantic rules
-inline void make_versioning_string_seraphis_base(const unsigned char tx_structure_version,
+/// get the tx version for seraphis txs: TxEraSp | format | semantic rules
+inline void make_tx_version_seraphis_base(const unsigned char tx_structure_version,
     const unsigned char tx_semantic_rules_version,
-    std::string &version_string_out)
+    tx_version_t &tx_version_out)
 {
-    make_versioning_string_tx_base(TxEraSp, tx_structure_version, tx_semantic_rules_version, version_string_out);
+    make_tx_version_tx_base(TxEraSp, tx_structure_version, tx_semantic_rules_version, tx_version_out);
 }
 
-/// get the tx version string for a specific seraphis tx type
+/// get the tx version for a specific seraphis tx type
 template <typename SpTxType>
-void make_versioning_string(const unsigned char tx_semantic_rules_version, std::string &version_string_out)
+void make_tx_version(const unsigned char tx_semantic_rules_version, tx_version_t &tx_version_out)
 {
-    make_versioning_string_seraphis_base(tx_structure_version<SpTxType>(), tx_semantic_rules_version, version_string_out);
+    make_tx_version_seraphis_base(tx_structure_version<SpTxType>(), tx_semantic_rules_version, tx_version_out);
 }
 
 

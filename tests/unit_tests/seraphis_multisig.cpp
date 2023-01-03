@@ -51,6 +51,7 @@
 #include "seraphis/legacy_core_utils.h"
 #include "seraphis/legacy_enote_utils.h"
 #include "seraphis/sp_core_enote_utils.h"
+#include "seraphis/tx_base.h"
 #include "seraphis/tx_binned_reference_set.h"
 #include "seraphis/tx_binned_reference_set_utils.h"
 #include "seraphis/tx_builder_types.h"
@@ -385,8 +386,8 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     // global
     MockLedgerContext ledger_context{0, 10000};
 
-    std::string version_string;
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
 
     /// 1) setup multisig accounts
@@ -608,7 +609,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                 seraphis_accounts[signer_index].get_threshold(),
                 seraphis_accounts[signer_index].get_signers(),
                 multisig_tx_proposal,
-                version_string,
+                tx_version,
                 rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
                 legacy_subaddress_map,
                 legacy_accounts[0].get_common_privkey(),
@@ -624,7 +625,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                 seraphis_accounts[signer_index].get_threshold(),
                 seraphis_accounts[signer_index].get_signers(),
                 multisig_tx_proposal,
-                version_string,
+                tx_version,
                 rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
                 legacy_subaddress_map,
                 legacy_accounts[0].get_common_privkey(),
@@ -656,7 +657,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                 legacy_subaddress_map,
                 shared_sp_keys.K_1_base,
                 shared_sp_keys.k_vb,
-                version_string,
+                tx_version,
                 legacy_input_init_collections_per_signer[legacy_accounts[signer_index].get_base_pubkey()],
                 //don't need to remove the local init (will be filtered out internally)
                 legacy_input_init_collections_per_signer,
@@ -670,7 +671,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                 rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
                 legacy_subaddress_map,
                 legacy_accounts[0].get_common_privkey(),
-                version_string,
+                tx_version,
                 sp_input_init_collections_per_signer[seraphis_accounts[signer_index].get_base_pubkey()],
                 //don't need to remove the local init (will be filtered out internally)
                 sp_input_init_collections_per_signer,
@@ -688,7 +689,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                         legacy_subaddress_map,
                         shared_sp_keys.K_1_base,
                         shared_sp_keys.k_vb,
-                        version_string,
+                        tx_version,
                         legacy_input_init_collections_per_signer[legacy_accounts[signer_index].get_base_pubkey()],
                         //don't need to remove the local init (will be filtered out internally)
                         legacy_input_init_collections_per_signer,
@@ -701,7 +702,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
                         rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
                         legacy_subaddress_map,
                         legacy_accounts[0].get_common_privkey(),
-                        version_string,
+                        tx_version,
                         sp_input_init_collections_per_signer[seraphis_accounts[signer_index].get_base_pubkey()],
                         //don't need to remove the local init (will be filtered out internally)
                         sp_input_init_collections_per_signer,
@@ -753,7 +754,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     ASSERT_NO_THROW(make_v1_partial_tx_v1(tx_proposal,
         std::move(legacy_inputs),
         std::move(sp_partial_inputs),
-        version_string,
+        tx_version,
         rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
         shared_sp_keys.K_1_base,
         shared_sp_keys.k_vb,

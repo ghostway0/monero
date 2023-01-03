@@ -211,7 +211,7 @@ void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
     // tx_id = H_32(tx_proposal_prefix, input images, proofs)
 
     // 1. tx proposal prefix
-    // H_32(version string, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
+    // H_32(tx version, legacy input key images, seraphis input key images, output enotes, fee, tx supplement)
     rct::key tx_proposal_prefix;
     make_tx_proposal_prefix_v1(tx, tx_proposal_prefix);
 
@@ -317,16 +317,15 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     SpTxSquashedV1 &tx_out)
 {
     // versioning for proofs
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
     // partial tx
     SpPartialTxV1 partial_tx;
     make_v1_partial_tx_v1(tx_proposal,
         std::move(legacy_inputs),
         std::move(sp_partial_inputs),
-        version_string,
+        tx_version,
         legacy_spend_pubkey,
         jamtis_spend_pubkey,
         k_view_balance,
@@ -354,13 +353,12 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     SpTxSquashedV1 &tx_out)
 {
     // versioning for proofs
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
     // tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, tx_version, k_view_balance, tx_proposal_prefix);
 
     // legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;

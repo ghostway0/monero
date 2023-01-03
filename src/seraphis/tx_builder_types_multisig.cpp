@@ -179,7 +179,7 @@ void get_tx_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposa
         tx_proposal);
 
     // get prefix from proposal
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix_out);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,

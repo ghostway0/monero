@@ -385,9 +385,8 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         element = gen_extra_field_element();
 
     // versioning for proofs
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
     // tx components
     std::vector<LegacyEnoteImageV2> legacy_input_images;
@@ -431,7 +430,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         sp_input_images.emplace_back();
         get_enote_image_v1(sp_input_proposal, sp_input_images.back());
     }
-    make_tx_proposal_prefix_v1(version_string,
+    make_tx_proposal_prefix_v1(tx_version,
         legacy_input_images,
         sp_input_images,
         outputs,

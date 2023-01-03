@@ -188,13 +188,12 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     make_tx_extra(std::move(additional_memo_elements), partial_memo);
 
     // versioning for proofs
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
     // proposal prefix
     rct::key tx_proposal_prefix;
-    make_tx_proposal_prefix_v1(version_string,
+    make_tx_proposal_prefix_v1(tx_version,
         legacy_input_proposals,
         sp_input_proposals,
         output_proposals,
@@ -242,7 +241,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         std::move(output_proposals),
         tx_fee,
         partial_memo,
-        version_string,
+        tx_version,
         partial_tx);
 
     // make mock seraphis membership proof ref sets

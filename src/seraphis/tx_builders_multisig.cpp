@@ -57,6 +57,7 @@
 #include "seraphis/tx_builder_types_legacy.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "sp_core_enote_utils.h"
+#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_multisig.h"
 #include "tx_builders_inputs.h"
@@ -598,7 +599,7 @@ void make_v1_sp_multisig_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     const std::uint32_t threshold,
     const std::uint32_t num_signers,
     const rct::key &legacy_spend_pubkey,
@@ -610,7 +611,7 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
     /// multisig signing config checks
 
     // 1. proposal should contain expected tx version encoding
-    CHECK_AND_ASSERT_THROW_MES(multisig_tx_proposal.m_version_string == expected_version_string,
+    CHECK_AND_ASSERT_THROW_MES(multisig_tx_proposal.m_tx_version == expected_tx_version,
         "multisig tx proposal: intended tx version encoding is invalid.");
 
     // 2. signer set filter must be valid (at least 'threshold' signers allowed, format is valid)
@@ -651,7 +652,7 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
 
     // - get prefix from proposal
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix);
 
     // 3. collect legacy ring signature messages
     std::unordered_map<rct::key, rct::key> legacy_proof_contexts;  //[ proof key : proof message ]
@@ -754,14 +755,13 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
     //todo: clean up this function
     try
     {
-        // get version string of the proposed tx
-        std::string version_string;
-        version_string.reserve(3);
-        make_versioning_string(semantic_rules_version, version_string);
+        // get versioning of the proposed tx
+        tx_version_t tx_version;
+        make_tx_version(semantic_rules_version, tx_version);
 
         // validate the multisig tx proposal
         check_v1_multisig_tx_proposal_semantics_v1(multisig_tx_proposal,
-            version_string,
+            tx_version,
             threshold,
             num_signers,
             legacy_spend_pubkey,
@@ -913,7 +913,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 
         // tx proposal prefix of modified tx proposal
         rct::key tx_proposal_prefix;
-        get_tx_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
+        get_tx_proposal_prefix_v1(tx_proposal, tx_version, k_view_balance, tx_proposal_prefix);
 
         // finish preparing the legacy ring signature preps
         for (LegacyRingSignaturePrepV1 &ring_signature_prep : legacy_ring_signature_preps)
@@ -953,7 +953,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
             std::move(output_proposals),
             tx_proposal.m_tx_fee,
             tx_proposal.m_partial_memo,
-            version_string,
+            tx_version,
             partial_tx);
 
         // validate the partial tx (this internally simulates a full transaction)
@@ -972,7 +972,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const DiscretizedFee &tx_fee,
-    std::string version_string,
+    const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -1031,7 +1031,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
 
     // 6. get proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, tx_version, k_view_balance, tx_proposal_prefix);
 
     // 7. make sure the legacy proof preps align with legacy input proposals
     // note: if the legacy input proposals contain duplicates, then the call to check_v1_tx_proposal_semantics_v1()
@@ -1095,13 +1095,13 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
 
     // 10. add miscellaneous components
     proposal_out.m_legacy_multisig_input_proposals = std::move(legacy_multisig_input_proposals);
-    proposal_out.m_sp_multisig_input_proposals = std::move(sp_multisig_input_proposals);
-    proposal_out.m_aggregate_signer_set_filter = aggregate_signer_set_filter;
-    proposal_out.m_normal_payment_proposals = std::move(normal_payment_proposals);
-    proposal_out.m_selfsend_payment_proposals = std::move(selfsend_payment_proposals);
+    proposal_out.m_sp_multisig_input_proposals     = std::move(sp_multisig_input_proposals);
+    proposal_out.m_aggregate_signer_set_filter     = aggregate_signer_set_filter;
+    proposal_out.m_normal_payment_proposals        = std::move(normal_payment_proposals);
+    proposal_out.m_selfsend_payment_proposals      = std::move(selfsend_payment_proposals);
     make_tx_extra(std::move(additional_memo_elements), proposal_out.m_partial_memo);
-    proposal_out.m_tx_fee = tx_fee;
-    proposal_out.m_version_string = std::move(version_string);
+    proposal_out.m_tx_fee                          = tx_fee;
+    proposal_out.m_tx_version                      = tx_version;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
@@ -1165,8 +1165,8 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
         "make tx proposal for transfer (v1): unable to extract memo field elements for tx proposal.");
 
     // 4. finalize multisig tx proposal
-    std::string version_string;
-    make_versioning_string(semantic_rules_version, version_string);
+    tx_version_t tx_version;
+    make_tx_version(semantic_rules_version, tx_version);
 
     make_v1_multisig_tx_proposal_v1(std::move(legacy_multisig_input_proposals),
         std::move(sp_multisig_input_proposals),
@@ -1176,7 +1176,7 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
         std::move(selfsend_payment_proposals),
         std::move(extra_field_elements),
         tx_fee,
-        version_string,
+        tx_version,
         legacy_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
@@ -1189,7 +1189,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
     const std::uint32_t threshold,
     const std::vector<crypto::public_key> &multisig_signers,
     const SpMultisigTxProposalV1 &multisig_tx_proposal,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -1201,7 +1201,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 {
     // 1. validate multisig tx proposal
     check_v1_multisig_tx_proposal_semantics_v1(multisig_tx_proposal,
-        expected_version_string,
+        expected_tx_version,
         threshold,
         multisig_signers.size(),
         legacy_spend_pubkey,
@@ -1226,7 +1226,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 
     // 3. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix);
 
     // 4. prepare proof contexts and multisig proof base points
     // a. legacy proof context     [ legacy Ko : legacy input message ]
@@ -1272,7 +1272,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> local_input_init_set_collection,
     //[ signer id : [ proof key : init set ] ]
@@ -1302,7 +1302,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 
     // 2. validate multisig tx proposal (this may be redundant for the caller, but should be done for robustness)
     check_v1_multisig_tx_proposal_semantics_v1(multisig_tx_proposal,
-        expected_version_string,
+        expected_tx_version,
         threshold,
         signer_account.get_signers().size(),
         legacy_spend_pubkey,
@@ -1323,7 +1323,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 
     // 4. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix);
 
     // 5. legacy proof contexts: [ onetime address : legacy input message ]
     std::unordered_map<rct::key, rct::key> input_proof_contexts;  //[ proof key : proof message ]
@@ -1370,7 +1370,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> local_input_init_set_collection,
     //[ signer id : [ proof key : init set ] ]
@@ -1402,7 +1402,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
 
     // 3. validate multisig tx proposal (this may be redundant for the caller, but should be done for robustness)
     check_v1_multisig_tx_proposal_semantics_v1(multisig_tx_proposal,
-        expected_version_string,
+        expected_tx_version,
         threshold,
         signer_account.get_signers().size(),
         legacy_spend_pubkey,
@@ -1423,7 +1423,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
 
     // 5. tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix);
 
     // 6. seraphis proof contexts: [ masked address : tx proposal prefix ]
     // note: for seraphis, all seraphis input image proofs sign the same message
@@ -1501,7 +1501,7 @@ bool try_make_inputs_for_multisig_v1(const SpMultisigTxProposalV1 &multisig_tx_p
 
     // 2. the expected proof message is the tx's proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_tx_version, k_view_balance, tx_proposal_prefix);
 
     // 3. try to make legacy inputs
     if (!try_make_legacy_inputs_for_multisig_v1(tx_proposal_prefix,

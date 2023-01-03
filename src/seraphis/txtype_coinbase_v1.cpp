@@ -93,19 +93,18 @@ std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
 //-------------------------------------------------------------------------------------------------------------------
 void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
 {
-    // tx_id = H_32(version string, block height, block reward, output enotes, tx supplement)
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(tx.m_tx_semantic_rules_version, version_string);
+    // tx_id = H_32(tx version, block height, block reward, output enotes, tx supplement)
+    tx_version_t tx_version;
+    make_tx_version(tx.m_tx_semantic_rules_version, tx_version);
 
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1,
-            version_string.size() +
+            sizeof(tx_version) +
                 16 +
                 tx.m_outputs.size()*sp_coinbase_enote_v1_size_bytes() +
                 sp_tx_supplement_v1_size_bytes(tx.m_tx_supplement)
         };
-    transcript.append("version_string", version_string);
+    transcript.append("tx_version", tx_version.bytes);
     transcript.append("block_height", tx.m_block_height);
     transcript.append("block_reward", tx.m_block_reward);
     transcript.append("output_enotes", tx.m_outputs);

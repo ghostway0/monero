@@ -73,6 +73,7 @@
 
 //forward declarations
 namespace multisig { class MultisigNonceRecord; }
+namespace sp { struct tx_version_t; }
 
 
 namespace sp
@@ -141,7 +142,7 @@ void make_v1_sp_multisig_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
 *   - not checked: input/output counts satisfy the desired tx semantic rules version
 *                  (input count can be lower if only partially funding a tx)
 * param: multisig_tx_proposal -
-* param: expected_version_string -
+* param: expected_tx_version -
 * param: threshold -
 * param: num_signers -
 * param: legacy_spend_pubkey -
@@ -151,7 +152,7 @@ void make_v1_sp_multisig_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
 * param: k_view_balance -
 */
 void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     const std::uint32_t threshold,
     const std::uint32_t num_signers,
     const rct::key &legacy_spend_pubkey,
@@ -176,7 +177,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 * param: selfsend_payment_proposals -
 * param: additional_memo_elements -
 * param: tx_fee -
-* param: version_string -
+* param: tx_version -
 * param: legacy_multisig_input_proposals -
 * param: sp_multisig_input_proposals -
 * param: legacy_ring_signature_preps -
@@ -196,7 +197,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const DiscretizedFee &tx_fee,
-    std::string version_string,
+    const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -224,7 +225,7 @@ void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecord
 * param: threshold -
 * param: multisig_signers -
 * param: multisig_tx_proposal -
-* param: expected_version_string -
+* param: expected_tx_version -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
 * param: legacy_view_privkey -
@@ -238,7 +239,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
     const std::uint32_t threshold,
     const std::vector<crypto::public_key> &multisig_signers,
     const SpMultisigTxProposalV1 &multisig_tx_proposal,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -258,7 +259,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 * param: legacy_subaddress_map -
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
-* param: expected_version_string -
+* param: expected_tx_version -
 * param: local_input_init_set_collection -
 * param: other_input_init_set_collections -
 * inoutparam: multisig_errors_inout -
@@ -271,7 +272,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> local_input_init_set_collection,
     //[ signer id : [ proof key : init set ] ]
@@ -291,7 +292,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
 * param: legacy_view_privkey -
-* param: expected_version_string -
+* param: expected_tx_version -
 * param: local_input_init_set_collection -
 * param: other_input_init_set_collections -
 * inoutparam: multisig_errors_inout -
@@ -304,7 +305,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
-    const std::string &expected_version_string,
+    const tx_version_t &expected_tx_version,
     //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> local_input_init_set_collection,
     //[ signer id : [ proof key : init set ] ]

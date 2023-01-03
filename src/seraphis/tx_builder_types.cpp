@@ -36,6 +36,7 @@
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "tx_base.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"
@@ -176,7 +177,7 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_tx_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
-    const std::string &version_string,
+    const tx_version_t &tx_version,
     const crypto::secret_key &k_view_balance,
     rct::key &tx_proposal_prefix_out)
 {
@@ -188,7 +189,7 @@ void get_tx_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
     check_v1_output_proposal_set_semantics_v1(output_proposals);
 
     // make the proposal prefix
-    make_tx_proposal_prefix_v1(version_string,
+    make_tx_proposal_prefix_v1(tx_version,
         tx_proposal.m_legacy_input_proposals,
         tx_proposal.m_sp_input_proposals,
         output_proposals,

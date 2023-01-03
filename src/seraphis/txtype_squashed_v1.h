@@ -223,11 +223,11 @@ inline unsigned char tx_structure_version<SpTxSquashedV1>()
     return static_cast<unsigned char>(TxStructureVersionSp::TxTypeSpSquashedV1);
 }
 
-/// versioning string for an SpTxSquashedV1 tx
-inline void make_versioning_string(const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version,
-    std::string &version_string_out)
+/// version of an SpTxSquashedV1 tx
+inline void make_tx_version(const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version,
+    tx_version_t &tx_version_out)
 {
-    make_versioning_string<SpTxSquashedV1>(static_cast<unsigned char>(tx_semantic_rules_version), version_string_out);
+    make_tx_version<SpTxSquashedV1>(static_cast<unsigned char>(tx_semantic_rules_version), tx_version_out);
 }
 
 /// transaction validators

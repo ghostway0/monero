@@ -41,6 +41,7 @@
 #include "multisig/multisig_sp_composition_proof.h"
 #include "ringct/rctTypes.h"
 #include "sp_core_types.h"
+#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
@@ -150,7 +151,7 @@ struct SpMultisigTxProposalV1 final
     DiscretizedFee m_tx_fee;
 
     /// encoding of intended tx version
-    std::string m_version_string;
+    tx_version_t m_tx_version;
 };
 
 /// comparison method for sorting: a.KI < b.KI

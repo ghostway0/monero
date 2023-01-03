@@ -49,6 +49,8 @@
 //forward declarations
 namespace sp
 {
+    struct tx_version_t;
+
 namespace jamtis
 {
     struct JamtisPaymentProposalV1;
@@ -289,12 +291,12 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
 /**
 * brief: get_tx_proposal_prefix_v1 - get the message to be signed by input spend proofs
 * param: tx_proposal -
-* param: version_string -
+* param: tx_version -
 * param: k_view_balance -
 * outparam: tx_proposal_prefix_out -
 */
 void get_tx_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
-    const std::string &version_string,
+    const tx_version_t &tx_version,
     const crypto::secret_key &k_view_balance,
     rct::key &tx_proposal_prefix_out);
 /**

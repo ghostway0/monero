@@ -281,12 +281,11 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
         tx_proposal);
 
     // 5. tx proposal prefix
-    std::string version_string;
-    version_string.reserve(3);
-    make_versioning_string(SpTxSquashedV1::SemanticRulesVersion::MOCK, version_string);
+    tx_version_t tx_version;
+    make_tx_version(SpTxSquashedV1::SemanticRulesVersion::MOCK, tx_version);
 
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, version_string, local_user_sp_keys.k_vb, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, tx_version, local_user_sp_keys.k_vb, tx_proposal_prefix);
 
     // 6. get ledger mappings for the input membership proofs
     // note: do this after making the tx proposal to demo that inputs don't have to be on-chain when proposing a tx
