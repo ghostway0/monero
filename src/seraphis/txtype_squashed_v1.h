@@ -32,6 +32,7 @@
 
 //local headers
 #include "crypto/crypto.h"
+#include "device/device.hpp"
 #include "jamtis_payment_proposal.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
@@ -169,6 +170,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &k_view_balance,
+    hw::device &hwdev,
     SpTxSquashedV1 &tx_out);
 void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
@@ -182,6 +184,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &k_view_balance,
+    hw::device &hwdev,
     SpTxSquashedV1 &tx_out);
 
 /**
@@ -211,7 +214,7 @@ SemanticConfigSpRefSetV1 semantic_config_sp_ref_sets_v1(
 
 /// short descriptor of the tx type
 template <>
-inline std::string tx_descriptor<SpTxSquashedV1>() { return "Sp-Squashed-V1"; }
+inline std::string tx_descriptor<SpTxSquashedV1>() { return "SpSquashedV1"; }
 
 /// tx structure version
 template <>

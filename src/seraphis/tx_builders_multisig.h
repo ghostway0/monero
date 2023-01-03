@@ -47,6 +47,7 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
+#include "device/device.hpp"
 #include "jamtis_destination.h"
 #include "jamtis_payment_proposal.h"
 #include "multisig/multisig_account.h"
@@ -167,7 +168,8 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
-    const crypto::secret_key &k_view_balance);
+    const crypto::secret_key &k_view_balance,
+    hw::device &hwdev);
 /**
 * brief: make_v1_multisig_tx_proposal_v1 - make a multisig tx proposal
 * param: normal_payment_proposals -

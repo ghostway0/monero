@@ -63,7 +63,7 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     const std::vector<SpEnoteImageV1> &sp_enote_images,
     rct::key &input_images_prefix_out);
 /**
-* brief: check_v1_input_proposal_semantics_v1 - check the semantics of a seraphis input proposal
+* brief: check_v1_input_proposal_semantics_v1 - check the semantics of a seraphis v1 input proposal
 *   - throws on failure
 * param: input_proposal -
 * param: sp_core_spend_pubkey -
@@ -96,7 +96,7 @@ void make_input_proposal(const SpEnoteCore &enote_core,
     const crypto::secret_key &commitment_mask,
     SpInputProposalCore &proposal_out);
 /**
-* brief: make_v1_input_proposal_v1 - make a seraphis input proposal
+* brief: make_v1_input_proposal_v1 - make a seraphis v1 input proposal
 * param: enote_record -
 * param: address_mask -
 * param: commitment_mask -
@@ -107,7 +107,7 @@ void make_v1_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
     const crypto::secret_key &commitment_mask,
     SpInputProposalV1 &proposal_out);
 /**
-* brief: try_make_v1_input_proposal_v1 - try to make a seraphis input proposal from an enote
+* brief: try_make_v1_input_proposal_v1 - try to make a seraphis v1 input proposal from an enote
 * param: enote -
 * param: enote_ephemeral_pubkey -
 * param: input_context -
@@ -161,12 +161,63 @@ void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposa
     const crypto::secret_key &k_view_balance,
     std::vector<SpImageProofV1> &image_proofs_out);
 /**
+* brief: check_v1_partial_input_semantics_v1 - check the semantics of a v1 partial seraphis input
+*   - throws on failure
+* param: partial_input -
+*/
+void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input);
+/**
+* brief: make_v1_partial_input_v1 - make a v1 partial seraphis input
+* param: input_proposal -
+* param: tx_proposal_prefix -
+* param: sp_image_proof -
+* param: sp_core_spend_pubkey -
+* param: k_view_balance -
+* outparam: partial_input_out -
+*/
+void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &tx_proposal_prefix,
+    SpImageProofV1 sp_image_proof,
+    const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
+    SpPartialInputV1 &partial_input_out);
+void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &tx_proposal_prefix,
+    const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    SpPartialInputV1 &partial_input_out);
+/**
+* brief: make_v1_partial_inputs_v1 - make a full set of v1 partial inputs
+* param: input_proposals -
+* param: tx_proposal_prefix -
+* param: sp_spend_privkey -
+* param: k_view_balance -
+* outparam: partial_inputs_out -
+*/
+void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_proposals,
+    const rct::key &tx_proposal_prefix,
+    const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    std::vector<SpPartialInputV1> &partial_inputs_out);
+/**
+* brief: get_input_commitment_factors_v1 - collect input amounts and input image amount commitment blinding factors
+* param: input_proposals -
+* outparam: input_amounts_out -
+* outparam: blinding_factors_out -
+*/
+void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input_proposals,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out);
+void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partial_inputs,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out);
+/**
 * brief: make_binned_ref_set_generator_seed_v1 - compute a generator seed for making a binned reference set
 *   seed = H_32(K", C")
 *   note: depending on the enote image ensures the seed is a function of some 'random' information that is always
 *         available to both tx authors and validators (i.e. the masks, which are embedded in the image); seraphis
 *         membership proofs can be constructed in isolation, in which case only the real reference and the masks are
-*         available
+*         available (so there are no other options for entropy without passing additional bytes around)
 * param: masked_address -
 * param: masked_commitment -
 * outparam: generator_seed_out -
@@ -180,7 +231,7 @@ void make_binned_ref_set_generator_seed_v1(const rct::key &onetime_address,
     const crypto::secret_key &commitment_mask,
     rct::key &generator_seed_out);
 /**
-* brief: make_tx_membership_proof_message_v1 - message for membership proofs
+* brief: make_tx_membership_proof_message_v1 - message to sign in seraphis membership proofs used in a transaction
 *   - H_32({binned reference set})
 * param: binned_reference_set -
 * outparam: message_out - the message to sign in a membership proof
@@ -229,56 +280,5 @@ void make_v1_alignable_membership_proofs_v1(std::vector<SpMembershipProofPrepV1>
 void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_images,
     std::vector<SpAlignableMembershipProofV1> membership_proofs_alignable,
     std::vector<SpMembershipProofV1> &membership_proofs_out);
-/**
-* brief: check_v1_partial_input_semantics_v1 - check the semantics of a partial seraphis input
-*   - throws on failure
-* param: partial_input -
-*/
-void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input);
-/**
-* brief: make_v1_partial_input_v1 - make a v1 partial seraphis input
-* param: input_proposal -
-* param: proposal_prefix -
-* param: sp_image_proof -
-* param: sp_core_spend_pubkey -
-* param: k_view_balance -
-* outparam: partial_input_out -
-*/
-void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
-    const rct::key &proposal_prefix,
-    SpImageProofV1 sp_image_proof,
-    const rct::key &sp_core_spend_pubkey,
-    const crypto::secret_key &k_view_balance,
-    SpPartialInputV1 &partial_input_out);
-void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
-    const rct::key &proposal_prefix,
-    const crypto::secret_key &sp_spend_privkey,
-    const crypto::secret_key &k_view_balance,
-    SpPartialInputV1 &partial_input_out);
-/**
-* brief: make_v1_partial_inputs_v1 - make a full set of v1 partial inputs
-* param: input_proposals -
-* param: proposal_prefix -
-* param: sp_spend_privkey -
-* param: k_view_balance -
-* outparam: partial_inputs_out -
-*/
-void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_proposals,
-    const rct::key &proposal_prefix,
-    const crypto::secret_key &sp_spend_privkey,
-    const crypto::secret_key &k_view_balance,
-    std::vector<SpPartialInputV1> &partial_inputs_out);
-/**
-* brief: get_input_commitment_factors_v1 - collect input amounts and input image amount commitment blinding factors
-* param: input_proposals -
-* outparam: input_amounts_out -
-* outparam: blinding_factors_out -
-*/
-void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input_proposals,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out);
-void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partial_inputs,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out);
 
 } //namespace sp

@@ -42,6 +42,46 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
+// brief: validate_txs_impl - validate a set of tx (use batching if possible)
+// type: SpTxType - transaction type
+// param: txs - set of tx pointers
+// param: tx_validation_context - injected validation context (e.g. for obtaining ledger-related information)
+// return: true/false on verification result
+//-------------------------------------------------------------------------------------------------------------------
+template <typename SpTxType>
+static bool validate_txs_impl(const std::vector<const SpTxType*> &txs, const TxValidationContext &tx_validation_context)
+{
+    try
+    {
+        // validate non-batchable
+        for (const SpTxType *tx : txs)
+        {
+            if (!tx)
+                return false;
+
+            if (!validate_tx_semantics(*tx))
+                return false;
+
+            if (!validate_tx_key_images(*tx, tx_validation_context))
+                return false;
+
+            if (!validate_tx_amount_balance(*tx))
+                return false;
+
+            if (!validate_tx_input_proofs(*tx, tx_validation_context))
+                return false;
+        }
+
+        // validate batchable
+        if (!validate_txs_batchable(txs, tx_validation_context))
+            return false;
+    }
+    catch (...) { return false; }
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 bool validate_tx(const SpTxCoinbaseV1 &tx, const TxValidationContext &tx_validation_context)
 {
     return validate_txs_impl<SpTxCoinbaseV1>({&tx}, tx_validation_context);

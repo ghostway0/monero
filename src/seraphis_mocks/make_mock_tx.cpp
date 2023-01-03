@@ -193,18 +193,18 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     make_versioning_string(semantic_rules_version, version_string);
 
     // proposal prefix
-    rct::key proposal_prefix;
+    rct::key tx_proposal_prefix;
     make_tx_proposal_prefix_v1(version_string,
         legacy_input_proposals,
         sp_input_proposals,
         output_proposals,
         tx_fee,
         partial_memo,
-        proposal_prefix);
+        tx_proposal_prefix);
 
     // make legacy ring signature preps
     std::vector<LegacyRingSignaturePrepV1> legacy_ring_signature_preps{
-            gen_mock_legacy_ring_signature_preps_v1(proposal_prefix,
+            gen_mock_legacy_ring_signature_preps_v1(tx_proposal_prefix,
                 legacy_input_proposals,
                 params.legacy_ring_size,
                 ledger_context_inout)
@@ -216,17 +216,22 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     // make legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;
 
-    make_v1_legacy_inputs_v1(proposal_prefix,
+    make_v1_legacy_inputs_v1(tx_proposal_prefix,
         legacy_input_proposals,
         std::move(legacy_ring_signature_preps),
         legacy_spend_privkey,
+        hw::get_device("default"),
         legacy_inputs);
     std::sort(legacy_inputs.begin(), legacy_inputs.end(), tools::compare_func<LegacyInputV1>(compare_KI));
 
     // make seraphis partial inputs
     std::vector<SpPartialInputV1> sp_partial_inputs;
 
-    make_v1_partial_inputs_v1(sp_input_proposals, proposal_prefix, sp_spend_privkey, k_view_balance, sp_partial_inputs);
+    make_v1_partial_inputs_v1(sp_input_proposals,
+        tx_proposal_prefix,
+        sp_spend_privkey,
+        k_view_balance,
+        sp_partial_inputs);
     std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // prepare partial tx

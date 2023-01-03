@@ -175,10 +175,10 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
         tools::compare_func<SpOutputProposalV1>(compare_Ko));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
+void get_tx_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
     const std::string &version_string,
     const crypto::secret_key &k_view_balance,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // get output proposals
     std::vector<SpOutputProposalV1> output_proposals;
@@ -194,7 +194,7 @@ void get_proposal_prefix_v1(const SpTxProposalV1 &tx_proposal,
         output_proposals,
         tx_proposal.m_tx_fee,
         tx_proposal.m_partial_memo,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 SpInputProposalV1 gen_sp_input_proposal_v1(const crypto::secret_key &sp_spend_privkey,

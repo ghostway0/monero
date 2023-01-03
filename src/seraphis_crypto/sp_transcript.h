@@ -316,7 +316,8 @@ public:
     SpFSTranscript(const boost::string_ref domain_separator,
         const std::size_t estimated_data_size,
         const boost::string_ref prefix = config::TRANSCRIPT_PREFIX) :
-        m_transcript_builder{15 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::FULL}
+        m_transcript_builder{15 + domain_separator.size() + estimated_data_size + prefix.size(),
+            SpTranscriptBuilder::Mode::FULL}
     {
         // transcript = prefix || domain_separator
         m_transcript_builder.append("FS_prefix", prefix);
@@ -361,7 +362,8 @@ public:
     SpKDFTranscript(const boost::string_ref domain_separator,
         const std::size_t estimated_data_size,
         const boost::string_ref prefix = config::TRANSCRIPT_PREFIX) :
-        m_transcript_builder{10 + domain_separator.size() + estimated_data_size, SpTranscriptBuilder::Mode::SIMPLE}
+        m_transcript_builder{10 + domain_separator.size() + estimated_data_size + prefix.size(),
+            SpTranscriptBuilder::Mode::SIMPLE}
     {
         // transcript = prefix || domain_separator
         m_transcript_builder.append("", prefix);

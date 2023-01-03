@@ -54,7 +54,7 @@ namespace sp
 
 //// must be implemented by each tx type
 
-/// short description of the tx type (e.g. 'Sp-Squashed-V1')
+/// short description of the tx type (e.g. 'SpSquashedV1')
 template <typename SpTxType>
 std::string tx_descriptor();
 
@@ -121,51 +121,12 @@ void make_versioning_string(const unsigned char tx_semantic_rules_version, std::
 
 
 //// core validators
-/// - note: specialize the following functions with definitions in tx_base.cpp, so the validate_txs_impl() function
-///         will be explicitly instantiated using the formula written below (this way maliciously injected overloads
-///         of validate_txs_impl() won't be available to the compiler)
+
+/// specialize the following functions with definitions in tx_base.cpp, so the validate_txs_impl() function from that
+///   file will be explicitly instantiated using the formula written there (this way maliciously injected overloads
+///   of validate_txs_impl() won't be available to the compiler)
 /// bool validate_tx(const SpTxType &tx, const TxValidationContext &tx_validation_context);
 /// bool validate_txs(const std::vector<const SpTxType*> &txs, const TxValidationContext &tx_validation_context);
-
-/**
-* brief: validate_txs_impl - validate a set of tx (use batching if possible)
-* type: SpTxType - transaction type
-* param: txs - set of tx pointers
-* param: tx_validation_context - injected validation context (e.g. for obtaining ledger-related information)
-* return: true/false on verification result
-*/
-template <typename SpTxType>
-bool validate_txs_impl(const std::vector<const SpTxType*> &txs, const TxValidationContext &tx_validation_context)
-{
-    try
-    {
-        // validate non-batchable
-        for (const SpTxType *tx : txs)
-        {
-            if (!tx)
-                return false;
-
-            if (!validate_tx_semantics(*tx))
-                return false;
-
-            if (!validate_tx_key_images(*tx, tx_validation_context))
-                return false;
-
-            if (!validate_tx_amount_balance(*tx))
-                return false;
-
-            if (!validate_tx_input_proofs(*tx, tx_validation_context))
-                return false;
-        }
-
-        // validate batchable
-        if (!validate_txs_batchable(txs, tx_validation_context))
-            return false;
-    }
-    catch (...) { return false; }
-
-    return true;
-}
 
 /// SpTxCoinbaseV1
 bool validate_tx(const SpTxCoinbaseV1 &tx, const TxValidationContext &tx_validation_context);

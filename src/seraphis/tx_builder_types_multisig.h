@@ -198,22 +198,22 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const crypto::secret_key &k_view_balance,
     SpTxProposalV1 &tx_proposal_out);
 /**
-* brief: get_proposal_prefix_v1 - get the tx proposal prefix of a multisig tx proposal
+* brief: get_tx_proposal_prefix_v1 - get the tx proposal prefix of a multisig tx proposal
 * param: multisig_tx_proposal -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
 * param: legacy_view_privkey -
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
-* outparam: proposal_prefix_out -
+* outparam: tx_proposal_prefix_out -
 */
-void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+void get_tx_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 /**
 * brief: matches_with - check if a multisig input proposal matches against other data types
 * ...

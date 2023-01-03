@@ -446,6 +446,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         };
     make_v3_legacy_ring_signatures_v1(std::move(legacy_ring_signature_preps),
         legacy_spend_privkey,
+        hw::get_device("default"),
         tx_legacy_ring_signatures);
     make_v1_image_proofs_v1(sp_input_proposals,
         tx_proposal_prefix,

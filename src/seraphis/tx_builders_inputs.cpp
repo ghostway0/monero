@@ -294,6 +294,149 @@ void make_v1_image_proofs_v1(const std::vector<SpInputProposalV1> &input_proposa
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input)
+{
+    // input amount commitment can be reconstructed
+    const rct::key reconstructed_amount_commitment{
+            rct::commit(partial_input.m_input_amount, rct::sk2rct(partial_input.m_input_amount_blinding_factor))
+        };
+
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_amount_commitment == amount_commitment_ref(partial_input.m_input_enote_core),
+        "partial input semantics (v1): could not reconstruct amount commitment.");
+
+    // input image masked address and commitment can be reconstructed
+    rct::key reconstructed_masked_address;
+    rct::key reconstructed_masked_commitment;
+    make_seraphis_enote_image_masked_keys(onetime_address_ref(partial_input.m_input_enote_core),
+        reconstructed_amount_commitment,
+        partial_input.m_address_mask,
+        partial_input.m_commitment_mask,
+        reconstructed_masked_address,
+        reconstructed_masked_commitment);
+
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_address == partial_input.m_input_image.m_core.m_masked_address,
+        "partial input semantics (v1): could not reconstruct masked address.");
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_commitment == partial_input.m_input_image.m_core.m_masked_commitment,
+        "partial input semantics (v1): could not reconstruct masked commitment.");
+
+    // image proof is valid
+    CHECK_AND_ASSERT_THROW_MES(verify_sp_composition_proof(partial_input.m_image_proof.m_composition_proof,
+            partial_input.m_tx_proposal_prefix,
+            reconstructed_masked_address,
+            partial_input.m_input_image.m_core.m_key_image),
+        "partial input semantics (v1): image proof is invalid.");
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &tx_proposal_prefix,
+    SpImageProofV1 sp_image_proof,
+    const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance,
+    SpPartialInputV1 &partial_input_out)
+{
+    // 1. check input proposal semantics
+    check_v1_input_proposal_semantics_v1(input_proposal, sp_core_spend_pubkey, k_view_balance);
+
+    // 2. prepare input image
+    get_enote_image_v1(input_proposal, partial_input_out.m_input_image);
+
+    // 3. set partial input pieces
+    partial_input_out.m_image_proof                  = std::move(sp_image_proof);
+    partial_input_out.m_address_mask                 = input_proposal.m_core.m_address_mask;
+    partial_input_out.m_commitment_mask              = input_proposal.m_core.m_commitment_mask;
+    partial_input_out.m_tx_proposal_prefix           = tx_proposal_prefix;
+    partial_input_out.m_input_enote_core             = enote_core_ref(input_proposal.m_core);
+    partial_input_out.m_input_amount                 = amount_ref(input_proposal);
+    partial_input_out.m_input_amount_blinding_factor = input_proposal.m_core.m_amount_blinding_factor;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &tx_proposal_prefix,
+    const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    SpPartialInputV1 &partial_input_out)
+{
+    // 1. initialization
+    rct::key sp_core_spend_pubkey;
+    make_seraphis_core_spendkey(sp_spend_privkey, sp_core_spend_pubkey);
+
+    // 2. construct image proof
+    SpImageProofV1 sp_image_proof;
+    make_v1_image_proof_v1(input_proposal.m_core, tx_proposal_prefix, sp_spend_privkey, k_view_balance, sp_image_proof);
+
+    // 3. finalize the partial input
+    make_v1_partial_input_v1(input_proposal,
+        tx_proposal_prefix,
+        std::move(sp_image_proof),
+        sp_core_spend_pubkey,
+        k_view_balance,
+        partial_input_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_proposals,
+    const rct::key &tx_proposal_prefix,
+    const crypto::secret_key &sp_spend_privkey,
+    const crypto::secret_key &k_view_balance,
+    std::vector<SpPartialInputV1> &partial_inputs_out)
+{
+    partial_inputs_out.clear();
+    partial_inputs_out.reserve(input_proposals.size());
+
+    // make all inputs
+    for (const SpInputProposalV1 &input_proposal : input_proposals)
+    {
+        make_v1_partial_input_v1(input_proposal,
+            tx_proposal_prefix,
+            sp_spend_privkey,
+            k_view_balance,
+            tools::add_element(partial_inputs_out));
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input_proposals,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out)
+{
+    // use input proposals to get amounts/blinding factors
+    blinding_factors_out.clear();
+    input_amounts_out.clear();
+    blinding_factors_out.reserve(input_proposals.size());
+    input_amounts_out.reserve(input_proposals.size());
+
+    for (const SpInputProposalV1 &input_proposal : input_proposals)
+    {
+        // input image amount commitment blinding factor: t_c + x
+        sc_add(to_bytes(tools::add_element(blinding_factors_out)),
+            to_bytes(input_proposal.m_core.m_commitment_mask),          // t_c
+            to_bytes(input_proposal.m_core.m_amount_blinding_factor));  // x
+
+        // input amount: a
+        input_amounts_out.emplace_back(amount_ref(input_proposal));
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partial_inputs,
+    std::vector<rct::xmr_amount> &input_amounts_out,
+    std::vector<crypto::secret_key> &blinding_factors_out)
+{
+    // use partial inputs to get amounts/blinding factors
+    blinding_factors_out.clear();
+    input_amounts_out.clear();
+    blinding_factors_out.reserve(partial_inputs.size());
+    input_amounts_out.reserve(partial_inputs.size());
+
+    for (const SpPartialInputV1 &partial_input : partial_inputs)
+    {
+        // input image amount commitment blinding factor: t_c + x
+        sc_add(to_bytes(tools::add_element(blinding_factors_out)),
+            to_bytes(partial_input.m_commitment_mask),                // t_c
+            to_bytes(partial_input.m_input_amount_blinding_factor));  // x
+
+        // input amount: a
+        input_amounts_out.emplace_back(partial_input.m_input_amount);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_binned_ref_set_generator_seed_v1(const rct::key &masked_address,
     const rct::key &masked_commitment,
     rct::key &generator_seed_out)
@@ -513,149 +656,6 @@ void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_imag
 
         membership_proof_match->m_masked_address = rct::zero();  //clear so duplicates will error out
         membership_proofs_out.emplace_back(std::move(membership_proof_match->m_membership_proof));
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input)
-{
-    // input amount commitment can be reconstructed
-    const rct::key reconstructed_amount_commitment{
-            rct::commit(partial_input.m_input_amount, rct::sk2rct(partial_input.m_input_amount_blinding_factor))
-        };
-
-    CHECK_AND_ASSERT_THROW_MES(reconstructed_amount_commitment == amount_commitment_ref(partial_input.m_input_enote_core),
-        "partial input semantics (v1): could not reconstruct amount commitment.");
-
-    // input image masked address and commitment can be reconstructed
-    rct::key reconstructed_masked_address;
-    rct::key reconstructed_masked_commitment;
-    make_seraphis_enote_image_masked_keys(onetime_address_ref(partial_input.m_input_enote_core),
-        reconstructed_amount_commitment,
-        partial_input.m_address_mask,
-        partial_input.m_commitment_mask,
-        reconstructed_masked_address,
-        reconstructed_masked_commitment);
-
-    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_address == partial_input.m_input_image.m_core.m_masked_address,
-        "partial input semantics (v1): could not reconstruct masked address.");
-    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_commitment == partial_input.m_input_image.m_core.m_masked_commitment,
-        "partial input semantics (v1): could not reconstruct masked commitment.");
-
-    // image proof is valid
-    CHECK_AND_ASSERT_THROW_MES(verify_sp_composition_proof(partial_input.m_image_proof.m_composition_proof,
-            partial_input.m_proposal_prefix,
-            reconstructed_masked_address,
-            partial_input.m_input_image.m_core.m_key_image),
-        "partial input semantics (v1): image proof is invalid.");
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
-    const rct::key &proposal_prefix,
-    SpImageProofV1 sp_image_proof,
-    const rct::key &sp_core_spend_pubkey,
-    const crypto::secret_key &k_view_balance,
-    SpPartialInputV1 &partial_input_out)
-{
-    // 1. check input proposal semantics
-    check_v1_input_proposal_semantics_v1(input_proposal, sp_core_spend_pubkey, k_view_balance);
-
-    // 2. prepare input image
-    get_enote_image_v1(input_proposal, partial_input_out.m_input_image);
-
-    // 3. set partial input pieces
-    partial_input_out.m_image_proof                  = std::move(sp_image_proof);
-    partial_input_out.m_address_mask                 = input_proposal.m_core.m_address_mask;
-    partial_input_out.m_commitment_mask              = input_proposal.m_core.m_commitment_mask;
-    partial_input_out.m_proposal_prefix              = proposal_prefix;
-    partial_input_out.m_input_enote_core             = enote_core_ref(input_proposal.m_core);
-    partial_input_out.m_input_amount                 = amount_ref(input_proposal);
-    partial_input_out.m_input_amount_blinding_factor = input_proposal.m_core.m_amount_blinding_factor;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
-    const rct::key &proposal_prefix,
-    const crypto::secret_key &sp_spend_privkey,
-    const crypto::secret_key &k_view_balance,
-    SpPartialInputV1 &partial_input_out)
-{
-    // 1. initialization
-    rct::key sp_core_spend_pubkey;
-    make_seraphis_core_spendkey(sp_spend_privkey, sp_core_spend_pubkey);
-
-    // 2. construct image proof
-    SpImageProofV1 sp_image_proof;
-    make_v1_image_proof_v1(input_proposal.m_core, proposal_prefix, sp_spend_privkey, k_view_balance, sp_image_proof);
-
-    // 3. finalize the partial input
-    make_v1_partial_input_v1(input_proposal,
-        proposal_prefix,
-        std::move(sp_image_proof),
-        sp_core_spend_pubkey,
-        k_view_balance,
-        partial_input_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_v1_partial_inputs_v1(const std::vector<SpInputProposalV1> &input_proposals,
-    const rct::key &proposal_prefix,
-    const crypto::secret_key &sp_spend_privkey,
-    const crypto::secret_key &k_view_balance,
-    std::vector<SpPartialInputV1> &partial_inputs_out)
-{
-    partial_inputs_out.clear();
-    partial_inputs_out.reserve(input_proposals.size());
-
-    // make all inputs
-    for (const SpInputProposalV1 &input_proposal : input_proposals)
-    {
-        make_v1_partial_input_v1(input_proposal,
-            proposal_prefix,
-            sp_spend_privkey,
-            k_view_balance,
-            tools::add_element(partial_inputs_out));
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input_proposals,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out)
-{
-    // use input proposals to get amounts/blinding factors
-    blinding_factors_out.clear();
-    input_amounts_out.clear();
-    blinding_factors_out.reserve(input_proposals.size());
-    input_amounts_out.reserve(input_proposals.size());
-
-    for (const SpInputProposalV1 &input_proposal : input_proposals)
-    {
-        // input image amount commitment blinding factor: t_c + x
-        sc_add(to_bytes(tools::add_element(blinding_factors_out)),
-            to_bytes(input_proposal.m_core.m_commitment_mask),          // t_c
-            to_bytes(input_proposal.m_core.m_amount_blinding_factor));  // x
-
-        // input amount: a
-        input_amounts_out.emplace_back(amount_ref(input_proposal));
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partial_inputs,
-    std::vector<rct::xmr_amount> &input_amounts_out,
-    std::vector<crypto::secret_key> &blinding_factors_out)
-{
-    // use partial inputs to get amounts/blinding factors
-    blinding_factors_out.clear();
-    input_amounts_out.clear();
-    blinding_factors_out.reserve(partial_inputs.size());
-    input_amounts_out.reserve(partial_inputs.size());
-
-    for (const SpPartialInputV1 &partial_input : partial_inputs)
-    {
-        // input image amount commitment blinding factor: t_c + x
-        sc_add(to_bytes(tools::add_element(blinding_factors_out)),
-            to_bytes(partial_input.m_commitment_mask),                // t_c
-            to_bytes(partial_input.m_input_amount_blinding_factor));  // x
-
-        // input amount: a
-        input_amounts_out.emplace_back(partial_input.m_input_amount);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------

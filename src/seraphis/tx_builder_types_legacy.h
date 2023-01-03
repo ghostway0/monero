@@ -78,14 +78,14 @@ rct::xmr_amount amount_ref(const LegacyInputProposalV1 &proposal);
 struct LegacyRingSignaturePrepV1 final
 {
     /// tx proposal prefix (message to sign in the proof)
-    rct::key m_proposal_prefix;
+    rct::key m_tx_proposal_prefix;
     /// ledger indices of legacy enotes to be referenced by the proof
     std::vector<std::uint64_t> m_reference_set;
     /// the referenced enotes ({Ko, C}((legacy)) representation)
     rct::ctkeyV m_referenced_enotes;
     /// the index of the real enote being referenced within the reference set
     std::uint64_t m_real_reference_index;
-    /// enote image of the real reference
+    /// enote image of the real reference (useful for sorting)
     LegacyEnoteImageV2 m_reference_image;
     /// enote view privkey of the real reference's onetime address
     crypto::secret_key m_reference_view_privkey;
@@ -117,8 +117,8 @@ struct LegacyInputV1 final
     /// cached ring members of the ring signature; used for validating the ring signature
     rct::ctkeyV m_ring_members;
 
-    /// proposal prefix (represents the inputs/outputs/fee/memo; signed by this input's ring signature)
-    rct::key m_proposal_prefix;
+    /// tx proposal prefix (represents the inputs/outputs/fee/memo; signed by this input's ring signature)
+    rct::key m_tx_proposal_prefix;
 };
 
 /// comparison method for sorting: a.KI < b.KI

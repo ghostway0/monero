@@ -66,7 +66,7 @@ namespace sp
 * param: output_enotes -
 * param: tx_supplement -
 * param: transaction_fee -
-* outparam: proposal_prefix_out - hash representing a tx proposal
+* outparam: tx_proposal_prefix_out - hash representing a tx proposal
 */
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<crypto::key_image> &legacy_input_key_images,
@@ -74,43 +74,43 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpEnoteV1> &output_enotes,
     const rct::xmr_amount transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<LegacyEnoteImageV2> &input_legacy_enote_images,
     const std::vector<SpEnoteImageV1> &input_sp_enote_images,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<LegacyInputV1> &legacy_inputs,
     const std::vector<SpPartialInputV1> &sp_partial_inputs,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out);
-void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &proposal_prefix_out);
+    rct::key &tx_proposal_prefix_out);
+void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out);
 /**
 * brief: make_tx_proofs_prefix_v1 - hash of all proofs in a tx (for tx hashes)
 *   - H_32(balance proof, image proofs, membership proofs)

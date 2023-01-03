@@ -32,6 +32,7 @@
 #include "crypto/generators.h"
 #include "cryptonote_basic/account_generators.h"
 #include "cryptonote_basic/subaddress_index.h"
+#include "device/device.hpp"
 #include "multisig/multisig.h"
 #include "multisig/multisig_account.h"
 #include "multisig/multisig_mocks.h"
@@ -292,7 +293,8 @@ static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig
         legacy_subaddress_map,
         legacy_view_privkey,
         jamtis_spend_pubkey,
-        k_view_balance));
+        k_view_balance,
+        hw::get_device("default")));
 
     // 2. check that the proposal inputs are known by our enote store, are unspent, and will be unlocked by a specified
     //    block height

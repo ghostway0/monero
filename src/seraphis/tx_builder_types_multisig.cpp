@@ -160,13 +160,13 @@ void get_v1_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
         tx_proposal_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
+void get_tx_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // extract proposal
     SpTxProposalV1 tx_proposal;
@@ -179,7 +179,7 @@ void get_proposal_prefix_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
         tx_proposal);
 
     // get prefix from proposal
-    get_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, proposal_prefix_out);
+    get_tx_proposal_prefix_v1(tx_proposal, multisig_tx_proposal.m_version_string, k_view_balance, tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,

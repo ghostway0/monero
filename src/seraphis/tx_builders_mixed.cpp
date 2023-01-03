@@ -380,7 +380,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpEnoteV1> &output_enotes,
     const rct::xmr_amount transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     CHECK_AND_ASSERT_THROW_MES(std::is_sorted(legacy_input_key_images.begin(), legacy_input_key_images.end()),
         "tx proposal prefix (v1): legacy input key images are not sorted.");
@@ -406,7 +406,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     transcript.append("transaction_fee", transaction_fee);
     transcript.append("tx_supplement", tx_supplement);
 
-    sp_hash_to_32(transcript.data(), transcript.size(), proposal_prefix_out.bytes);
+    sp_hash_to_32(transcript.data(), transcript.size(), tx_proposal_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -415,7 +415,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // get raw fee value
     rct::xmr_amount raw_transaction_fee;
@@ -429,7 +429,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         output_enotes,
         raw_transaction_fee,
         tx_supplement,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -438,7 +438,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpEnoteV1> &output_enotes,
     const DiscretizedFee &transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // get key images from enote images
     std::vector<crypto::key_image> legacy_input_key_images;
@@ -459,7 +459,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         output_enotes,
         transaction_fee,
         tx_supplement,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -468,7 +468,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // extract info from output proposals
     std::vector<SpEnoteV1> output_enotes;
@@ -492,7 +492,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         output_enotes,
         transaction_fee,
         tx_supplement,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -501,7 +501,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // get key images from partial inputs
     std::vector<crypto::key_image> legacy_input_key_images;
@@ -522,7 +522,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         output_proposals,
         transaction_fee,
         partial_memo,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const std::string &version_string,
@@ -531,7 +531,7 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
     const std::vector<SpOutputProposalV1> &output_proposals,
     const DiscretizedFee &transaction_fee,
     const TxExtra &partial_memo,
-    rct::key &proposal_prefix_out)
+    rct::key &tx_proposal_prefix_out)
 {
     // get key images from input proposals
     std::vector<crypto::key_image> legacy_input_key_images;
@@ -552,10 +552,10 @@ void make_tx_proposal_prefix_v1(const std::string &version_string,
         output_proposals,
         transaction_fee,
         partial_memo,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &proposal_prefix_out)
+void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out)
 {
     // version string
     std::string version_string;
@@ -569,7 +569,7 @@ void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &proposal_pre
         tx.m_outputs,
         tx.m_tx_fee,
         tx.m_tx_supplement,
-        proposal_prefix_out);
+        tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
@@ -1111,24 +1111,24 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.m_tx_extra);
 
     // 6. check: inputs and proposal must have consistent proposal prefixes
-    rct::key proposal_prefix;
+    rct::key tx_proposal_prefix;
     make_tx_proposal_prefix_v1(version_string,
         legacy_inputs,
         sp_partial_inputs,
         output_proposals,
         tx_fee,
         partial_memo,
-        proposal_prefix);
+        tx_proposal_prefix);
 
     for (const LegacyInputV1 &legacy_input : legacy_inputs)
     {
-        CHECK_AND_ASSERT_THROW_MES(proposal_prefix == legacy_input.m_proposal_prefix,
+        CHECK_AND_ASSERT_THROW_MES(tx_proposal_prefix == legacy_input.m_tx_proposal_prefix,
             "making partial tx: a legacy input's proposal prefix is invalid/inconsistent.");
     }
 
     for (const SpPartialInputV1 &partial_input : sp_partial_inputs)
     {
-        CHECK_AND_ASSERT_THROW_MES(proposal_prefix == partial_input.m_proposal_prefix,
+        CHECK_AND_ASSERT_THROW_MES(tx_proposal_prefix == partial_input.m_tx_proposal_prefix,
             "making partial tx: a seraphis partial input's proposal prefix is invalid/inconsistent.");
     }
 

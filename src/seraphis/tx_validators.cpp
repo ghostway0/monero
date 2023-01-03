@@ -565,8 +565,8 @@ bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpM
     rct::keyV offsets;
     rct::keyV messages;
     proofs.reserve(num_proofs);
-    membership_proof_keys.resize(num_proofs);
-    offsets.resize(num_proofs);
+    membership_proof_keys.reserve(num_proofs);
+    offsets.reserve(num_proofs);
     messages.reserve(num_proofs);
 
     rct::key generator_seed_reproduced;
@@ -593,10 +593,11 @@ bool try_get_sp_membership_proofs_v1_validation_data(const std::vector<const SpM
             return false;
 
         // get proof keys from enotes stored in the ledger
-        tx_validation_context.get_reference_set_proof_elements_v2(reference_indices, membership_proof_keys[proof_index]);
+        tx_validation_context.get_reference_set_proof_elements_v2(reference_indices,
+            tools::add_element(membership_proof_keys));
 
         // offset (input image masked keys squashed: Q" = K" + C")
-        rct::addKeys(offsets[proof_index],
+        rct::addKeys(tools::add_element(offsets),
             sp_input_images[proof_index]->m_masked_address,
             sp_input_images[proof_index]->m_masked_commitment);
 

@@ -130,7 +130,7 @@ SemanticConfigCoinbaseComponentCountsV1 semantic_config_coinbase_component_count
 
 /// short descriptor of the tx type
 template <>
-inline std::string tx_descriptor<SpTxCoinbaseV1>() { return "Sp-Coinbase-V1"; }
+inline std::string tx_descriptor<SpTxCoinbaseV1>() { return "SpCoinbaseV1"; }
 
 /// tx structure version
 template <>

@@ -350,6 +350,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &k_view_balance,
+    hw::device &hwdev,
     SpTxSquashedV1 &tx_out)
 {
     // versioning for proofs
@@ -358,21 +359,22 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     make_versioning_string(semantic_rules_version, version_string);
 
     // tx proposal prefix
-    rct::key proposal_prefix;
-    get_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, proposal_prefix);
+    rct::key tx_proposal_prefix;
+    get_tx_proposal_prefix_v1(tx_proposal, version_string, k_view_balance, tx_proposal_prefix);
 
     // legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;
-    make_v1_legacy_inputs_v1(proposal_prefix,
+    make_v1_legacy_inputs_v1(tx_proposal_prefix,
         tx_proposal.m_legacy_input_proposals,
         std::move(legacy_ring_signature_preps),
         legacy_spend_privkey,
+        hwdev,
         legacy_inputs);
 
     // seraphis partial inputs
     std::vector<SpPartialInputV1> sp_partial_inputs;
     make_v1_partial_inputs_v1(tx_proposal.m_sp_input_proposals,
-        proposal_prefix,
+        tx_proposal_prefix,
         sp_spend_privkey,
         k_view_balance,
         sp_partial_inputs);
@@ -408,6 +410,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &sp_spend_privkey,
     const crypto::secret_key &k_view_balance,
+    hw::device &hwdev,
     SpTxSquashedV1 &tx_out)
 {
     // tx proposal
@@ -428,6 +431,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
         legacy_spend_privkey,
         sp_spend_privkey,
         k_view_balance,
+        hwdev,
         tx_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
