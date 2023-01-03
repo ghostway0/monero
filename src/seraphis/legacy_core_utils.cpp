@@ -159,10 +159,7 @@ void make_legacy_amount_blinding_factor_v2(const crypto::secret_key &sender_rece
     crypto::secret_key &amount_blinding_factor_out)
 {
     // Hn("commitment_mask", Hn(r K^v, t))
-    char data[15 + sizeof(rct::key)];
-    memcpy(data, "commitment_mask", 15);
-    memcpy(data + 15, to_bytes(sender_receiver_secret), sizeof(rct::key));
-    crypto::hash_to_scalar(data, sizeof(data), amount_blinding_factor_out);
+    amount_blinding_factor_out = rct::rct2sk(genCommitmentMask(rct::sk2rct(sender_receiver_secret)));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_amount_blinding_factor_v2(const rct::key &destination_viewkey,
@@ -185,10 +182,7 @@ void make_legacy_amount_encoding_factor_v2(const crypto::secret_key &sender_rece
     rct::key &amount_encoding_factor_out)
 {
     // H32("amount", Hn(r K^v, t))
-    char data[6 + sizeof(rct::key)];
-    memcpy(data, "amount", 6);
-    memcpy(data + 6, to_bytes(sender_receiver_secret), sizeof(rct::key));
-    rct::cn_fast_hash(amount_encoding_factor_out, data, sizeof(data));
+    amount_encoding_factor_out = genAmountEncodingFactor(rct::sk2rct(sender_receiver_secret));
 }
 //-------------------------------------------------------------------------------------------------------------------
 jamtis::encoded_amount_t legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor)
