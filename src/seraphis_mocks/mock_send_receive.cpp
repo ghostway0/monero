@@ -58,7 +58,6 @@
 #include "tx_enote_finding_context_mocks.h"
 #include "tx_validation_context_mock.h"
 
-
 //third party headers
 
 //standard headers
@@ -250,8 +249,8 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     }
 
     // 3. prepare inputs and finalize outputs
-    std::list<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
-    std::list<SpContextualEnoteRecordV1> sp_contextual_inputs;
+    std::vector<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
+    std::vector<SpContextualEnoteRecordV1> sp_contextual_inputs;
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;  //note: no user-defined selfsends
     DiscretizedFee discretized_transaction_fee;
     CHECK_AND_ASSERT_THROW_MES(try_prepare_inputs_and_outputs_for_transfer_v1(change_address,

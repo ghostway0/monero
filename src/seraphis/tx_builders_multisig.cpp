@@ -181,8 +181,8 @@ static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyI
         "collect legacy clsag privkeys for multisig: legacy input proposals aren't sorted and unique.");
 
     proof_privkeys_k_offset_out.clear();
-    proof_privkeys_z.clear();
     proof_privkeys_k_offset_out.reserve(legacy_input_proposals.size());
+    proof_privkeys_z.clear();
     proof_privkeys_z.reserve(legacy_input_proposals.size());
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
@@ -236,12 +236,12 @@ static void collect_sp_composition_proof_privkeys_for_multisig(const std::vector
         "collect sp composition proof privkeys for multisig: sp input proposals aren't sorted and unique.");
 
     proof_privkeys_x_out.clear();
-    proof_privkeys_y_out.clear();
-    proof_privkeys_z_offset_out.clear();
-    proof_privkeys_z_multiplier_out.clear();
     proof_privkeys_x_out.reserve(sp_input_proposals.size());
+    proof_privkeys_y_out.clear();
     proof_privkeys_y_out.reserve(sp_input_proposals.size());
+    proof_privkeys_z_offset_out.clear();
     proof_privkeys_z_offset_out.reserve(sp_input_proposals.size());
+    proof_privkeys_z_multiplier_out.clear();
     proof_privkeys_z_multiplier_out.reserve(sp_input_proposals.size());
     rct::key squash_prefix_temp;
 
@@ -1104,8 +1104,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     proposal_out.m_tx_version                      = tx_version;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
-    const std::list<SpContextualEnoteRecordV1> &sp_contextual_inputs,
+void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
+    const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_multisig_ring_signature_preps,
     const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     const multisig::signer_set_filter aggregate_filter_of_requested_multisig_signers,

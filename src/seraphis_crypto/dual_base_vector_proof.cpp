@@ -193,8 +193,8 @@ void make_dual_base_vector_proof(const rct::key &message,
     V_1_mul8.reserve(num_keys);
     V_2_mul8.reserve(num_keys);
     proof_out.V_1.clear();
-    proof_out.V_2.clear();
     proof_out.V_1.reserve(num_keys);
+    proof_out.V_2.clear();
     proof_out.V_2.reserve(num_keys);
 
     for (const crypto::secret_key &k_i : privkeys)

@@ -262,7 +262,7 @@ void get_output_proposal_v1(const JamtisPaymentProposalSelfSendV1 &proposal,
     make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
     address_index_t j;
     CHECK_AND_ASSERT_THROW_MES(try_decipher_address_index(s_cipher_tag, proposal.m_destination.m_addr_tag, j),
-        "Failed to create a self-send-type output proposal: could not decipher the destination's address tag.");
+        "Failed to create a self-send-type output proposal v1: could not decipher the destination's address tag.");
 
     // b. make a raw address tag (not ciphered)
     const address_tag_t raw_address_tag{make_address_tag(j, address_tag_hint_t{})};
@@ -303,12 +303,12 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(const JamtisPaymentProp
             spend_pubkey,
             k_view_balance,
             temp_enote_record),
-        "semantics check jamtis self-send payment proposal: failed to extract enote record from the proposal.");
+        "semantics check jamtis self-send payment proposal v1: failed to extract enote record from the proposal.");
 
     // 4. extract the self-send type
     JamtisSelfSendType dummy_type;
     CHECK_AND_ASSERT_THROW_MES(try_get_jamtis_self_send_type(temp_enote_record.m_type, dummy_type),
-        "semantics check jamtis self-send payment proposal: failed to convert enote type to self-send type (bug).");
+        "semantics check jamtis self-send payment proposal v1: failed to convert enote type to self-send type (bug).");
 }
 //-------------------------------------------------------------------------------------------------------------------
 JamtisPaymentProposalV1 gen_jamtis_payment_proposal_v1(const rct::xmr_amount amount,

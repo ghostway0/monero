@@ -114,14 +114,16 @@ bool legacy_enote_has_highest_amount_amoung_duplicates(const rct::key &searched_
 }
 //-------------------------------------------------------------------------------------------------------------------
 void split_selected_input_set(const input_set_tracker_t &input_set,
-    std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_records_out,
-    std::list<SpContextualEnoteRecordV1> &sp_contextual_records_out)
+    std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_records_out,
+    std::vector<SpContextualEnoteRecordV1> &sp_contextual_records_out)
 {
     legacy_contextual_records_out.clear();
     sp_contextual_records_out.clear();
 
     if (input_set.find(InputSelectionType::LEGACY) != input_set.end())
     {
+        legacy_contextual_records_out.reserve(input_set.at(InputSelectionType::LEGACY).size());
+
         for (const auto &mapped_contextual_enote_record : input_set.at(InputSelectionType::LEGACY))
         {
             CHECK_AND_ASSERT_THROW_MES(mapped_contextual_enote_record.second.is_type<LegacyContextualEnoteRecordV1>(),
@@ -135,6 +137,8 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
 
     if (input_set.find(InputSelectionType::SERAPHIS) != input_set.end())
     {
+        sp_contextual_records_out.reserve(input_set.at(InputSelectionType::SERAPHIS).size());
+
         for (const auto &mapped_contextual_enote_record : input_set.at(InputSelectionType::SERAPHIS))
         {
             CHECK_AND_ASSERT_THROW_MES(mapped_contextual_enote_record.second.is_type<SpContextualEnoteRecordV1>(),
@@ -147,7 +151,7 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t total_amount(const std::list<LegacyContextualEnoteRecordV1> &contextual_records)
+boost::multiprecision::uint128_t total_amount(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records)
 {
     boost::multiprecision::uint128_t total_amount{0};
 
@@ -157,7 +161,7 @@ boost::multiprecision::uint128_t total_amount(const std::list<LegacyContextualEn
     return total_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t total_amount(const std::list<SpContextualEnoteRecordV1> &contextual_records)
+boost::multiprecision::uint128_t total_amount(const std::vector<SpContextualEnoteRecordV1> &contextual_records)
 {
     boost::multiprecision::uint128_t total_amount{0};
 
@@ -167,7 +171,7 @@ boost::multiprecision::uint128_t total_amount(const std::list<SpContextualEnoteR
     return total_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_get_membership_proof_real_reference_mappings(const std::list<LegacyContextualEnoteRecordV1> &contextual_records,
+bool try_get_membership_proof_real_reference_mappings(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records,
     std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out)
 {
     ledger_mappings_out.clear();
@@ -185,7 +189,7 @@ bool try_get_membership_proof_real_reference_mappings(const std::list<LegacyCont
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_get_membership_proof_real_reference_mappings(const std::list<SpContextualEnoteRecordV1> &contextual_records,
+bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContextualEnoteRecordV1> &contextual_records,
     std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out)
 {
     ledger_mappings_out.clear();

@@ -105,16 +105,24 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
 /**
 * brief: check_v1_tx_supplement_semantics_v1 - check semantics of a tx supplement
 *   - throws if a check fails
-*   - if num_outputs == 2 and ephemeral_pubkey_optimization is set, should be 1 enote ephemeral pubkey
-*   - otherwise, should be 'num_outputs' enote ephemeral pubkeys
-*   - all enote ephemeral pubkeys should be unique
+*   - check: num_outputs == enote ephemeral pubkeys
+*   - check: all enote ephemeral pubkeys should be unique
 * param: tx_supplement -
 * param: num_outputs -
 * param: ephemeral_pubkey_optimization -
 */
-void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement,
-    const std::size_t num_outputs,
-    const bool ephemeral_pubkey_optimization);
+void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
+/**
+* brief: check_v1_tx_supplement_semantics_v2 - check semantics of a tx supplement
+*   - throws if a check fails
+*   - check: if num_outputs == 2, there should be 1 enote ephemeral pubkey
+*   - check: otherwise, should be 'num_outputs' enote ephemeral pubkeys
+*   - check: all enote ephemeral pubkeys should be unique
+* param: tx_supplement -
+* param: num_outputs -
+* param: ephemeral_pubkey_optimization -
+*/
+void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
 /**
 * brief: make_v1_coinbase_outputs_v1 - make v1 coinbase tx outputs
 * param: output_proposals -

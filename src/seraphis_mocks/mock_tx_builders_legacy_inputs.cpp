@@ -49,7 +49,6 @@
 //third party headers
 
 //standard headers
-#include <list>
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
@@ -287,7 +286,7 @@ void make_mock_legacy_ring_signature_preps_for_inputs_v1(const rct::key &tx_prop
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::list<LegacyContextualEnoteRecordV1> &contextual_records,
+bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records,
     const std::uint64_t legacy_ring_size,
     const MockLedgerContext &ledger_context,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> &mapped_preps_out)

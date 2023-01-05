@@ -399,8 +399,8 @@ void get_input_commitment_factors_v1(const std::vector<SpInputProposalV1> &input
 {
     // use input proposals to get amounts/blinding factors
     blinding_factors_out.clear();
-    input_amounts_out.clear();
     blinding_factors_out.reserve(input_proposals.size());
+    input_amounts_out.clear();
     input_amounts_out.reserve(input_proposals.size());
 
     for (const SpInputProposalV1 &input_proposal : input_proposals)
@@ -421,8 +421,8 @@ void get_input_commitment_factors_v1(const std::vector<SpPartialInputV1> &partia
 {
     // use partial inputs to get amounts/blinding factors
     blinding_factors_out.clear();
-    input_amounts_out.clear();
     blinding_factors_out.reserve(partial_inputs.size());
+    input_amounts_out.clear();
     input_amounts_out.reserve(partial_inputs.size());
 
     for (const SpPartialInputV1 &partial_input : partial_inputs)
@@ -547,11 +547,9 @@ void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
     const rct::key image_offset{rct::addKeys(masked_address, masked_commitment)};  //Q" = K" + C"
 
     // 3. secret key of: Q[l] - Q" = -(t_k + t_c) G
-    static const rct::key MINUS_ONE{minus_one()};
-
     crypto::secret_key proof_privkey;
     sc_add(to_bytes(proof_privkey), to_bytes(address_mask), to_bytes(commitment_mask));  // t_k + t_c
-    sc_mul(to_bytes(proof_privkey), to_bytes(proof_privkey), MINUS_ONE.bytes);  // -(t_k + t_c)
+    sc_mul(to_bytes(proof_privkey), to_bytes(proof_privkey), minus_one().bytes);  // -(t_k + t_c)
 
     // 4. proof message
     rct::key message;

@@ -72,10 +72,10 @@ static void prepare_clsag_proof_keys(const rct::ctkeyV &referenced_enotes,
     rct::keyV &nominal_commitments_to_zero_out)
 {
     referenced_onetime_addresses_out.clear();
-    referenced_amount_commitments_out.clear();
-    nominal_commitments_to_zero_out.clear();
     referenced_onetime_addresses_out.reserve(referenced_enotes.size());
+    referenced_amount_commitments_out.clear();
     referenced_amount_commitments_out.reserve(referenced_enotes.size());
+    nominal_commitments_to_zero_out.clear();
     nominal_commitments_to_zero_out.reserve(referenced_enotes.size());
 
     for (const rct::ctkey &referenced_enote : referenced_enotes)
@@ -416,8 +416,8 @@ void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputProposa
 {
     // use legacy input proposals to get amounts/blinding factors
     input_amounts_out.clear();
-    blinding_factors_out.clear();
     input_amounts_out.reserve(input_proposals.size());
+    blinding_factors_out.clear();
     blinding_factors_out.reserve(input_proposals.size());
 
     for (const LegacyInputProposalV1 &input_proposal : input_proposals)
@@ -438,8 +438,8 @@ void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputV1> &in
 {
     // use legacy inputs to get amounts/blinding factors
     input_amounts_out.clear();
-    blinding_factors_out.clear();
     input_amounts_out.reserve(inputs.size());
+    blinding_factors_out.clear();
     blinding_factors_out.reserve(inputs.size());
 
     for (const LegacyInputV1 &input : inputs)

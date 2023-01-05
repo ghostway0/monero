@@ -322,8 +322,6 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
     std::vector<ExtraFieldElement> extra_field_elements;
     if (!try_get_extra_field_elements(tx_extra, extra_field_elements))
         return false;
-    if (!std::is_sorted(extra_field_elements.begin(), extra_field_elements.end()))
-        return false;
 
     return true;
 }
@@ -374,8 +372,6 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     // tx extra fields should be in sorted TLV (Type-Length-Value) format
     std::vector<ExtraFieldElement> extra_field_elements;
     if (!try_get_extra_field_elements(tx_extra, extra_field_elements))
-        return false;
-    if (!std::is_sorted(extra_field_elements.begin(), extra_field_elements.end()))
         return false;
 
     return true;

@@ -90,26 +90,9 @@ static bool try_get_extra_field_element(const epee::span<const unsigned char> &t
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
+// convert an element to bytes and append to the input variable: varint(type) || varint(length) || value
 //-------------------------------------------------------------------------------------------------------------------
-bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
-{
-    if (a.m_type < b.m_type)
-        return true;
-    if (a.m_type > b.m_type)
-        return false;
-    if (a.m_value.size() < b.m_value.size())
-        return true;
-    if (a.m_value.size() > b.m_value.size())
-        return false;
-    return a.m_value < b.m_value;  //same type, same length
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::size_t length(const ExtraFieldElement &element)
-{
-    return element.m_value.size();
-}
-//-------------------------------------------------------------------------------------------------------------------
-void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
+static void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
 {
     //TODO: simplify this function?
     // varint(type) || varint(length) || bytes
@@ -141,6 +124,25 @@ void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &
         element.m_value.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
+{
+    if (a.m_type < b.m_type)
+        return true;
+    if (a.m_type > b.m_type)
+        return false;
+    if (a.m_value.size() < b.m_value.size())
+        return true;
+    if (a.m_value.size() > b.m_value.size())
+        return false;
+    return a.m_value < b.m_value;  //same type, same length
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::size_t length(const ExtraFieldElement &element)
+{
+    return element.m_value.size();
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_out)
 {
     tx_extra_out.clear();
@@ -155,6 +157,8 @@ void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_ou
 bool try_get_extra_field_elements(const TxExtra &tx_extra, std::vector<ExtraFieldElement> &elements_out)
 {
     elements_out.clear();
+
+    // extract elements from the tx extra field
     std::size_t element_position{0};
     const epee::span<const unsigned char> tx_extra_span{epee::to_span(tx_extra)};
 
@@ -169,7 +173,15 @@ bool try_get_extra_field_elements(const TxExtra &tx_extra, std::vector<ExtraFiel
         }
     }
 
-    return element_position == tx_extra.size();  //if we didn't consume all extra bytes, then the field is malformed
+    // if we didn't consume all bytes, then the field is malformed
+    if (element_position != tx_extra.size())
+        return false;
+
+    // if the elements in a tx extra are not sorted, then the field is malformed
+    if (!std::is_sorted(elements_out.begin(), elements_out.end()))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void accumulate_extra_field_elements(const std::vector<ExtraFieldElement> &elements_to_add,

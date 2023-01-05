@@ -102,9 +102,8 @@ static void prepare_multiexp_cached_generators(const std::size_t num_predef_gen_
 
     // default initialize caches
     cached_base_points_inout.clear();
-    elements_collected_inout.clear();
-
     cached_base_points_inout.resize(4 + num_predef_gen_elements);
+    elements_collected_inout.clear();
     elements_collected_inout.resize(4 + num_predef_gen_elements, {rct::zero(), ge_p3_identity});
 
     // set generators

@@ -335,29 +335,17 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement,
-    const std::size_t num_outputs,
-    const bool ephemeral_pubkey_optimization)
+void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs)
 {
-    // there may be either 1 or 3+ enote pubkeys
-    if (num_outputs <= 2 && ephemeral_pubkey_optimization)
-    {
-        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 1,
-            "Semantics check tx supplement v1: there must be 1 enote pubkey if there are 2 outputs and the ephemeral "
-            "pubkey optimization is being used.");
-    }
-    else
-    {
-        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
-            "Semantics check tx supplement v1: there must be one enote pubkey for each output when there is no ephemeral "
-            "pubkey optimization.");
-    }
+    // 1. num outputs = num enote ephemeral pubkeys
+    CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
+        "Semantics check tx supplement v1: there must be one enote pubkey for each output.");
 
-    // all enote pubkeys should be unique
+    // 2. all enote pubkeys should be unique
     CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
         "Semantics check tx supplement v1: enote pubkeys must be unique.");
 
-    // enote ephemeral pubkeys should not be zero
+    // 3. enote ephemeral pubkeys should not be zero
     // note: these are easy checks to do, but in no way guarantee the enote ephemeral pubkeys are valid/usable
     for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.m_output_enote_ephemeral_pubkeys)
     {
@@ -365,14 +353,42 @@ void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement,
             "Semantics check tx supplement v1: an enote ephemeral pubkey is zero.");
     }
 
-    // the tx extra must be well-formed
+    // 4. the tx extra must be well-formed
     std::vector<ExtraFieldElement> extra_field_elements;
-
     CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.m_tx_extra, extra_field_elements),
         "Semantics check tx supplement v1: could not extract extra field elements.");
+}
+//-------------------------------------------------------------------------------------------------------------------
+void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs)
+{
+    // 1. there may be either 1 or 3+ enote pubkeys
+    if (num_outputs <= 2)
+    {
+        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 1,
+            "Semantics check tx supplement v2: there must be 1 enote pubkey if there are 2 outputs.");
+    }
+    else
+    {
+        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
+            "Semantics check tx supplement v2: there must be one enote pubkey for each output when there are >2 outputs.");
+    }
 
-    CHECK_AND_ASSERT_THROW_MES(std::is_sorted(extra_field_elements.begin(), extra_field_elements.end()),
-        "Semantics check tx supplement v1: extra field elements are not sorted.");
+    // 2. all enote pubkeys should be unique
+    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
+        "Semantics check tx supplement v2: enote pubkeys must be unique.");
+
+    // 3. enote ephemeral pubkeys should not be zero
+    // note: these are easy checks to do, but in no way guarantee the enote ephemeral pubkeys are valid/usable
+    for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.m_output_enote_ephemeral_pubkeys)
+    {
+        CHECK_AND_ASSERT_THROW_MES(!(enote_ephemeral_pubkey == crypto::x25519_pubkey{}),
+            "Semantics check tx supplement v2: an enote ephemeral pubkey is zero.");
+    }
+
+    // 4. the tx extra must be well-formed
+    std::vector<ExtraFieldElement> extra_field_elements;
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.m_tx_extra, extra_field_elements),
+        "Semantics check tx supplement v2: could not extract extra field elements.");
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_coinbase_outputs_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,

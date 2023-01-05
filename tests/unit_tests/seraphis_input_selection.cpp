@@ -41,7 +41,6 @@
 #include "tx_component_types.h"
 #include "gtest/gtest.h"
 
-#include <list>
 #include <vector>
 
 using namespace sp;
@@ -128,8 +127,8 @@ static void input_selection_test_full(const std::vector<rct::xmr_amount> &stored
                 selected_input_set)
         };
 
-    std::list<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
-    std::list<SpContextualEnoteRecordV1> sp_contextual_inputs;
+    std::vector<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
+    std::vector<SpContextualEnoteRecordV1> sp_contextual_inputs;
 
     split_selected_input_set(selected_input_set, legacy_contextual_inputs, sp_contextual_inputs);
 

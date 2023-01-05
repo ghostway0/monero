@@ -43,8 +43,8 @@
 
 //standard headers
 #include <functional>
-#include <list>
 #include <unordered_set>
+#include <vector>
 
 //forward declarations
 
@@ -72,19 +72,19 @@ bool legacy_enote_has_highest_amount_amoung_duplicates(const rct::key &searched_
 
 //todo
 void split_selected_input_set(const input_set_tracker_t &input_set,
-    std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_records_out,
-    std::list<SpContextualEnoteRecordV1> &sp_contextual_records_out);
+    std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_records_out,
+    std::vector<SpContextualEnoteRecordV1> &sp_contextual_records_out);
 
 //todo
-boost::multiprecision::uint128_t total_amount(const std::list<LegacyContextualEnoteRecordV1> &contextual_records);
-boost::multiprecision::uint128_t total_amount(const std::list<SpContextualEnoteRecordV1> &contextual_records);
+boost::multiprecision::uint128_t total_amount(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records);
+boost::multiprecision::uint128_t total_amount(const std::vector<SpContextualEnoteRecordV1> &contextual_records);
 
 /// [ KI : enote index ] is a convenience map for connecting input proposals or partial inputs to their ledger locations,
 ///   which is needed when making membership proofs
 //todo
-bool try_get_membership_proof_real_reference_mappings(const std::list<LegacyContextualEnoteRecordV1> &contextual_records,
+bool try_get_membership_proof_real_reference_mappings(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records,
     std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out);
-bool try_get_membership_proof_real_reference_mappings(const std::list<SpContextualEnoteRecordV1> &contextual_records,
+bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContextualEnoteRecordV1> &contextual_records,
     std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out);
 
 //todo

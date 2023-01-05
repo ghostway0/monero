@@ -204,8 +204,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     SpMultisigTxProposalV1 &proposal_out);
-void make_v1_multisig_tx_proposal_v1(const std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
-    const std::list<SpContextualEnoteRecordV1> &sp_contextual_inputs,
+void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
+    const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_ring_signature_preps,
     const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     const multisig::signer_set_filter aggregate_filter_of_requested_multisig_signers,

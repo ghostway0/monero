@@ -528,8 +528,8 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     const InputSelectorMockV1 input_selector{enote_store};
     const FeeCalculatorMockTrivial tx_fee_calculator;  //trivial fee calculator so we can use specified input fee
 
-    std::list<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
-    std::list<SpContextualEnoteRecordV1> sp_contextual_inputs;
+    std::vector<LegacyContextualEnoteRecordV1> legacy_contextual_inputs;
+    std::vector<SpContextualEnoteRecordV1> sp_contextual_inputs;
     DiscretizedFee discretized_transaction_fee;
     ASSERT_NO_THROW(ASSERT_TRUE(try_prepare_inputs_and_outputs_for_transfer_v1(sp_user_address,
         sp_user_address,

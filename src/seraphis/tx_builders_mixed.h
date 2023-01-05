@@ -26,17 +26,14 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis tx-builder/component-builder implementations (those related to both inputs and outputs).
-
 
 #pragma once
 
 //local headers
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_base.h"
+#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
@@ -48,7 +45,6 @@
 //third party headers
 
 //standard headers
-#include <string>
 #include <vector>
 
 //forward declarations
@@ -64,8 +60,8 @@ namespace sp
 * param: legacy_input_key_images -
 * param: sp_input_key_images -
 * param: output_enotes -
-* param: tx_supplement -
 * param: transaction_fee -
+* param: tx_supplement -
 * outparam: tx_proposal_prefix_out - hash representing a tx proposal
 */
 void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
@@ -112,8 +108,8 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out);
 /**
-* brief: make_tx_proofs_prefix_v1 - hash of all proofs in a tx (for tx hashes)
-*   - H_32(balance proof, image proofs, membership proofs)
+* brief: make_tx_proofs_prefix_v1 - hash of all proofs in a tx (e.g. for use in making a tx id)
+*   - H_32(balance proof, legacy ring signatures, seraphis image proofs, seraphis membership proofs)
 * param: balance_proof -
 * param: legacy_ring_signatures -
 * param: sp_image_proofs -
@@ -151,33 +147,21 @@ bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinat
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     const crypto::secret_key &k_view_balance,
-    std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs_out,
-    std::list<SpContextualEnoteRecordV1> &sp_contextual_inputs_out,
+    std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs_out,
+    std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs_out,
     std::vector<jamtis::JamtisPaymentProposalV1> &final_normal_payment_proposals_out,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &final_selfsend_payment_proposals_out,
     DiscretizedFee &discretized_transaction_fee_out);
 /**
 * brief: check_v1_coinbase_tx_proposal_semantics_v1 - check semantics of a coinbase tx proposal
 *   - throws if a check fails
-*   - outputs should be sorted and unique
-*   - outputs should have unique and canonical onetime addresses
-*   - the tx supplement should have valid semantics
-*   - output amounts should balance the block reward
-*   - NOTE: zero coinbase enotes are permitted by the semantics check
+*   - NOTE: it is permitted for there to be no output coinbase enotes (i.e. for unit testing/mockups)
 * param: tx_proposal -
-* param: legacy_spend_pubkey -
-* param: jamtis_spend_pubkey -
-* param: k_view_balance -
 */
 void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx_proposal);
 /**
 * brief: check_v1_tx_proposal_semantics_v1 - check semantics of a tx proposal
 *   - throws if a check fails
-*   - outputs should have unique and canonical onetime addresses
-*   - self-send payment proposals should have destinations owned by the user
-*   - amount commitments are consistent with masks/amounts recorded in the proposal
-*   - input proposals have valid semantics
-*   - the tx supplement should have valid semantics
 * param: tx_proposal -
 * param: legacy_spend_pubkey -
 * param: jamtis_spend_pubkey -
@@ -217,13 +201,33 @@ void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_prop
     const DiscretizedFee &tx_fee,
     std::vector<ExtraFieldElement> additional_memo_elements,
     SpTxProposalV1 &tx_proposal_out);
-void make_v1_tx_proposal_v1(const std::list<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
-    const std::list<SpContextualEnoteRecordV1> &sp_contextual_inputs,
+void make_v1_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
+    const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
     const DiscretizedFee &discretized_transaction_fee,
     const TxExtra &partial_memo_for_tx,
     SpTxProposalV1 &tx_proposal_out);
+/**
+* brief: balance_check_in_out_amnts_v1 - verify that the block reward equals output amounts (coinbase txs)
+* param: block_reward -
+* param: output_proposals -
+* return: true if amounts balance between block reward and outputs
+*/
+bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
+    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals);
+/**
+* brief: balance_check_in_out_amnts_v2 - verify that input amounts equal output amounts + fee (normal txs)
+* param: legacy_input_proposals -
+* param: sp_input_proposals -
+* param: output_proposals -
+* param: discretized_transaction_fee -
+* return: true if amounts balance between inputs and outputs (plus fee)
+*/
+bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
+    const std::vector<SpInputProposalV1> &sp_input_proposals,
+    const std::vector<SpOutputProposalV1> &output_proposals,
+    const DiscretizedFee &discretized_transaction_fee);
 /**
 * brief: make_v1_balance_proof_v1 - make v1 tx balance proof (BP+ for range proofs; balance check is sum-to-zero)
 *   - range proofs: for seraphis input image amount commitments and output commitments (squashed enote model)
@@ -245,26 +249,6 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
     const std::vector<crypto::secret_key> &output_amount_commitment_blinding_factors,
     SpBalanceProofV1 &balance_proof_out);
 /**
-* brief: balance_check_in_out_amnts_v1 - verify that block reward equals output amounts (coinbase txs)
-* param: block_reward -
-* param: output_proposals -
-* return: true if amounts balance between block reward and outputs
-*/
-bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
-    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals);
-/**
-* brief: balance_check_in_out_amnts_v2 - verify that input amounts equal output amounts + fee
-* param: legacy_input_proposals -
-* param: sp_input_proposals -
-* param: output_proposals -
-* param: discretized_transaction_fee -
-* return: true if amounts balance between inputs and outputs (plus fee)
-*/
-bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
-    const std::vector<SpInputProposalV1> &sp_input_proposals,
-    const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &discretized_transaction_fee);
-/**
 * brief: check_v1_partial_tx_semantics_v1 - check the semantics of a partial tx against SpTxSquashedV1 validation rules
 *   - throws if a check fails
 *   - makes a mock tx and validates it using the specified SpTxSquashedV1 semantics rules version
@@ -274,12 +258,14 @@ bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &leg
 void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
     const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version);
 /**
-* brief: make_v1_partial_tx_v1 - make v1 partial transaction (everything ready for a full tx except membership proofs)
-* param: tx_proposal -
+* brief: make_v1_partial_tx_v1 - make v1 partial transaction (everything ready for a full tx except seraphis membership
+*   proofs)
 * param: legacy_inputs -
 * param: sp_partial_inputs -
+* param: output_proposals -
+* param: tx_fee -
+* param: partial_memo -
 * param: tx_version -
-* param: k_view_balance -
 * outparam: partial_tx_out -
 */
 void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,

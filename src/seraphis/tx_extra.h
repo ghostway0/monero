@@ -64,8 +64,6 @@ struct ExtraFieldElement final
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b);
 /// get length of an extra field element
 std::size_t length(const ExtraFieldElement &element);
-/// convert an element to bytes and append to the input variable: varint(type) || varint(length) || value
-void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout);
 /**
 * brief: make_tx_extra - make a tx extra
 * param: elements -
