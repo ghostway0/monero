@@ -97,32 +97,34 @@ struct tx_version_t final
 inline bool operator==(const tx_version_t &a, const tx_version_t &b)
 { return (a.bytes[0] == b.bytes[0]) && (a.bytes[1] == b.bytes[1]) && (a.bytes[2] == b.bytes[2]); }
 
-inline void make_tx_version_tx_base(const unsigned char tx_era_version,
+inline tx_version_t tx_version_tx_base_from(const unsigned char tx_era_version,
     const unsigned char tx_structure_version,
-    const unsigned char tx_semantic_rules_version,
-    tx_version_t &tx_version_out)
+    const unsigned char tx_semantic_rules_version)
 {
+    tx_version_t tx_version;
+
     /// era of the tx (e.g. CryptoNote/RingCT/Seraphis)
-    tx_version_out.bytes[0] = tx_era_version;
+    tx_version.bytes[0] = tx_era_version;
     /// structure version of the tx within its era
-    tx_version_out.bytes[1] = tx_structure_version;
+    tx_version.bytes[1] = tx_structure_version;
     /// a tx format's validation rules version
-    tx_version_out.bytes[2] = tx_semantic_rules_version;
+    tx_version.bytes[2] = tx_semantic_rules_version;
+
+    return tx_version;
 }
 
 /// get the tx version for seraphis txs: TxEraSp | format | semantic rules
-inline void make_tx_version_seraphis_base(const unsigned char tx_structure_version,
-    const unsigned char tx_semantic_rules_version,
-    tx_version_t &tx_version_out)
+inline tx_version_t tx_version_seraphis_base_from(const unsigned char tx_structure_version,
+    const unsigned char tx_semantic_rules_version)
 {
-    make_tx_version_tx_base(TxEraSp, tx_structure_version, tx_semantic_rules_version, tx_version_out);
+    return tx_version_tx_base_from(TxEraSp, tx_structure_version, tx_semantic_rules_version);
 }
 
 /// get the tx version for a specific seraphis tx type
 template <typename SpTxType>
-void make_tx_version(const unsigned char tx_semantic_rules_version, tx_version_t &tx_version_out)
+tx_version_t tx_version_from(const unsigned char tx_semantic_rules_version)
 {
-    make_tx_version_seraphis_base(tx_structure_version<SpTxType>(), tx_semantic_rules_version, tx_version_out);
+    return tx_version_seraphis_base_from(tx_structure_version<SpTxType>(), tx_semantic_rules_version);
 }
 
 

@@ -96,7 +96,7 @@ struct LegacyMultisigInputProposalV1 final
     /// u: the enote's unlock time
     std::uint64_t m_unlock_time;
 
-    /// z
+    /// mask
     crypto::secret_key m_commitment_mask;
 
     /// cached legacy enote indices for a legacy ring signature (should include a reference to this input proposal's enote)
@@ -145,10 +145,10 @@ struct SpMultisigTxProposalV1 final
     std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
     /// self-send tx outputs (NOT SORTED)
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> m_selfsend_payment_proposals;
-    /// miscellaneous memo elements to add to the tx memo
-    TxExtra m_partial_memo;
     /// proposed transaction fee
     DiscretizedFee m_tx_fee;
+    /// miscellaneous memo elements to add to the tx memo
+    TxExtra m_partial_memo;
 
     /// encoding of intended tx version
     tx_version_t m_tx_version;

@@ -316,16 +316,12 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     const crypto::secret_key &k_view_balance,
     SpTxSquashedV1 &tx_out)
 {
-    // versioning for proofs
-    tx_version_t tx_version;
-    make_tx_version(semantic_rules_version, tx_version);
-
     // partial tx
     SpPartialTxV1 partial_tx;
     make_v1_partial_tx_v1(tx_proposal,
         std::move(legacy_inputs),
         std::move(sp_partial_inputs),
-        tx_version,
+        tx_version_from(semantic_rules_version),
         legacy_spend_pubkey,
         jamtis_spend_pubkey,
         k_view_balance,
@@ -352,13 +348,9 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     hw::device &hwdev,
     SpTxSquashedV1 &tx_out)
 {
-    // versioning for proofs
-    tx_version_t tx_version;
-    make_tx_version(semantic_rules_version, tx_version);
-
     // tx proposal prefix
     rct::key tx_proposal_prefix;
-    get_tx_proposal_prefix_v1(tx_proposal, tx_version, k_view_balance, tx_proposal_prefix);
+    get_tx_proposal_prefix_v1(tx_proposal, tx_version_from(semantic_rules_version), k_view_balance, tx_proposal_prefix);
 
     // legacy inputs
     std::vector<LegacyInputV1> legacy_inputs;

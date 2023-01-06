@@ -224,9 +224,9 @@ void make_v3_legacy_ring_signature(const rct::key &message,
     crypto::secret_key signing_privkey;
     sc_add(to_bytes(signing_privkey), to_bytes(reference_view_privkey), to_bytes(legacy_spend_privkey));
 
-    // 3. prepare commitment to zero key (negated mask): -z
-    crypto::secret_key negated_commitment_mask;
-    sc_mul(to_bytes(negated_commitment_mask), minus_one().bytes, to_bytes(reference_commitment_mask));
+    // 3. prepare commitment to zero key (negated mask): z
+    crypto::secret_key z;
+    sc_mul(to_bytes(z), minus_one().bytes, to_bytes(reference_commitment_mask));
 
 
     /// make clsag proof
@@ -234,7 +234,7 @@ void make_v3_legacy_ring_signature(const rct::key &message,
         referenced_onetime_addresses,
         rct::sk2rct(signing_privkey),
         nominal_commitments_to_zero,
-        rct::sk2rct(negated_commitment_mask),
+        rct::sk2rct(z),
         referenced_amount_commitments,
         masked_commitment,
         real_reference_index,
@@ -425,9 +425,9 @@ void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputProposa
         // input amount: a
         input_amounts_out.emplace_back(input_proposal.m_amount);
 
-        // input image amount commitment blinding factor: z + x
+        // input image amount commitment blinding factor: x" = mask + x
         sc_add(to_bytes(tools::add_element(blinding_factors_out)),
-            to_bytes(input_proposal.m_commitment_mask),          //z
+            to_bytes(input_proposal.m_commitment_mask),          //mask
             to_bytes(input_proposal.m_amount_blinding_factor));  //x
     }
 }
@@ -447,7 +447,7 @@ void get_legacy_input_commitment_factors_v1(const std::vector<LegacyInputV1> &in
         // input amount: a
         input_amounts_out.emplace_back(input.m_input_amount);
 
-        // masked commitment blinding factor: z + x
+        // masked commitment blinding factor: x" = mask + x
         blinding_factors_out.emplace_back(input.m_input_masked_commitment_blinding_factor);
     }
 }

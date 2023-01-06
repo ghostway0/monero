@@ -213,26 +213,26 @@ void collect_partial_sigs_v1(const std::vector<MultisigPartialSigVariant> &type_
 }
 /**
 * brief: try_assemble_multisig_partial_sigs - try to combine multisig partial signatures into full signatures of
-*        type ContextualSigT using an injected function for merging partial signatures
+*        type ResultSigT using an injected function for merging partial signatures
 *   - takes as input a set of {proof key, {partial signatures}} pairs, and only succeeds if each of those pairs can be
 *     resolved to a complete signature
 * type: PartialSigT -
-* type: ContextualSigT -
+* type: ResultSigT -
 * param: collected_sigs_per_key -
 * param: try_assemble_partial_sigs_func -
-* outparam: contextual_sigs_out -
+* outparam: result_sigs_out -
 * return: true if a complete signature was assembled for every {proof key, {partial signatures}} pair passed in
 */
-template <typename PartialSigT, typename ContextualSigT>
+template <typename PartialSigT, typename ResultSigT>
 bool try_assemble_multisig_partial_sigs(
     //[ proof key : partial signatures ]
     const std::unordered_map<rct::key, std::vector<MultisigPartialSigVariant>> &collected_sigs_per_key,
-    const std::function<bool(const rct::key&, const std::vector<PartialSigT>&, ContextualSigT&)>
+    const std::function<bool(const rct::key&, const std::vector<PartialSigT>&, ResultSigT&)>
         &try_assemble_partial_sigs_func,
-    std::vector<ContextualSigT> &contextual_sigs_out)
+    std::vector<ResultSigT> &result_sigs_out)
 {
-    contextual_sigs_out.clear();
-    contextual_sigs_out.reserve(collected_sigs_per_key.size());
+    result_sigs_out.clear();
+    result_sigs_out.reserve(collected_sigs_per_key.size());
     std::vector<PartialSigT> partial_sigs_temp;
 
     for (const auto &proof_key_and_partial_sigs : collected_sigs_per_key)
@@ -243,7 +243,7 @@ bool try_assemble_multisig_partial_sigs(
         // b. try to make the contextual signature
         if (!try_assemble_partial_sigs_func(proof_key_and_partial_sigs.first,
                 partial_sigs_temp,
-                tools::add_element(contextual_sigs_out)))
+                tools::add_element(result_sigs_out)))
             return false;
     }
 
@@ -251,31 +251,31 @@ bool try_assemble_multisig_partial_sigs(
 }
 /**
 * brief: try_assemble_multisig_partial_sigs_signer_group_attempts - try to combine multisig partial signatures into full
-*        signatures of type ContextualSigT using an injected function for merging partial signatures; makes attempts for
+*        signatures of type ResultSigT using an injected function for merging partial signatures; makes attempts for
 *        multiple signer groups
 *   - note: it is the responsibility of the caller to validate the 'collected_sigs_per_key_per_filter' map; failing to
 *           validate it could allow a malicious signer to pollute the signature attempts of signer subgroups they aren't
 *           a member of, or lead to unexpected failures where the signatures output from here are invalid according to
 *           a broader context (e.g. undesired proof keys or proof messages, etc.)
 * type: PartialSigT -
-* type: ContextualSigT -
+* type: ResultSigT -
 * param: num_expected_completed_sigs -
 * param: collected_sigs_per_key_per_filter -
 * param: try_assemble_partial_sigs_func -
 * inoutparam: multisig_errors_inout -
-* outparam: contextual_sigs_out -
+* outparam: result_sigs_out -
 * return: true if the requested number of signatures were assembled (e.g. one per proof key represented in the
 *         collected_sigs_per_key_per_filter input)
 */
-template <typename PartialSigT, typename ContextualSigT>
+template <typename PartialSigT, typename ResultSigT>
 bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t num_expected_completed_sigs,
     const std::unordered_map<signer_set_filter,  //signing group
         std::unordered_map<rct::key,             //proof key 
             std::vector<MultisigPartialSigVariant>>> &collected_sigs_per_key_per_filter,
-    const std::function<bool(const rct::key&, const std::vector<PartialSigT>&, ContextualSigT&)>
+    const std::function<bool(const rct::key&, const std::vector<PartialSigT>&, ResultSigT&)>
         &try_assemble_partial_sigs_func,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
-    std::vector<ContextualSigT> &contextual_sigs_out)
+    std::vector<ResultSigT> &result_sigs_out)
 {
     // try to assemble a collection of signatures from partial signatures provided by different signer groups
     // - all-or-nothing: a signer group must produce the expected number of completed signatures for their signatures
@@ -297,11 +297,11 @@ bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t 
         }
 
         // b. try to assemble the set of signatures that this signer group is working on
-        if (try_assemble_multisig_partial_sigs<PartialSigT, ContextualSigT>(signer_group_partial_sigs.second,
+        if (try_assemble_multisig_partial_sigs<PartialSigT, ResultSigT>(signer_group_partial_sigs.second,
                 try_assemble_partial_sigs_func,
-                contextual_sigs_out)
+                result_sigs_out)
             &&
-            contextual_sigs_out.size() == num_expected_completed_sigs)
+            result_sigs_out.size() == num_expected_completed_sigs)
             break;
         else
         {
@@ -314,7 +314,7 @@ bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t 
         }
     }
 
-    if (contextual_sigs_out.size() != num_expected_completed_sigs)
+    if (result_sigs_out.size() != num_expected_completed_sigs)
     {
         multisig_errors_inout.emplace_back(
                 MultisigSigningErrorBadSigSet{

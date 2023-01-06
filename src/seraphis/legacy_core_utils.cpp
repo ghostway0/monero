@@ -146,7 +146,7 @@ void make_legacy_auxilliary_key_image_v1(const crypto::secret_key &commitment_ma
     const rct::key &onetime_address,
     crypto::key_image &auxilliary_key_image_out)
 {
-    // z = - commitment mask
+    // z = - mask
     crypto::secret_key z;
     sc_0(to_bytes(z));
     sc_sub(to_bytes(z), to_bytes(z), to_bytes(commitment_mask));

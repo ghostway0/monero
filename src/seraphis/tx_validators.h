@@ -194,7 +194,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
 * brief: validate_sp_semantics_layout_v1 - check tx components have the proper layout
 *   - legacy reference sets are sorted (ascending)
 *   - legacy reference set indices are unique
-*   - serpahis membership proof binned reference set bins are sorted (ascending)
+*   - seraphis membership proof binned reference set bins are sorted (ascending)
 *   - legacy input images sorted by key image with byte-wise comparisons (ascending)
 *   - seraphis input images sorted by key image with byte-wise comparisons (ascending)
 *   - legacy and seraphis input key images are all unique

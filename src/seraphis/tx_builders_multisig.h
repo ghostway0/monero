@@ -26,20 +26,16 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis tx-builder/component-builder implementations (multisig).
 // WARNING: Passing a semantic check here, or successfully making a component, does not guarantee that the
 //          component is well-formed (i.e. can ultimately be used to make a valid transaction). The checks should be
 //          considered sanity checks that only a malicious implementation can/will circumvent. Note that multisig
 //          is only assumed to work when a threshold of honest players are interacting.
 //          - The semantic checks SHOULD detect unintended behavior that would allow a successful transaction. For example,
-//            the checks prevent a multisig tx proposer from making a tx with no self-sends (which would make balance checks
-//            much more difficult).
-//          - If users encounter tx construction failures, it may be necessary to identify malicious player(s) and
+//            the checks prevent a multisig tx proposer from proposing a tx with no self-sends (which would make balance
+//            checks much more difficult).
+//          - If users encounter tx construction failures, it may be necessary to identify malicious players and
 //            exclude them.
-//          - TODO: Provide better ways to track down malicious players (more informative exceptions?).
-
 
 #pragma once
 
@@ -69,38 +65,31 @@
 //third party headers
 
 //standard headers
+#include <list>
 #include <unordered_map>
+#include <vector>
 
 //forward declarations
 namespace multisig { class MultisigNonceRecord; }
 namespace sp { struct tx_version_t; }
 
-
 namespace sp
 {
 
 /**
-* brief: check_v1_legacy_multisig_input_proposal_semantics_v1 - check semantics of a multisig legacy input
-*      proposal
+* brief: check_v1_legacy_multisig_input_proposal_semantics_v1 - check semantics of a legacy multisig input proposal
 *   - throws if a check fails
-*   - check: amout mask is a non-zero canonical scalar
+*   - note: does not verify that the caller owns the input's enote
 * param: multisig_input_proposal -
 */
 void check_v1_legacy_multisig_input_proposal_semantics_v1(const LegacyMultisigInputProposalV1 &multisig_input_proposal);
 /**
-* brief: check_v1_sp_multisig_input_proposal_semantics_v1 - check semantics of a multisig seraphis input
-*      proposal
-*   - throws if a check fails
-*   - check: enote masks are non-zero canonical scalars
-* param: multisig_input_proposal -
-*/
-void check_v1_sp_multisig_input_proposal_semantics_v1(const SpMultisigInputProposalV1 &multisig_input_proposal);
-/**
-* brief: make_v1_legacy_multisig_input_proposal_v1 - make a serpahis multisig input proposal (can be sent to other people)
+* brief: make_v1_legacy_multisig_input_proposal_v1 - make a legacy multisig input proposal (can be sent to other people)
 * param: enote -
+* param: key_image -
 * param: enote_ephemeral_pubkey -
-* param: input_context -
-* param: address_mask -
+* param: tx_output_index -
+* param: unlock_time -
 * param: commitment_mask -
 * param: reference_set -
 * outparam: proposal_out -
@@ -118,7 +107,14 @@ void make_v1_legacy_multisig_input_proposal_v1(const LegacyEnoteRecord &enote_re
     std::vector<std::uint64_t> reference_set,
     LegacyMultisigInputProposalV1 &proposal_out);
 /**
-* brief: make_v1_sp_multisig_input_proposal_v1 - make a serpahis multisig input proposal (can be sent to other people)
+* brief: check_v1_sp_multisig_input_proposal_semantics_v1 - check semantics of a seraphis multisig input proposal
+*   - throws if a check fails
+*   - note: does not verify that the caller owns the input's enote
+* param: multisig_input_proposal -
+*/
+void check_v1_sp_multisig_input_proposal_semantics_v1(const SpMultisigInputProposalV1 &multisig_input_proposal);
+/**
+* brief: make_v1_sp_multisig_input_proposal_v1 - make a seraphis multisig input proposal (can be sent to other people)
 * param: enote -
 * param: enote_ephemeral_pubkey -
 * param: input_context -
@@ -139,8 +135,7 @@ void make_v1_sp_multisig_input_proposal_v1(const SpEnoteRecordV1 &enote_record,
 /**
 * brief: check_v1_multisig_tx_proposal_semantics_v1 - check semantics of a multisig tx proposal
 *   - throws if a check fails
-*   - not checked: input/output counts satisfy the desired tx semantic rules version
-*                  (input count can be lower if only partially funding a tx)
+*   - not checked: semantics satisfy the desired tx semantic rules version (can check these with the simulate tx method)
 * param: multisig_tx_proposal -
 * param: expected_tx_version -
 * param: threshold -
@@ -160,7 +155,24 @@ void check_v1_multisig_tx_proposal_semantics_v1(const SpMultisigTxProposalV1 &mu
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance);
-//todo
+/**
+* brief: try_simulate_tx_from_multisig_tx_proposal_v1 - try to simulate a squashed v1 tx from a multisig tx proposal
+*   - checks the proposal semantics then simulates a transaction and tries to fully validate it against the specified
+*     semantics rules
+*   - note: to check that a multisig tx proposal MAY ultimately succeed, combine this simulation with A) checks that
+*     all inputs are owned and spendable by the local user, B) checks that legacy ring members are valid references
+* param: multisig_tx_proposal -
+* param: semantic_rules_version -
+* param: threshold -
+* param: num_signers -
+* param: legacy_spend_pubkey -
+* param: legacy_subaddress_map -
+* param: legacy_view_privkey -
+* param: jamtis_spend_pubkey -
+* param: k_view_balance -
+* inoutparam: hwdev -
+* return: true if the tx was successfully simulated
+*/
 bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &multisig_tx_proposal,
     const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     const std::uint32_t threshold,
@@ -173,15 +185,15 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
     hw::device &hwdev);
 /**
 * brief: make_v1_multisig_tx_proposal_v1 - make a multisig tx proposal
-* param: normal_payment_proposals -
-* param: selfsend_payment_proposals -
-* param: additional_memo_elements -
-* param: tx_fee -
-* param: tx_version -
 * param: legacy_multisig_input_proposals -
 * param: sp_multisig_input_proposals -
 * param: legacy_ring_signature_preps -
 * param: aggregate_signer_set_filter -
+* param: normal_payment_proposals -
+* param: selfsend_payment_proposals -
+* param: tx_fee -
+* param: additional_memo_elements -
+* param: tx_version -
 * param: legacy_spend_pubkey -
 * param: legacy_subaddress_map -
 * param: legacy_view_privkey -
@@ -195,8 +207,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    std::vector<ExtraFieldElement> additional_memo_elements,
     const DiscretizedFee &tx_fee,
+    std::vector<ExtraFieldElement> additional_memo_elements,
     const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
@@ -207,12 +219,12 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
 void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
     const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> legacy_ring_signature_preps,
-    const sp::SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
-    const multisig::signer_set_filter aggregate_filter_of_requested_multisig_signers,
+    const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    TxExtra partial_memo_for_tx,
     const DiscretizedFee &tx_fee,
+    TxExtra partial_memo_for_tx,
+    const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -220,7 +232,7 @@ void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteReco
     const crypto::secret_key &k_view_balance,
     SpMultisigTxProposalV1 &multisig_tx_proposal_out);
 /**
-* brief: make_v1_multisig_init_sets_for_inputs_v1 - make init sets for seraphis and legacy multisig tx input proofs
+* brief: make_v1_multisig_init_sets_for_inputs_v1 - make init sets for legacy and seraphis multisig tx input proofs
 * param: signer_id -
 * param: threshold -
 * param: multisig_signers -
@@ -246,14 +258,17 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     multisig::MultisigNonceRecord &nonce_record_inout,
+    //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> &legacy_input_init_set_collection_out,
+    //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> &sp_input_init_set_collection_out);
 /**
 * brief: try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1 - try to make multisig partial signatures for legacy
-*      tx inputs
-*   - weak preconditions: ignores invalid initializers from non-local signers
+*   tx inputs
+*   - weak preconditions: ignores invalid proof initializers from non-local signers
 *   - will throw if local signer is not in the aggregate signer filter (or has an invalid initializer)
-*   - will only succeed if a partial sig set can be made for each of the legacy inputs found in the multisig tx proposal
+*   - will only succeed (return true) if a partial sig set can be made that includes each  of the legacy inputs found in
+*     the multisig tx proposal
 * param: signer_account -
 * param: multisig_tx_proposal -
 * param: legacy_subaddress_map -
@@ -265,7 +280,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
 * inoutparam: multisig_errors_inout -
 * inoutparam: nonce_record_inout -
 * outparam: legacy_input_partial_sig_sets_out -
-* return: true if at least one set of partial signatures was created (one set will contain a partial sig for each input)
+* return: true if at least one set of partial signatures was created (containing a partial sig for each input)
 */
 bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::multisig_account &signer_account,
     const SpMultisigTxProposalV1 &multisig_tx_proposal,
@@ -283,10 +298,11 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
     std::vector<multisig::MultisigPartialSigSetV1> &legacy_input_partial_sig_sets_out);
 /**
 * brief: try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1 - try to make multisig partial signatures for seraphis
-*      tx inputs
-*   - weak preconditions: ignores invalid initializers from non-local signers
+*   tx inputs
+*   - weak preconditions: ignores invalid proof initializers from non-local signers
 *   - will throw if local signer is not in the aggregate signer filter (or has an invalid initializer)
-*   - will only succeed if a partial sig set can be made for each of the seraphis inputs found in the multisig tx proposal
+*   - will only succeed (return true) if a partial sig set can be made that includes each  of the seraphis inputs found in
+*     the multisig tx proposal
 * param: signer_account -
 * param: multisig_tx_proposal -
 * param: legacy_spend_pubkey -
@@ -298,7 +314,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
 * inoutparam: multisig_errors_inout -
 * inoutparam: nonce_record_inout -
 * outparam: sp_input_partial_sig_sets_out -
-* return: true if at least one set of partial signatures was created (one set will contain a partial sig for each input)
+* return: true if at least one set of partial signatures was created (containing a partial sig for each input)
 */
 bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::multisig_account &signer_account,
     const SpMultisigTxProposalV1 &multisig_tx_proposal,
@@ -316,8 +332,8 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
     std::vector<multisig::MultisigPartialSigSetV1> &sp_input_partial_sig_sets_out);
 /**
 * brief: try_make_inputs_for_multisig_v1 - try to make legacy inputs and seraphis partial inputs from a collection of
-*      multisig partial signatures
-*   - weak preconditions: ignores invalid partial signature sets
+*   multisig partial signatures
+*   - weak preconditions: ignores invalid partial signature sets (including sets that are only partially invalid)
 *   - will only succeed if a legacy input and seraphis partial input can be made for each of the inputs found in the
 *     multisig tx proposal
 * param: multisig_tx_proposal -

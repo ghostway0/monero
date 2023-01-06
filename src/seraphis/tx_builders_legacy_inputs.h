@@ -133,6 +133,7 @@ void check_v1_legacy_input_semantics_v1(const LegacyInputV1 &input);
 * param: ring_signature -
 * param: referenced_enotes -
 * param: legacy_spend_pubkey -
+* inoutparam: hwdev -
 * outparam: input_out -
 */
 void make_v1_legacy_input_v1(const rct::key &tx_proposal_prefix,

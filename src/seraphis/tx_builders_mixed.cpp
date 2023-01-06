@@ -690,12 +690,8 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out)
 {
-    // versioning
-    tx_version_t tx_version;
-    make_tx_version(tx.m_tx_semantic_rules_version, tx_version);
-
     // get proposal prefix
-    make_tx_proposal_prefix_v1(tx_version,
+    make_tx_proposal_prefix_v1(tx_version_from(tx.m_tx_semantic_rules_version),
         tx.m_legacy_input_images,
         tx.m_sp_input_images,
         tx.m_outputs,

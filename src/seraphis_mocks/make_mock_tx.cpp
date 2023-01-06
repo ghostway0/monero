@@ -188,8 +188,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     make_tx_extra(std::move(additional_memo_elements), partial_memo);
 
     // versioning for proofs
-    tx_version_t tx_version;
-    make_tx_version(semantic_rules_version, tx_version);
+    const tx_version_t tx_version{tx_version_from(semantic_rules_version)};
 
     // proposal prefix
     rct::key tx_proposal_prefix;

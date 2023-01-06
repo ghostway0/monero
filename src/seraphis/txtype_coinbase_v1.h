@@ -140,10 +140,9 @@ inline unsigned char tx_structure_version<SpTxCoinbaseV1>()
 }
 
 /// versioning for an SpTxCoinbaseV1 tx
-inline void make_tx_version(const SpTxCoinbaseV1::SemanticRulesVersion tx_semantic_rules_version,
-    tx_version_t &tx_version_out)
+inline tx_version_t tx_version_from(const SpTxCoinbaseV1::SemanticRulesVersion tx_semantic_rules_version)
 {
-    make_tx_version<SpTxCoinbaseV1>(static_cast<unsigned char>(tx_semantic_rules_version), tx_version_out);
+    return tx_version_from<SpTxCoinbaseV1>(static_cast<unsigned char>(tx_semantic_rules_version));
 }
 
 /// transaction validators

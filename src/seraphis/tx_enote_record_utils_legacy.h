@@ -60,6 +60,7 @@ namespace sp
 * param: sender_receiver_DH_derivation -
 * param: legacy_base_spend_pubkey -
 * param: legacy_subaddress_map -
+* inoutparam: hwdev -
 * outparam: basic_record_out -
 * return: true if an extraction succeeded
 */

@@ -280,8 +280,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
         tx_proposal);
 
     // 5. tx proposal prefix
-    tx_version_t tx_version;
-    make_tx_version(SpTxSquashedV1::SemanticRulesVersion::MOCK, tx_version);
+    const tx_version_t tx_version{tx_version_from(SpTxSquashedV1::SemanticRulesVersion::MOCK)};
 
     rct::key tx_proposal_prefix;
     get_tx_proposal_prefix_v1(tx_proposal, tx_version, local_user_sp_keys.k_vb, tx_proposal_prefix);

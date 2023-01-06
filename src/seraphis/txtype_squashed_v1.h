@@ -224,10 +224,9 @@ inline unsigned char tx_structure_version<SpTxSquashedV1>()
 }
 
 /// version of an SpTxSquashedV1 tx
-inline void make_tx_version(const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version,
-    tx_version_t &tx_version_out)
+inline tx_version_t tx_version_from(const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version)
 {
-    make_tx_version<SpTxSquashedV1>(static_cast<unsigned char>(tx_semantic_rules_version), tx_version_out);
+    return tx_version_from<SpTxSquashedV1>(static_cast<unsigned char>(tx_semantic_rules_version));
 }
 
 /// transaction validators

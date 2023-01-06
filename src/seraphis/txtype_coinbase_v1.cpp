@@ -94,8 +94,7 @@ std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
 void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
 {
     // tx_id = H_32(tx version, block height, block reward, output enotes, tx supplement)
-    tx_version_t tx_version;
-    make_tx_version(tx.m_tx_semantic_rules_version, tx_version);
+    const tx_version_t tx_version{tx_version_from(tx.m_tx_semantic_rules_version)};
 
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1,

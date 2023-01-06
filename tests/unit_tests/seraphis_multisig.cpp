@@ -386,8 +386,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     // global
     MockLedgerContext ledger_context{0, 10000};
 
-    tx_version_t tx_version;
-    make_tx_version(semantic_rules_version, tx_version);
+    const tx_version_t tx_version{tx_version_from(semantic_rules_version)};
 
 
     /// 1) setup multisig accounts
@@ -561,12 +560,12 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     ASSERT_NO_THROW(make_v1_multisig_tx_proposal_v1(legacy_contextual_inputs,
         sp_contextual_inputs,
         std::move(mapped_legacy_multisig_ring_signature_preps),
-        semantic_rules_version,
         aggregate_filter_of_requested_multisig_signers,
         std::move(normal_payment_proposals),
         std::move(selfsend_payment_proposals),
-        TxExtra{},
         discretized_transaction_fee,
+        TxExtra{},
+        tx_version,
         rct::pk2rct(legacy_accounts[0].get_multisig_pubkey()),
         legacy_subaddress_map,
         legacy_accounts[0].get_common_privkey(),

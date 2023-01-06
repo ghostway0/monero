@@ -597,8 +597,8 @@ static bool multisig_framework_clsag_test(const std::uint32_t threshold,
         std::vector<crypto::secret_key> proof_privkeys_k_offset;
         std::vector<crypto::secret_key> proof_privkeys_z;
         std::unordered_map<crypto::key_image, rct::key> mapped_proof_keys;  //[ key image : proof key ]
-        std::unordered_map<rct::key, rct::key> proof_contexts;  //[ proof key : proof message ]
-        std::unordered_map<rct::key, rct::keyV> proof_key_base_points;  //[ proof key : {proof key base points} ]
+        std::unordered_map<rct::key, rct::key> proof_contexts;              //[ proof key : proof message ]
+        std::unordered_map<rct::key, rct::keyV> proof_key_base_points;      //[ proof key : {proof key base points} ]
         std::unordered_map<rct::key, rct::ctkeyV> mapped_ring_members;
         std::unordered_map<rct::key, rct::key> mapped_masked_commitments;
 
@@ -721,9 +721,9 @@ static bool multisig_framework_composition_proof_test(const std::uint32_t thresh
         std::vector<crypto::secret_key> proof_privkeys_y;
         std::vector<crypto::secret_key> proof_privkeys_z_offset;
         std::vector<crypto::secret_key> proof_privkeys_z_multiplier;
-        std::unordered_map<rct::key, rct::key> mapped_proof_keys;  //[ K_t1 : proof key ]
-        std::unordered_map<rct::key, crypto::key_image> mapped_KI;  //[ proof key : KI ]
-        std::unordered_map<rct::key, rct::key> proof_contexts;  //[ proof key : proof message ]
+        std::unordered_map<rct::key, rct::key> mapped_proof_keys;       //[ K_t1      : proof key ]
+        std::unordered_map<rct::key, crypto::key_image> mapped_KI;      //[ proof key : KI ]
+        std::unordered_map<rct::key, rct::key> proof_contexts;          //[ proof key : proof message ]
         std::unordered_map<rct::key, rct::keyV> proof_key_base_points;  //[ proof key : {proof key base points} ]
 
         for (std::size_t proof_index{0}; proof_index < num_proofs; ++proof_index)

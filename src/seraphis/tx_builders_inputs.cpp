@@ -232,7 +232,7 @@ void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     const crypto::secret_key &k_view_balance,
     SpImageProofV1 &image_proof_out)
 {
-    // make image proof
+    // make image proof for an enote image in the squashed enote model
 
     // 1. the input enote
     const SpEnoteCoreVariant &input_enote_core{enote_core_ref(input_proposal)};

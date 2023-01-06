@@ -385,8 +385,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         element = gen_extra_field_element();
 
     // versioning for proofs
-    tx_version_t tx_version;
-    make_tx_version(semantic_rules_version, tx_version);
+    const tx_version_t tx_version{tx_version_from(semantic_rules_version)};
 
     // tx components
     std::vector<LegacyEnoteImageV2> legacy_input_images;

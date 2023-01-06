@@ -64,7 +64,7 @@ struct LegacyInputProposalV1 final
     /// a
     rct::xmr_amount m_amount;
 
-    /// z
+    /// mask
     crypto::secret_key m_commitment_mask;
 };
 
