@@ -39,9 +39,9 @@
 //local headers
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/binned_reference_set.h"
+#include "seraphis_core/discretized_fee.h"
 #include "seraphis_core/sp_core_types.h"
-#include "seraphis_core/sp_binned_reference_set.h"
-#include "seraphis_core/sp_discretized_fee.h"
 #include "serialization/binary_archive.h"
 #include "serialization/serialization.h"
 #include "serialization_demo_types.h"

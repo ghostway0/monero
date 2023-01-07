@@ -45,7 +45,7 @@
 #include "seraphis_core/jamtis_destination.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/jamtis_support_types.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"

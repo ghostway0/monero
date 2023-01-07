@@ -38,7 +38,7 @@
 #include "mock_ledger_context.h"
 #include "ringct/rctTypes.h"
 #include "seraphis/tx_builder_types.h"
-#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/binned_reference_set.h"
 
 //third party headers
 

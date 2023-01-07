@@ -27,6 +27,9 @@
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(seraphis_core_sources
+  binned_reference_set.cpp
+  binned_reference_set_utils.cpp
+  discretized_fee.cpp
   jamtis_address_tag_utils.cpp
   jamtis_address_utils.cpp
   jamtis_core_utils.cpp
@@ -40,11 +43,8 @@ set(seraphis_core_sources
   legacy_enote_utils.cpp
   sp_core_enote_utils.cpp
   sp_core_types.cpp
-  sp_binned_reference_set.cpp
-  sp_binned_reference_set_utils.cpp
-  sp_discretized_fee.cpp
   sp_ref_set_index_mapper_flat.cpp
-  sp_tx_extra.cpp)
+  tx_extra.cpp)
 
 monero_find_all_headers(seraphis_core_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
 

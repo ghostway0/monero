@@ -33,8 +33,8 @@
 //local headers
 #include "crypto/x25519.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_core/sp_discretized_fee.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/discretized_fee.h"
+#include "seraphis_core/tx_extra.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
 

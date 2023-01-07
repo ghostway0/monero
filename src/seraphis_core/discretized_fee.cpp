@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "sp_discretized_fee.h"
+#include "discretized_fee.h"
 
 //local headers
 #include "cryptonote_config.h"

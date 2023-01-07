@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "sp_tx_extra.h"
+#include "tx_extra.h"
 
 //local headers
 #include "common/varint.h"

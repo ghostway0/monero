@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "sp_binned_reference_set.h"
+#include "binned_reference_set.h"
 
 //local headers
 #include "seraphis_crypto/sp_transcript.h"

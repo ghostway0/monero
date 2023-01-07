@@ -42,7 +42,7 @@
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/legacy_enote_types.h"
 #include "seraphis_core/sp_core_types.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"

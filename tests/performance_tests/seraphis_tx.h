@@ -32,7 +32,7 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis/txtype_squashed_v1.h"
-#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/binned_reference_set.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
 #include <iostream>

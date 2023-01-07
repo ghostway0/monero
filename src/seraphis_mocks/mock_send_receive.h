@@ -47,9 +47,9 @@
 #include "seraphis/tx_input_selection.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
-#include "seraphis_core/sp_binned_reference_set.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 
 //third party headers
 

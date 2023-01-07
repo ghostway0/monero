@@ -48,8 +48,8 @@
 #include "seraphis/tx_builders_outputs.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
-#include "seraphis_core/sp_discretized_fee.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/discretized_fee.h"
+#include "seraphis_core/tx_extra.h"
 
 //third party headers
 

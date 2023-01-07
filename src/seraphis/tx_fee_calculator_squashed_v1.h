@@ -35,7 +35,7 @@
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "tx_fee_calculator.h"
 #include "txtype_squashed_v1.h"
 

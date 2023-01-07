@@ -40,7 +40,7 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/sp_core_enote_utils.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"

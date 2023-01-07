@@ -32,7 +32,7 @@
 #include "seraphis/tx_base.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
-#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/binned_reference_set.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 #include "span.h"
 

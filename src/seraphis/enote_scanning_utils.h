@@ -40,7 +40,7 @@
 #include "device/device.hpp"
 #include "enote_record_types.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 
 //third party headers

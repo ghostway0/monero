@@ -49,7 +49,7 @@
 #include "seraphis_core/jamtis_core_utils.h"
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/legacy_enote_utils.h"
-#include "seraphis_core/sp_tx_extra.h"
+#include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_component_types.h"
 

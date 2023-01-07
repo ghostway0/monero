@@ -43,7 +43,7 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "sp_core_types.h"
-#include "sp_tx_extra.h"
+#include "tx_extra.h"
 
 //third party headers
 

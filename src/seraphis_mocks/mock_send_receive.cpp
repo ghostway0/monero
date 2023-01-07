@@ -51,10 +51,10 @@
 #include "seraphis/tx_component_types.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/binned_reference_set.h"
+#include "seraphis_core/binned_reference_set_utils.h"
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/legacy_enote_utils.h"
-#include "seraphis_core/sp_binned_reference_set.h"
-#include "seraphis_core/sp_binned_reference_set_utils.h"
 #include "seraphis_core/sp_core_types.h"
 #include "tx_validation_context_mock.h"
 

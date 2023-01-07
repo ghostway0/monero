@@ -36,7 +36,7 @@
 #include "cryptonote_basic/subaddress_index.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
-#include "sp_tx_extra.h"
+#include "tx_extra.h"
 
 //third party headers
 

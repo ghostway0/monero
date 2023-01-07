@@ -27,9 +27,10 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "sp_binned_reference_set_utils.h"
+#include "binned_reference_set_utils.h"
 
 //local headers
+#include "binned_reference_set.h"
 #include "crypto/crypto.h"
 #include "cryptonote_config.h"
 #include "int-util.h"
@@ -37,7 +38,6 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
-#include "sp_binned_reference_set.h"
 #include "sp_ref_set_index_mapper.h"
 
 //third party headers
