@@ -106,11 +106,30 @@ inline std::size_t legacy_enote_v3_size_bytes() { return 2*32 + 8; }
 ////
 // LegacyEnoteV4
 // - onetime address
+// - cleartext amount
+// - view tag
+///
+struct LegacyEnoteV4 final
+{
+    /// Ko
+    rct::key m_onetime_address;
+    /// a
+    rct::xmr_amount m_amount;
+    /// view_tag
+    crypto::view_tag m_view_tag;
+};
+
+/// get size in bytes
+inline std::size_t legacy_enote_v4_size_bytes() { return 2*32 + 8 + sizeof(crypto::view_tag); }
+
+////
+// LegacyEnoteV5
+// - onetime address
 // - amount commitment
 // - encoded amount (version 2: 8 bytes)
 // - view tag
 ///
-struct LegacyEnoteV4 final
+struct LegacyEnoteV5 final
 {
     /// Ko
     rct::key m_onetime_address;
@@ -123,7 +142,7 @@ struct LegacyEnoteV4 final
 };
 
 /// get size in bytes
-inline std::size_t legacy_enote_v4_size_bytes() { return 2*32 + 8 + sizeof(crypto::view_tag); }
+inline std::size_t legacy_enote_v5_size_bytes() { return 2*32 + 8 + sizeof(crypto::view_tag); }
 
 ////
 // LegacyEnoteVariant
@@ -133,7 +152,7 @@ inline std::size_t legacy_enote_v4_size_bytes() { return 2*32 + 8 + sizeof(crypt
 // amount_commitment_ref(): get the enote's amount commitment (this is a copy because V1 enotes need to
 //                          compute the commitment)
 ///
-using LegacyEnoteVariant = tools::variant<LegacyEnoteV1, LegacyEnoteV2, LegacyEnoteV3, LegacyEnoteV4>;
+using LegacyEnoteVariant = tools::variant<LegacyEnoteV1, LegacyEnoteV2, LegacyEnoteV3, LegacyEnoteV4, LegacyEnoteV5>;
 const rct::key& onetime_address_ref(const LegacyEnoteVariant &variant);
 rct::key amount_commitment_ref(const LegacyEnoteVariant &variant);
 
@@ -153,5 +172,9 @@ LegacyEnoteV3 gen_legacy_enote_v3();
 * brief: gen_legacy_enote_v4() - generate a legacy v4 enote (all random)
 */
 LegacyEnoteV4 gen_legacy_enote_v4();
+/**
+* brief: gen_legacy_enote_v5() - generate a legacy v5 enote (all random)
+*/
+LegacyEnoteV5 gen_legacy_enote_v5();
 
 } //namespace sp

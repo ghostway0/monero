@@ -67,15 +67,21 @@ static bool try_check_legacy_view_tag(const LegacyEnoteVariant &enote,
     const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation)
 {
-    // only legacy enote v4 has a view tag
-    if (!enote.is_type<LegacyEnoteV4>())
+    // only legacy enotes v4 and v5 have a view tag
+    crypto::view_tag enote_view_tag;
+
+    if (enote.is_type<LegacyEnoteV4>())
+        enote_view_tag = enote.unwrap<LegacyEnoteV4>().m_view_tag;
+    else if (enote.is_type<LegacyEnoteV5>())
+        enote_view_tag = enote.unwrap<LegacyEnoteV5>().m_view_tag;
+    else
         return true;
 
     // view_tag = H_1("view_tag", r K^v, t)
     crypto::view_tag nominal_view_tag;
     crypto::derive_view_tag(sender_receiver_DH_derivation, tx_output_index, nominal_view_tag);
 
-    return nominal_view_tag == enote.unwrap<LegacyEnoteV4>().m_view_tag;
+    return nominal_view_tag == enote_view_tag;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -209,8 +215,14 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
     }
     else if (enote.is_type<LegacyEnoteV4>())
     {
-        return try_get_amount_commitment_information_v3(enote.unwrap<LegacyEnoteV4>().m_amount_commitment,
-            enote.unwrap<LegacyEnoteV4>().m_encoded_amount,
+        return try_get_amount_commitment_information_v1(enote.unwrap<LegacyEnoteV4>().m_amount,
+            amount_out,
+            amount_blinding_factor_out);
+    }
+    else if (enote.is_type<LegacyEnoteV5>())
+    {
+        return try_get_amount_commitment_information_v3(enote.unwrap<LegacyEnoteV5>().m_amount_commitment,
+            enote.unwrap<LegacyEnoteV5>().m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
             amount_out,

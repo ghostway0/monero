@@ -98,7 +98,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
 /**
 * brief: make_legacy_enote_v4 - make a v4 legacy enote sending to an address or subaddress
 ...
-* outparam: enote_out - [K^o, C, enc(a), view_tag]
+* outparam: enote_out - [K^o, a, view_tag]
 */
 void make_legacy_enote_v4(const rct::key &destination_spendkey,
     const rct::key &destination_viewkey,
@@ -106,6 +106,17 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
     const std::uint64_t output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
     LegacyEnoteV4 &enote_out);
+/**
+* brief: make_legacy_enote_v5 - make a v5 legacy enote sending to an address or subaddress
+...
+* outparam: enote_out - [K^o, C, enc(a), view_tag]
+*/
+void make_legacy_enote_v5(const rct::key &destination_spendkey,
+    const rct::key &destination_viewkey,
+    const rct::xmr_amount amount,
+    const std::uint64_t output_index,
+    const crypto::secret_key &enote_ephemeral_privkey,
+    LegacyEnoteV5 &enote_out);
 /**
 * brief: make_legacy_ephemeral_pubkey_shared - make an ephemeral pubkey for an enote (shared by all enotes in a tx)
 * param: enote_ephemeral_privkey - r

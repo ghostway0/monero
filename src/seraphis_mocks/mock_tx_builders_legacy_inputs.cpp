@@ -152,7 +152,7 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_v1(const rct::key 
 
     for (std::size_t enote_to_add{0}; enote_to_add < num_enotes_to_add; ++enote_to_add)
     {
-        LegacyEnoteV4 temp{gen_legacy_enote_v4()};
+        LegacyEnoteV5 temp{gen_legacy_enote_v5()};
 
         if (enote_to_add == add_real_at_pos)
         {

@@ -55,7 +55,7 @@ static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amoun
     for (const rct::xmr_amount legacy_amount : legacy_amounts)
     {
         LegacyEnoteRecord temp_record{};
-        LegacyEnoteV4 temp_enote{gen_legacy_enote_v4()};
+        LegacyEnoteV5 temp_enote{gen_legacy_enote_v5()};
         temp_record.m_enote = temp_enote;
         temp_record.m_amount = legacy_amount;
         temp_record.m_key_image = rct::rct2ki(rct::pkGen());

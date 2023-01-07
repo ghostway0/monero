@@ -55,6 +55,7 @@ const rct::key& onetime_address_ref(const LegacyEnoteVariant &variant)
         const rct::key& operator()(const LegacyEnoteV2 &enote) const { return enote.m_onetime_address; }
         const rct::key& operator()(const LegacyEnoteV3 &enote) const { return enote.m_onetime_address; }
         const rct::key& operator()(const LegacyEnoteV4 &enote) const { return enote.m_onetime_address; }
+        const rct::key& operator()(const LegacyEnoteV5 &enote) const { return enote.m_onetime_address; }
     };
 
     return variant.visit(visitor{});
@@ -68,7 +69,8 @@ rct::key amount_commitment_ref(const LegacyEnoteVariant &variant)
         rct::key operator()(const LegacyEnoteV1 &enote) const { return rct::zeroCommit(enote.m_amount); }
         rct::key operator()(const LegacyEnoteV2 &enote) const { return enote.m_amount_commitment; }
         rct::key operator()(const LegacyEnoteV3 &enote) const { return enote.m_amount_commitment; }
-        rct::key operator()(const LegacyEnoteV4 &enote) const { return enote.m_amount_commitment; }
+        rct::key operator()(const LegacyEnoteV4 &enote) const { return rct::zeroCommit(enote.m_amount); }
+        rct::key operator()(const LegacyEnoteV5 &enote) const { return enote.m_amount_commitment; }
     };
 
     return variant.visit(visitor{});
@@ -104,6 +106,15 @@ LegacyEnoteV3 gen_legacy_enote_v3()
 LegacyEnoteV4 gen_legacy_enote_v4()
 {
     LegacyEnoteV4 temp;
+    temp.m_onetime_address = rct::pkGen();
+    temp.m_amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    temp.m_view_tag.data = static_cast<char>(crypto::rand_idx(static_cast<unsigned char>(-1)));
+    return temp;
+}
+//-------------------------------------------------------------------------------------------------------------------
+LegacyEnoteV5 gen_legacy_enote_v5()
+{
+    LegacyEnoteV5 temp;
     temp.m_onetime_address = rct::pkGen();
     temp.m_amount_commitment = rct::pkGen();
     crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);

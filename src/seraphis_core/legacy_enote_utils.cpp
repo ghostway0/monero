@@ -147,6 +147,27 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
         enote_ephemeral_privkey,
         enote_out.m_onetime_address);
 
+    // amount: a
+    enote_out.m_amount = amount;
+
+    // view tag: 
+    make_legacy_view_tag(destination_viewkey, output_index, enote_ephemeral_privkey, enote_out.m_view_tag);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_legacy_enote_v5(const rct::key &destination_spendkey,
+    const rct::key &destination_viewkey,
+    const rct::xmr_amount amount,
+    const std::uint64_t output_index,
+    const crypto::secret_key &enote_ephemeral_privkey,
+    LegacyEnoteV5 &enote_out)
+{
+    // onetime address: K^o = Hn(r K^v, t) G + K^s
+    make_legacy_onetime_address(destination_spendkey,
+        destination_viewkey,
+        output_index,
+        enote_ephemeral_privkey,
+        enote_out.m_onetime_address);
+
     // amount commitment: Hn("commitment_mask", Hn(r K^v, t)) G + a H
     crypto::secret_key amount_mask;
     make_legacy_amount_blinding_factor_v2(destination_viewkey, output_index, enote_ephemeral_privkey, amount_mask);

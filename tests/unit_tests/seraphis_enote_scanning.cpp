@@ -168,7 +168,7 @@ static crypto::secret_key make_secret_key()
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void prepare_mock_v4_legacy_enote_for_transfer(const rct::key &destination_subaddr_spendkey,
+static void prepare_mock_v5_legacy_enote_for_transfer(const rct::key &destination_subaddr_spendkey,
     const rct::key &destination_subaddr_viewkey,
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
@@ -177,14 +177,14 @@ static void prepare_mock_v4_legacy_enote_for_transfer(const rct::key &destinatio
     const rct::xmr_amount amount,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
-    LegacyEnoteV4 &legacy_enote_out,
+    LegacyEnoteV5 &legacy_enote_out,
     rct::key &enote_ephemeral_pubkey_out,
     crypto::key_image &key_image_out)
 {
     // prepare enote
     enote_ephemeral_pubkey_out = rct::scalarmultKey(destination_subaddr_spendkey, rct::sk2rct(enote_ephemeral_privkey));
 
-    ASSERT_NO_THROW(make_legacy_enote_v4(destination_subaddr_spendkey,
+    ASSERT_NO_THROW(make_legacy_enote_v5(destination_subaddr_spendkey,
         destination_subaddr_viewkey,
         amount,
         tx_output_index,
@@ -2267,26 +2267,26 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
         enote_ephemeral_privkey_6,
         enote_v3_2));
 
-    LegacyEnoteV4 enote_v4_1;  //to normal destination
+    LegacyEnoteV5 enote_v4_1;  //to normal destination
     const crypto::secret_key enote_ephemeral_privkey_7{make_secret_key()};
     const rct::key enote_ephemeral_pubkey_7{
             rct::scalarmultBase(rct::sk2rct(enote_ephemeral_privkey_7))
         };
 
-    ASSERT_NO_THROW(make_legacy_enote_v4(normal_addr_spendkey,
+    ASSERT_NO_THROW(make_legacy_enote_v5(normal_addr_spendkey,
         normal_addr_viewkey,
         1,  //amount
         6,  //index in planned mock coinbase tx
         enote_ephemeral_privkey_7,
         enote_v4_1));
 
-    LegacyEnoteV4 enote_v4_2;  //to subaddress destination
+    LegacyEnoteV5 enote_v4_2;  //to subaddress destination
     const crypto::secret_key enote_ephemeral_privkey_8{make_secret_key()};
     const rct::key enote_ephemeral_pubkey_8{
             rct::scalarmultKey(subaddr_spendkey, rct::sk2rct(enote_ephemeral_privkey_8))
         };
 
-    ASSERT_NO_THROW(make_legacy_enote_v4(subaddr_spendkey,
+    ASSERT_NO_THROW(make_legacy_enote_v5(subaddr_spendkey,
         subaddr_viewkey,
         1,  //amount
         7,  //index in planned mock coinbase tx
@@ -2377,11 +2377,11 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
     SpEnoteStoreMockV1 enote_store{0, 10000, 0};
 
     //make enote for test
-    LegacyEnoteV4 enote_1;
+    LegacyEnoteV5 enote_1;
     rct::key enote_ephemeral_pubkey_1;
     crypto::key_image key_image;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -2610,11 +2610,11 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
     SpEnoteStoreMockV1 enote_store{0, 10000, 0};
 
     //make enotes: 1 -> user, 1 -> rand
-    LegacyEnoteV4 enote_1;
+    LegacyEnoteV5 enote_1;
     rct::key enote_ephemeral_pubkey_1;
     crypto::key_image key_image_1;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -2627,8 +2627,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         enote_ephemeral_pubkey_1,
         key_image_1);
 
-    LegacyEnoteV4 enote_rand;
-    ASSERT_NO_THROW(make_legacy_enote_v4(subaddr_spendkey_rand,  //random enote
+    LegacyEnoteV5 enote_rand;
+    ASSERT_NO_THROW(make_legacy_enote_v5(subaddr_spendkey_rand,  //random enote
         subaddr_viewkey_rand,
         1,  //amount
         1,  //index in planned mock coinbase tx
@@ -2675,11 +2675,11 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         {EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE}) == 0);
 
     //make enote: 2 -> user
-    LegacyEnoteV4 enote_2;
+    LegacyEnoteV5 enote_2;
     rct::key enote_ephemeral_pubkey_2;
     crypto::key_image key_image_2;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -2889,11 +2889,11 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_height() == 1);
 
     //make enote: 4 -> user
-    LegacyEnoteV4 enote_3;
+    LegacyEnoteV5 enote_3;
     rct::key enote_ephemeral_pubkey_3;
     crypto::key_image key_image_3;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3098,11 +3098,11 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
     SpEnoteStoreMockV1 enote_store_full{0, 10000, 0};  //for full scanning
 
     //make enote: 1 -> user (this will be reused throughout the test)
-    LegacyEnoteV4 enote_1;
+    LegacyEnoteV5 enote_1;
     rct::key enote_ephemeral_pubkey_1;
     crypto::key_image key_image_1;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3531,17 +3531,17 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     SpEnoteStoreMockV1 enote_store_full{0, 10000, 0};  //for full scanning
 
     //make enotes: 1-a (amount 3), 1-b (amount 5), 1-c (amount 1), 1-d (amount 4)
-    LegacyEnoteV4 enote_1a;
-    LegacyEnoteV4 enote_1b;
-    LegacyEnoteV4 enote_1c;
-    LegacyEnoteV4 enote_1d;
+    LegacyEnoteV5 enote_1a;
+    LegacyEnoteV5 enote_1b;
+    LegacyEnoteV5 enote_1c;
+    LegacyEnoteV5 enote_1d;
     const crypto::secret_key enote_ephemeral_privkey{make_secret_key()};
     rct::key enote_ephemeral_pubkey;
     rct::key enote_ephemeral_pubkey_temp;
     crypto::key_image key_image;
     crypto::key_image key_image_temp;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3554,7 +3554,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
         enote_ephemeral_pubkey,
         key_image);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3569,7 +3569,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     ASSERT_TRUE(enote_ephemeral_pubkey_temp == enote_ephemeral_pubkey);
     ASSERT_TRUE(key_image_temp == key_image);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3584,7 +3584,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     ASSERT_TRUE(enote_ephemeral_pubkey_temp == enote_ephemeral_pubkey);
     ASSERT_TRUE(key_image_temp == key_image);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -3982,9 +3982,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
     SpEnoteStoreMockV1 enote_store_full{0, 10000, 2};  //for full scanning
 
     //make enotes: enote 1, 2, 3
-    LegacyEnoteV4 enote_1;
-    LegacyEnoteV4 enote_2;
-    LegacyEnoteV4 enote_3;
+    LegacyEnoteV5 enote_1;
+    LegacyEnoteV5 enote_2;
+    LegacyEnoteV5 enote_3;
     rct::key enote_ephemeral_pubkey_1;
     rct::key enote_ephemeral_pubkey_2;
     rct::key enote_ephemeral_pubkey_3;
@@ -3992,7 +3992,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
     crypto::key_image key_image_2;
     crypto::key_image key_image_3;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -4005,7 +4005,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
         enote_ephemeral_pubkey_1,
         key_image_1);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -4018,7 +4018,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
         enote_ephemeral_pubkey_2,
         key_image_2);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -4374,16 +4374,16 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
     SpEnoteStoreMockV1 enote_store_full{0, 10000, 2};  //for full scanning
 
     //make enotes: 1-a (amount 1), 1-b (amount 2), 1-c (amount 3)
-    LegacyEnoteV4 enote_1a;
-    LegacyEnoteV4 enote_1b;
-    LegacyEnoteV4 enote_1c;
+    LegacyEnoteV5 enote_1a;
+    LegacyEnoteV5 enote_1b;
+    LegacyEnoteV5 enote_1c;
     const crypto::secret_key enote_ephemeral_privkey{make_secret_key()};
     rct::key enote_ephemeral_pubkey;
     rct::key enote_ephemeral_pubkey_temp;
     crypto::key_image key_image;
     crypto::key_image key_image_temp;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -4396,7 +4396,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
         enote_ephemeral_pubkey,
         key_image);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -4411,7 +4411,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
     ASSERT_TRUE(enote_ephemeral_pubkey_temp == enote_ephemeral_pubkey);
     ASSERT_TRUE(key_image_temp == key_image);
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5011,14 +5011,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make two legacy enotes
-    LegacyEnoteV4 legacy_enote_1;
+    LegacyEnoteV5 legacy_enote_1;
     rct::key legacy_enote_ephemeral_pubkey_1;
     crypto::key_image legacy_key_image_1;
-    LegacyEnoteV4 legacy_enote_2;
+    LegacyEnoteV5 legacy_enote_2;
     rct::key legacy_enote_ephemeral_pubkey_2;
     crypto::key_image legacy_key_image_2;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5030,7 +5030,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         legacy_enote_1,
         legacy_enote_ephemeral_pubkey_1,
         legacy_key_image_1);
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5106,11 +5106,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         enote_store_view);
 
     //make legacy enote 3
-    LegacyEnoteV4 legacy_enote_3;
+    LegacyEnoteV5 legacy_enote_3;
     rct::key legacy_enote_ephemeral_pubkey_3;
     crypto::key_image legacy_key_image_3;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5383,14 +5383,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         enote_store_view);
 
     //make legacy enotes 4, 5
-    LegacyEnoteV4 legacy_enote_4;
+    LegacyEnoteV5 legacy_enote_4;
     rct::key legacy_enote_ephemeral_pubkey_4;
     crypto::key_image legacy_key_image_4;
-    LegacyEnoteV4 legacy_enote_5;
+    LegacyEnoteV5 legacy_enote_5;
     rct::key legacy_enote_ephemeral_pubkey_5;
     crypto::key_image legacy_key_image_5;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -5402,7 +5402,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         legacy_enote_4,
         legacy_enote_ephemeral_pubkey_4,
         legacy_key_image_4);
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -6099,14 +6099,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make two legacy enotes
-    LegacyEnoteV4 legacy_enote_1;
+    LegacyEnoteV5 legacy_enote_1;
     rct::key legacy_enote_ephemeral_pubkey_1;
     crypto::key_image legacy_key_image_1;
-    LegacyEnoteV4 legacy_enote_2;
+    LegacyEnoteV5 legacy_enote_2;
     rct::key legacy_enote_ephemeral_pubkey_2;
     crypto::key_image legacy_key_image_2;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -6118,7 +6118,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         legacy_enote_1,
         legacy_enote_ephemeral_pubkey_1,
         legacy_key_image_1);
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -6194,11 +6194,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         enote_store_view);
 
     //make legacy enote 3
-    LegacyEnoteV4 legacy_enote_3;
+    LegacyEnoteV5 legacy_enote_3;
     rct::key legacy_enote_ephemeral_pubkey_3;
     crypto::key_image legacy_key_image_3;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -7112,11 +7112,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make one legacy enote
-    LegacyEnoteV4 legacy_enote_1;
+    LegacyEnoteV5 legacy_enote_1;
     rct::key legacy_enote_ephemeral_pubkey_1;
     crypto::key_image legacy_key_image_1;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -7659,14 +7659,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
     InputSelectorMockV1 input_selector_temp{enote_store_temp};
 
     //make two legacy enotes
-    LegacyEnoteV4 legacy_enote_1;
+    LegacyEnoteV5 legacy_enote_1;
     rct::key legacy_enote_ephemeral_pubkey_1;
     crypto::key_image legacy_key_image_1;
-    LegacyEnoteV4 legacy_enote_2;
+    LegacyEnoteV5 legacy_enote_2;
     rct::key legacy_enote_ephemeral_pubkey_2;
     crypto::key_image legacy_key_image_2;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -7678,7 +7678,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         legacy_enote_1,
         legacy_enote_ephemeral_pubkey_1,
         legacy_key_image_1);
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -7754,11 +7754,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         enote_store_view);
 
     //make legacy enote 3
-    LegacyEnoteV4 legacy_enote_3;
+    LegacyEnoteV5 legacy_enote_3;
     rct::key legacy_enote_ephemeral_pubkey_3;
     crypto::key_image legacy_key_image_3;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -8278,14 +8278,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
     InputSelectorMockV1 input_selector_temp{enote_store_temp};
 
     //make two legacy enotes
-    LegacyEnoteV4 legacy_enote_1;
+    LegacyEnoteV5 legacy_enote_1;
     rct::key legacy_enote_ephemeral_pubkey_1;
     crypto::key_image legacy_key_image_1;
-    LegacyEnoteV4 legacy_enote_2;
+    LegacyEnoteV5 legacy_enote_2;
     rct::key legacy_enote_ephemeral_pubkey_2;
     crypto::key_image legacy_key_image_2;
 
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,
@@ -8297,7 +8297,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         legacy_enote_1,
         legacy_enote_ephemeral_pubkey_1,
         legacy_key_image_1);
-    prepare_mock_v4_legacy_enote_for_transfer(subaddr_spendkey,
+    prepare_mock_v5_legacy_enote_for_transfer(subaddr_spendkey,
         subaddr_viewkey,
         legacy_keys.Ks,
         legacy_subaddress_map,

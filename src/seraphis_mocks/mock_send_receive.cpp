@@ -100,7 +100,7 @@ void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &co
     coinbase_enotes.reserve(coinbase_amounts.size());
     coinbase_enotes.reserve(coinbase_amounts.size());
 
-    LegacyEnoteV4 enote_temp;
+    LegacyEnoteV5 enote_temp;
 
     for (std::size_t amount_index{0}; amount_index < coinbase_amounts.size(); ++amount_index)
     {
@@ -111,7 +111,7 @@ void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &co
             );
 
         // make legacy coinbase enote
-        make_legacy_enote_v4(destination_subaddr_spend_pubkey,
+        make_legacy_enote_v5(destination_subaddr_spend_pubkey,
             destination_subaddr_view_pubkey,
             coinbase_amounts[amount_index],
             amount_index,

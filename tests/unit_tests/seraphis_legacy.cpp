@@ -452,4 +452,80 @@ TEST(seraphis_legacy, information_recovery_enote_v4)
         subaddr_index,
         amount_subaddr_dest);
 }
+
+//-------------------------------------------------------------------------------------------------------------------
+TEST(seraphis_legacy, information_recovery_enote_v5)
+{
+    // prepare user keys
+    const crypto::secret_key legacy_spend_privkey{make_secret_key()};
+    const crypto::secret_key legacy_view_privkey{make_secret_key()};
+    const rct::key legacy_base_spend_pubkey{rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey))};
+
+    // prepare normal address
+    const rct::key normal_addr_spendkey{legacy_base_spend_pubkey};
+    const rct::key normal_addr_viewkey{rct::scalarmultBase(rct::sk2rct(legacy_view_privkey))};
+
+    // prepare subaddress
+    rct::key subaddr_spendkey;
+    rct::key subaddr_viewkey;
+    cryptonote::subaddress_index subaddr_index;
+
+    gen_legacy_subaddress(legacy_base_spend_pubkey, legacy_view_privkey, subaddr_spendkey, subaddr_viewkey, subaddr_index);
+
+    // save subaddress
+    std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
+    legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
+
+    // send enote v5 (normal destination)
+    LegacyEnoteV5 legacy_enote_normal_dest;
+    const crypto::secret_key enote_ephemeral_privkey_normal_dest{make_secret_key()};
+    const rct::key enote_ephemeral_pubkey_normal_dest{
+            rct::scalarmultBase(rct::sk2rct(enote_ephemeral_privkey_normal_dest))
+        };
+    const rct::xmr_amount amount_normal_dest{100};
+
+    ASSERT_NO_THROW(make_legacy_enote_v5(normal_addr_spendkey,
+        normal_addr_viewkey,
+        amount_normal_dest,
+        0,
+        enote_ephemeral_privkey_normal_dest,
+        legacy_enote_normal_dest));
+
+    // information recovery test
+    test_information_recovery(legacy_spend_privkey,
+        legacy_view_privkey,
+        legacy_base_spend_pubkey,
+        legacy_subaddress_map,
+        legacy_enote_normal_dest,
+        enote_ephemeral_pubkey_normal_dest,
+        0,
+        boost::none,
+        amount_normal_dest);
+
+    // send enote v5 (subaddress destination)
+    LegacyEnoteV5 legacy_enote_subaddr_dest;
+    const crypto::secret_key enote_ephemeral_privkey_subaddr_dest{make_secret_key()};
+    const rct::key enote_ephemeral_pubkey_subaddr_dest{
+            rct::scalarmultKey(subaddr_spendkey, rct::sk2rct(enote_ephemeral_privkey_subaddr_dest))
+        };
+    const rct::xmr_amount amount_subaddr_dest{999999};
+
+    ASSERT_NO_THROW(make_legacy_enote_v5(subaddr_spendkey,
+        subaddr_viewkey,
+        amount_subaddr_dest,
+        0,
+        enote_ephemeral_privkey_subaddr_dest,
+        legacy_enote_subaddr_dest));
+
+    // information recovery test
+    test_information_recovery(legacy_spend_privkey,
+        legacy_view_privkey,
+        legacy_base_spend_pubkey,
+        legacy_subaddress_map,
+        legacy_enote_subaddr_dest,
+        enote_ephemeral_pubkey_subaddr_dest,
+        0,
+        subaddr_index,
+        amount_subaddr_dest);
+}
 //-------------------------------------------------------------------------------------------------------------------
