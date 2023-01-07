@@ -70,6 +70,20 @@ enum class OutputProposalSetExtraTypesV1
 };
 
 /**
+* brief: check_jamtis_payment_proposal_selfsend_semantics_v1 - validate semantics of a self-send payment proposal
+* param: output_proposal -
+* param: input_context -
+* param: spend_pubkey -
+* param: k_view_balance -
+* outparam: type_out -
+* return: true if it's a self-send proposal
+*/
+void check_jamtis_payment_proposal_selfsend_semantics_v1(
+    const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal,
+    const rct::key &input_context,
+    const rct::key &spend_pubkey,
+    const crypto::secret_key &k_view_balance);
+/**
 * brief: check_v1_coinbase_output_proposal_semantics_v1 - check semantics of a coinbase output proposal
 *   - throws if a check fails
 *   - partial memo should be valid
@@ -102,6 +116,35 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
 * param: output_proposals -
 */
 void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposalV1> &output_proposals);
+/**
+* brief: get_coinbase_output_proposal_v1 - convert a jamtis proposal to a coinbase output proposal
+* param: proposal -
+* param: block_height - height of the coinbase tx's block
+* outparam: output_proposal_out -
+*/
+void get_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+    const std::uint64_t block_height,
+    SpCoinbaseOutputProposalV1 &output_proposal_out);
+/**
+* brief: get_output_proposal_v1 - convert a jamtis proposal to an output proposal
+* param: proposal -
+* param: input_context -
+* outparam: output_proposal_out -
+*/
+void get_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+    const rct::key &input_context,
+    SpOutputProposalV1 &output_proposal_out);
+/**
+* brief: get_output_proposal_v1 - convert a jamtis selfsend proposal to a concrete output proposal
+* param: proposal -
+* param: k_view_balance -
+* param: input_context -
+* outparam: output_proposal_out -
+*/
+void get_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
+    const crypto::secret_key &k_view_balance,
+    const rct::key &input_context,
+    SpOutputProposalV1 &output_proposal_out);
 /**
 * brief: check_v1_tx_supplement_semantics_v1 - check semantics of a tx supplement
 *   - throws if a check fails

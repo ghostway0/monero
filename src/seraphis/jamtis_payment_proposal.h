@@ -36,6 +36,7 @@
 #include "jamtis_destination.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
+#include "sp_core_types.h"
 #include "tx_extra.h"
 
 //third party headers
@@ -43,11 +44,7 @@
 //standard headers
 
 //forward declarations
-namespace sp
-{
-    struct SpCoinbaseOutputProposalV1;
-    struct SpOutputProposalV1;
-}
+
 
 namespace sp
 {
@@ -109,44 +106,59 @@ void get_enote_ephemeral_pubkey(const JamtisPaymentProposalSelfSendV1 &proposal,
 * brief: get_coinbase_output_proposal_v1 - convert the jamtis proposal to a coinbase output proposal
 * param: proposal -
 * param: block_height - height of the coinbase tx's block
-* outparam: output_proposal_out -
+* outparam: output_enote_core_out -
+* outparam: enote_ephemeral_pubkey_out -
+* outparam: addr_tag_enc_out -
+* outparam: view_tag_out -
+* outparam: partial_memo_out -
 */
 void get_coinbase_output_proposal_v1(const JamtisPaymentProposalV1 &proposal,
     const std::uint64_t block_height,
-    SpCoinbaseOutputProposalV1 &output_proposal_out);
+    SpCoinbaseEnoteCore &output_enote_core_out,
+    crypto::x25519_pubkey &enote_ephemeral_pubkey_out,
+    encrypted_address_tag_t &addr_tag_enc_out,
+    view_tag_t &view_tag_out,
+    TxExtra &partial_memo_out);
 /**
 * brief: get_output_proposal_v1 - convert the jamtis proposal to an output proposal
 * param: proposal -
 * param: input_context -
-* outparam: output_proposal_out -
+* outparam: output_proposal_core_out -
+* outparam: enote_ephemeral_pubkey_out -
+* outparam: encoded_amount_out -
+* outparam: addr_tag_enc_out -
+* outparam: view_tag_out -
+* outparam: partial_memo_out -
 */
 void get_output_proposal_v1(const JamtisPaymentProposalV1 &proposal,
     const rct::key &input_context,
-    SpOutputProposalV1 &output_proposal_out);
+    SpOutputProposalCore &output_proposal_core_out,
+    crypto::x25519_pubkey &enote_ephemeral_pubkey_out,
+    encoded_amount_t &encoded_amount_out,
+    encrypted_address_tag_t &addr_tag_enc_out,
+    view_tag_t &view_tag_out,
+    TxExtra &partial_memo_out);
 /**
-* brief: get_output_proposal_v1 - convert the jamtis selfsend proposal to a concrete output proposal
+* brief: get_output_proposal_v1 - convert the jamtis selfsend proposal to an output proposal
 * param: proposal -
 * param: k_view_balance -
 * param: input_context -
-* outparam: output_proposal_out -
+* outparam: output_proposal_core_out -
+* outparam: enote_ephemeral_pubkey_out -
+* outparam: encoded_amount_out -
+* outparam: addr_tag_enc_out -
+* outparam: view_tag_out -
+* outparam: partial_memo_out -
 */
 void get_output_proposal_v1(const JamtisPaymentProposalSelfSendV1 &proposal,
     const crypto::secret_key &k_view_balance,
     const rct::key &input_context,
-    SpOutputProposalV1 &output_proposal_out);
-/**
-* brief: check_jamtis_payment_proposal_selfsend_semantics_v1 - validate semantics of a self-send payment proposal
-* param: output_proposal -
-* param: input_context -
-* param: spend_pubkey -
-* param: k_view_balance -
-* outparam: type_out -
-* return: true if it's a self-send proposal
-*/
-void check_jamtis_payment_proposal_selfsend_semantics_v1(const JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal,
-    const rct::key &input_context,
-    const rct::key &spend_pubkey,
-    const crypto::secret_key &k_view_balance);
+    SpOutputProposalCore &output_proposal_core_out,
+    crypto::x25519_pubkey &enote_ephemeral_pubkey_out,
+    encoded_amount_t &encoded_amount_out,
+    encrypted_address_tag_t &addr_tag_enc_out,
+    view_tag_t &view_tag_out,
+    TxExtra &partial_memo_out);
 /**
 * brief: gen_jamtis_payment_proposal_v1 - generate a random proposal
 * param: amount -
