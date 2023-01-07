@@ -33,6 +33,8 @@
 #include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
+#include "enote_record_types.h"
+#include "enote_record_utils_legacy.h"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -46,8 +48,6 @@
 #include "tx_builders_legacy_inputs.h"
 #include "tx_builders_mixed.h"
 #include "tx_component_types_legacy.h"
-#include "tx_enote_record_types.h"
-#include "tx_enote_record_utils_legacy.h"
 
 //third party headers
 

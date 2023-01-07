@@ -34,8 +34,8 @@
 #pragma once
 
 //local headers
+#include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
-#include "tx_contextual_enote_record_types.h"
 #include "tx_input_selection.h"
 
 //third party headers

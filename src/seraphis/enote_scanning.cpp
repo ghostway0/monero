@@ -29,14 +29,14 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_scanning.h"
+#include "enote_scanning.h"
 
 //local headers
+#include "contextual_enote_record_types.h"
+#include "enote_finding_context.h"
+#include "enote_scanning_context.h"
+#include "enote_store_updater.h"
 #include "ringct/rctTypes.h"
-#include "tx_contextual_enote_record_types.h"
-#include "tx_enote_finding_context.h"
-#include "tx_enote_scanning_context.h"
-#include "tx_enote_store_updater.h"
 
 //third party headers
 #include <boost/optional/optional.hpp>

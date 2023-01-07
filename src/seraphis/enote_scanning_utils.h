@@ -34,14 +34,14 @@
 #pragma once
 
 //local headers
+#include "contextual_enote_record_types.h"
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
+#include "enote_record_types.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
 #include "seraphis_core/sp_tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "tx_contextual_enote_record_types.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 

@@ -42,7 +42,6 @@
 
 //standard headers
 #include <list>
-#include <memory>
 #include <vector>
 
 //forward declarations

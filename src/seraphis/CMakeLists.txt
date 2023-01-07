@@ -27,6 +27,12 @@
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(seraphis_sources
+  contextual_enote_record_types.cpp
+  contextual_enote_record_utils.cpp
+  enote_record_utils.cpp
+  enote_record_utils_legacy.cpp
+  enote_scanning.cpp
+  enote_scanning_utils.cpp
   serialization_demo_utils.cpp
   tx_base.cpp
   tx_builder_types.cpp
@@ -39,12 +45,6 @@ set(seraphis_sources
   tx_builders_outputs.cpp
   tx_component_types.cpp
   tx_component_types_legacy.cpp
-  tx_contextual_enote_record_types.cpp
-  tx_contextual_enote_record_utils.cpp
-  tx_enote_record_utils.cpp
-  tx_enote_record_utils_legacy.cpp
-  tx_enote_scanning.cpp
-  tx_enote_scanning_utils.cpp
   tx_fee_calculator_squashed_v1.cpp
   tx_input_selection.cpp
   tx_input_selection_output_context_v1.cpp

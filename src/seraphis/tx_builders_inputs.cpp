@@ -38,6 +38,8 @@ extern "C"
 #include "crypto/crypto-ops.h"
 }
 #include "cryptonote_config.h"
+#include "enote_record_types.h"
+#include "enote_record_utils.h"
 #include "misc_language.h"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
@@ -55,8 +57,6 @@ extern "C"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_enote_record_types.h"
-#include "tx_enote_record_utils.h"
 
 //third party headers
 

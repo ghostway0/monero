@@ -27,6 +27,9 @@
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(seraphis_mocks_sources
+  enote_finding_context_mocks.cpp
+  enote_store_mocks.cpp
+  enote_store_updater_mocks.cpp
   jamtis_mock_keys.cpp
   legacy_mock_keys.cpp
   make_mock_tx.cpp
@@ -36,9 +39,6 @@ set(seraphis_mocks_sources
   mock_tx_builders_inputs.cpp
   mock_tx_builders_legacy_inputs.cpp
   mock_tx_builders_outputs.cpp
-  tx_enote_finding_context_mocks.cpp
-  tx_enote_store_mocks.cpp
-  tx_enote_store_updater_mocks.cpp
   tx_input_selector_mocks.cpp)
 
 monero_find_all_headers(seraphis_mocks_headers, "${CMAKE_CURRENT_SOURCE_DIR}")

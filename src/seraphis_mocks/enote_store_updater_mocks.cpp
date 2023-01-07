@@ -29,17 +29,17 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_store_updater_mocks.h"
+#include "enote_store_updater_mocks.h"
 
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
+#include "enote_store_mocks.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_enote_record_types.h"
-#include "seraphis/tx_enote_scanning.h"
-#include "seraphis/tx_enote_scanning_utils.h"
+#include "seraphis/enote_record_types.h"
+#include "seraphis/enote_scanning.h"
+#include "seraphis/enote_scanning_utils.h"
 #include "seraphis_core/jamtis_core_utils.h"
-#include "tx_enote_store_mocks.h"
 
 //third party headers
 

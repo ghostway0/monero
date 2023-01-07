@@ -33,6 +33,9 @@
 
 #pragma once
 
+#include "enote_finding_context_mocks.h"
+#include "enote_store_mocks.h"
+#include "enote_store_updater_mocks.h"
 #include "jamtis_mock_keys.h"
 #include "legacy_mock_keys.h"
 #include "make_mock_tx.h"
@@ -42,9 +45,6 @@
 #include "mock_tx_builders_inputs.h"
 #include "mock_tx_builders_legacy_inputs.h"
 #include "mock_tx_builders_outputs.h"
-#include "tx_enote_finding_context_mocks.h"
-#include "tx_enote_store_mocks.h"
-#include "tx_enote_store_updater_mocks.h"
 #include "tx_fee_calculator_mocks.h"
 #include "tx_input_selection_output_context_mocks.h"
 #include "tx_input_selector_mocks.h"

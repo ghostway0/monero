@@ -32,7 +32,6 @@
 //local headers
 #include "cryptonote_config.h"
 #include "misc_log_ex.h"
-#include "ringct/bulletproofs_plus.h"
 #include "ringct/multiexp.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
@@ -40,6 +39,7 @@
 #include "seraphis_core/sp_core_types.h"
 #include "seraphis_core/sp_binned_reference_set.h"
 #include "seraphis_core/sp_discretized_fee.h"
+#include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_multiexp.h"

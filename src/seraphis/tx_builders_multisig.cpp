@@ -31,12 +31,15 @@
 
 //local headers
 #include "common/container_helpers.h"
+#include "contextual_enote_record_utils.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "crypto/generators.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "cryptonote_config.h"
 #include "device/device.hpp"
+#include "enote_record_types.h"
+#include "enote_record_utils.h"
 #include "misc_language.h"
 #include "misc_log_ex.h"
 #include "multisig/multisig_clsag.h"
@@ -64,9 +67,6 @@
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
-#include "tx_contextual_enote_record_utils.h"
-#include "tx_enote_record_types.h"
-#include "tx_enote_record_utils.h"
 #include "tx_input_selection_output_context_v1.h"
 
 //third party headers

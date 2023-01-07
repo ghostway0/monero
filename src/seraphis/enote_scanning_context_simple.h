@@ -34,9 +34,9 @@
 #pragma once
 
 //local headers
-#include "tx_enote_finding_context.h"
-#include "tx_enote_scanning.h"
-#include "tx_enote_scanning_context.h"
+#include "enote_finding_context.h"
+#include "enote_scanning.h"
+#include "enote_scanning_context.h"
 
 //third party headers
 

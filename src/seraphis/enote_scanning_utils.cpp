@@ -29,13 +29,21 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_scanning_utils.h"
+#include "enote_scanning_utils.h"
 
 //local headers
+#include "contextual_enote_record_types.h"
+#include "contextual_enote_record_utils.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
+#include "enote_finding_context.h"
+#include "enote_record_types.h"
+#include "enote_record_utils.h"
+#include "enote_record_utils_legacy.h"
+#include "enote_scanning.h"
+#include "enote_scanning_context.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_core_utils.h"
@@ -44,14 +52,6 @@
 #include "seraphis_core/sp_tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_component_types.h"
-#include "tx_contextual_enote_record_types.h"
-#include "tx_contextual_enote_record_utils.h"
-#include "tx_enote_finding_context.h"
-#include "tx_enote_record_types.h"
-#include "tx_enote_record_utils.h"
-#include "tx_enote_record_utils_legacy.h"
-#include "tx_enote_scanning.h"
-#include "tx_enote_scanning_context.h"
 
 //third party headers
 

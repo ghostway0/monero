@@ -29,10 +29,10 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_finding_context_mocks.h"
+#include "enote_finding_context_mocks.h"
 
 //local headers
-#include "seraphis/tx_enote_scanning.h"
+#include "seraphis/enote_scanning.h"
 
 //third party headers
 

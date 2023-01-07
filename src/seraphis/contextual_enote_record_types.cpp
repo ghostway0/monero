@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_contextual_enote_record_types.h"
+#include "contextual_enote_record_types.h"
 
 //local headers
 #include "common/variant.h"

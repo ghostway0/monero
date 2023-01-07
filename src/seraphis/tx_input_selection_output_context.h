@@ -35,9 +35,9 @@
 
 //local headers
 #include "crypto/crypto.h"
+#include "enote_record_types.h"
 #include "ringct/rctTypes.h"
 #include "tx_builder_types.h"
-#include "tx_enote_record_types.h"
 #include "tx_fee_calculator.h"
 
 //third party headers

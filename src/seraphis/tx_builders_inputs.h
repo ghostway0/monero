@@ -33,13 +33,13 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
+#include "enote_record_types.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/sp_binned_reference_set.h"
 #include "seraphis_core/sp_core_types.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 

@@ -29,9 +29,10 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_record_utils_legacy.h"
+#include "enote_record_utils_legacy.h"
 
 //local headers
+#include "contextual_enote_record_types.h"
 #include "crypto/crypto.h"
 extern "C"
 {
@@ -40,6 +41,7 @@ extern "C"
 }
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
+#include "enote_record_types.h"
 #include "int-util.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -47,8 +49,6 @@ extern "C"
 #include "seraphis_core/legacy_enote_types.h"
 #include "seraphis_core/legacy_enote_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "tx_contextual_enote_record_types.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 #include <boost/optional/optional.hpp>

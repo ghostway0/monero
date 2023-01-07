@@ -32,8 +32,8 @@
 #include "tx_input_selector_mocks.h"
 
 //local headers
-#include "seraphis/tx_contextual_enote_record_types.h"
-#include "seraphis/tx_contextual_enote_record_utils.h"
+#include "seraphis/contextual_enote_record_types.h"
+#include "seraphis/contextual_enote_record_utils.h"
 #include "seraphis/tx_input_selection.h"
 
 //third party headers

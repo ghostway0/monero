@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_enote_record_utils.h"
+#include "enote_record_utils.h"
 
 //local headers
 #include "crypto/crypto.h"
@@ -38,6 +38,7 @@ extern "C"
 {
 #include "crypto/crypto-ops.h"
 }
+#include "enote_record_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
@@ -48,7 +49,6 @@ extern "C"
 #include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_component_types.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 

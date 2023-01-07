@@ -36,6 +36,8 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_config.h"
+#include "enote_record_types.h"
+#include "enote_record_utils.h"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
@@ -47,8 +49,6 @@
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"
-#include "tx_enote_record_types.h"
-#include "tx_enote_record_utils.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"

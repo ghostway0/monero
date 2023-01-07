@@ -34,7 +34,7 @@
 #pragma once
 
 //local headers
-#include "tx_enote_scanning.h"
+#include "enote_scanning.h"
 
 //third party headers
 

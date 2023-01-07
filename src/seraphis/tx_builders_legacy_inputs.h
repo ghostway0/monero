@@ -33,10 +33,10 @@
 //local headers
 #include "crypto/crypto.h"
 #include "device/device.hpp"
+#include "enote_record_types.h"
 #include "ringct/rctTypes.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types_legacy.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 

@@ -38,11 +38,11 @@
 #include "mock_ledger_context.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis/contextual_enote_record_types.h"
+#include "seraphis/contextual_enote_record_utils.h"
 #include "seraphis/tx_builder_types_legacy.h"
 #include "seraphis/tx_builder_types_multisig.h"
 #include "seraphis/tx_component_types_legacy.h"
-#include "seraphis/tx_contextual_enote_record_types.h"
-#include "seraphis/tx_contextual_enote_record_utils.h"
 #include "seraphis_core/legacy_decoy_selector_flat.h"
 #include "seraphis_core/legacy_enote_types.h"
 

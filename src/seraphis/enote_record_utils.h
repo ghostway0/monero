@@ -36,11 +36,11 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
+#include "enote_record_types.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
 #include "seraphis_core/jamtis_support_types.h"
 #include "tx_component_types.h"
-#include "tx_enote_record_types.h"
 
 //third party headers
 

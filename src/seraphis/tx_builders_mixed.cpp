@@ -31,6 +31,7 @@
 
 //local headers
 #include "common/container_helpers.h"
+#include "contextual_enote_record_utils.h"
 #include "crypto/crypto.h"
 #include "cryptonote_config.h"
 #include "misc_language.h"
@@ -54,7 +55,6 @@
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_contextual_enote_record_utils.h"
 #include "tx_input_selection_output_context_v1.h"
 #include "tx_validators.h"
 #include "txtype_squashed_v1.h"
