@@ -42,7 +42,6 @@
 #include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
-#include <list>
 
 //forward declarations
 

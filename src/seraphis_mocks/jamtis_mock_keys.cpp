@@ -35,8 +35,8 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "ringct/rctOps.h"
-#include "seraphis/jamtis_core_utils.h"
-#include "seraphis/sp_core_enote_utils.h"
+#include "seraphis_core/jamtis_core_utils.h"
+#include "seraphis_core/sp_core_enote_utils.h"
 
 //third party headers
 

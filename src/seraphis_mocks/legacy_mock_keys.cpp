@@ -36,7 +36,7 @@
 #include "cryptonote_basic/subaddress_index.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/legacy_core_utils.h"
+#include "seraphis_core/legacy_core_utils.h"
 
 //third party headers
 

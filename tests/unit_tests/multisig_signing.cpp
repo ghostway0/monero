@@ -42,7 +42,7 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctSigs.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/sp_core_enote_utils.h"
+#include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 

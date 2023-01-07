@@ -37,14 +37,14 @@
 #include "common/variant.h"
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_support_types.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
-#include "sp_core_types.h"
-#include "tx_binned_reference_set.h"
-#include "tx_extra.h"
 
 //third party headers
 #include <boost/utility/string_ref.hpp>

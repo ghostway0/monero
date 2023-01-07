@@ -42,7 +42,7 @@ extern "C"
 #include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "tx_extra.h"
+#include "sp_tx_extra.h"
 
 //third party headers
 

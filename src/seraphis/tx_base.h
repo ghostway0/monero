@@ -43,7 +43,6 @@
 namespace rct { using xmr_amount = uint64_t; }
 namespace sp
 {
-    struct DiscretizedFee;
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
     class TxValidationContext;

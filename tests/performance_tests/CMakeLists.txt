@@ -74,6 +74,7 @@ target_link_libraries(performance_tests
     randomx
     ringct
     seraphis
+    seraphis_core
     seraphis_crypto
     seraphis_mocks
     ${Boost_CHRONO_LIBRARY}

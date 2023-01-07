@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_discretized_fee.h"
+#include "sp_discretized_fee.h"
 
 //local headers
 #include "cryptonote_config.h"
@@ -60,7 +60,7 @@ static std::once_flag init_fee_context_once_flag;
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static long double round_to_sig_figs(long double value, const std::size_t num_sig_figs)
+static std::uint64_t round_to_sig_figs(long double value, const std::size_t num_sig_figs)
 {
     std::size_t decimal_scale{0};
 
@@ -81,7 +81,7 @@ static long double round_to_sig_figs(long double value, const std::size_t num_si
         --decimal_scale;
     }
 
-    return value;
+    return static_cast<std::uint64_t>(value);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -99,9 +99,7 @@ static void generate_discretized_fee_context()
         do
         {
             // value = round_1_sig_fig(factor ^ level)
-            fee_value = static_cast<std::uint64_t>(
-                    round_to_sig_figs(std::pow(fee_level_factor, current_level), config::DISCRETIZED_FEE_SIG_FIGS)
-                );
+            fee_value = round_to_sig_figs(std::pow(fee_level_factor, current_level), config::DISCRETIZED_FEE_SIG_FIGS);
 
             // skip if we already have this value
             if (fee_value == last_fee_value)

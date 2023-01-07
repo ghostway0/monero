@@ -42,7 +42,6 @@
 
 //standard headers
 #include <algorithm>
-#include <list>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis_mocks"

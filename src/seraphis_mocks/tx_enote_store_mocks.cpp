@@ -34,11 +34,11 @@
 //local headers
 #include "common/container_helpers.h"
 #include "misc_log_ex.h"
-#include "seraphis/legacy_enote_types.h"
-#include "seraphis/legacy_enote_utils.h"
 #include "seraphis/tx_contextual_enote_record_types.h"
 #include "seraphis/tx_contextual_enote_record_utils.h"
 #include "seraphis/tx_enote_record_utils_legacy.h"
+#include "seraphis_core/legacy_enote_types.h"
+#include "seraphis_core/legacy_enote_utils.h"
 
 //third party headers
 

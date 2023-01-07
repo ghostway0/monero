@@ -31,18 +31,19 @@
 
 //local headers
 #include "cryptonote_config.h"
-#include "jamtis_payment_proposal.h"
 #include "misc_log_ex.h"
 #include "ringct/bulletproofs_plus.h"
 #include "ringct/multiexp.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/sp_core_enote_utils.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/sp_discretized_fee.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_multiexp.h"
 #include "seraphis_crypto/sp_transcript.h"
-#include "sp_core_enote_utils.h"
-#include "sp_core_types.h"
-#include "tx_binned_reference_set.h"
 #include "tx_builder_types.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_legacy_inputs.h"
@@ -50,16 +51,12 @@
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_discretized_fee.h"
 #include "tx_validation_context.h"
 #include "tx_validators.h"
 
 //third party headers
 
 //standard headers
-#include <algorithm>
-#include <string>
-#include <utility>
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY

@@ -36,13 +36,13 @@
 //local headers
 #include "common/variant.h"
 #include "crypto/crypto.h"
-#include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "sp_core_types.h"
+#include "seraphis_core/jamtis_support_types.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "tx_component_types.h"
 #include "tx_enote_record_types.h"
-#include "tx_extra.h"
 
 //third party headers
 

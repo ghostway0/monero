@@ -33,12 +33,13 @@
 #include "common/container_helpers.h"
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
-#include "legacy_core_utils.h"
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/legacy_core_utils.h"
+#include "seraphis_core/sp_core_enote_utils.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "sp_core_enote_utils.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_builders_inputs.h"
@@ -47,7 +48,6 @@
 #include "tx_component_types_legacy.h"
 #include "tx_enote_record_types.h"
 #include "tx_enote_record_utils_legacy.h"
-#include "tx_extra.h"
 
 //third party headers
 

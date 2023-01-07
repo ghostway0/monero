@@ -26,39 +26,33 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(seraphis_sources
-  serialization_demo_utils.cpp
-  tx_base.cpp
-  tx_builder_types.cpp
-  tx_builder_types_legacy.cpp
-  tx_builder_types_multisig.cpp
-  tx_builders_inputs.cpp
-  tx_builders_legacy_inputs.cpp
-  tx_builders_mixed.cpp
-  tx_builders_multisig.cpp
-  tx_builders_outputs.cpp
-  tx_component_types.cpp
-  tx_component_types_legacy.cpp
-  tx_contextual_enote_record_types.cpp
-  tx_contextual_enote_record_utils.cpp
-  tx_enote_record_utils.cpp
-  tx_enote_record_utils_legacy.cpp
-  tx_enote_scanning.cpp
-  tx_enote_scanning_utils.cpp
-  tx_fee_calculator_squashed_v1.cpp
-  tx_input_selection.cpp
-  tx_input_selection_output_context_v1.cpp
-  tx_validators.cpp
-  txtype_coinbase_v1.cpp
-  txtype_squashed_v1.cpp)
+set(seraphis_core_sources
+  jamtis_address_tag_utils.cpp
+  jamtis_address_utils.cpp
+  jamtis_core_utils.cpp
+  jamtis_destination.cpp
+  jamtis_enote_utils.cpp
+  jamtis_payment_proposal.cpp
+  jamtis_support_types.cpp
+  legacy_core_utils.cpp
+  legacy_decoy_selector_flat.cpp
+  legacy_enote_types.cpp
+  legacy_enote_utils.cpp
+  sp_core_enote_utils.cpp
+  sp_core_types.cpp
+  sp_binned_reference_set.cpp
+  sp_binned_reference_set_utils.cpp
+  sp_discretized_fee.cpp
+  sp_ref_set_index_mapper_flat.cpp
+  sp_tx_extra.cpp)
 
-monero_find_all_headers(seraphis_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
+monero_find_all_headers(seraphis_core_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
 
-monero_add_library(seraphis
-  ${seraphis_sources}
-  ${seraphis_headers})
+monero_add_library(seraphis_core
+  ${seraphis_core_sources}
+  ${seraphis_core_headers})
 
-target_link_libraries(seraphis
+target_link_libraries(seraphis_core
   PUBLIC
     cncrypto
     common
@@ -67,12 +61,11 @@ target_link_libraries(seraphis
     epee
     multisig
     ringct
-    seraphis_core
     seraphis_crypto
   PRIVATE
     ${EXTRA_LIBRARIES})
 
-target_include_directories(seraphis
+target_include_directories(seraphis_core
   PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}"
   PRIVATE

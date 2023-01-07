@@ -45,7 +45,6 @@
 
 //standard headers
 #include <algorithm>
-#include <iterator>
 #include <list>
 #include <vector>
 

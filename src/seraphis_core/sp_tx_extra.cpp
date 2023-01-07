@@ -29,11 +29,11 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "crypto/crypto.h"
-#include "tx_extra.h"
+#include "sp_tx_extra.h"
 
 //local headers
 #include "common/varint.h"
+#include "crypto/crypto.h"
 #include "misc_log_ex.h"
 #include "span.h"
 

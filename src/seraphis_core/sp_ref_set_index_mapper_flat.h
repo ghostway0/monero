@@ -35,7 +35,7 @@
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "tx_ref_set_index_mapper.h"
+#include "sp_ref_set_index_mapper.h"
 
 //third party headers
 

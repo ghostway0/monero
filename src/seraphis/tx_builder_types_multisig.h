@@ -34,19 +34,19 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
-#include "jamtis_payment_proposal.h"
-#include "legacy_enote_types.h"
 #include "multisig/multisig_clsag.h"
 #include "multisig/multisig_signer_set_filter.h"
 #include "multisig/multisig_sp_composition_proof.h"
 #include "ringct/rctTypes.h"
-#include "sp_core_types.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/legacy_enote_types.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
 #include "tx_enote_record_types.h"
-#include "tx_extra.h"
 
 //third party headers
 

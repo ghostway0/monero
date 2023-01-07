@@ -34,10 +34,10 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "jamtis_payment_proposal.h"
-#include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/jamtis_support_types.h"
 #include "tx_builders_outputs.h"
 
 //third party headers

@@ -36,11 +36,12 @@
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
-#include "jamtis_core_utils.h"
-#include "legacy_core_utils.h"
-#include "legacy_enote_utils.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_core_utils.h"
+#include "seraphis_core/legacy_core_utils.h"
+#include "seraphis_core/legacy_enote_utils.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_component_types.h"
 #include "tx_contextual_enote_record_types.h"
@@ -51,7 +52,6 @@
 #include "tx_enote_record_utils_legacy.h"
 #include "tx_enote_scanning.h"
 #include "tx_enote_scanning_context.h"
-#include "tx_extra.h"
 
 //third party headers
 

@@ -36,8 +36,8 @@
 //local headers
 #include "crypto/crypto.h"
 #include "device/device.hpp"
-#include "legacy_enote_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/legacy_enote_types.h"
 #include "tx_contextual_enote_record_types.h"
 #include "tx_enote_record_types.h"
 

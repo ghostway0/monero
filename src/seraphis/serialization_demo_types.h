@@ -36,13 +36,13 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_support_types.h"
+#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/sp_discretized_fee.h"
 #include "serialization/containers.h"
 #include "serialization/crypto.h"
 #include "serialization/serialization.h"
-#include "tx_binned_reference_set.h"
-#include "tx_discretized_fee.h"
 #include "txtype_coinbase_v1.h"
 #include "txtype_squashed_v1.h"
 

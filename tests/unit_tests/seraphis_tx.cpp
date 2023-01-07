@@ -31,9 +31,9 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis/tx_base.h"
-#include "seraphis/tx_binned_reference_set.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/sp_binned_reference_set.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
 #include "gtest/gtest.h"

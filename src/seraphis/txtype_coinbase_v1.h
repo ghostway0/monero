@@ -32,10 +32,10 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "jamtis_payment_proposal.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
-#include "sp_core_types.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/sp_core_types.h"
 #include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"

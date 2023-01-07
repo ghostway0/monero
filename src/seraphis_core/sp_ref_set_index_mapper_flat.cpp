@@ -29,7 +29,7 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "tx_ref_set_index_mapper_flat.h"
+#include "sp_ref_set_index_mapper_flat.h"
 
 //local headers
 #include "misc_log_ex.h"

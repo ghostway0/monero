@@ -41,7 +41,7 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/jamtis_destination.h"
+#include "seraphis_core/jamtis_destination.h"
 
 //third party headers
 

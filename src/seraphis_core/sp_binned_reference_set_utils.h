@@ -32,10 +32,10 @@
 
 //local headers
 #include "ringct/rctTypes.h"
+#include "sp_binned_reference_set.h"
+#include "sp_ref_set_index_mapper.h"
 
 //third party headers
-#include "tx_binned_reference_set.h"
-#include "tx_ref_set_index_mapper.h"
 
 //standard headers
 #include <cstdint>

@@ -35,13 +35,13 @@
 #include "common/variant.h"
 #include "crypto/crypto.h"
 #include "int-util.h"
-#include "jamtis_support_types.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/sp_core_types.h"
+#include "seraphis_core/jamtis_support_types.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_binned_reference_set.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_legacy_proof_helpers.h"
 #include "seraphis_crypto/sp_transcript.h"
-#include "tx_binned_reference_set.h"
 
 //third party headers
 

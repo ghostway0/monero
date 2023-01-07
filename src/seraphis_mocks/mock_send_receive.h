@@ -40,15 +40,15 @@
 #include "legacy_mock_keys.h"
 #include "mock_ledger_context.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/jamtis_payment_proposal.h"
-#include "seraphis/tx_binned_reference_set.h"
 #include "seraphis/tx_builder_types.h"
 #include "seraphis/tx_enote_scanning.h"
-#include "seraphis/tx_extra.h"
 #include "seraphis/tx_fee_calculator.h"
 #include "seraphis/tx_input_selection.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "tx_enote_store_mocks.h"
 
 //third party headers

@@ -35,7 +35,7 @@
 #pragma once
 
 //local headers
-#include "seraphis/tx_binned_reference_set.h"
+#include "seraphis_core/sp_binned_reference_set.h"
 
 //third party headers
 

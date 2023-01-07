@@ -33,14 +33,14 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "jamtis_payment_proposal.h"
 #include "ringct/rctTypes.h"
-#include "sp_core_types.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_discretized_fee.h"
+#include "seraphis_core/sp_tx_extra.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_discretized_fee.h"
-#include "tx_extra.h"
 
 //third party headers
 

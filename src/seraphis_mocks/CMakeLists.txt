@@ -56,6 +56,7 @@ target_link_libraries(seraphis_mocks
     epee
     ringct
     seraphis
+    seraphis_core
     seraphis_crypto
   PRIVATE
     ${EXTRA_LIBRARIES})

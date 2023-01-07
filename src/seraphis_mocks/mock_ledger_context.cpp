@@ -38,14 +38,14 @@
 #include "device/device.hpp"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/jamtis_enote_utils.h"
-#include "seraphis/legacy_enote_types.h"
-#include "seraphis/sp_core_enote_utils.h"
 #include "seraphis/tx_component_types.h"
 #include "seraphis/tx_enote_scanning.h"
 #include "seraphis/tx_enote_scanning_utils.h"
 #include "seraphis/txtype_coinbase_v1.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/jamtis_enote_utils.h"
+#include "seraphis_core/legacy_enote_types.h"
+#include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 
 //third party headers

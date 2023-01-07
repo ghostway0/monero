@@ -34,7 +34,7 @@
 //local headers
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
-#include "tx_discretized_fee.h"
+#include "seraphis_core/sp_discretized_fee.h"
 
 //third party headers
 

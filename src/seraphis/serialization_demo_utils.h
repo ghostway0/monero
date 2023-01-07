@@ -39,15 +39,15 @@
 //local headers
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/sp_core_types.h"
+#include "seraphis_core/sp_binned_reference_set.h"
+#include "seraphis_core/sp_discretized_fee.h"
 #include "serialization/binary_archive.h"
 #include "serialization/serialization.h"
 #include "serialization_demo_types.h"
-#include "sp_core_types.h"
 #include "span.h"
-#include "tx_binned_reference_set.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_discretized_fee.h"
 #include "txtype_squashed_v1.h"
 
 //third party headers

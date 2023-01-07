@@ -33,11 +33,11 @@
 #include "cryptonote_config.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/sp_core_enote_utils.h"
+#include "seraphis_core/sp_core_types.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
-#include "sp_core_enote_utils.h"
-#include "sp_core_types.h"
 #include "tx_builder_types.h"
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"
@@ -48,9 +48,6 @@
 //third party headers
 
 //standard headers
-#include <algorithm>
-#include <string>
-#include <utility>
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY

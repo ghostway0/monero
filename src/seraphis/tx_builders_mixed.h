@@ -33,12 +33,12 @@
 //local headers
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/sp_discretized_fee.h"
 #include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_discretized_fee.h"
 #include "tx_input_selection.h"
 #include "txtype_squashed_v1.h"
 

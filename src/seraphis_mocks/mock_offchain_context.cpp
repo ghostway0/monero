@@ -36,13 +36,13 @@
 #include "crypto/x25519.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/jamtis_enote_utils.h"
-#include "seraphis/sp_core_enote_utils.h"
 #include "seraphis/tx_component_types.h"
 #include "seraphis/tx_component_types_legacy.h"
 #include "seraphis/tx_enote_scanning.h"
 #include "seraphis/tx_enote_scanning_utils.h"
 #include "seraphis/txtype_squashed_v1.h"
+#include "seraphis_core/jamtis_enote_utils.h"
+#include "seraphis_core/sp_core_enote_utils.h"
 
 //third party headers
 #include <boost/thread/locks.hpp>

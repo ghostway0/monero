@@ -35,8 +35,8 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "jamtis_payment_proposal.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
 #include "tx_input_selection_output_context.h"
 
 //third party headers
