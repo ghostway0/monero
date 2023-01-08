@@ -665,7 +665,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
         user_address);
 
     // make a plain enote paying to address
-    const rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(-1))};
+    const rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(0))};
     const crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
 
     const std::uint64_t block_height{0};
@@ -695,7 +695,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
         user_address);
 
     // make a plain enote paying to address
-    const rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(-1))};
+    const rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(0))};
     const crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
 
     JamtisPaymentProposalV1 payment_proposal{user_address, amount, enote_privkey};
@@ -724,7 +724,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
         user_address);
 
     // make a self-spend enote paying to address
-    rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(-1))};
+    rct::xmr_amount amount{crypto::rand_idx(static_cast<rct::xmr_amount>(0))};
     crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
 
     JamtisPaymentProposalSelfSendV1 payment_proposal_selfspend{user_address,
@@ -738,7 +738,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::SELF_SPEND);
 
     // make a change enote paying to address
-    amount = crypto::rand_idx(static_cast<rct::xmr_amount>(-1));
+    amount = crypto::rand_idx(static_cast<rct::xmr_amount>(0));
     enote_privkey = crypto::x25519_secret_key_gen();
 
     JamtisPaymentProposalSelfSendV1 payment_proposal_change{user_address,

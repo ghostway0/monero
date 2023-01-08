@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Implementation of the cryptonote tx_extra field, with an enforced 'sorted TLV' format.
-
 
 #pragma once
 
@@ -38,6 +35,7 @@
 //third party headers
 
 //standard headers
+#include <cstdint>
 #include <vector>
 
 //forward declarations
@@ -54,13 +52,14 @@ using TxExtra = std::vector<unsigned char>;
 struct ExtraFieldElement final
 {
     /// type
-    std::size_t m_type;
-    /// value length: implicit
+    std::uint64_t m_type;
+    /// value length
+    //m_value.size()
     /// value
     std::vector<unsigned char> m_value;
 };
 
-/// less-than operator for sorting: type, value length, value bytewise comparison
+/// less-than operator for sorting: sort order = type, length, value bytewise comparison
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b);
 /// get length of an extra field element
 std::size_t length(const ExtraFieldElement &element);
@@ -80,7 +79,7 @@ bool try_get_extra_field_elements(const TxExtra &tx_extra, std::vector<ExtraFiel
 /**
 * brief: accumulate_extra_field_elements - append extra field elements to an existing set of elements
 * param: elements_to_add -
-* inoutparam: elements_inoutt -
+* inoutparam: elements_inout -
 */
 void accumulate_extra_field_elements(const std::vector<ExtraFieldElement> &elements_to_add,
     std::vector<ExtraFieldElement> &elements_inout);
@@ -88,7 +87,7 @@ void accumulate_extra_field_elements(const TxExtra &partial_memo,
     std::vector<ExtraFieldElement> &elements_inout);
 /**
 * brief: gen_extra_field_element - generate a random extra field element
-* return: make a random field element
+* return: a random field element
 */
 ExtraFieldElement gen_extra_field_element();
 

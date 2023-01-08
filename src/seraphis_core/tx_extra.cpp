@@ -26,12 +26,11 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_extra.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "common/varint.h"
 #include "crypto/crypto.h"
 #include "misc_log_ex.h"
@@ -49,93 +48,114 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-// get an extra field element at the specified position
+//-------------------------------------------------------------------------------------------------------------------
+template <typename T>
+static void append_varint(const T value, std::vector<unsigned char> &bytes_inout)
+{
+    unsigned char v_variable[(sizeof(std::size_t) * 8 + 6) / 7];
+    unsigned char *v_variable_end = v_variable;
+
+    // 1. write varint into a temp buffer
+    tools::write_varint(v_variable_end, value);
+    assert(v_variable_end <= v_variable + sizeof(v_variable));
+
+    // 2. copy into our bytes buffer
+    const std::size_t v_length = v_variable_end - v_variable;
+    bytes_inout.resize(bytes_inout.size() + v_length);
+    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static void append_bytes(const unsigned char *data,
+    const std::size_t length,
+    std::vector<unsigned char> &bytes_inout)
+{
+    // copy data into our bytes buffer
+    bytes_inout.resize(bytes_inout.size() + length);
+    memcpy(bytes_inout.data() + bytes_inout.size() - length, data, length);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename T>
+static bool try_parse_bytes_varint(const epee::span<const unsigned char> &bytes, std::size_t &position_inout, T &val_out)
+{
+    // 1. sanity check range
+    if (position_inout >= bytes.size())
+        return false;
+
+    // 2. try to read a variant into the value
+    const int parse_result{tools::read_varint(bytes.data() + position_inout, bytes.end(), val_out)};
+
+    // 3. check if parsing succeeded
+    if (parse_result <= 0)
+        return false;
+
+    // 4. return success
+    position_inout += parse_result;
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// convert an element to bytes and append to the input bytes: varint(type) || varint(length) || value
+//-------------------------------------------------------------------------------------------------------------------
+static void grow_extra_field_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
+{
+    // varint(type) || varint(length) || bytes
+    bytes_inout.reserve(bytes_inout.size() + 18 + element.m_value.size());
+
+    // 1. append type
+    append_varint(element.m_type, bytes_inout);
+
+    // 2. append length
+    append_varint(element.m_value.size(), bytes_inout);
+
+    // 3. append value
+    append_bytes(element.m_value.data(), element.m_value.size(), bytes_inout);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// get an extra field element from the specified position in the tx extra field
 // - returns false if could not get an element
 //-------------------------------------------------------------------------------------------------------------------
 static bool try_get_extra_field_element(const epee::span<const unsigned char> &tx_extra,
     std::size_t &element_position_inout,
     ExtraFieldElement &element_out)
 {
-    //TODO: simplify this function?
-    if (element_position_inout >= tx_extra.size())
+    // 1. parse the type
+    if (!try_parse_bytes_varint(tx_extra, element_position_inout, element_out.m_type))
         return false;
 
-    int parse_result;
-
-    // parse the type
-    parse_result = tools::read_varint(tx_extra.data() + element_position_inout, tx_extra.end(), element_out.m_type);
-
-    if (parse_result <= 0)  //could not get a type
-        return false;
-
-    element_position_inout += parse_result;
-
-    // parse the length
+    // 2. parse the length
     std::uint64_t length{0};
-    parse_result = tools::read_varint(tx_extra.data() + element_position_inout, tx_extra.end(), length);
-
-    if (parse_result <= 0)  //could not get the length
+    if (!try_parse_bytes_varint(tx_extra, element_position_inout, length))
         return false;
 
-    element_position_inout += parse_result;
-
-    // parse the value
-    if (element_position_inout + length > tx_extra.size())  //value extends past the end
+    // 3. check if the value can be extracted (fail if it extends past the field end)
+    if (element_position_inout + length > tx_extra.size())
         return false;
 
-    element_out.m_value.resize(length);
-    memcpy(element_out.m_value.data(), tx_extra.data() + element_position_inout, length);
+    // 4. parse the value
+    append_bytes(tx_extra.data() + element_position_inout, length, element_out.m_value);
     element_position_inout += length;
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-// convert an element to bytes and append to the input variable: varint(type) || varint(length) || value
-//-------------------------------------------------------------------------------------------------------------------
-static void append_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
-{
-    //TODO: simplify this function?
-    // varint(type) || varint(length) || bytes
-    bytes_inout.reserve(bytes_inout.size() + 18 + element.m_value.size());
-
-    unsigned char v_variable[(sizeof(std::size_t) * 8 + 6) / 7];
-    unsigned char *v_variable_end = v_variable;
-    std::size_t v_length;
-
-    // type
-    tools::write_varint(v_variable_end, element.m_type);
-    assert(v_variable_end <= v_variable + sizeof(v_variable));
-    v_length = v_variable_end - v_variable;
-    bytes_inout.resize(bytes_inout.size() + v_length);
-    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
-
-    // length
-    v_variable_end = v_variable;
-    tools::write_varint(v_variable_end, element.m_value.size());
-    assert(v_variable_end <= v_variable + sizeof(v_variable));
-    v_length = v_variable_end - v_variable;
-    bytes_inout.resize(bytes_inout.size() + v_length);
-    memcpy(bytes_inout.data() + bytes_inout.size() - v_length, v_variable, v_length);
-
-    // value
-    bytes_inout.resize(bytes_inout.size() + element.m_value.size());
-    memcpy(bytes_inout.data() + bytes_inout.size() - element.m_value.size(),
-        element.m_value.data(),
-        element.m_value.size());
-}
-//-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
 {
+    // 1. check type
     if (a.m_type < b.m_type)
         return true;
     if (a.m_type > b.m_type)
         return false;
+
+    // 2. check length (type is equal)
     if (a.m_value.size() < b.m_value.size())
         return true;
     if (a.m_value.size() > b.m_value.size())
         return false;
-    return a.m_value < b.m_value;  //same type, same length
+
+    // 3. check value (type, length are equal)
+    return a.m_value < b.m_value;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t length(const ExtraFieldElement &element)
@@ -146,38 +166,39 @@ std::size_t length(const ExtraFieldElement &element)
 void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_out)
 {
     tx_extra_out.clear();
+    tx_extra_out.reserve(elements.size() * (18 + 32));  //assume 32 byte values
 
-    // tx_extra should be sorted
+    // 1. tx_extra must be sorted
     std::sort(elements.begin(), elements.end());
 
+    // 2. build the tx extra
     for (const ExtraFieldElement &element : elements)
-        append_bytes(element, tx_extra_out);
+        grow_extra_field_bytes(element, tx_extra_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_extra_field_elements(const TxExtra &tx_extra, std::vector<ExtraFieldElement> &elements_out)
 {
     elements_out.clear();
+    elements_out.reserve(tx_extra.size() / 25);  //approximate
 
-    // extract elements from the tx extra field
+    // 1. extract elements from the tx extra field
     std::size_t element_position{0};
     const epee::span<const unsigned char> tx_extra_span{epee::to_span(tx_extra)};
 
     while (element_position < tx_extra.size())
     {
-        elements_out.emplace_back();
-
-        if (!try_get_extra_field_element(tx_extra_span, element_position, elements_out.back()))
+        if (!try_get_extra_field_element(tx_extra_span, element_position, tools::add_element(elements_out)))
         {
             elements_out.pop_back();
             return false;
         }
     }
 
-    // if we didn't consume all bytes, then the field is malformed
+    // 2. if we didn't consume all bytes, then the field is malformed
     if (element_position != tx_extra.size())
         return false;
 
-    // if the elements in a tx extra are not sorted, then the field is malformed
+    // 3. if the elements extracted from a tx extra are not sorted, then the field is malformed
     if (!std::is_sorted(elements_out.begin(), elements_out.end()))
         return false;
 
@@ -196,15 +217,15 @@ void accumulate_extra_field_elements(const TxExtra &partial_memo,
 {
     std::vector<ExtraFieldElement> temp_memo_elements;
     CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(partial_memo, temp_memo_elements),
-        "Could not accumulate extra field elements: malformed partial memo.");
+        "accumulate extra field elements: malformed partial memo.");
     accumulate_extra_field_elements(temp_memo_elements, elements_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
 ExtraFieldElement gen_extra_field_element()
 {
     ExtraFieldElement temp;
-    temp.m_type = crypto::rand_idx(static_cast<std::size_t>(-1));
-    temp.m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit random field to 100 bytes for performance
+    temp.m_type = crypto::rand_idx(static_cast<std::uint64_t>(0));
+    temp.m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit length to 100 bytes for performance
     crypto::rand(temp.m_value.size(), temp.m_value.data());
     return temp;
 }
