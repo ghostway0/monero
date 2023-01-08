@@ -59,7 +59,6 @@ target_link_libraries(seraphis_core
     cryptonote_basic
     device
     epee
-    multisig
     ringct
     seraphis_crypto
   PRIVATE

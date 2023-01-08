@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Implementation of the reference set index mapper. Maps to and from a uniform distribution across [0, 2^64 - 1]
-
+// Implementation of the reference set index mapper for a flat mapping function.
 
 #pragma once
 
@@ -51,7 +48,6 @@ namespace sp
 
 ////
 // SpRefSetIndexMapperFlat
-// - implementation of SpRefSetIndexMapper
 // - linear mapping function (i.e. project the element range onto the uniform space)
 ///
 class SpRefSetIndexMapperFlat final : public SpRefSetIndexMapper
@@ -61,8 +57,7 @@ public:
     /// default constructor: disabled
 
     /// normal constructor
-    SpRefSetIndexMapperFlat(const std::uint64_t distribution_min_index,
-        const std::uint64_t distribution_max_index);
+    SpRefSetIndexMapperFlat(const std::uint64_t distribution_min_index, const std::uint64_t distribution_max_index);
 
 //destructor: default
 

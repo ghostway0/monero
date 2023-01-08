@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "sp_ref_set_index_mapper_flat.h"
 
@@ -55,11 +53,12 @@ static std::uint64_t project_between_ranges(const std::uint64_t a,
     const std::uint64_t b_max)
 {
     // sanity checks
-    CHECK_AND_ASSERT_THROW_MES(a >= a_min &&
+    CHECK_AND_ASSERT_THROW_MES(
+            a     >= a_min &&
             a     <= a_max &&
             a_min <= a_max &&
             b_min <= b_max,
-        "projecting between ranges: invalid inputs.");
+        "ref set index mapper (flat) projecting between ranges: invalid inputs.");
 
     // (a - a_min)/(a_max - a_min + 1) = (b - b_min)/(b_max - b_min + 1)
     // b = (a - a_min)*(b_max - b_min + 1)/(a_max - a_min + 1) + b_min

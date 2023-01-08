@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Interface for mapping reference set indices to and from a custom distribution.
-
 
 #pragma once
 
@@ -49,11 +46,13 @@ namespace sp
 
 ////
 // SpRefSetIndexMapper
-// - interface for mapping reference set indices between a custom distribution (e.g. uniform over [a, b], a gamma distribution,
-//   etc.) and a uniform space (the range [0, 2^64 - 1])
-// - the original element set (from which the reference set will be selected) exists as a range of indices ([min, max]),
-//   so the mapping function exists as a filter between element-space and uniform space
+// - interface for mapping elements of a custom distribution (e.g. uniform over [a, b]) to and from a uniform
+//   space (the range [0, 2^64 - 1])
+// - the element space is modeled as a range of indices ([min, max]), so the mapping function is a filter between
+//   element space and uniform space
 // - mapping: [min, max] <-(func)-> [0, 2^64 - 1]
+// note: intuitively, you can select a random element in element space from the custom distribution by selecting a
+//       element uniformly at random from the uniform space then mapping it into element space
 ///
 class SpRefSetIndexMapper
 {
