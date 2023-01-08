@@ -38,6 +38,7 @@
 //third party headers
 
 //standard headers
+#include <type_traits>
 #include <vector>
 
 //forward declarations
@@ -55,38 +56,35 @@ struct sortable_key
     sortable_key(const rct::key &rct_key) { memcpy(bytes, rct_key.bytes, 32); }
     bool operator<(const sortable_key &other) const { return memcmp(bytes, other.bytes, 32) < 0; }
 };
-static inline const rct::key& sortable2rct(const sortable_key &sortable)
-{
-    return reinterpret_cast<const rct::key&>(sortable);
-}
+inline const rct::key& sortable2rct(const sortable_key &k) { return reinterpret_cast<const rct::key&>(k); }
 
 /**
-* brief: size_from_decomposition - compute n^m
+* brief: uint_pow - compute n^m
 * param: n - base
-* param: m - power
+* param: m - uint_pow
 * return: n^m
 * 
 * note: use this instead of std::pow() for better control over error states
 */
-constexpr std::size_t size_from_decomposition(const std::size_t n, const std::size_t m) noexcept
+constexpr std::uint64_t uint_pow(const std::size_t n, const std::size_t m) noexcept
 {
     // n^m
-    std::size_t size{n};
+    std::uint64_t result{n};
 
     if (n == 0 || m == 0)
-        size = 1;
+        result = 1;
     else
     {
         for (std::size_t mul{1}; mul < m; ++mul)
         {
-            if (size*n < size)  //overflow
+            if (result*n < result)  //overflow
                 return -1;
             else
-                size *= n;
+                result *= n;
         }
     }
 
-    return size;
+    return result;
 }
 /**
 * brief: minus_one - -1 mod q

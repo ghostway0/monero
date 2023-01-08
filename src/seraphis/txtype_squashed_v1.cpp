@@ -246,7 +246,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     std::vector<SpImageProofV1> sp_image_proofs,
     std::vector<SpMembershipProofV1> sp_membership_proofs,
     SpTxSupplementV1 tx_supplement,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     SpTxSquashedV1 &tx_out)
 {
     tx_out.m_tx_semantic_rules_version = semantic_rules_version;
@@ -388,7 +388,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
 void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     std::vector<LegacyInputProposalV1> legacy_input_proposals,
     std::vector<SpInputProposalV1> sp_input_proposals,
     std::vector<ExtraFieldElement> additional_memo_elements,
@@ -406,7 +406,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
         std::move(sp_input_proposals),
         std::move(normal_payment_proposals),
         std::move(selfsend_payment_proposals),
-        tx_fee,
+        discretized_transaction_fee,
         std::move(additional_memo_elements),
         tx_proposal);
 

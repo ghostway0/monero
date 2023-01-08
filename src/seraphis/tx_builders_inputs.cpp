@@ -500,7 +500,7 @@ void make_v1_membership_proof_v1(const std::size_t ref_set_decomp_n,
     /// checks and initialization
 
     // 1. misc
-    const std::size_t ref_set_size{size_from_decomposition(ref_set_decomp_n, ref_set_decomp_m)};
+    const std::size_t ref_set_size{uint_pow(ref_set_decomp_n, ref_set_decomp_m)};
 
     CHECK_AND_ASSERT_THROW_MES(referenced_enotes_squashed.size() == ref_set_size,
         "make membership proof v1: ref set size doesn't match number of referenced enotes.");

@@ -38,7 +38,6 @@
 
 //standard headers
 #include <cstdint>
-#include <string>
 #include <vector>
 
 //forward declarations

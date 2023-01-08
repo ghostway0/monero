@@ -221,7 +221,7 @@ bool validate_sp_semantics_sp_reference_sets_v1(const SemanticConfigSpRefSetV1 &
     for (const SpMembershipProofV1 &sp_proof : sp_membership_proofs)
     {
         // proof ref set decomposition (n^m) should match number of referenced enotes
-        const std::size_t ref_set_size{size_from_decomposition(sp_proof.m_ref_set_decomp_n, sp_proof.m_ref_set_decomp_m)};
+        const std::size_t ref_set_size{uint_pow(sp_proof.m_ref_set_decomp_n, sp_proof.m_ref_set_decomp_m)};
 
         if (ref_set_size != reference_set_size(sp_proof.m_binned_reference_set))
             return false;
@@ -377,7 +377,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool validate_sp_semantics_fee_v1(const DiscretizedFee &discretized_transaction_fee)
+bool validate_sp_semantics_fee_v1(const DiscretizedFee discretized_transaction_fee)
 {
     rct::xmr_amount raw_transaction_fee;
     if (!try_get_fee_value(discretized_transaction_fee, raw_transaction_fee))
@@ -426,7 +426,7 @@ bool validate_sp_coinbase_amount_balance_v1(const rct::xmr_amount block_reward,
 bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const std::vector<SpEnoteImageV1> &sp_input_images,
     const std::vector<SpEnoteV1> &outputs,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const SpBalanceProofV1 &balance_proof)
 {
     const BulletproofPlus2 &range_proofs = balance_proof.m_bpp2_proof;

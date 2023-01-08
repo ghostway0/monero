@@ -163,7 +163,7 @@ std::size_t sp_membership_proof_v1_size_bytes(const std::size_t n,
     const std::size_t m,
     const std::size_t num_bin_members)
 {
-    const std::size_t ref_set_size{size_from_decomposition(n, m)};
+    const std::size_t ref_set_size{uint_pow(n, m)};
 
     return grootle_size_bytes(n, m) +
         (num_bin_members > 0
@@ -176,7 +176,7 @@ std::size_t sp_membership_proof_v1_size_bytes_compact(const std::size_t n,
     const std::size_t m,
     const std::size_t num_bin_members)
 {
-    const std::size_t ref_set_size{size_from_decomposition(n, m)};
+    const std::size_t ref_set_size{uint_pow(n, m)};
 
     return grootle_size_bytes(n, m) +
         (num_bin_members > 0

@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // A discretized fee (i.e. a fee value represented by a discrete identifier).
-
 
 #pragma once
 
@@ -37,53 +34,54 @@
 #include "ringct/rctTypes.h"
 
 //third party headers
+#include <boost/utility/string_ref.hpp>
 
 //standard headers
 #include <cstdint>
-#include <string>
 
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
 
-
 namespace sp
 {
 
-using discretized_fee_level_t = unsigned char;
+using discretized_fee_encoding_t = unsigned char;
 
 ////
 // DiscretizedFee
 // - a discretized fee represents a fee value selected from a limited set of valid fee values
-// - a raw fee value is 'discretized' when it is converted into one of those valid fee values (rounded up)
+// - a raw fee value is 'discretized' when it is converted into one of those valid fee values (by rounding
+//   up to the nearest fee level)
+// note: a default-initialized discretized fee encodes the fee value '0'
 ///
 struct DiscretizedFee final
 {
-    discretized_fee_level_t m_fee_level;
+    discretized_fee_encoding_t m_fee_encoding;
 };
-inline const boost::string_ref container_name(const DiscretizedFee&) { return "DiscretizedFee"; }
-void append_to_transcript(const DiscretizedFee &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const DiscretizedFee) { return "DiscretizedFee"; }
+void append_to_transcript(const DiscretizedFee container, SpTranscriptBuilder &transcript_inout);
 
 /// get size in bytes
-inline std::size_t discretized_fee_size_bytes() { return sizeof(discretized_fee_level_t); }
+inline std::size_t discretized_fee_size_bytes() { return sizeof(discretized_fee_encoding_t); }
 
 /// equality operators
-bool operator==(const DiscretizedFee &a, const DiscretizedFee &b);
-bool operator==(const DiscretizedFee &fee, const discretized_fee_level_t fee_level);
-bool operator==(const discretized_fee_level_t fee_level, const DiscretizedFee &fee);
-bool operator==(const DiscretizedFee &fee, const rct::xmr_amount raw_fee_value);
+bool operator==(const DiscretizedFee a, const DiscretizedFee b);
+bool operator==(const DiscretizedFee fee, const discretized_fee_encoding_t fee_level);
+bool operator==(const discretized_fee_encoding_t fee_level, const DiscretizedFee fee);
+bool operator==(const DiscretizedFee fee, const rct::xmr_amount raw_fee_value);
 
 /**
-* brief: discretize_fee - convert a raw fee value to a discretized fee (the resulting real fee may differ from the raw fee)
+* brief: discretize_fee - convert a raw fee value to a discretized fee (the resulting encoded fee may be >= the raw fee)
 * param: raw_fee_value -
 * return: discretized fee
 */
 DiscretizedFee discretize_fee(const rct::xmr_amount raw_fee_value);
 /**
-* brief: try_get_fee_value - try to extract a raw fee value from a discretized fee
+* brief: try_get_fee_value - try to extract a raw fee value from a discretized fee (fails if the encoding is invalid)
 * param: discretized_fee -
 * outparam: fee_value_out -
 * return: true if an extraction succeeded
 */
-bool try_get_fee_value(const DiscretizedFee &discretized_fee, std::uint64_t &fee_value_out);
+bool try_get_fee_value(const DiscretizedFee discretized_fee, std::uint64_t &fee_value_out);
 
 } //namespace sp

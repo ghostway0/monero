@@ -352,7 +352,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts_normal,
     const std::vector<rct::xmr_amount> &out_amounts_selfsend,
-    const DiscretizedFee &fee,
+    const DiscretizedFee fee,
     const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version)
 {
     ASSERT_TRUE(num_signers > 0);
@@ -499,11 +499,11 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     {
         selfsend_payment_proposals.emplace_back(
                 JamtisPaymentProposalSelfSendV1{
-                    .m_destination = sp_user_address,
-                    .m_amount = out_amount,
-                    .m_type = JamtisSelfSendType::SELF_SPEND,
+                    .m_destination             = sp_user_address,
+                    .m_amount                  = out_amount,
+                    .m_type                    = JamtisSelfSendType::SELF_SPEND,
                     .m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
-                    .m_partial_memo = TxExtra{}
+                    .m_partial_memo            = TxExtra{}
                 }
             );
     }

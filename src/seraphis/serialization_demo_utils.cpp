@@ -328,10 +328,10 @@ void make_serializable_sp_tx_supplement_v1(const SpTxSupplementV1 &supplement,
     serializable_supplement_out.m_tx_extra                       = supplement.m_tx_extra;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_discretized_fee(const DiscretizedFee &discretized_fee,
+void make_serializable_discretized_fee(const DiscretizedFee discretized_fee,
     unsigned char &serializable_discretized_fee_out)
 {
-    serializable_discretized_fee_out = discretized_fee.m_fee_level;
+    serializable_discretized_fee_out = discretized_fee.m_fee_encoding;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_serializable_sp_tx_coinbase_v1(const SpTxCoinbaseV1 &tx, ser_SpTxCoinbaseV1 &serializable_tx_out)
@@ -557,7 +557,7 @@ void recover_sp_tx_supplement_v1(ser_SpTxSupplementV1 &serializable_supplement_i
 //-------------------------------------------------------------------------------------------------------------------
 void recover_discretized_fee(const unsigned char serializable_discretized_fee, DiscretizedFee &discretized_fee_out)
 {
-    discretized_fee_out.m_fee_level = serializable_discretized_fee;
+    discretized_fee_out.m_fee_encoding = serializable_discretized_fee;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_tx_coinbase_v1(ser_SpTxCoinbaseV1 &serializable_tx_in, SpTxCoinbaseV1 &tx_out)

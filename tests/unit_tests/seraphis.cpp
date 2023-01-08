@@ -323,7 +323,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     const std::vector<rct::xmr_amount> &in_legacy_amounts,
     const std::vector<rct::xmr_amount> &in_sp_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const SpTxSquashedV1::SemanticRulesVersion semantic_rules_version,
     MockLedgerContext &ledger_context_inout,
     SpTxSquashedV1 &tx_out)
@@ -1193,7 +1193,7 @@ TEST(seraphis, discretized_fees)
     EXPECT_TRUE(fee_value == test_fee_value);
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
-    // fee value more digits than sig figs (should round up)
+    // fee value with more digits than sig figs (should round up)
     test_fee_value = 1;
     for (std::size_t sig_fig{0}; sig_fig < config::DISCRETIZED_FEE_SIG_FIGS; ++sig_fig)
     {
@@ -1213,7 +1213,7 @@ TEST(seraphis, discretized_fees)
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
     // unknown fee level
-    discretized_fee.m_fee_level = static_cast<discretized_fee_level_t>(-1);
+    discretized_fee.m_fee_encoding = static_cast<discretized_fee_encoding_t>(-1);
     EXPECT_FALSE(try_get_fee_value(discretized_fee, fee_value));
 }
 //-------------------------------------------------------------------------------------------------------------------

@@ -79,7 +79,7 @@ void make_mock_tx(const SpTxParamsT &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxType &tx_out);
 
@@ -108,7 +108,7 @@ void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxCoinbaseV1 &tx_out);
 /**
@@ -125,7 +125,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxSquashedV1 &tx_out);
 

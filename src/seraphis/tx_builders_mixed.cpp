@@ -223,7 +223,7 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation_v1(const rct::key
     SpMembershipProofPrepV1 &prep_out)
 {
     /// checks and initialization
-    const std::size_t ref_set_size{size_from_decomposition(ref_set_decomp_n, ref_set_decomp_m)};  //n^m
+    const std::size_t ref_set_size{uint_pow(ref_set_decomp_n, ref_set_decomp_m)};  //n^m
 
     CHECK_AND_ASSERT_THROW_MES(simulated_ledger_squashed_enotes.size() > 0,
         "prepare sp membership proof prep v1 (tx simulation): insufficient reference elements.");
@@ -546,7 +546,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpEnoteV1> &output_enotes,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out)
 {
@@ -569,7 +569,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyEnoteImageV2> &input_legacy_enote_images,
     const std::vector<SpEnoteImageV1> &input_sp_enote_images,
     const std::vector<SpEnoteV1> &output_enotes,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out)
 {
@@ -599,7 +599,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out)
 {
@@ -632,7 +632,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputV1> &legacy_inputs,
     const std::vector<SpPartialInputV1> &sp_partial_inputs,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out)
 {
@@ -662,7 +662,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out)
 {
@@ -882,8 +882,8 @@ void make_v1_coinbase_tx_proposal_v1(const std::uint64_t block_height,
     SpCoinbaseTxProposalV1 &tx_proposal_out)
 {
     // set fields
-    tx_proposal_out.m_block_height = block_height;
-    tx_proposal_out.m_block_reward = block_reward;
+    tx_proposal_out.m_block_height             = block_height;
+    tx_proposal_out.m_block_reward             = block_reward;
     tx_proposal_out.m_normal_payment_proposals = std::move(normal_payment_proposals);
     make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.m_partial_memo);
 }
@@ -892,7 +892,7 @@ void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_prop
     std::vector<SpInputProposalV1> sp_input_proposals,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     std::vector<ExtraFieldElement> additional_memo_elements,
     SpTxProposalV1 &tx_proposal_out)
 {
@@ -907,7 +907,7 @@ void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_prop
     tx_proposal_out.m_sp_input_proposals         = std::move(sp_input_proposals);
     tx_proposal_out.m_normal_payment_proposals   = std::move(normal_payment_proposals);
     tx_proposal_out.m_selfsend_payment_proposals = std::move(selfsend_payment_proposals);
-    tx_proposal_out.m_tx_fee                     = tx_fee;
+    tx_proposal_out.m_tx_fee                     = discretized_transaction_fee;
     make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.m_partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -915,7 +915,7 @@ void make_v1_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &le
     const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const TxExtra &partial_memo_for_tx,
     SpTxProposalV1 &tx_proposal_out)
 {
@@ -959,7 +959,7 @@ bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
 bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &discretized_transaction_fee)
+    const DiscretizedFee discretized_transaction_fee)
 {
     // input amounts
     std::vector<rct::xmr_amount> in_amounts;
@@ -1100,7 +1100,7 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
 void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     std::vector<SpPartialInputV1> sp_partial_inputs,
     std::vector<SpOutputProposalV1> output_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const TxExtra &partial_memo,
     const tx_version_t &tx_version,
     SpPartialTxV1 &partial_tx_out)
@@ -1145,7 +1145,7 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
         legacy_inputs,
         sp_partial_inputs,
         output_proposals,
-        tx_fee,
+        discretized_transaction_fee,
         partial_memo,
         tx_proposal_prefix);
 
@@ -1179,7 +1179,7 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
 
     // 2. extract the fee
     rct::xmr_amount raw_transaction_fee;
-    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(tx_fee, raw_transaction_fee),
+    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(discretized_transaction_fee, raw_transaction_fee),
         "making partial tx v1: could not extract a fee value from the discretized fee.");
 
     // 3. make balance proof
@@ -1224,8 +1224,8 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     }
 
     // 3. gather tx output parts
-    partial_tx_out.m_outputs = std::move(output_enotes);
-    partial_tx_out.m_tx_fee = tx_fee;
+    partial_tx_out.m_outputs       = std::move(output_enotes);
+    partial_tx_out.m_tx_fee        = discretized_transaction_fee;
     partial_tx_out.m_tx_supplement = std::move(tx_supplement);
 }
 //-------------------------------------------------------------------------------------------------------------------

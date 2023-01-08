@@ -75,35 +75,35 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpEnoteV1> &output_enotes,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyEnoteImageV2> &input_legacy_enote_images,
     const std::vector<SpEnoteImageV1> &input_sp_enote_images,
     const std::vector<SpEnoteV1> &output_enotes,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const SpTxSupplementV1 &tx_supplement,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<crypto::key_image> &legacy_input_key_images,
     const std::vector<crypto::key_image> &sp_input_key_images,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputV1> &legacy_inputs,
     const std::vector<SpPartialInputV1> &sp_partial_inputs,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &transaction_fee,
+    const DiscretizedFee transaction_fee,
     const TxExtra &partial_memo,
     rct::key &tx_proposal_prefix_out);
 void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out);
@@ -190,7 +190,7 @@ void make_v1_coinbase_tx_proposal_v1(const std::uint64_t block_height,
 * param: sp_input_proposals -
 * param: normal_payment_proposals -
 * param: selfsend_payment_proposals -
-* param: tx_fee -
+* param: discretized_transaction_fee -
 * param: additional_memo_elements -
 * outparam: tx_proposal_out -
 */
@@ -198,14 +198,14 @@ void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_prop
     std::vector<SpInputProposalV1> sp_input_proposals,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     std::vector<ExtraFieldElement> additional_memo_elements,
     SpTxProposalV1 &tx_proposal_out);
 void make_v1_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
     const std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const TxExtra &partial_memo_for_tx,
     SpTxProposalV1 &tx_proposal_out);
 /**
@@ -227,7 +227,7 @@ bool balance_check_in_out_amnts_v1(const rct::xmr_amount block_reward,
 bool balance_check_in_out_amnts_v2(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     const std::vector<SpInputProposalV1> &sp_input_proposals,
     const std::vector<SpOutputProposalV1> &output_proposals,
-    const DiscretizedFee &discretized_transaction_fee);
+    const DiscretizedFee discretized_transaction_fee);
 /**
 * brief: make_v1_balance_proof_v1 - make v1 tx balance proof (BP+ for range proofs; balance check is sum-to-zero)
 *   - range proofs: for seraphis input image amount commitments and output commitments (squashed enote model)
@@ -263,7 +263,7 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
 * param: legacy_inputs -
 * param: sp_partial_inputs -
 * param: output_proposals -
-* param: tx_fee -
+* param: discretized_transaction_fee -
 * param: partial_memo -
 * param: tx_version -
 * outparam: partial_tx_out -
@@ -271,7 +271,7 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
 void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
     std::vector<SpPartialInputV1> sp_partial_inputs,
     std::vector<SpOutputProposalV1> output_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const TxExtra &partial_memo,
     const tx_version_t &tx_version,
     SpPartialTxV1 &partial_tx_out);

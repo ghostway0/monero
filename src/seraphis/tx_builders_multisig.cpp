@@ -229,11 +229,11 @@ static void replace_legacy_input_proposal_destination_for_tx_simulation_v1(
     // 4. make a legacy ring signature prep for this input
     legacy_ring_signature_prep_out =
         LegacyRingSignaturePrepV1{
-                .m_tx_proposal_prefix   = rct::I, //set this later
-                .m_reference_set        = multisig_input_proposal.m_reference_set,
-                .m_referenced_enotes    = input_proof_proposal.ring_members,
-                .m_real_reference_index = input_proof_proposal.l,
-                .m_reference_image      =
+                .m_tx_proposal_prefix        = rct::I, //set this later
+                .m_reference_set             = multisig_input_proposal.m_reference_set,
+                .m_referenced_enotes         = input_proof_proposal.ring_members,
+                .m_real_reference_index      = input_proof_proposal.l,
+                .m_reference_image           =
                     LegacyEnoteImageV2{
                             .m_masked_commitment = input_proof_proposal.masked_C,
                             .m_key_image         = input_proposal_inout.m_key_image
@@ -1053,7 +1053,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
@@ -1108,7 +1108,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
         std::move(sp_input_proposals),
         normal_payment_proposals,
         selfsend_payment_proposals,
-        tx_fee,
+        discretized_transaction_fee,
         additional_memo_elements,
         tx_proposal);
 
@@ -1169,7 +1169,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     proposal_out.m_aggregate_signer_set_filter     = aggregate_signer_set_filter;
     proposal_out.m_normal_payment_proposals        = std::move(normal_payment_proposals);
     proposal_out.m_selfsend_payment_proposals      = std::move(selfsend_payment_proposals);
-    proposal_out.m_tx_fee                          = tx_fee;
+    proposal_out.m_tx_fee                          = discretized_transaction_fee;
     make_tx_extra(std::move(additional_memo_elements), proposal_out.m_partial_memo);
     proposal_out.m_tx_version                      = tx_version;
 }
@@ -1180,7 +1180,7 @@ void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteReco
     const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     TxExtra partial_memo_for_tx,
     const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
@@ -1244,7 +1244,7 @@ void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteReco
         aggregate_signer_set_filter,
         std::move(normal_payment_proposals),
         std::move(selfsend_payment_proposals),
-        tx_fee,
+        discretized_transaction_fee,
         std::move(extra_field_elements),
         tx_version,
         legacy_spend_pubkey,

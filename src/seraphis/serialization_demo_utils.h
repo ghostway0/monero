@@ -119,7 +119,7 @@ void make_serializable_sp_image_proof_v1(const SpImageProofV1 &image_proof,
     ser_SpImageProofV1 &serializable_image_proof_out);
 void make_serializable_sp_tx_supplement_v1(const SpTxSupplementV1 &supplement,
     ser_SpTxSupplementV1 &serializable_supplement_out);
-void make_serializable_discretized_fee(const DiscretizedFee &discretized_fee,
+void make_serializable_discretized_fee(const DiscretizedFee discretized_fee,
     unsigned char &serializable_discretized_fee_out);
 void make_serializable_sp_tx_coinbase_v1(const SpTxCoinbaseV1 &tx, ser_SpTxCoinbaseV1 &serializable_tx_out);
 void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquashedV1 &serializable_tx_out);

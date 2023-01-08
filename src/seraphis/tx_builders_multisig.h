@@ -191,7 +191,7 @@ bool try_simulate_tx_from_multisig_tx_proposal_v1(const SpMultisigTxProposalV1 &
 * param: aggregate_signer_set_filter -
 * param: normal_payment_proposals -
 * param: selfsend_payment_proposals -
-* param: tx_fee -
+* param: discretized_transaction_fee -
 * param: additional_memo_elements -
 * param: tx_version -
 * param: legacy_spend_pubkey -
@@ -207,7 +207,7 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
     const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     std::vector<ExtraFieldElement> additional_memo_elements,
     const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,
@@ -222,7 +222,7 @@ void make_v1_multisig_tx_proposal_v1(const std::vector<LegacyContextualEnoteReco
     const multisig::signer_set_filter aggregate_signer_set_filter,
     std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     TxExtra partial_memo_for_tx,
     const tx_version_t &tx_version,
     const rct::key &legacy_spend_pubkey,

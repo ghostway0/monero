@@ -222,7 +222,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
 * param: discretized_transaction_fee
 * return: true/false on validation result
 */
-bool validate_sp_semantics_fee_v1(const DiscretizedFee &discretized_transaction_fee);
+bool validate_sp_semantics_fee_v1(const DiscretizedFee discretized_transaction_fee);
 /**
 * brief: validate_sp_key_images_v1 - check tx does not double spend
 *   - no key image duplicates in ledger
@@ -257,7 +257,7 @@ bool validate_sp_coinbase_amount_balance_v1(const rct::xmr_amount block_reward,
 bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const std::vector<SpEnoteImageV1> &sp_input_images,
     const std::vector<SpEnoteV1> &outputs,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     const SpBalanceProofV1 &balance_proof);
 /**
 * brief: validate_sp_composition_proofs_v1 - check that spending legacy tx inputs is authorized by their owners,

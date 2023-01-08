@@ -69,7 +69,7 @@ void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &discretized_transaction_fee,
+    const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxCoinbaseV1 &tx_out)
 {
@@ -129,7 +129,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
     const std::vector<rct::xmr_amount> &sp_in_amounts,
     const std::vector<rct::xmr_amount> &out_amounts,
-    const DiscretizedFee &tx_fee,
+    const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxSquashedV1 &tx_out)
 {
@@ -174,7 +174,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     CHECK_AND_ASSERT_THROW_MES(balance_check_in_out_amnts_v2(legacy_input_proposals,
             sp_input_proposals,
             output_proposals,
-            tx_fee),
+            discretized_transaction_fee),
         "SpTxSquashedV1: tried to make mock tx with unbalanced amounts.");
 
     // make partial memo
@@ -196,7 +196,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
         legacy_input_proposals,
         sp_input_proposals,
         output_proposals,
-        tx_fee,
+        discretized_transaction_fee,
         partial_memo,
         tx_proposal_prefix);
 
@@ -238,7 +238,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     make_v1_partial_tx_v1(std::move(legacy_inputs),
         std::move(sp_partial_inputs),
         std::move(output_proposals),
-        tx_fee,
+        discretized_transaction_fee,
         partial_memo,
         tx_version,
         partial_tx);
