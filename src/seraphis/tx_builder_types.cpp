@@ -130,7 +130,7 @@ void get_coinbase_output_proposals_v1(const SpCoinbaseTxProposalV1 &tx_proposal,
 
     for (const jamtis::JamtisPaymentProposalV1 &payment_proposal : tx_proposal.m_normal_payment_proposals)
     {
-        get_coinbase_output_proposal_v1(payment_proposal,
+        make_v1_coinbase_output_proposal_v1(payment_proposal,
             tx_proposal.m_block_height,
             tools::add_element(output_proposals_out));
     }
@@ -159,12 +159,12 @@ void get_output_proposals_v1(const SpTxProposalV1 &tx_proposal,
         tx_proposal.m_selfsend_payment_proposals.size());
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_payment_proposal : tx_proposal.m_normal_payment_proposals)
-        get_output_proposal_v1(normal_payment_proposal, input_context, tools::add_element(output_proposals_out));
+        make_v1_output_proposal_v1(normal_payment_proposal, input_context, tools::add_element(output_proposals_out));
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal :
         tx_proposal.m_selfsend_payment_proposals)
     {
-        get_output_proposal_v1(selfsend_payment_proposal,
+        make_v1_output_proposal_v1(selfsend_payment_proposal,
             k_view_balance,
             input_context,
             tools::add_element(output_proposals_out));

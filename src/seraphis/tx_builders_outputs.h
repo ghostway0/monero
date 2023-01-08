@@ -117,31 +117,31 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
 */
 void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposalV1> &output_proposals);
 /**
-* brief: get_coinbase_output_proposal_v1 - convert a jamtis proposal to a coinbase output proposal
+* brief: make_v1_coinbase_output_proposal_v1 - convert a jamtis proposal to a coinbase output proposal
 * param: proposal -
 * param: block_height - height of the coinbase tx's block
 * outparam: output_proposal_out -
 */
-void get_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+void make_v1_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
     const std::uint64_t block_height,
     SpCoinbaseOutputProposalV1 &output_proposal_out);
 /**
-* brief: get_output_proposal_v1 - convert a jamtis proposal to an output proposal
+* brief: make_v1_output_proposal_v1 - convert a jamtis proposal to an output proposal
 * param: proposal -
 * param: input_context -
 * outparam: output_proposal_out -
 */
-void get_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
     const rct::key &input_context,
     SpOutputProposalV1 &output_proposal_out);
 /**
-* brief: get_output_proposal_v1 - convert a jamtis selfsend proposal to a concrete output proposal
+* brief: make_v1_output_proposal_v1 - convert a jamtis selfsend proposal to a concrete output proposal
 * param: proposal -
 * param: k_view_balance -
 * param: input_context -
 * outparam: output_proposal_out -
 */
-void get_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
+void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
     const crypto::secret_key &k_view_balance,
     const rct::key &input_context,
     SpOutputProposalV1 &output_proposal_out);

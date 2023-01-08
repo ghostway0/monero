@@ -238,7 +238,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
             .m_partial_memo = mock_tx_supplement.m_tx_extra
         };
     SpOutputProposalV1 output_proposal;
-    get_output_proposal_v1(payment_proposal, mock_input_context, output_proposal);
+    make_v1_output_proposal_v1(payment_proposal, mock_input_context, output_proposal);
 
     SpEnoteV1 single_enote;
     get_enote_v1(output_proposal, single_enote);

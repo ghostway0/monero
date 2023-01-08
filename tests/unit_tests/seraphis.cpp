@@ -242,7 +242,7 @@ static void check_is_owned(const JamtisPaymentProposalSelfSendV1 &test_proposal,
 {
     // convert to output proposal
     SpOutputProposalV1 output_proposal;
-    get_output_proposal_v1(test_proposal, keys.k_vb, rct::zero(), output_proposal);
+    make_v1_output_proposal_v1(test_proposal, keys.k_vb, rct::zero(), output_proposal);
 
     // check ownership
     check_is_owned(output_proposal, keys, j_expected, amount_expected, type_expected);
@@ -671,7 +671,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
     const std::uint64_t block_height{0};
     JamtisPaymentProposalV1 payment_proposal{user_address, amount, enote_privkey};
     SpCoinbaseOutputProposalV1 output_proposal;
-    get_coinbase_output_proposal_v1(payment_proposal, block_height, output_proposal);
+    make_v1_coinbase_output_proposal_v1(payment_proposal, block_height, output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, block_height, keys, j, amount, JamtisEnoteType::PLAIN);
@@ -700,7 +700,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
 
     JamtisPaymentProposalV1 payment_proposal{user_address, amount, enote_privkey};
     SpOutputProposalV1 output_proposal;
-    get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
+    make_v1_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::PLAIN);
@@ -732,7 +732,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
         JamtisSelfSendType::SELF_SPEND,
         enote_privkey};
     SpOutputProposalV1 output_proposal;
-    get_output_proposal_v1(payment_proposal_selfspend, keys.k_vb, rct::zero(), output_proposal);
+    make_v1_output_proposal_v1(payment_proposal_selfspend, keys.k_vb, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::SELF_SPEND);
@@ -745,7 +745,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
         amount,
         JamtisSelfSendType::CHANGE,
         enote_privkey};
-    get_output_proposal_v1(payment_proposal_change, keys.k_vb, rct::zero(), output_proposal);
+    make_v1_output_proposal_v1(payment_proposal_change, keys.k_vb, rct::zero(), output_proposal);
 
     // check the enote
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::CHANGE);
@@ -794,9 +794,9 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     SpOutputProposalV1 self_spend_proposal1_amnt_1;
     SpOutputProposalV1 self_spend_proposal2_amnt_1;
     SpOutputProposalV1 change_proposal_amnt_1;
-    get_output_proposal_v1(self_spend_payment_proposal1_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal1_amnt_1);
-    get_output_proposal_v1(self_spend_payment_proposal2_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal2_amnt_1);
-    get_output_proposal_v1(change_payment_proposal_amnt_1, keys.k_vb, rct::zero(), change_proposal_amnt_1);
+    make_v1_output_proposal_v1(self_spend_payment_proposal1_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal1_amnt_1);
+    make_v1_output_proposal_v1(self_spend_payment_proposal2_amnt_1, keys.k_vb, rct::zero(), self_spend_proposal2_amnt_1);
+    make_v1_output_proposal_v1(change_payment_proposal_amnt_1, keys.k_vb, rct::zero(), change_proposal_amnt_1);
     check_is_owned(self_spend_proposal2_amnt_1, keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
     check_is_owned(self_spend_proposal1_amnt_1, keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
     check_is_owned(change_proposal_amnt_1, keys, j_change, 1, JamtisEnoteType::CHANGE);

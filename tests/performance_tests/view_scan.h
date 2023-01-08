@@ -228,7 +228,7 @@ public:
         const crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
         const sp::jamtis::JamtisPaymentProposalV1 payment_proposal{user_address, rct::xmr_amount{0}, enote_privkey};
         sp::SpOutputProposalV1 output_proposal;
-        get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
+        make_v1_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
         m_enote_ephemeral_pubkey = output_proposal.m_enote_ephemeral_pubkey;
         get_enote_v1(output_proposal, m_enote);
 
@@ -318,7 +318,7 @@ public:
         const crypto::x25519_secret_key enote_privkey{crypto::x25519_secret_key_gen()};
         const sp::jamtis::JamtisPaymentProposalV1 payment_proposal{user_address, rct::xmr_amount{0}, enote_privkey};
         sp::SpOutputProposalV1 output_proposal;
-        get_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
+        make_v1_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
         sp::SpEnoteV1 real_enote;
         get_enote_v1(output_proposal, real_enote);
 

@@ -270,7 +270,7 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(
 {
     // 1. convert to an output proposal
     SpOutputProposalV1 output_proposal;
-    get_output_proposal_v1(selfsend_payment_proposal, k_view_balance, input_context, output_proposal);
+    make_v1_output_proposal_v1(selfsend_payment_proposal, k_view_balance, input_context, output_proposal);
 
     // 2. extract enote from output proposal
     SpEnoteV1 temp_enote;
@@ -330,49 +330,6 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
-    const std::uint64_t block_height,
-    SpCoinbaseOutputProposalV1 &output_proposal_out)
-{
-    jamtis::get_coinbase_output_proposal_v1(proposal,
-        block_height,
-        output_proposal_out.m_enote.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_enote.m_addr_tag_enc,
-        output_proposal_out.m_enote.m_view_tag,
-        output_proposal_out.m_partial_memo);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void get_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
-    const rct::key &input_context,
-    SpOutputProposalV1 &output_proposal_out)
-{
-    jamtis::get_output_proposal_v1(proposal,
-        input_context,
-        output_proposal_out.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_encoded_amount,
-        output_proposal_out.m_addr_tag_enc,
-        output_proposal_out.m_view_tag,
-        output_proposal_out.m_partial_memo);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void get_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
-    const crypto::secret_key &k_view_balance,
-    const rct::key &input_context,
-    SpOutputProposalV1 &output_proposal_out)
-{
-    jamtis::get_output_proposal_v1(proposal,
-        k_view_balance,
-        input_context,
-        output_proposal_out.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_encoded_amount,
-        output_proposal_out.m_addr_tag_enc,
-        output_proposal_out.m_view_tag,
-        output_proposal_out.m_partial_memo);
-}
-//-------------------------------------------------------------------------------------------------------------------
 void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposalV1> &output_proposals)
 {
     CHECK_AND_ASSERT_THROW_MES(output_proposals.size() >= 1, "Semantics check output proposals v1: insufficient outputs.");
@@ -407,6 +364,49 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
         CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.m_core),
             "Semantics check output proposals v1: an output onetime address is not in the prime subgroup.");
     }
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+    const std::uint64_t block_height,
+    SpCoinbaseOutputProposalV1 &output_proposal_out)
+{
+    jamtis::get_coinbase_output_proposal_v1(proposal,
+        block_height,
+        output_proposal_out.m_enote.m_core,
+        output_proposal_out.m_enote_ephemeral_pubkey,
+        output_proposal_out.m_enote.m_addr_tag_enc,
+        output_proposal_out.m_enote.m_view_tag,
+        output_proposal_out.m_partial_memo);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
+    const rct::key &input_context,
+    SpOutputProposalV1 &output_proposal_out)
+{
+    jamtis::get_output_proposal_v1(proposal,
+        input_context,
+        output_proposal_out.m_core,
+        output_proposal_out.m_enote_ephemeral_pubkey,
+        output_proposal_out.m_encoded_amount,
+        output_proposal_out.m_addr_tag_enc,
+        output_proposal_out.m_view_tag,
+        output_proposal_out.m_partial_memo);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
+    const crypto::secret_key &k_view_balance,
+    const rct::key &input_context,
+    SpOutputProposalV1 &output_proposal_out)
+{
+    jamtis::get_output_proposal_v1(proposal,
+        k_view_balance,
+        input_context,
+        output_proposal_out.m_core,
+        output_proposal_out.m_enote_ephemeral_pubkey,
+        output_proposal_out.m_encoded_amount,
+        output_proposal_out.m_addr_tag_enc,
+        output_proposal_out.m_view_tag,
+        output_proposal_out.m_partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs)
