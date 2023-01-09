@@ -86,13 +86,14 @@ public:
     */
     std::uint64_t chain_height() const;
     /**
-    * brief: key_image_exists_onchain_v1 - checks if a Seraphis linking tag (key image) exists in the ledger
+    * brief: *key_image_exists* - checks if a key image exists in the cache
     * param: key_image -
     * return: true/false on check result
     */
-    bool key_image_exists_offchain_v1(const crypto::key_image &key_image) const;
-    bool key_image_exists_unconfirmed_v1(const crypto::key_image &key_image) const;
-    bool key_image_exists_onchain_v1(const crypto::key_image &key_image) const;
+    bool cryptonote_key_image_exists_unconfirmed(const crypto::key_image &key_image) const;
+    bool seraphis_key_image_exists_unconfirmed(const crypto::key_image &key_image) const;
+    bool cryptonote_key_image_exists_onchain(const crypto::key_image &key_image) const;
+    bool seraphis_key_image_exists_onchain(const crypto::key_image &key_image) const;
     /**
     * brief: get_reference_set_proof_elements_v1 - get legacy enotes stored in the ledger (for a membership proof)
     * param: indices -
@@ -235,8 +236,10 @@ public:
 
 private:
     /// implementations of the above, without internally locking the ledger mutex (all expected to be no-fail)
-    bool key_image_exists_unconfirmed_v1_impl(const crypto::key_image &key_image) const;
-    bool key_image_exists_onchain_v1_impl(const crypto::key_image &key_image) const;
+    bool cryptonote_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const;
+    bool seraphis_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const;
+    bool cryptonote_key_image_exists_onchain_impl(const crypto::key_image &key_image) const;
+    bool seraphis_key_image_exists_onchain_impl(const crypto::key_image &key_image) const;
     void get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         const rct::key &legacy_base_spend_pubkey,

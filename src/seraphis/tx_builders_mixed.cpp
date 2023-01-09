@@ -91,11 +91,14 @@ public:
 
 //member functions
     /**
-    * brief: key_image_exists_v1 - checks if a key image (linking tag) exists (always false here)
-    * param: key_image -
-    * return: always false
+    * brief: *_key_image_exists - check if a key image exists (always false here)
+    * ...
     */
-    bool key_image_exists_v1(const crypto::key_image &key_image) const override
+    bool cryptonote_key_image_exists(const crypto::key_image &key_image) const override
+    {
+        return false;
+    }
+    bool seraphis_key_image_exists(const crypto::key_image &key_image) const override
     {
         return false;
     }

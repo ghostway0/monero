@@ -69,11 +69,17 @@ class MockOffchainContext final
 {
 public:
     /**
-    * brief: key_image_exists_onchain_v1 - checks if a legacy or Seraphis key image exists in the ledger
+    * brief: cryptonote_key_image_exists - checks if a cryptonote key image exists in the offchain context
     * param: key_image -
     * return: true/false on check result
     */
-    bool key_image_exists_v1(const crypto::key_image &key_image) const;
+    bool cryptonote_key_image_exists(const crypto::key_image &key_image) const;
+    /**
+    * brief: seraphis_key_image_exists - checks if a seraphis key image exists in the offchain context
+    * param: key_image -
+    * return: true/false on check result
+    */
+    bool seraphis_key_image_exists(const crypto::key_image &key_image) const;
     /**
     * brief: try_get_offchain_chunk_sp - try to find-received scan the offchain tx cache
     * param: xk_find_received -
@@ -112,8 +118,9 @@ public:
     void clear_cache();
 
 private:
-    /// implementations of the above, without internally locking the ledger mutex (all expected to be no-fail)
-    bool key_image_exists_v1_impl(const crypto::key_image &key_image) const;
+    /// implementations of the above, without internally locking the mutex (all expected to be no-fail)
+    bool cryptonote_key_image_exists_impl(const crypto::key_image &key_image) const;
+    bool seraphis_key_image_exists_impl(const crypto::key_image &key_image) const;
     bool try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     bool try_add_v1_impl(const std::vector<LegacyEnoteImageV2> &legacy_input_images,

@@ -98,18 +98,32 @@ std::uint64_t MockLedgerContext::chain_height() const
     return m_block_infos.size() - 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::key_image_exists_unconfirmed_v1(const crypto::key_image &key_image) const
+bool MockLedgerContext::cryptonote_key_image_exists_unconfirmed(const crypto::key_image &key_image) const
 {
     boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->key_image_exists_unconfirmed_v1_impl(key_image);
+    return this->cryptonote_key_image_exists_unconfirmed_impl(key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::key_image_exists_onchain_v1(const crypto::key_image &key_image) const
+bool MockLedgerContext::seraphis_key_image_exists_unconfirmed(const crypto::key_image &key_image) const
 {
     boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->key_image_exists_onchain_v1_impl(key_image);
+    return this->seraphis_key_image_exists_unconfirmed_impl(key_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::cryptonote_key_image_exists_onchain(const crypto::key_image &key_image) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->cryptonote_key_image_exists_onchain_impl(key_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::seraphis_key_image_exists_onchain(const crypto::key_image &key_image) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->seraphis_key_image_exists_onchain_impl(key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::get_reference_set_proof_elements_v1(const std::vector<std::uint64_t> &indices,
@@ -263,16 +277,24 @@ std::uint64_t MockLedgerContext::pop_blocks(const std::size_t num_blocks)
 //-------------------------------------------------------------------------------------------------------------------
 // internal implementation details
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::key_image_exists_unconfirmed_v1_impl(const crypto::key_image &key_image) const
+bool MockLedgerContext::cryptonote_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const
 {
-    return m_unconfirmed_legacy_key_images.find(key_image) != m_unconfirmed_legacy_key_images.end() ||
-        m_unconfirmed_sp_key_images.find(key_image) != m_unconfirmed_sp_key_images.end();
+    return m_unconfirmed_legacy_key_images.find(key_image) != m_unconfirmed_legacy_key_images.end();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::key_image_exists_onchain_v1_impl(const crypto::key_image &key_image) const
+bool MockLedgerContext::seraphis_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const
 {
-    return m_legacy_key_images.find(key_image) != m_legacy_key_images.end() ||
-        m_sp_key_images.find(key_image) != m_sp_key_images.end();
+    return m_unconfirmed_sp_key_images.find(key_image) != m_unconfirmed_sp_key_images.end();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::cryptonote_key_image_exists_onchain_impl(const crypto::key_image &key_image) const
+{
+    return m_legacy_key_images.find(key_image) != m_legacy_key_images.end();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::seraphis_key_image_exists_onchain_impl(const crypto::key_image &key_image) const
+{
+    return m_sp_key_images.find(key_image) != m_sp_key_images.end();
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,
@@ -742,8 +764,8 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
 
     for (const LegacyEnoteImageV2 &legacy_enote_image : tx.m_legacy_input_images)
     {
-        if (this->key_image_exists_unconfirmed_v1_impl(legacy_enote_image.m_key_image) ||
-            this->key_image_exists_onchain_v1_impl(legacy_enote_image.m_key_image))
+        if (this->cryptonote_key_image_exists_unconfirmed_impl(legacy_enote_image.m_key_image) ||
+            this->cryptonote_key_image_exists_onchain_impl(legacy_enote_image.m_key_image))
             return false;
 
         legacy_key_images_collected.emplace_back(legacy_enote_image.m_key_image);
@@ -751,8 +773,8 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
 
     for (const SpEnoteImageV1 &sp_enote_image : tx.m_sp_input_images)
     {
-        if (this->key_image_exists_unconfirmed_v1_impl(key_image_ref(sp_enote_image)) ||
-            this->key_image_exists_onchain_v1_impl(key_image_ref(sp_enote_image)))
+        if (this->seraphis_key_image_exists_unconfirmed_impl(key_image_ref(sp_enote_image)) ||
+            this->seraphis_key_image_exists_onchain_impl(key_image_ref(sp_enote_image)))
             return false;
 
         sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
@@ -856,15 +878,15 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &
         // c. legacy key images are not present onchain
         for (const crypto::key_image &key_image : std::get<0>(tx_key_images.second))
         {
-            CHECK_AND_ASSERT_THROW_MES(!this->key_image_exists_onchain_v1_impl(key_image),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed tx key image exists in ledger (bug).");
+            CHECK_AND_ASSERT_THROW_MES(!this->cryptonote_key_image_exists_onchain_impl(key_image),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed legacy tx key image exists in ledger (bug).");
         }
 
-        // d. Seraphis key images are not present onchain
+        // d. seraphis key images are not present onchain
         for (const crypto::key_image &key_image : std::get<1>(tx_key_images.second))
         {
-            CHECK_AND_ASSERT_THROW_MES(!this->key_image_exists_onchain_v1_impl(key_image),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed tx key image exists in ledger (bug).");
+            CHECK_AND_ASSERT_THROW_MES(!this->seraphis_key_image_exists_onchain_impl(key_image),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed seraphis tx key image exists in ledger (bug).");
         }
     }
 

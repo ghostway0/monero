@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Interface for interacting with a context where a tx should be valid (e.g. a ledger).
-
 
 #pragma once
 
@@ -60,15 +57,21 @@ public:
 
 //member functions
     /**
-    * brief: key_image_exists_v1 - checks if a key image (linking tag) exists in the validation context
+    * brief: cryptonote_key_image_exists - checks if a cryptonote-style key image exists in the validation context
     * param: key_image -
     * return: true/false on check result
     */
-    virtual bool key_image_exists_v1(const crypto::key_image &key_image) const = 0;
+    virtual bool cryptonote_key_image_exists(const crypto::key_image &key_image) const = 0;
+    /**
+    * brief: seraphis_key_image_exists - checks if a seraphis-style key image exists in the validation context
+    * param: key_image -
+    * return: true/false on check result
+    */
+    virtual bool seraphis_key_image_exists(const crypto::key_image &key_image) const = 0;
     /**
     * brief: get_reference_set_proof_elements_v1 - gets legacy {KI, C} pairs stored in the validation context
     * param: indices -
-    * outparam: proof_elements_out - {squashed enote}
+    * outparam: proof_elements_out - {KI, C}
     */
     virtual void get_reference_set_proof_elements_v1(const std::vector<std::uint64_t> &indices,
         rct::ctkeyV &proof_elements_out) const = 0;

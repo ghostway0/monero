@@ -393,14 +393,14 @@ bool validate_sp_key_images_v1(const std::vector<LegacyEnoteImageV2> &legacy_inp
     // check no legacy duplicates in ledger context
     for (const LegacyEnoteImageV2 &legacy_input_image : legacy_input_images)
     {
-        if (tx_validation_context.key_image_exists_v1(legacy_input_image.m_key_image))
+        if (tx_validation_context.cryptonote_key_image_exists(legacy_input_image.m_key_image))
             return false;
     }
 
     // check no seraphis duplicates in ledger context
     for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
     {
-        if (tx_validation_context.key_image_exists_v1(key_image_ref(sp_input_image)))
+        if (tx_validation_context.seraphis_key_image_exists(key_image_ref(sp_input_image)))
             return false;
     }
 

@@ -66,13 +66,22 @@ public:
 
 //member functions
     /**
-    * brief: key_image_exists_v1 - checks if a key image (linking tag) exists in the mock ledger
+    * brief: cryptonote_key_image_exists - checks if a cryptonote key image exists in the mock ledger
     * param: key_image -
     * return: true/false on check result
     */
-    bool key_image_exists_v1(const crypto::key_image &key_image) const override
+    bool cryptonote_key_image_exists(const crypto::key_image &key_image) const override
     {
-        return m_mock_ledger_context.key_image_exists_onchain_v1(key_image);
+        return m_mock_ledger_context.cryptonote_key_image_exists_onchain(key_image);
+    }
+    /**
+    * brief: seraphis_key_image_exists - checks if a seraphis key image exists in the mock ledger
+    * param: key_image -
+    * return: true/false on check result
+    */
+    bool seraphis_key_image_exists(const crypto::key_image &key_image) const override
+    {
+        return m_mock_ledger_context.seraphis_key_image_exists_onchain(key_image);
     }
     /**
     * brief: get_reference_set_proof_elements_v1 - gets legacy {KI, C} pairs stored in the mock ledger

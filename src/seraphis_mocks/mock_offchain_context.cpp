@@ -59,11 +59,18 @@ namespace sp
 namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::key_image_exists_v1(const crypto::key_image &key_image) const
+bool MockOffchainContext::cryptonote_key_image_exists(const crypto::key_image &key_image) const
 {
     boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->key_image_exists_v1_impl(key_image);
+    return this->cryptonote_key_image_exists_impl(key_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockOffchainContext::seraphis_key_image_exists(const crypto::key_image &key_image) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->seraphis_key_image_exists_impl(key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
@@ -111,7 +118,12 @@ void MockOffchainContext::clear_cache()
 //-------------------------------------------------------------------------------------------------------------------
 // internal implementation details
 //-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::key_image_exists_v1_impl(const crypto::key_image &key_image) const
+bool MockOffchainContext::cryptonote_key_image_exists_impl(const crypto::key_image &key_image) const
+{
+    return m_legacy_key_images.find(key_image) != m_legacy_key_images.end();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockOffchainContext::seraphis_key_image_exists_impl(const crypto::key_image &key_image) const
 {
     return m_sp_key_images.find(key_image) != m_sp_key_images.end();
 }
@@ -170,7 +182,7 @@ bool MockOffchainContext::try_add_v1_impl(const std::vector<LegacyEnoteImageV2> 
 
     for (const LegacyEnoteImageV2 &legacy_enote_image : legacy_input_images)
     {
-        if (this->key_image_exists_v1_impl(legacy_enote_image.m_key_image))
+        if (this->cryptonote_key_image_exists_impl(legacy_enote_image.m_key_image))
             return false;
 
         legacy_key_images_collected.emplace_back(legacy_enote_image.m_key_image);
@@ -178,7 +190,7 @@ bool MockOffchainContext::try_add_v1_impl(const std::vector<LegacyEnoteImageV2> 
 
     for (const SpEnoteImageV1 &sp_enote_image : sp_input_images)
     {
-        if (this->key_image_exists_v1_impl(key_image_ref(sp_enote_image)))
+        if (this->seraphis_key_image_exists_impl(key_image_ref(sp_enote_image)))
             return false;
 
         sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
