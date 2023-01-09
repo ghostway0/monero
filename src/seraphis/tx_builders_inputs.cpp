@@ -226,6 +226,30 @@ void make_standard_input_context_v1(const std::vector<LegacyInputProposalV1> &le
     jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void make_standard_input_context_v1(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
+    const std::vector<SpEnoteImageV1> &sp_input_images,
+    rct::key &input_context_out)
+{
+    // collect key images
+    std::vector<crypto::key_image> legacy_key_images_collected;
+    std::vector<crypto::key_image> sp_key_images_collected;
+    legacy_key_images_collected.reserve(legacy_input_images.size());
+    sp_key_images_collected.reserve(sp_input_images.size());
+
+    for (const LegacyEnoteImageV2 &legacy_input_image : legacy_input_images)
+        legacy_key_images_collected.emplace_back(legacy_input_image.m_key_image);
+
+    for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
+        sp_key_images_collected.emplace_back(sp_input_image.m_core.m_key_image);
+
+    // sort the key images
+    std::sort(legacy_key_images_collected.begin(), legacy_key_images_collected.end());
+    std::sort(sp_key_images_collected.begin(), sp_key_images_collected.end());
+
+    // make the input context
+    jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     const rct::key &message,
     const crypto::secret_key &sp_spend_privkey,

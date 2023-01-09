@@ -758,9 +758,6 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
         sp_key_images_collected.emplace_back(sp_enote_image.m_core.m_key_image);
     }
 
-    rct::key input_context;
-    jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context);
-
     // 2. fail if tx id is duplicated (bug since key image check should prevent this)
     rct::key tx_id;
     get_sp_squashed_v1_txid(tx, tx_id);
@@ -769,6 +766,10 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
         "mock tx ledger (adding unconfirmed tx): tx id already exists in key image map (bug).");
     CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_id) == m_unconfirmed_tx_output_contents.end(),
         "mock tx ledger (adding unconfirmed tx): tx id already exists in output contents map (bug).");
+
+    // 3. prepare input context
+    rct::key input_context;
+    jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context);
 
 
     /// update state
