@@ -146,6 +146,21 @@ jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant)
     return variant.visit(visitor{});
 }
 //-------------------------------------------------------------------------------------------------------------------
+const crypto::key_image& key_image_ref(const SpEnoteImageV1 &enote_image)
+{
+    return enote_image.m_core.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
+const rct::key& masked_address_ref(const SpEnoteImageV1 &enote_image)
+{
+    return enote_image.m_core.m_masked_address;
+}
+//-------------------------------------------------------------------------------------------------------------------
+const rct::key& masked_commitment_ref(const SpEnoteImageV1 &enote_image)
+{
+    return enote_image.m_core.m_masked_commitment;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout)
 {
     transcript_inout.append("core", container.m_core);

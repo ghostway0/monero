@@ -174,7 +174,7 @@ static bool same_key_image(const LegacyInputV1 &input, const LegacyInputProposal
 //-------------------------------------------------------------------------------------------------------------------
 static bool same_key_image(const SpPartialInputV1 &partial_input, const SpInputProposalV1 &input_proposal)
 {
-    return partial_input.m_input_image.m_core.m_key_image == input_proposal.m_core.m_key_image;
+    return key_image_ref(partial_input.m_input_image) == key_image_ref(input_proposal);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -583,7 +583,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
         legacy_input_key_images.emplace_back(legacy_enote_image.m_key_image);
 
     for (const SpEnoteImageV1 &sp_enote_image : input_sp_enote_images)
-        sp_input_key_images.emplace_back(sp_enote_image.m_core.m_key_image);
+        sp_input_key_images.emplace_back(key_image_ref(sp_enote_image));
 
     // get proposal prefix
     make_tx_proposal_prefix_v1(tx_version,
@@ -646,7 +646,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
         legacy_input_key_images.emplace_back(legacy_input.m_input_image.m_key_image);
 
     for (const SpPartialInputV1 &sp_partial_input : sp_partial_inputs)
-        sp_input_key_images.emplace_back(sp_partial_input.m_input_image.m_core.m_key_image);
+        sp_input_key_images.emplace_back(key_image_ref(sp_partial_input.m_input_image));
 
     // get proposal prefix
     make_tx_proposal_prefix_v1(tx_version,
@@ -676,7 +676,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
         legacy_input_key_images.emplace_back(legacy_input_proposal.m_key_image);
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
-        sp_input_key_images.emplace_back(sp_input_proposal.m_core.m_key_image);
+        sp_input_key_images.emplace_back(key_image_ref(sp_input_proposal));
 
     // get proposal prefix
     make_tx_proposal_prefix_v1(tx_version,

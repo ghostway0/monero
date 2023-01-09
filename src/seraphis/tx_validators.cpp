@@ -84,7 +84,7 @@ static bool validate_sp_amount_balance_equality_check_v1(const std::vector<Legac
         input_image_amount_commitments.emplace_back(legacy_input_image.m_masked_commitment);
 
     for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
-        input_image_amount_commitments.emplace_back(sp_input_image.m_core.m_masked_commitment);
+        input_image_amount_commitments.emplace_back(masked_commitment_ref(sp_input_image));
 
     for (const SpEnoteV1 &output : outputs)
         output_commitments.emplace_back(output.m_core.m_amount_commitment);
@@ -291,15 +291,15 @@ bool validate_sp_semantics_input_images_v1(const std::vector<LegacyEnoteImageV2>
     for (const SpEnoteImageV1 &sp_image : sp_input_images)
     {
         // input linking tags must be in the prime subgroup: l*KI = identity
-        if (!sp::key_domain_is_prime_subgroup(rct::ki2rct(sp_image.m_core.m_key_image)))
+        if (!sp::key_domain_is_prime_subgroup(rct::ki2rct(key_image_ref(sp_image))))
             return false;
 
         // image parts must not be identity
-        if (sp_image.m_core.m_masked_address == rct::identity())
+        if (masked_address_ref(sp_image) == rct::identity())
             return false;
-        if (sp_image.m_core.m_masked_commitment == rct::identity())
+        if (masked_commitment_ref(sp_image) == rct::identity())
             return false;
-        if (rct::ki2rct(sp_image.m_core.m_key_image) == rct::identity())
+        if (rct::ki2rct(key_image_ref(sp_image)) == rct::identity())
             return false;
     }
 
@@ -400,7 +400,7 @@ bool validate_sp_key_images_v1(const std::vector<LegacyEnoteImageV2> &legacy_inp
     // check no seraphis duplicates in ledger context
     for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
     {
-        if (tx_validation_context.key_image_exists_v1(sp_input_image.m_core.m_key_image))
+        if (tx_validation_context.key_image_exists_v1(key_image_ref(sp_input_image)))
             return false;
     }
 
@@ -455,7 +455,7 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
     for (std::size_t input_commitment_index{0}; input_commitment_index < sp_input_images.size(); ++input_commitment_index)
     {
         // the two stored copies of input image commitments must match
-        if (!(sp_input_images[input_commitment_index].m_core.m_masked_commitment ==
+        if (!(masked_commitment_ref(sp_input_images[input_commitment_index]) ==
                 rct::scalarmult8(range_proofs.V[input_commitment_index])))
             return false;
     }
@@ -531,8 +531,8 @@ bool validate_sp_composition_proofs_v1(const std::vector<SpImageProofV1> &sp_ima
     {
         if (!sp::verify_sp_composition_proof(sp_image_proofs[input_index].m_composition_proof,
                 tx_proposal_prefix,
-                sp_input_images[input_index].m_core.m_masked_address,
-                sp_input_images[input_index].m_core.m_key_image))
+                masked_address_ref(sp_input_images[input_index]),
+                key_image_ref(sp_input_images[input_index])))
             return false;
     }
 

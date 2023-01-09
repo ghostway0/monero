@@ -198,7 +198,7 @@ static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputPro
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 &input_proposal,
+static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 &multisig_input_proposal,
     const SpEnoteStoreMockV1 &enote_store,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::uint64_t current_chain_height,
@@ -206,16 +206,16 @@ static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 
     const crypto::secret_key &k_view_balance)
 {
     // 1. convert to a normal input proposal so the key image is available
-    SpInputProposalV1 normal_input_proposal;
-    get_sp_input_proposal_v1(input_proposal, jamtis_spend_pubkey, k_view_balance, normal_input_proposal);
+    SpInputProposalV1 input_proposal;
+    get_sp_input_proposal_v1(multisig_input_proposal, jamtis_spend_pubkey, k_view_balance, input_proposal);
 
     // 2. get the legacy enote from the enote store
     SpContextualEnoteRecordV1 contextual_record;
-    if (!enote_store.try_get_sp_enote_record(normal_input_proposal.m_core.m_key_image, contextual_record))
+    if (!enote_store.try_get_sp_enote_record(key_image_ref(input_proposal), contextual_record))
         return false;
 
     // 3. expect the record obtained matches with the input proposal
-    if (!matches_with(input_proposal, contextual_record.m_record))
+    if (!matches_with(multisig_input_proposal, contextual_record.m_record))
         return false;
 
     // 4. expect that the enote has an allowed origin

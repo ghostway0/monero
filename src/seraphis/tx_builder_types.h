@@ -72,6 +72,8 @@ struct SpInputProposalV1 final
 
 /// get the proposal's amount
 rct::xmr_amount amount_ref(const SpInputProposalV1 &proposal);
+/// get the proposal's key image
+const crypto::key_image& key_image_ref(const SpInputProposalV1 &proposal);
 
 ////
 // SpCoinbaseOutputProposalV1

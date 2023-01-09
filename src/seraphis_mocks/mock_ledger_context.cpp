@@ -751,11 +751,11 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
 
     for (const SpEnoteImageV1 &sp_enote_image : tx.m_sp_input_images)
     {
-        if (this->key_image_exists_unconfirmed_v1_impl(sp_enote_image.m_core.m_key_image) ||
-            this->key_image_exists_onchain_v1_impl(sp_enote_image.m_core.m_key_image))
+        if (this->key_image_exists_unconfirmed_v1_impl(key_image_ref(sp_enote_image)) ||
+            this->key_image_exists_onchain_v1_impl(key_image_ref(sp_enote_image)))
             return false;
 
-        sp_key_images_collected.emplace_back(sp_enote_image.m_core.m_key_image);
+        sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
     }
 
     // 2. fail if tx id is duplicated (bug since key image check should prevent this)

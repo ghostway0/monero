@@ -58,6 +58,11 @@ rct::xmr_amount amount_ref(const SpInputProposalV1 &proposal)
     return proposal.m_core.m_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
+const crypto::key_image& key_image_ref(const SpInputProposalV1 &proposal)
+{
+    return proposal.m_core.m_key_image;
+}
+//-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount amount_ref(const SpCoinbaseOutputProposalV1 &proposal)
 {
     return proposal.m_enote.m_core.m_amount;

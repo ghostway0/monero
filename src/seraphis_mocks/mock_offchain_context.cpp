@@ -178,10 +178,10 @@ bool MockOffchainContext::try_add_v1_impl(const std::vector<LegacyEnoteImageV2> 
 
     for (const SpEnoteImageV1 &sp_enote_image : sp_input_images)
     {
-        if (this->key_image_exists_v1_impl(sp_enote_image.m_core.m_key_image))
+        if (this->key_image_exists_v1_impl(key_image_ref(sp_enote_image)))
             return false;
 
-        sp_key_images_collected.emplace_back(sp_enote_image.m_core.m_key_image);
+        sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
     }
 
     rct::key input_context;

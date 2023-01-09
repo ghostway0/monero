@@ -92,7 +92,7 @@ static void collect_sp_balance_proof_commitments_v1(const std::vector<SpEnoteIma
     commitments_out.reserve(seraphis_input_images.size() + output_enotes.size());
 
     for (const SpEnoteImageV1 &input_image : seraphis_input_images)
-        commitments_out.emplace_back(rct::scalarmultKey(input_image.m_core.m_masked_commitment, rct::INV_EIGHT));
+        commitments_out.emplace_back(rct::scalarmultKey(masked_commitment_ref(input_image), rct::INV_EIGHT));
 
     for (const SpEnoteV1 &output_enote : output_enotes)
         commitments_out.emplace_back(rct::scalarmultKey(output_enote.m_core.m_amount_commitment, rct::INV_EIGHT));
@@ -153,8 +153,8 @@ static void recover_sp_membership_proofs_v1(
 
     for (std::size_t sp_input_index{0}; sp_input_index < enote_images.size(); ++sp_input_index)
     {
-        make_binned_ref_set_generator_seed_v1(enote_images[sp_input_index].m_core.m_masked_address,
-            enote_images[sp_input_index].m_core.m_masked_commitment,
+        make_binned_ref_set_generator_seed_v1(masked_address_ref(enote_images[sp_input_index]),
+            masked_commitment_ref(enote_images[sp_input_index]),
             generator_seed_temp);
 
         recover_sp_membership_proof_v1(serializable_membership_proofs_in[sp_input_index],

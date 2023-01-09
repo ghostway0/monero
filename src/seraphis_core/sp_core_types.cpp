@@ -95,16 +95,6 @@ void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder
     transcript_inout.append("KI", container.m_key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
-const crypto::key_image& key_image_ref(const SpInputProposalCore &proposal)
-{
-    return proposal.m_key_image;
-}
-//-------------------------------------------------------------------------------------------------------------------
-const SpEnoteCoreVariant& enote_core_ref(const SpInputProposalCore &proposal)
-{
-    return proposal.m_enote_core;
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool operator==(const SpCoinbaseEnoteCore &a, const SpCoinbaseEnoteCore &b)
 {
     return a.m_onetime_address == b.m_onetime_address &&
@@ -197,7 +187,7 @@ void get_enote_image_core(const SpInputProposalCore &proposal, SpEnoteImageCore 
         image_out.m_masked_commitment);
 
     // KI = ((k_u + k_m) / k_x) U
-    image_out.m_key_image = key_image_ref(proposal);
+    image_out.m_key_image = proposal.m_key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_enote_core(const SpOutputProposalCore &proposal, SpEnoteCore &enote_out)

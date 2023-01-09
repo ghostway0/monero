@@ -132,6 +132,11 @@ void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &
 /// get size in bytes
 inline std::size_t sp_enote_image_v1_size_bytes() { return sp_enote_image_core_size_bytes(); }
 
+/// get the image components
+const crypto::key_image& key_image_ref(const SpEnoteImageV1 &enote_image);
+const rct::key& masked_address_ref(const SpEnoteImageV1 &enote_image);
+const rct::key& masked_commitment_ref(const SpEnoteImageV1 &enote_image);
+
 ////
 // SpMembershipProofV1
 // - Grootle

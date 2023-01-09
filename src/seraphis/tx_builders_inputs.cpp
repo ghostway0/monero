@@ -86,55 +86,62 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
     sp_hash_to_32(transcript.data(), transcript.size(), input_images_prefix_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal,
+void check_v1_input_proposal_semantics_v1(const SpInputProposalCore &input_proposal,
     const rct::key &sp_core_spend_pubkey,
     const crypto::secret_key &k_view_balance)
 {
     // 1. the onetime address must be reproducible
     rct::key extended_spendkey{sp_core_spend_pubkey};
-    extend_seraphis_spendkey_u(input_proposal.m_core.m_enote_view_extension_u, extended_spendkey);
+    extend_seraphis_spendkey_u(input_proposal.m_enote_view_extension_u, extended_spendkey);
 
     rct::key onetime_address_reproduced{extended_spendkey};
-    extend_seraphis_spendkey_x(add_secrets(input_proposal.m_core.m_enote_view_extension_x, k_view_balance),
+    extend_seraphis_spendkey_x(add_secrets(input_proposal.m_enote_view_extension_x, k_view_balance),
         onetime_address_reproduced);
-    mask_key(input_proposal.m_core.m_enote_view_extension_g, onetime_address_reproduced, onetime_address_reproduced);
+    mask_key(input_proposal.m_enote_view_extension_g, onetime_address_reproduced, onetime_address_reproduced);
 
-    CHECK_AND_ASSERT_THROW_MES(onetime_address_reproduced == onetime_address_ref(input_proposal.m_core.m_enote_core),
+    CHECK_AND_ASSERT_THROW_MES(onetime_address_reproduced == onetime_address_ref(input_proposal.m_enote_core),
         "input proposal v1 semantics check: could not reproduce the one-time address.");
 
     // 2. the key image must be reproducible and canonical
     crypto::key_image key_image_reproduced;
-    make_seraphis_key_image(add_secrets(input_proposal.m_core.m_enote_view_extension_x, k_view_balance),
+    make_seraphis_key_image(add_secrets(input_proposal.m_enote_view_extension_x, k_view_balance),
         rct::rct2pk(extended_spendkey),
         key_image_reproduced);
 
-    CHECK_AND_ASSERT_THROW_MES(key_image_reproduced == input_proposal.m_core.m_key_image,
+    CHECK_AND_ASSERT_THROW_MES(key_image_reproduced == input_proposal.m_key_image,
         "input proposal v1 semantics check: could not reproduce the key image.");
     CHECK_AND_ASSERT_THROW_MES(key_domain_is_prime_subgroup(rct::ki2rct(key_image_reproduced)),
         "input proposal v1 semantics check: the key image is not canonical.");
 
     // 3. the amount commitment must be reproducible
     const rct::key amount_commitment_reproduced{
-            rct::commit(input_proposal.m_core.m_amount, rct::sk2rct(input_proposal.m_core.m_amount_blinding_factor))
+            rct::commit(input_proposal.m_amount, rct::sk2rct(input_proposal.m_amount_blinding_factor))
         };
 
-    CHECK_AND_ASSERT_THROW_MES(amount_commitment_reproduced == amount_commitment_ref(input_proposal.m_core.m_enote_core),
+    CHECK_AND_ASSERT_THROW_MES(amount_commitment_reproduced == amount_commitment_ref(input_proposal.m_enote_core),
         "input proposal v1 semantics check: could not reproduce the amount commitment.");
 
     // 4. the masks should be canonical and > 1
-    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(input_proposal.m_core.m_address_mask)) == 0,
+    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(input_proposal.m_address_mask)) == 0,
         "input proposal v1 semantics check: invalid address mask.");
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(input_proposal.m_core.m_address_mask)),
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(input_proposal.m_address_mask)),
         "input proposal v1 semantics check: address mask is zero.");
-    CHECK_AND_ASSERT_THROW_MES(!(rct::sk2rct(input_proposal.m_core.m_address_mask) == rct::identity()),
+    CHECK_AND_ASSERT_THROW_MES(!(rct::sk2rct(input_proposal.m_address_mask) == rct::identity()),
         "input proposal v1 semantics check: address mask is 1.");
 
-    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(input_proposal.m_core.m_commitment_mask)) == 0,
+    CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(input_proposal.m_commitment_mask)) == 0,
         "input proposal v1 semantics check: invalid commitment mask.");
-    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(input_proposal.m_core.m_commitment_mask)),
+    CHECK_AND_ASSERT_THROW_MES(sc_isnonzero(to_bytes(input_proposal.m_commitment_mask)),
         "input proposal v1 semantics check: commitment mask is zero.");
-    CHECK_AND_ASSERT_THROW_MES(!(rct::sk2rct(input_proposal.m_core.m_commitment_mask) == rct::identity()),
+    CHECK_AND_ASSERT_THROW_MES(!(rct::sk2rct(input_proposal.m_commitment_mask) == rct::identity()),
         "input proposal v1 semantics check: commitment mask is 1.");
+}
+//-------------------------------------------------------------------------------------------------------------------
+void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal,
+    const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance)
+{
+    check_v1_input_proposal_semantics_v1(input_proposal.m_core, sp_core_spend_pubkey, k_view_balance);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_input_proposal(const SpEnoteCoreVariant &enote_core,
@@ -216,7 +223,7 @@ void make_standard_input_context_v1(const std::vector<LegacyInputProposalV1> &le
         legacy_key_images_collected.emplace_back(legacy_input_proposal.m_key_image);
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
-        sp_key_images_collected.emplace_back(key_image_ref(sp_input_proposal.m_core));
+        sp_key_images_collected.emplace_back(key_image_ref(sp_input_proposal));
 
     // sort the key images
     std::sort(legacy_key_images_collected.begin(), legacy_key_images_collected.end());
@@ -240,7 +247,7 @@ void make_standard_input_context_v1(const std::vector<LegacyEnoteImageV2> &legac
         legacy_key_images_collected.emplace_back(legacy_input_image.m_key_image);
 
     for (const SpEnoteImageV1 &sp_input_image : sp_input_images)
-        sp_key_images_collected.emplace_back(sp_input_image.m_core.m_key_image);
+        sp_key_images_collected.emplace_back(key_image_ref(sp_input_image));
 
     // sort the key images
     std::sort(legacy_key_images_collected.begin(), legacy_key_images_collected.end());
@@ -259,7 +266,7 @@ void make_v1_image_proof_v1(const SpInputProposalCore &input_proposal,
     // make image proof for an enote image in the squashed enote model
 
     // 1. the input enote
-    const SpEnoteCoreVariant &input_enote_core{enote_core_ref(input_proposal)};
+    const SpEnoteCoreVariant &input_enote_core{input_proposal.m_enote_core};
 
     // 2. the input enote image
     SpEnoteImageCore input_enote_image_core;
@@ -338,16 +345,16 @@ void check_v1_partial_input_semantics_v1(const SpPartialInputV1 &partial_input)
         reconstructed_masked_address,
         reconstructed_masked_commitment);
 
-    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_address == partial_input.m_input_image.m_core.m_masked_address,
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_address == masked_address_ref(partial_input.m_input_image),
         "partial input semantics (v1): could not reconstruct masked address.");
-    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_commitment == partial_input.m_input_image.m_core.m_masked_commitment,
+    CHECK_AND_ASSERT_THROW_MES(reconstructed_masked_commitment == masked_commitment_ref(partial_input.m_input_image),
         "partial input semantics (v1): could not reconstruct masked commitment.");
 
     // image proof is valid
     CHECK_AND_ASSERT_THROW_MES(verify_sp_composition_proof(partial_input.m_image_proof.m_composition_proof,
             partial_input.m_tx_proposal_prefix,
             reconstructed_masked_address,
-            partial_input.m_input_image.m_core.m_key_image),
+            key_image_ref(partial_input.m_input_image)),
         "partial input semantics (v1): image proof is invalid.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -369,7 +376,7 @@ void make_v1_partial_input_v1(const SpInputProposalV1 &input_proposal,
     partial_input_out.m_address_mask                 = input_proposal.m_core.m_address_mask;
     partial_input_out.m_commitment_mask              = input_proposal.m_core.m_commitment_mask;
     partial_input_out.m_tx_proposal_prefix           = tx_proposal_prefix;
-    partial_input_out.m_input_enote_core             = enote_core_ref(input_proposal.m_core);
+    partial_input_out.m_input_enote_core             = input_proposal.m_core.m_enote_core;
     partial_input_out.m_input_amount                 = amount_ref(input_proposal);
     partial_input_out.m_input_amount_blinding_factor = input_proposal.m_core.m_amount_blinding_factor;
 }
@@ -667,7 +674,7 @@ void align_v1_membership_proofs_v1(const std::vector<SpEnoteImageV1> &input_imag
             std::find_if(
                 alignable_membership_proofs.begin(),
                 alignable_membership_proofs.end(),
-                [&masked_address = input_image.m_core.m_masked_address](const SpAlignableMembershipProofV1 &a) -> bool
+                [&masked_address = masked_address_ref(input_image)](const SpAlignableMembershipProofV1 &a) -> bool
                 {
                     return alignment_check(a, masked_address);
                 }

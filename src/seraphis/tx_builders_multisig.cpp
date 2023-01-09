@@ -110,7 +110,7 @@ static void get_seraphis_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     for (const SpInputProposalV1 &input_proposal : sp_input_proposals)
     {
         get_enote_image_v1(input_proposal, enote_image_temp);
-        proof_contexts_out[enote_image_temp.m_core.m_masked_address] = tx_proposal_prefix;
+        proof_contexts_out[masked_address_ref(enote_image_temp)] = tx_proposal_prefix;
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ static void get_sp_proof_base_keys_v1(const std::vector<SpInputProposalV1> &sp_i
     for (const SpInputProposalV1 &input_proposal : sp_input_proposals)
     {
         get_enote_image_v1(input_proposal, enote_image_temp);
-        sp_proof_key_base_points_out[enote_image_temp.m_core.m_masked_address] = {rct::pk2rct(crypto::get_U())};
+        sp_proof_key_base_points_out[masked_address_ref(enote_image_temp)] = {rct::pk2rct(crypto::get_U())};
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -193,12 +193,12 @@ static void check_semantics_sp_multisig_input_material_v1(const rct::key &tx_pro
     SpEnoteImageV1 sp_enote_image;
     get_enote_image_v1(input_proposal, sp_enote_image);
 
-    CHECK_AND_ASSERT_THROW_MES(input_proof_proposal.K == sp_enote_image.m_core.m_masked_address,
+    CHECK_AND_ASSERT_THROW_MES(input_proof_proposal.K == masked_address_ref(sp_enote_image),
         "semantics check seraphis multisig input material v1: sp input proof proposal does not match input proposal "
         "(different proof keys).");
 
     // 3. input proof proposal key image should match with the input proposal
-    CHECK_AND_ASSERT_THROW_MES(input_proof_proposal.KI == sp_enote_image.m_core.m_key_image,
+    CHECK_AND_ASSERT_THROW_MES(input_proof_proposal.KI == key_image_ref(sp_enote_image),
         "semantics check seraphis multisig input material v1: sp input proof proposal does not match input proposal "
         "(different key images).");
 }
@@ -310,41 +310,48 @@ static void replace_legacy_input_proposal_destinations_for_tx_simulation_v1(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static void replace_sp_input_proposal_destination_for_tx_simulation_v1(const rct::key &sp_core_spend_pubkey_mock,
+    const crypto::secret_key &k_view_balance,
+    SpInputProposalCore &sp_input_proposal_inout)
+{
+    // 1. save the amount commitment in a new temporary enote core shuttle variable
+    SpEnoteCore temp_enote_core;
+    temp_enote_core.m_amount_commitment = amount_commitment_ref(sp_input_proposal_inout.m_enote_core);
+
+    // 2. extended spendkey
+    rct::key seraphis_extended_spendkey_temp{sp_core_spend_pubkey_mock};  //k_m U
+    extend_seraphis_spendkey_u(sp_input_proposal_inout.m_enote_view_extension_u,
+        seraphis_extended_spendkey_temp);  //(k_u + k_m) U
+
+    // 3. new onetime address
+    rct::key seraphis_onetime_address_temp{seraphis_extended_spendkey_temp};  //(k_u + k_m) U
+    extend_seraphis_spendkey_x(k_view_balance, seraphis_onetime_address_temp);  //k_vb X + (k_u + k_m) U
+    extend_seraphis_spendkey_x(sp_input_proposal_inout.m_enote_view_extension_x,
+        seraphis_onetime_address_temp);  //(k_x + k_vb) X + (k_u + k_m) U
+    mask_key(sp_input_proposal_inout.m_enote_view_extension_g,
+        seraphis_onetime_address_temp,
+        temp_enote_core.m_onetime_address);  //k_g G + (k_x + k_vb) X + (k_u + k_m) U
+
+    // 4. reset the proposal's enote core
+    sp_input_proposal_inout.m_enote_core = temp_enote_core;
+
+    // 5. update key image for new onetime address
+    make_seraphis_key_image(add_secrets(sp_input_proposal_inout.m_enote_view_extension_x, k_view_balance),
+        rct::rct2pk(seraphis_extended_spendkey_temp),
+        sp_input_proposal_inout.m_key_image);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static void replace_sp_input_proposal_destinations_for_tx_simulation_v1(const rct::key &sp_core_spend_pubkey_mock,
     const crypto::secret_key &k_view_balance,
     std::vector<SpInputProposalV1> &sp_input_proposals_inout)
 {
     // 1. update the input proposals
-    rct::key seraphis_extended_spendkey_temp;
-    rct::key seraphis_onetime_address_temp;
-    SpEnoteCore temp_enote_core;
-
     for (SpInputProposalV1 &sp_input_proposal : sp_input_proposals_inout)
     {
-        // a. save the amount commitment in a new temporary enote core shuttle variable
-        temp_enote_core.m_amount_commitment = amount_commitment_ref(sp_input_proposal.m_core.m_enote_core);
-
-        // b. extended spendkey
-        seraphis_extended_spendkey_temp = sp_core_spend_pubkey_mock;  //k_m U
-        extend_seraphis_spendkey_u(sp_input_proposal.m_core.m_enote_view_extension_u,
-            seraphis_extended_spendkey_temp);  //(k_u + k_m) U
-
-        // c. new onetime address
-        seraphis_onetime_address_temp = seraphis_extended_spendkey_temp;  //(k_u + k_m) U
-        extend_seraphis_spendkey_x(k_view_balance, seraphis_onetime_address_temp);  //k_vb X + (k_u + k_m) U
-        extend_seraphis_spendkey_x(sp_input_proposal.m_core.m_enote_view_extension_x,
-            seraphis_onetime_address_temp);  //(k_x + k_vb) X + (k_u + k_m) U
-        mask_key(sp_input_proposal.m_core.m_enote_view_extension_g,
-            seraphis_onetime_address_temp,
-            temp_enote_core.m_onetime_address);  //k_g G + (k_x + k_vb) X + (k_u + k_m) U
-
-        // d. reset the proposal's enote core
-        sp_input_proposal.m_core.m_enote_core = temp_enote_core;
-
-        // e. update key image for new onetime address
-        make_seraphis_key_image(add_secrets(sp_input_proposal.m_core.m_enote_view_extension_x, k_view_balance),
-            rct::rct2pk(seraphis_extended_spendkey_temp),
-            sp_input_proposal.m_core.m_key_image);
+        replace_sp_input_proposal_destination_for_tx_simulation_v1(sp_core_spend_pubkey_mock,
+            k_view_balance,
+            sp_input_proposal.m_core);
     }
 
     // 2. make sure the updated proposals are sorted
@@ -701,8 +708,8 @@ static bool try_make_sp_partial_inputs_for_multisig_v1(const rct::key &tx_propos
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
     {
         get_enote_image_v1(sp_input_proposal, enote_image_temp);
-        sp_proof_contexts[enote_image_temp.m_core.m_masked_address] = tx_proposal_prefix;
-        mapped_sp_input_proposals[enote_image_temp.m_core.m_masked_address] = sp_input_proposal;
+        sp_proof_contexts[masked_address_ref(enote_image_temp)] = tx_proposal_prefix;
+        mapped_sp_input_proposals[masked_address_ref(enote_image_temp)] = sp_input_proposal;
     }
 
     // 2. filter the seraphis partial signatures into a map
@@ -1158,8 +1165,8 @@ void make_v1_multisig_tx_proposal_v1(std::vector<LegacyMultisigInputProposalV1> 
         get_enote_image_v1(sp_input_proposal, sp_enote_image_temp);
 
         multisig::make_sp_composition_multisig_proposal(tx_proposal_prefix,
-            sp_enote_image_temp.m_core.m_masked_address,
-            sp_enote_image_temp.m_core.m_key_image,
+            masked_address_ref(sp_enote_image_temp),
+            key_image_ref(sp_enote_image_temp),
             tools::add_element(proposal_out.m_sp_input_proof_proposals));
     }
 

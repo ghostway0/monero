@@ -69,6 +69,9 @@ void make_input_images_prefix_v1(const std::vector<LegacyEnoteImageV2> &legacy_e
 * param: sp_core_spend_pubkey -
 * param: k_view_balance -
 */
+void check_v1_input_proposal_semantics_v1(const SpInputProposalCore &input_proposal,
+    const rct::key &sp_core_spend_pubkey,
+    const crypto::secret_key &k_view_balance);
 void check_v1_input_proposal_semantics_v1(const SpInputProposalV1 &input_proposal,
     const rct::key &sp_core_spend_pubkey,
     const crypto::secret_key &k_view_balance);

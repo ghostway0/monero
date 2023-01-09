@@ -138,11 +138,6 @@ struct SpInputProposalCore final
     crypto::secret_key m_commitment_mask;
 };
 
-/// access the proposal's key image
-const crypto::key_image& key_image_ref(const SpInputProposalCore &proposal);
-/// access the proposal's enote core
-const SpEnoteCoreVariant& enote_core_ref(const SpInputProposalCore &proposal);
-
 ////
 // SpOutputProposalCore
 // - for creating an enote to send an amount to someone
