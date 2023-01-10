@@ -27,35 +27,44 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ////
-// Schnorr-like dual-base proof for a pair of vectors: V_1 = {k_1 G1, k_2 G1, ...}, V_2 = {k_1 G2, k_2 G2, ...}
-// - demonstrates knowledge of all k_1, k_2, k_3, ...
-// - demonstrates that members of V_1 have a 1:1 discrete-log equivalence with the members of V_2, across base keys G1, G2
-// - guarantees that V_1 and V_2 contain canonical prime-order subgroup group elements (they are stored multiplied by
-//   (1/8) then multiplied by 8 before verification)
+// Schnorr-like matrix proof between a vector of base keys and vector of private keys.
+// - base keys: {B} = {B1, B2, ..., Bn}
+// - private keys: {k} = {k1, k2, ..., kn}
+// - public keys per base key: V1 = {k1 B1, k2 B1, ..., kn B1}
+// - all public keys: M = {{V}} = {V1, V2, ... Vn}
+// - 1. demonstrates knowledge of all {k}
+// - 2. demonstrates that members of each public key set in {V1, V2, ... Vn} have a 1:1 discrete-log equivalence with the
+//      members of the other public key sets across the base keys {B}
+// - 3. guarantees that {{V}} contain canonical prime-order subgroup group elements (pubkeys are stored multiplied by
+//      (1/8) then multiplied by 8 before verification)
+// NOTE: does not allow signing with different private keys on different base keys (e.g. the pair {k1 G1, k2 G2}), this
+//       proof is designed mainly for showing discrete log equivalence across multiple bases (with the bonus of being
+//       efficient when you have multiple such proofs to construct in parallel)
+// NOTE2: at one base key this proof degenerates into a simple Schnorr signature, which can be useful for making signatures
+//        across arbitrary base keys
 //
 // proof outline
 // 0. preliminaries
 //    H_32(...) = blake2b(...) -> 32 bytes   hash to 32 bytes (domain separated)
 //    H_n(...)  = H_64(...) mod l            hash to ed25519 scalar (domain separated)
-//    G1, G2: assumed to be ed25519 keys
+//    {B}: assumed to be ed25519 keys
 // 1. proof nonce and challenge
-//    given: m, G_1, G_2, {k}
-//    {V_1} = {k} * G_1
-//    {V_2} = {k} * G_2
-//    mu = H_n(m, G_1, G_2, {V_1}, {V_2})  aggregation coefficient
-//    cm = H(mu)                           challenge message
-//    a = rand()                           prover nonce
-//    c = H_n(cm, [a*G1], [a*G2])
+//    given: m, {B}, {k}
+//    {{V}} = {k} * {B}
+//    mu = H_n(m, {B}, {{V}})       aggregation coefficient
+//    cm = H(mu)                    challenge message
+//    a = rand()                    prover nonce
+//    c = H_n(cm, [a*B1], [a*B2], ..., [a*Bn])
 // 2. aggregate response
 //    r = a - c * sum_i(mu^i * k_i)
-// 3. proof: {m, c, r, {V_1}, {V_2}}
+// 3. proof: {m, c, r, {{V}}}
 //
 // verification
 // 1. mu, cm = ...
-// 2. c' = H_n(cm, [r*G1 + c*sum_i(mu^i*V_1[i])], [r*G2 + c*sum_i(mu^i*V_2[i])])
+// 2. c' = H_n(cm, [r*B1 + c*sum_i(mu^i*V_1[i])], [r*B2 + c*sum_i(mu^i*V_2[i])], ...)
 // 3. if (c' == c) then the proof is valid
 //
-// note: proof are 'concise' using the powers-of-aggregation coefficient approach from Triptych
+// note: proofs are 'concise' using the powers-of-aggregation coefficient approach from Triptych
 //
 // References:
 // - Triptych (Sarang Noether): https://eprint.iacr.org/2020/018
@@ -81,7 +90,7 @@ namespace sp { class SpTranscriptBuilder; }
 namespace sp
 {
 
-struct DualBaseVectorProof
+struct MatrixProof
 {
     // message
     rct::key m;
@@ -89,35 +98,29 @@ struct DualBaseVectorProof
     rct::key c;
     // response
     rct::key r;
-    // pubkeys (stored multiplied by (1/8))
-    std::vector<crypto::public_key> V_1;
-    std::vector<crypto::public_key> V_2;
+    // pubkeys matrix (stored multiplied by (1/8)); each inner vector uses a different base key
+    std::vector<std::vector<crypto::public_key>> M;
 };
-inline const boost::string_ref container_name(const DualBaseVectorProof&) { return "DualBaseVectorProof"; }
-void append_to_transcript(const DualBaseVectorProof &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const MatrixProof&) { return "MatrixProof"; }
+void append_to_transcript(const MatrixProof &container, SpTranscriptBuilder &transcript_inout);
 
 /**
-* brief: make_dual_base_vector_proof - create a dual base vector proof
+* brief: make_matrix_proof - create a matrix proof
 * param: message - message to insert in Fiat-Shamir transform hash
-* param: G_1 - base key of first vector
-* param: G_2 - base key of second vector
-* param: privkeys - secret keys k_1, k_2, ...
+* param: B - base keys B1, B2, ...
+* param: privkeys - secret keys k1, k2, ...
 * outparam: proof_out - the proof
 */
-void make_dual_base_vector_proof(const rct::key &message,
-    const crypto::public_key &G_1,
-    const crypto::public_key &G_2,
+void make_matrix_proof(const rct::key &message,
+    const std::vector<crypto::public_key> &B,
     const std::vector<crypto::secret_key> &privkeys,
-    DualBaseVectorProof &proof_out);
+    MatrixProof &proof_out);
 /**
-* brief: verify_dual_base_vector_proof - verify a dual base vector proof
+* brief: verify_matrix_proof - verify a matrix proof
 * param: proof - proof to verify
-* param: G_1 - base key of first vector
-* param: G_2 - base key of second vector
+* param: B - base keys B1, B2, ...
 * return: true/false on verification result
 */
-bool verify_dual_base_vector_proof(const DualBaseVectorProof &proof,
-    const crypto::public_key &G_1,
-    const crypto::public_key &G_2);
+bool verify_matrix_proof(const MatrixProof &proof, const std::vector<crypto::public_key> &B);
 
 } //namespace sp

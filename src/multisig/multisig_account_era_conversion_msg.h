@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 
-namespace sp { struct DualBaseVectorProof; }
+namespace sp { struct MatrixProof; }
 
 
 namespace multisig
@@ -50,11 +50,11 @@ namespace multisig
   //   See the multisig::get_multisig_account_with_new_generator_era() method for more information.
   // - INVARIANT: keyshares stored here are canonical prime-order subgroup points.
   //
-  // dualbase_proof_msg = versioning-domain-sep || signing_pubkey || old_era || new_era
+  // matrix_proof_msg = versioning-domain-sep || signing_pubkey || old_era || new_era
   //
   // msg = versioning-domain-sep ||
-  //       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || dualbase_proof_challenge ||
-  //           dualbase_proof_response || crypto_sig[signing_privkey](dualbase_proof_challenge || dualbase_proof_response))
+  //       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || matrix_proof_challenge ||
+  //           matrix_proof_response || crypto_sig[signing_privkey](matrix_proof_challenge || matrix_proof_response))
   ///
   class multisig_account_era_conversion_msg final
   {
@@ -95,7 +95,7 @@ namespace multisig
 
   private:
     // set: msg string based on msg contents, with signing pubkey defined from input privkey
-    void construct_msg(const crypto::secret_key &signing_privkey, const sp::DualBaseVectorProof &dualbase_proof);
+    void construct_msg(const crypto::secret_key &signing_privkey, const sp::MatrixProof &matrix_proof);
     // parse msg string into parts, validate contents and signature
     void parse_and_validate_msg();
 

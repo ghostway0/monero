@@ -39,7 +39,7 @@ extern "C"
 #include "include_base_utils.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/dual_base_vector_proof.h"
+#include "seraphis_crypto/matrix_proof.h"
 #include "serialization/binary_archive.h"
 #include "serialization/serialization.h"
 
@@ -96,7 +96,7 @@ namespace multisig
   //----------------------------------------------------------------------------------------------------------------------
   // INTERNAL
   //----------------------------------------------------------------------------------------------------------------------
-  static void get_dualbase_proof_msg(const boost::string_ref magic,
+  static void get_matrix_proof_msg(const boost::string_ref magic,
     const crypto::public_key &signing_pubkey,
     const cryptonote::account_generator_era old_era,
     const cryptonote::account_generator_era new_era,
@@ -121,13 +121,13 @@ namespace multisig
   //----------------------------------------------------------------------------------------------------------------------
   // INTERNAL
   //----------------------------------------------------------------------------------------------------------------------
-  static crypto::hash get_signature_msg(const sp::DualBaseVectorProof &dualbase_proof)
+  static crypto::hash get_signature_msg(const sp::MatrixProof &matrix_proof)
   {
-    // signature_msg = dualbase_proof_challenge || dualbase_proof_response
+    // signature_msg = matrix_proof_challenge || matrix_proof_response
     std::string data;
     data.reserve(2*sizeof(crypto::public_key));
-    data.append(reinterpret_cast<const char *>(&dualbase_proof.c), sizeof(crypto::public_key));
-    data.append(reinterpret_cast<const char *>(&dualbase_proof.r), sizeof(crypto::public_key));
+    data.append(reinterpret_cast<const char *>(&matrix_proof.c), sizeof(crypto::public_key));
+    data.append(reinterpret_cast<const char *>(&matrix_proof.r), sizeof(crypto::public_key));
 
     return crypto::cn_fast_hash(data.data(), data.size());
   }
@@ -153,18 +153,20 @@ namespace multisig
     CHECK_AND_ASSERT_THROW_MES(crypto::secret_key_to_public_key(signing_privkey, m_signing_pubkey),
       "Failed to derive public key");
 
-    // make dual base vector proof
+    // make matrix proof
     rct::key proof_msg;
-    get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, proof_msg);
-    sp::DualBaseVectorProof proof;
-    sp::make_dual_base_vector_proof(proof_msg, rct::rct2pk(G_1), rct::rct2pk(G_2), keyshare_privkeys, proof);
+    get_matrix_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, proof_msg);
+    sp::MatrixProof proof;
+    sp::make_matrix_proof(proof_msg, {rct::rct2pk(G_1), rct::rct2pk(G_2)}, keyshare_privkeys, proof);
 
     // sets message and signing pub key
     this->construct_msg(signing_privkey, proof);
 
     // set keyshares
-    m_old_keyshares = pubkeys_mul8(std::move(proof.V_1));
-    m_new_keyshares = pubkeys_mul8(std::move(proof.V_2));
+    CHECK_AND_ASSERT_THROW_MES(proof.M.size() == 2, "multisig conversion msg: invalid matrix proof keys size.");
+
+    m_old_keyshares = pubkeys_mul8(std::move(proof.M[0]));
+    m_new_keyshares = pubkeys_mul8(std::move(proof.M[1]));
   }
   //----------------------------------------------------------------------------------------------------------------------
   // multisig_account_era_conversion_msg: EXTERNAL
@@ -177,34 +179,37 @@ namespace multisig
   // multisig_account_era_conversion_msg: INTERNAL
   //----------------------------------------------------------------------------------------------------------------------
   void multisig_account_era_conversion_msg::construct_msg(const crypto::secret_key &signing_privkey,
-    const sp::DualBaseVectorProof &dualbase_proof)
+    const sp::MatrixProof &matrix_proof)
   {
     ////
-    // msg_to_sign = dualbase_proof_challenge || dualbase_proof_response
+    // msg_to_sign = matrix_proof_challenge || matrix_proof_response
     //
     // msg = versioning-domain-sep ||
-    //       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || dualbase_proof_challenge ||
-    //           dualbase_proof_response || crypto_sig[signing_privkey](dualbase_proof_challenge || dualbase_proof_response))
+    //       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || matrix_proof_challenge ||
+    //           matrix_proof_response || crypto_sig[signing_privkey](matrix_proof_challenge || matrix_proof_response))
     ///
 
     // sign the message
     crypto::signature msg_signature;
-    crypto::generate_signature(get_signature_msg(dualbase_proof), m_signing_pubkey, signing_privkey, msg_signature);
+    crypto::generate_signature(get_signature_msg(matrix_proof), m_signing_pubkey, signing_privkey, msg_signature);
 
-    // mangle the dualbase proof into a crypto::signature
-    const crypto::signature mangled_dualbase_proof{rct::rct2sk(dualbase_proof.c), rct::rct2sk(dualbase_proof.r)};
+    // mangle the matrix proof into a crypto::signature
+    const crypto::signature mangled_matrix_proof{rct::rct2sk(matrix_proof.c), rct::rct2sk(matrix_proof.r)};
 
     // prepare the message
+    CHECK_AND_ASSERT_THROW_MES(matrix_proof.M.size() == 2,
+      "serializing multisig conversion msg: invalid matrix proof keys size.");
+
     std::stringstream serialized_msg_ss;
     binary_archive<true> b_archive(serialized_msg_ss);
 
     multisig_conversion_msg_serializable msg_serializable;
     msg_serializable.old_era        = m_old_era;
     msg_serializable.new_era        = m_new_era;
-    msg_serializable.old_keyshares  = dualbase_proof.V_1;
-    msg_serializable.new_keyshares  = dualbase_proof.V_2;
+    msg_serializable.old_keyshares  = matrix_proof.M[0];
+    msg_serializable.new_keyshares  = matrix_proof.M[1];
     msg_serializable.signing_pubkey = m_signing_pubkey;
-    msg_serializable.dual_base_vector_proof_partial = mangled_dualbase_proof;
+    msg_serializable.matrix_proof_partial = mangled_matrix_proof;
     msg_serializable.signature      = msg_signature;
 
     CHECK_AND_ASSERT_THROW_MES(::serialization::serialize(b_archive, msg_serializable),
@@ -231,20 +236,23 @@ namespace multisig
     binary_archive<false> archived_msg{epee::strspan<std::uint8_t>(msg_no_magic)};
 
     // extract data from the message
-    sp::DualBaseVectorProof dualbase_proof;
+    sp::MatrixProof matrix_proof;
     crypto::signature msg_signature;
 
     multisig_conversion_msg_serializable deserialized_msg;
     if (::serialization::serialize(archived_msg, deserialized_msg))
     {
-      m_old_era          = deserialized_msg.old_era;
-      m_new_era          = deserialized_msg.new_era;
-      dualbase_proof.V_1 = std::move(deserialized_msg.old_keyshares);
-      dualbase_proof.V_2 = std::move(deserialized_msg.new_keyshares);
-      m_signing_pubkey   = deserialized_msg.signing_pubkey;
-      memcpy(dualbase_proof.c.bytes, to_bytes(deserialized_msg.dual_base_vector_proof_partial.c), sizeof(crypto::ec_scalar));
-      memcpy(dualbase_proof.r.bytes, to_bytes(deserialized_msg.dual_base_vector_proof_partial.r), sizeof(crypto::ec_scalar));
-      msg_signature      = deserialized_msg.signature;
+      m_old_era        = deserialized_msg.old_era;
+      m_new_era        = deserialized_msg.new_era;
+      matrix_proof.M   =
+        {
+          std::move(deserialized_msg.old_keyshares),
+          std::move(deserialized_msg.new_keyshares)
+        };
+      m_signing_pubkey = deserialized_msg.signing_pubkey;
+      memcpy(matrix_proof.c.bytes, to_bytes(deserialized_msg.matrix_proof_partial.c), sizeof(crypto::ec_scalar));
+      memcpy(matrix_proof.r.bytes, to_bytes(deserialized_msg.matrix_proof_partial.r), sizeof(crypto::ec_scalar));
+      msg_signature    = deserialized_msg.signature;
     }
     else CHECK_AND_ASSERT_THROW_MES(false, "Deserializing conversion msg failed.");
 
@@ -253,27 +261,31 @@ namespace multisig
     const rct::key G_2{rct::pk2rct(cryptonote::get_primary_generator(m_new_era))};
     CHECK_AND_ASSERT_THROW_MES(!(G_1 == rct::Z), "Unknown conversion msg old era.");
     CHECK_AND_ASSERT_THROW_MES(!(G_2 == rct::Z), "Unknown conversion msg new era.");
-    CHECK_AND_ASSERT_THROW_MES(dualbase_proof.V_1.size() > 0, "Conversion message has no conversion keys.");
-    CHECK_AND_ASSERT_THROW_MES(dualbase_proof.V_1.size() == dualbase_proof.V_2.size(),
+    CHECK_AND_ASSERT_THROW_MES(matrix_proof.M.size() == 2, "Conversion message is malformed.");
+    CHECK_AND_ASSERT_THROW_MES(matrix_proof.M[0].size() > 0, "Conversion message has no conversion keys.");
+    CHECK_AND_ASSERT_THROW_MES(matrix_proof.M[0].size() == matrix_proof.M[1].size(),
       "Conversion message key vectors don't line up.");
     CHECK_AND_ASSERT_THROW_MES(m_signing_pubkey != crypto::null_pkey && m_signing_pubkey != rct::rct2pk(rct::identity()),
       "Message signing key was invalid.");
     CHECK_AND_ASSERT_THROW_MES(rct::isInMainSubgroup(rct::pk2rct(m_signing_pubkey)),
       "Message signing key was not in prime subgroup.");
 
-    // validate dualbase proof
-    get_dualbase_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, dualbase_proof.m);
-    CHECK_AND_ASSERT_THROW_MES(sp::verify_dual_base_vector_proof(dualbase_proof, rct::rct2pk(G_1), rct::rct2pk(G_2)),
-      "Conversion message dualbase proof invalid.");
+    // validate matrix proof
+    get_matrix_proof_msg(MULTISIG_CONVERSION_MSG_MAGIC_V1, m_signing_pubkey, m_old_era, m_new_era, matrix_proof.m);
+    CHECK_AND_ASSERT_THROW_MES(sp::verify_matrix_proof(matrix_proof,
+        {
+          rct::rct2pk(G_1), rct::rct2pk(G_2)
+        }),
+      "Conversion message matrix proof invalid.");
 
     // validate signature
-    CHECK_AND_ASSERT_THROW_MES(crypto::check_signature(get_signature_msg(dualbase_proof), m_signing_pubkey, msg_signature),
+    CHECK_AND_ASSERT_THROW_MES(crypto::check_signature(get_signature_msg(matrix_proof), m_signing_pubkey, msg_signature),
       "Multisig conversion msg signature invalid.");
 
     // save keyshares (note: saving these after checking the signature ensures if the signature is invalid then the 
     //   message's internal state won't be usable even if the invalid-signature exception is caught)
-    m_old_keyshares = pubkeys_mul8(std::move(dualbase_proof.V_1));
-    m_new_keyshares = pubkeys_mul8(std::move(dualbase_proof.V_2));
+    m_old_keyshares = pubkeys_mul8(std::move(matrix_proof.M[0]));
+    m_new_keyshares = pubkeys_mul8(std::move(matrix_proof.M[1]));
   }
   //----------------------------------------------------------------------------------------------------------------------
 } //namespace multisig

@@ -37,7 +37,7 @@ extern "C"
 }
 #include "include_base_utils.h"
 #include "ringct/rctOps.h"
-#include "seraphis_crypto/dual_base_vector_proof.h"
+#include "seraphis_crypto/matrix_proof.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
 #include "serialization/binary_archive.h"
@@ -91,7 +91,7 @@ static bool try_get_message_no_magic(const std::string &original_msg,
 }
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
-static rct::key get_dualbase_proof_msg(const boost::string_ref magic,
+static rct::key get_matrix_proof_msg(const boost::string_ref magic,
   const crypto::public_key &signing_pubkey,
   const crypto::public_key &onetime_address)
 {
@@ -110,12 +110,12 @@ static rct::key get_dualbase_proof_msg(const boost::string_ref magic,
 //----------------------------------------------------------------------------------------------------------------------
 static crypto::hash get_signature_msg(const boost::string_ref magic,
   const crypto::public_key &onetime_address,
-  const sp::DualBaseVectorProof &dualbase_proof)
+  const sp::MatrixProof &matrix_proof)
 {
-  // signature_msg = H_32(Ko, dualbase proof)
+  // signature_msg = H_32(Ko, matrix proof)
   sp::SpFSTranscript transcript{magic, 2*sizeof(rct::key)};
   transcript.append("Ko", onetime_address);
-  transcript.append("dualbase_proof", dualbase_proof);
+  transcript.append("matrix_proof", matrix_proof);
 
   // message
   crypto::hash message;
@@ -147,12 +147,14 @@ multisig_partial_cn_key_image_msg::multisig_partial_cn_key_image_msg(const crypt
   crypto::key_image key_image_base;
   crypto::generate_key_image(m_onetime_address, rct::rct2sk(rct::I), key_image_base);
 
-  // make dual base vector proof
-  sp::DualBaseVectorProof proof;
-  sp::make_dual_base_vector_proof(
-      get_dualbase_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address),
-      crypto::get_G(),
-      rct::rct2pk(rct::ki2rct(key_image_base)),
+  // make matrix proof
+  sp::MatrixProof proof;
+  sp::make_matrix_proof(
+      get_matrix_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address),
+      {
+        crypto::get_G(),
+        rct::rct2pk(rct::ki2rct(key_image_base))
+      },
       keyshare_privkeys,
       proof
     );
@@ -161,8 +163,10 @@ multisig_partial_cn_key_image_msg::multisig_partial_cn_key_image_msg(const crypt
   this->construct_msg(signing_privkey, proof);
 
   // cache the keyshares (mul8 means they are guaranteed to be canonical points)
-  m_multisig_keyshares = pubkeys_mul8(std::move(proof.V_1));
-  m_partial_key_images = pubkeys_mul8(std::move(proof.V_2));
+  CHECK_AND_ASSERT_THROW_MES(proof.M.size() == 2, "multisig partial cn ki msg: invalid matrix proof keys size.");
+
+  m_multisig_keyshares = pubkeys_mul8(std::move(proof.M[0]));
+  m_partial_key_images = pubkeys_mul8(std::move(proof.M[1]));
 }
 //----------------------------------------------------------------------------------------------------------------------
 // multisig_partial_cn_key_image_msg: EXTERNAL
@@ -175,29 +179,32 @@ multisig_partial_cn_key_image_msg::multisig_partial_cn_key_image_msg(std::string
 // multisig_partial_cn_key_image_msg: INTERNAL
 //----------------------------------------------------------------------------------------------------------------------
 void multisig_partial_cn_key_image_msg::construct_msg(const crypto::secret_key &signing_privkey,
-  const sp::DualBaseVectorProof &dualbase_proof)
+  const sp::MatrixProof &matrix_proof)
 {
   // sign the message
   crypto::signature msg_signature;
-  crypto::generate_signature(get_signature_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_onetime_address, dualbase_proof),
+  crypto::generate_signature(get_signature_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_onetime_address, matrix_proof),
     m_signing_pubkey,
     signing_privkey,
     msg_signature);
 
-  // mangle the dualbase proof into a crypto::signature
-  const crypto::signature mangled_dualbase_proof{rct::rct2sk(dualbase_proof.c), rct::rct2sk(dualbase_proof.r)};
+  // mangle the matrix proof into a crypto::signature
+  const crypto::signature mangled_matrix_proof{rct::rct2sk(matrix_proof.c), rct::rct2sk(matrix_proof.r)};
 
   // prepare the message
+  CHECK_AND_ASSERT_THROW_MES(matrix_proof.M.size() == 2,
+    "serializing multisig partial cn ki msg: invalid matrix proof keys size.");
+
   std::stringstream serialized_msg_ss;
   binary_archive<true> b_archive(serialized_msg_ss);
 
   multisig_partial_cn_ki_msg_serializable msg_serializable;
-  msg_serializable.onetime_address                = m_onetime_address;
-  msg_serializable.multisig_keyshares             = dualbase_proof.V_1;
-  msg_serializable.partial_key_images             = dualbase_proof.V_2;
-  msg_serializable.signing_pubkey                 = m_signing_pubkey;
-  msg_serializable.dual_base_vector_proof_partial = mangled_dualbase_proof;
-  msg_serializable.signature                      = msg_signature;
+  msg_serializable.onetime_address      = m_onetime_address;
+  msg_serializable.multisig_keyshares   = matrix_proof.M[0];
+  msg_serializable.partial_key_images   = matrix_proof.M[1];
+  msg_serializable.signing_pubkey       = m_signing_pubkey;
+  msg_serializable.matrix_proof_partial = mangled_matrix_proof;
+  msg_serializable.signature            = msg_signature;
 
   CHECK_AND_ASSERT_THROW_MES(::serialization::serialize(b_archive, msg_serializable),
     "multisig partial cn key image msg (build): failed to serialize message.");
@@ -223,27 +230,32 @@ void multisig_partial_cn_key_image_msg::parse_and_validate_msg()
   binary_archive<false> archived_msg{epee::strspan<std::uint8_t>(msg_no_magic)};
 
   // extract data from the message
-  sp::DualBaseVectorProof dualbase_proof;
+  sp::MatrixProof matrix_proof;
   crypto::signature msg_signature;
 
   multisig_partial_cn_ki_msg_serializable deserialized_msg;
   CHECK_AND_ASSERT_THROW_MES(::serialization::serialize(archived_msg, deserialized_msg),
     "multisig partial cn key image msg (recover): deserializing message failed.");
 
-  m_onetime_address  = deserialized_msg.onetime_address;
-  dualbase_proof.V_1 = std::move(deserialized_msg.multisig_keyshares);
-  dualbase_proof.V_2 = std::move(deserialized_msg.partial_key_images);
-  m_signing_pubkey   = deserialized_msg.signing_pubkey;
-  memcpy(dualbase_proof.c.bytes, to_bytes(deserialized_msg.dual_base_vector_proof_partial.c), sizeof(crypto::ec_scalar));
-  memcpy(dualbase_proof.r.bytes, to_bytes(deserialized_msg.dual_base_vector_proof_partial.r), sizeof(crypto::ec_scalar));
-  msg_signature      = deserialized_msg.signature;
+  m_onetime_address = deserialized_msg.onetime_address;
+  matrix_proof.M    =
+    {
+      std::move(deserialized_msg.multisig_keyshares),
+      std::move(deserialized_msg.partial_key_images)
+    };
+  m_signing_pubkey = deserialized_msg.signing_pubkey;
+  memcpy(matrix_proof.c.bytes, to_bytes(deserialized_msg.matrix_proof_partial.c), sizeof(crypto::ec_scalar));
+  memcpy(matrix_proof.r.bytes, to_bytes(deserialized_msg.matrix_proof_partial.r), sizeof(crypto::ec_scalar));
+  msg_signature    = deserialized_msg.signature;
 
   // checks
   CHECK_AND_ASSERT_THROW_MES(!(rct::pk2rct(m_onetime_address) == rct::Z),
     "multisig partial cn key image msg (recover): message onetime address is null.");
-  CHECK_AND_ASSERT_THROW_MES(dualbase_proof.V_1.size() > 0,
-    "multisig partial cn key image msg (recover): message has no keyshares.");
-  CHECK_AND_ASSERT_THROW_MES(dualbase_proof.V_1.size() == dualbase_proof.V_2.size(),
+  CHECK_AND_ASSERT_THROW_MES(matrix_proof.M.size() == 2,
+    "multisig partial cn key image msg (recover): message is malformed.");
+  CHECK_AND_ASSERT_THROW_MES(matrix_proof.M[0].size() > 0,
+    "multisig partial cn key image msg (recover): message has no conversion keys.");
+  CHECK_AND_ASSERT_THROW_MES(matrix_proof.M[0].size() == matrix_proof.M[1].size(),
     "multisig partial cn key image msg (recover): message key vectors don't line up.");
   CHECK_AND_ASSERT_THROW_MES(m_signing_pubkey != crypto::null_pkey &&
       m_signing_pubkey != rct::rct2pk(rct::identity()),
@@ -255,16 +267,18 @@ void multisig_partial_cn_key_image_msg::parse_and_validate_msg()
   crypto::key_image key_image_base;
   crypto::generate_key_image(m_onetime_address, rct::rct2sk(rct::I), key_image_base);
 
-  // validate dualbase proof
-  dualbase_proof.m = get_dualbase_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address);
-  CHECK_AND_ASSERT_THROW_MES(sp::verify_dual_base_vector_proof(dualbase_proof,
-      crypto::get_G(),
-      rct::rct2pk(rct::ki2rct(key_image_base))),
-    "multisig partial cn key image msg (recover): message dualbase proof invalid.");
+  // validate matrix proof
+  matrix_proof.m = get_matrix_proof_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_signing_pubkey, m_onetime_address);
+  CHECK_AND_ASSERT_THROW_MES(sp::verify_matrix_proof(matrix_proof,
+      {
+        crypto::get_G(),
+        rct::rct2pk(rct::ki2rct(key_image_base))
+      }),
+    "multisig partial cn key image msg (recover): message matrix proof invalid.");
 
   // validate signature
   CHECK_AND_ASSERT_THROW_MES(crypto::check_signature(
-        get_signature_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_onetime_address, dualbase_proof),
+        get_signature_msg(MULTISIG_PARTIAL_CN_KI_MSG_MAGIC_V1, m_onetime_address, matrix_proof),
         m_signing_pubkey,
         msg_signature
       ),
@@ -272,8 +286,8 @@ void multisig_partial_cn_key_image_msg::parse_and_validate_msg()
 
   // cache the keyshares (note: caching these after checking the signature ensures if the signature is invalid then the
   //   message's internal state won't be usable even if the invalid-signature exception is caught)
-  m_multisig_keyshares = pubkeys_mul8(std::move(dualbase_proof.V_1));
-  m_partial_key_images = pubkeys_mul8(std::move(dualbase_proof.V_2));
+  m_multisig_keyshares = pubkeys_mul8(std::move(matrix_proof.M[0]));
+  m_partial_key_images = pubkeys_mul8(std::move(matrix_proof.M[1]));
 }
 //----------------------------------------------------------------------------------------------------------------------
 } //namespace multisig

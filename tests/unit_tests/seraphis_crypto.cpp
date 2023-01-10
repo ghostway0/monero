@@ -39,7 +39,7 @@ extern "C"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_core/sp_core_types.h"
-#include "seraphis_crypto/dual_base_vector_proof.h"
+#include "seraphis_crypto/matrix_proof.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_generator_factory.h"
@@ -102,9 +102,9 @@ TEST(seraphis_crypto, composition_proof)
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis_crypto, dual_base_vector_proof)
+TEST(seraphis_crypto, matrix_proof)
 {
-    sp::DualBaseVectorProof proof;
+    sp::MatrixProof proof;
 
     auto make_keys =
         [](const std::size_t num_keys) -> std::vector<crypto::secret_key>
@@ -115,37 +115,56 @@ TEST(seraphis_crypto, dual_base_vector_proof)
             return skeys;
         };
 
+    const crypto::public_key Pk{rct::rct2pk(rct::pkGen())};
     const crypto::public_key gen_G{crypto::get_G()};
     const crypto::public_key gen_U{crypto::get_U()};
 
-    // G, G, 0 keys
-    EXPECT_ANY_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(0), proof));
+    // 0 keys
+    EXPECT_ANY_THROW(sp::make_matrix_proof(rct::zero(), {}, make_keys(0), proof));
+    EXPECT_ANY_THROW(sp::make_matrix_proof(rct::zero(), {gen_G, gen_G}, make_keys(0), proof));
 
-    // G, G, 1 key
-    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(1), proof));
-    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_G));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
+    EXPECT_ANY_THROW(sp::make_matrix_proof(rct::zero(), {gen_G}, make_keys(0), proof));
+    EXPECT_ANY_THROW(sp::make_matrix_proof(rct::zero(), {gen_G, gen_G}, make_keys(0), proof));
 
-    // G, G, 2 keys
-    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_G, make_keys(2), proof));
-    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_G));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
-    EXPECT_FALSE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
+    // 1 key
+    EXPECT_ANY_THROW(sp::make_matrix_proof(rct::zero(), {}, make_keys(1), proof));
 
-    // G, U, 2 keys
-    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_G, gen_U, make_keys(2), proof));
-    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_G, gen_U));
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_G}, make_keys(1), proof));  //base key: G
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_G}));
+
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {Pk}, make_keys(1), proof));  //base key: Pk
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {Pk}));
+    EXPECT_ANY_THROW(sp::verify_matrix_proof(proof, {gen_G, gen_U}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_G}));
+
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_G, gen_G}, make_keys(1), proof));  //base keys: G, G
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_G, gen_G}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_G, gen_U}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_U, gen_G}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_U, gen_U}));
+
+    // 2 keys
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {Pk}, make_keys(2), proof));  //base key: Pk
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {Pk}));
+    EXPECT_ANY_THROW(sp::verify_matrix_proof(proof, {gen_G, gen_U}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_G}));
+
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_G, gen_G}, make_keys(2), proof));  //base keys: G, G
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_G, gen_G}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_G, gen_U}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_U, gen_G}));
+    EXPECT_FALSE(sp::verify_matrix_proof(proof, {gen_U, gen_U}));
+
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_G, gen_U}, make_keys(2), proof));  //base key: G, U
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_G, gen_U}));
 
     // U, G, 3 keys
-    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_U, gen_G, make_keys(3), proof));
-    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_G));
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_U, gen_G}, make_keys(3), proof));  //base keys: U, G
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_U, gen_G}));
 
     // U, U, 3 keys
-    EXPECT_NO_THROW(sp::make_dual_base_vector_proof(rct::zero(), gen_U, gen_U, make_keys(3), proof));
-    EXPECT_TRUE(sp::verify_dual_base_vector_proof(proof, gen_U, gen_U));
+    EXPECT_NO_THROW(sp::make_matrix_proof(rct::zero(), {gen_U, gen_U}, make_keys(3), proof));  //base keys: U, U
+    EXPECT_TRUE(sp::verify_matrix_proof(proof, {gen_U, gen_U}));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_crypto, multiexp_utility)

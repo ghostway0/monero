@@ -28,8 +28,8 @@
 
 set(seraphis_crypto_sources
   bulletproofs_plus2.cpp
-  dual_base_vector_proof.cpp
   grootle.cpp
+  matrix_proof.cpp
   sp_composition_proof.cpp
   sp_crypto_utils.cpp
   sp_generator_factory.cpp

@@ -111,8 +111,8 @@ namespace multisig
     std::vector<crypto::public_key> partial_key_images;
     // pubkey used to sign this msg
     crypto::public_key signing_pubkey;
-    // dual base vector proof (challenge/response shoved into crypto::signature structure)
-    crypto::signature dual_base_vector_proof_partial;
+    // matrix proof (challenge/response shoved into crypto::signature structure)
+    crypto::signature matrix_proof_partial;
     // message signature
     crypto::signature signature;
 
@@ -121,7 +121,7 @@ namespace multisig
       FIELD(multisig_keyshares)
       FIELD(partial_key_images)
       FIELD(signing_pubkey)
-      FIELD(dual_base_vector_proof_partial)
+      FIELD(matrix_proof_partial)
       FIELD(signature)
     END_SERIALIZE()
   };
@@ -139,8 +139,8 @@ namespace multisig
     std::vector<crypto::public_key> new_keyshares;
     // pubkey used to sign this msg
     crypto::public_key signing_pubkey;
-    // dual base vector proof (challenge/response shoved into crypto::signature structure)
-    crypto::signature dual_base_vector_proof_partial;
+    // matrix proof (challenge/response shoved into crypto::signature structure)
+    crypto::signature matrix_proof_partial;
     // message signature
     crypto::signature signature;
 
@@ -150,7 +150,7 @@ namespace multisig
       FIELD(old_keyshares)
       FIELD(new_keyshares)
       FIELD(signing_pubkey)
-      FIELD(dual_base_vector_proof_partial)
+      FIELD(matrix_proof_partial)
       FIELD(signature)
     END_SERIALIZE()
   };

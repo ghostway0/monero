@@ -34,7 +34,7 @@
 #include <string>
 #include <vector>
 
-namespace sp { struct DualBaseVectorProof; }
+namespace sp { struct MatrixProof; }
 
 namespace multisig
 {
@@ -50,7 +50,7 @@ namespace multisig
 //   key image KI. Verify the key image by summing the unique multisig public keyshares from the messages and expecting
 //   the result to equal the group's base spend key.
 // - INVARIANT: keyshares stored here are canonical prime-order subgroup points (this is guaranteed by obtaining the
-//   keyshares from a DualBaseVectorProof).
+//   keyshares from a MatrixProof).
 ///
 class multisig_partial_cn_key_image_msg final
 {
@@ -79,7 +79,7 @@ public:
 
 private:
   // set: msg string based on msg contents, with signing pubkey defined from signing privkey
-  void construct_msg(const crypto::secret_key &signing_privkey, const sp::DualBaseVectorProof &dualbase_proof);
+  void construct_msg(const crypto::secret_key &signing_privkey, const sp::MatrixProof &matrix_proof);
   // parse msg string into parts, validate contents and signature
   void parse_and_validate_msg();
 
