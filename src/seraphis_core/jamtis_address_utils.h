@@ -138,26 +138,14 @@ void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     const address_index_t j,
     rct::key &address_spendkey_out);
 /**
-* brief: test_jamtis_nominal_address_spend_key - see if an address spend key is owned by this wallet
-* param: spend_pubkey - K_s = k_vb X + k_m U
-* param: s_generate_address - s_ga
-* param: j - address_index
-* param: nominal_address_spend_key - address spend key to test K'_1
-* return: true if the nominal spend key matches this wallet's spend key at address index 'j'
-*/
-bool test_jamtis_nominal_address_spend_key(const rct::key &spend_pubkey,
-    const crypto::secret_key &s_generate_address,
-    const address_index_t j,
-    const rct::key &nominal_address_spend_key);
-/**
 * brief: make_seraphis_key_image_jamtis_style - KI
-*   - KI = ((H_n("..u..", q, C) + k^j_u + k_m)/(H_n("..x..", q, C) + k^j_x + k_vb)) U
+*   - KI = ((k^o_u + k^j_u + k_m)/(k^o_x + k^j_x + k_vb)) U
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: k_view_balance - k_vb
 * param: spendkey_extension_x - k^j_x
 * param: spendkey_extension_u - k^j_u
-* param: sender_extension_x - H_n("..x..", q, C)
-* param: sender_extension_u - H_n("..u..", q, C)
+* param: sender_extension_x - k^o_x
+* param: sender_extension_u - k^o_u
 * outparam: key_image_out - KI
 */
 void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,

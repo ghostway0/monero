@@ -172,19 +172,6 @@ void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     mask_key(address_extension_key_g, address_spendkey_out, address_spendkey_out);  //k^j_g G + k^j_x X + k^j_u U + K_s
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool test_jamtis_nominal_address_spend_key(const rct::key &spend_pubkey,
-    const crypto::secret_key &s_generate_address,
-    const address_index_t j,
-    const rct::key &nominal_address_spend_key)
-{
-    // get the spend key of the address at the uncovered index: K_1
-    rct::key address_spendkey;
-    make_jamtis_address_spend_key(spend_pubkey, s_generate_address, j, address_spendkey);
-
-    // check if the nominal spend key matches the real spend key: K'_1 ?= K_1
-    return nominal_address_spend_key == address_spendkey;
-}
-//-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &spendkey_extension_x,
@@ -193,19 +180,19 @@ void make_seraphis_key_image_jamtis_style(const rct::key &spend_pubkey,
     const crypto::secret_key &sender_extension_u,
     crypto::key_image &key_image_out)
 {
-    // KI = ((H_n("..u..", q, C) + k^j_u + k_m)/(H_n("..x..", q, C) + k^j_x + k_vb)) U
+    // KI = ((k^o_u + k^j_u + k_m)/(k^o_x + k^j_x + k_vb)) U
 
     // k_m U = K_s - k_vb X
     rct::key zU{spend_pubkey};  //K_s = k_vb X + k_m U
     reduce_seraphis_spendkey_x(k_view_balance, zU);  //k_m U
 
-    // z U = (k_u + k_m) U = H_n("..u..", q, C) U + k^j_u U + k_m U
+    // z U = (k_u + k_m) U = k^o_u U + k^j_u U + k_m U
     extend_seraphis_spendkey_u(spendkey_extension_u, zU);  //k^j_u U + k_m U
-    extend_seraphis_spendkey_u(sender_extension_u, zU);  //H_n("..u..", q, C) U + k^j_u U + k_m U
+    extend_seraphis_spendkey_u(sender_extension_u, zU);  //k^o_u U + k^j_u U + k_m U
 
-    // y = H_n("..x..", q, C) + k^j_x + k_vb
+    // y = k^o_x + k^j_x + k_vb
     crypto::secret_key y;
-    sc_add(to_bytes(y), to_bytes(sender_extension_x), to_bytes(spendkey_extension_x));  //H_n("..x..", q, C) + k^j_x
+    sc_add(to_bytes(y), to_bytes(sender_extension_x), to_bytes(spendkey_extension_x));  //k^o_x + k^j_x
     sc_add(to_bytes(y), to_bytes(y), to_bytes(k_view_balance));  //+ k_vb
 
     // KI = (1/y)*(k_u + k_m)*U
