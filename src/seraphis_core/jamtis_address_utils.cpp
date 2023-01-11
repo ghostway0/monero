@@ -101,7 +101,7 @@ void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
     const address_index_t j,
     crypto::secret_key &extension_out)
 {
-    // k^j_g = H_n(K_s, j, H_32[s_ga](j))
+    // k^j_g = H_n("..g..", K_s, j, H_32[s_ga](j))
     make_jamtis_spendkey_extension(config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_G,
         spend_pubkey,
         s_generate_address,
@@ -114,7 +114,7 @@ void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
     const address_index_t j,
     crypto::secret_key &extension_out)
 {
-    // k^j_x = H_n(K_s, j, H_32[s_ga](j))
+    // k^j_x = H_n("..x..", K_s, j, H_32[s_ga](j))
     make_jamtis_spendkey_extension(config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_X,
         spend_pubkey,
         s_generate_address,
@@ -127,7 +127,7 @@ void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
     const address_index_t j,
     crypto::secret_key &extension_out)
 {
-    // k^j_u = H_n(K_s, j, H_32[s_ga](j))
+    // k^j_u = H_n("..u..", K_s, j, H_32[s_ga](j))
     make_jamtis_spendkey_extension(config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_U,
         spend_pubkey,
         s_generate_address,

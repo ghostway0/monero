@@ -26,7 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Utilities for making and handling enotes with Jamtis.
+// Utilities for making and handling enotes with jamtis.
 
 #pragma once
 
@@ -194,81 +194,68 @@ void make_jamtis_onetime_address(const rct::key &sender_receiver_secret,
 /**
 * brief: make_jamtis_amount_baked_key_plain_sender - key baked into amount encodings of plain enotes, to provide
 *        fine-tuned control over read rights to the amount
-*    [sender] baked_key = xr xG
+*    [normal: sender] baked_key = H_32(xr xG)
 * param: enote_ephemeral_privkey - xr
-* outparam: baked_key_out - xr xG
+* outparam: baked_key_out - baked_key
 */
 void make_jamtis_amount_baked_key_plain_sender(const crypto::x25519_secret_key &enote_ephemeral_privkey,
-    crypto::x25519_pubkey &baked_key_out);
+    rct::key &baked_key_out);
 /**
 * brief: make_jamtis_amount_baked_key_plain_recipient - key baked into amount encodings of plain enotes, to provide
 *        fine-tuned control over read rights to the amount
-*    [recipient] baked_key = (1/(xk^j_a * xk_ua)) * xK_e
+*    [normal: recipient] baked_key = H_32( (1/(xk^j_a * xk_ua)) * xK_e )
 * param: address_privkey - xk^j_a
 * param: xk_unlock_amounts - xk_ua
 * param: enote_ephemeral_pubkey - xK_e
-* outparam: baked_key_out - (1/(k^j_a * k_ua)) * xK_e
+* outparam: baked_key_out - baked_key
 */
 void make_jamtis_amount_baked_key_plain_recipient(const crypto::x25519_secret_key &address_privkey,
     const crypto::x25519_secret_key &xk_unlock_amounts,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
-    crypto::x25519_pubkey &baked_key_out);
+    rct::key &baked_key_out);
 /**
-* brief: make_jamtis_amount_blinding_factor_plain - x for a normal enote's amount commitment C = x G + a H
-*   x = H_n(q, xr xG)
+* brief: make_jamtis_amount_baked_key_selfsend - key baked into amount encodings of selfsend enotes, to provide
+*        fine-tuned control over read rights to the amount
+*    [selfsend] baked_key = H_32[k_vb](q)
+* param: k_view_balance - k_vb
 * param: sender_receiver_secret - q
-* param: baked_key - xr xG
+* outparam: baked_key_out - baked_key
+*/
+void make_jamtis_amount_baked_key_selfsend(const crypto::secret_key &k_view_balance,
+    const rct::key &sender_receiver_secret,
+    rct::key &baked_key_out);
+/**
+* brief: make_jamtis_amount_blinding_factor - x for a normal enote's amount commitment C = x G + a H
+*   x = H_n(q, baked_key)
+* param: sender_receiver_secret - q
+* param: baked_key - baked_key
 * outparam: mask_out - x
 */
-void make_jamtis_amount_blinding_factor_plain(const rct::key &sender_receiver_secret,
-    const crypto::x25519_pubkey &baked_key,
+void make_jamtis_amount_blinding_factor(const rct::key &sender_receiver_secret,
+    const rct::key &baked_key,
     crypto::secret_key &mask_out);
 /**
-* brief: make_jamtis_amount_blinding_factor_selfsend - x for a self-spend enote's amount commitment C = x G + a H
-*   x = H_n(q)
-* param: sender_receiver_secret - q
-* outparam: mask_out - x
-*/
-void make_jamtis_amount_blinding_factor_selfsend(const rct::key &sender_receiver_secret, crypto::secret_key &mask_out);
-/**
-* brief: encode_jamtis_amount_plain - encode an amount for a normal enote
-*   a_enc = a XOR H_8(q, xr xG)
+* brief: encode_jamtis_amount - encode an amount for a normal enote
+*   a_enc = a XOR H_8(q, baked_key)
 * param: amount - a
 * param: sender_receiver_secret - q
-* param: baked_key - xr xG
+* param: baked_key - baked_key
 * return: a_enc
 */
-encoded_amount_t encode_jamtis_amount_plain(const rct::xmr_amount amount,
+encoded_amount_t encode_jamtis_amount(const rct::xmr_amount amount,
     const rct::key &sender_receiver_secret,
-    const crypto::x25519_pubkey &baked_key);
+    const rct::key &baked_key);
 /**
-* brief: decode_jamtis_amount_plain - decode an amount from a normal enote
-*   a = a_enc XOR H_8(q, xr xG)
+* brief: decode_jamtis_amount - decode an amount from a normal enote
+*   a = a_enc XOR H_8(q, baked_key)
 * param: encoded_amount - a_enc
 * param: sender_receiver_secret - q
-* param: baked_key - xr xG
+* param: baked_key - baked_key
 * return: a
 */
-rct::xmr_amount decode_jamtis_amount_plain(const encoded_amount_t &encoded_amount,
+rct::xmr_amount decode_jamtis_amount(const encoded_amount_t &encoded_amount,
     const rct::key &sender_receiver_secret,
-    const crypto::x25519_pubkey &baked_key);
-/**
-* brief: encode_jamtis_amount_selfsend - encode an amount for a self-send enote
-*   a_enc = a XOR H_8(q)
-* param: amount - a
-* param: sender_receiver_secret - q
-* return: a_enc
-*/
-encoded_amount_t encode_jamtis_amount_selfsend(const rct::xmr_amount amount, const rct::key &sender_receiver_secret);
-/**
-* brief: decode_jamtis_amount_selfsend - decode an amount from a self-send enote
-*   a = a_enc XOR H_8(q)
-* param: encoded_amount - a_enc
-* param: sender_receiver_secret - q
-* return: a
-*/
-rct::xmr_amount decode_jamtis_amount_selfsend(const encoded_amount_t &encoded_amount,
-    const rct::key &sender_receiver_secret);
+    const rct::key &baked_key);
 /**
 * brief: test_jamtis_onetime_address - see if a onetime address can be reconstructed
 * param: sender_receiver_secret - q
@@ -286,7 +273,7 @@ bool test_jamtis_onetime_address(const rct::key &sender_receiver_secret,
 *        (for a normal enote)
 * param: sender_receiver_DH_derivation - privkey * DH_key
 * param: enote_ephemeral_pubkey - xK_e
-* param: input_context - [normal: H_32({legacy KI}, {seraphis KI}); coinbase: H_32(block height)]
+* param: input_context - input_context
 * param: onetime_address - Ko
 * param: view_tag - view_tag
 * outparam: sender_receiver_secret_out - q
@@ -299,33 +286,17 @@ bool try_get_jamtis_sender_receiver_secret_plain(const crypto::x25519_pubkey &se
     const view_tag_t view_tag,
     rct::key &sender_receiver_secret_out);
 /**
-* brief: try_get_jamtis_amount_plain - test recreating the amount commitment; if it is recreate-able, return the amount
-*        (for a normal enote)
+* brief: try_get_jamtis_amount - test recreating the amount commitment; if it is recreate-able, return the amount
 * param: sender_receiver_secret - q
-* param: baked_key - xr xG
+* param: baked_key - baked_key
 * param: amount_commitment - C = x G + a H
 * param: encoded_amount - enc_a
 * outparam: amount_out - a' = dec(enc_a)
 * outparam: amount_blinding_factor_out - x'
 * return: true if successfully recomputed the amount commitment (C' = x' G + a' H ?= C)
 */
-bool try_get_jamtis_amount_plain(const rct::key &sender_receiver_secret,
-    const crypto::x25519_pubkey &baked_key,
-    const rct::key &amount_commitment,
-    const encoded_amount_t &encoded_amount,
-    rct::xmr_amount &amount_out,
-    crypto::secret_key &amount_blinding_factor_out);
-/**
-* brief: try_get_jamtis_amount_selfsend - test recreating the amount commitment; if it is recreate-able, return the amount
-*        (for a self-send enote)
-* param: sender_receiver_secret - q
-* param: amount_commitment - C = x G + a H
-* param: encoded_amount - enc_a
-* outparam: amount_out - a' = dec(enc_a)
-* outparam: amount_blinding_factor_out - x'
-* return: true if successfully recomputed the amount commitment (C' = x' G + a' H ?= C)
-*/
-bool try_get_jamtis_amount_selfsend(const rct::key &sender_receiver_secret,
+bool try_get_jamtis_amount(const rct::key &sender_receiver_secret,
+    const rct::key &baked_key,
     const rct::key &amount_commitment,
     const encoded_amount_t &encoded_amount,
     rct::xmr_amount &amount_out,

@@ -177,18 +177,6 @@ bool jamtis_address_tag_cipher_context::try_decipher(const address_tag_t &addr_t
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool try_get_address_index_raw(const address_tag_t &addr_tag, address_index_t &j_out)
-{
-    static_assert(sizeof(address_index_t) + sizeof(address_tag_hint_t) == sizeof(address_tag_t), "");
-
-    // addr_tag -> {j, hint}
-    address_tag_hint_t hint{};
-    memcpy(&j_out, addr_tag.bytes, sizeof(address_index_t));
-    memcpy(&hint, addr_tag.bytes + sizeof(address_index_t), sizeof(address_tag_hint_t));
-
-    return hint == address_tag_hint_t{};
-}
-//-------------------------------------------------------------------------------------------------------------------
 address_tag_t cipher_address_index(const jamtis_address_tag_cipher_context &cipher_context, const address_index_t &j)
 {
     return cipher_context.cipher(j);

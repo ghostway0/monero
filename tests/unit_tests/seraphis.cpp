@@ -484,14 +484,6 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 //-------------------------------------------------------------------------------------------------------------------
 static bool test_info_recovery_addressindex(const address_index_t j)
 {
-    // convert the index to/from raw tag form
-    const address_tag_t raw_address_tag{make_address_tag(j, address_tag_hint_t{})};
-    address_index_t j_recovered;
-    if (!try_get_address_index_raw(raw_address_tag, j_recovered))
-        return false;
-    if (j != j_recovered)
-        return false;
-
     // cipher and decipher the index
     crypto::secret_key cipher_key;
     make_secret_key(cipher_key);
@@ -558,20 +550,15 @@ TEST(seraphis, information_recovery_amountencoding)
     make_secret_key(sender_receiver_secret);
     const rct::xmr_amount amount{rct::randXmrAmount(rct::xmr_amount{static_cast<rct::xmr_amount>(-1)})};
 
-    crypto::x25519_pubkey fake_baked_key;
+    rct::key fake_baked_key;
     memcpy(&fake_baked_key, rct::zero().bytes, sizeof(rct::key));
 
     jamtis::encoded_amount_t encoded_amount{
-            encode_jamtis_amount_plain(amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
+            encode_jamtis_amount(amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
         };
     rct::xmr_amount decoded_amount{
-            decode_jamtis_amount_plain(encoded_amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
+            decode_jamtis_amount(encoded_amount, rct::sk2rct(sender_receiver_secret), fake_baked_key)
         };
-    //EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
-    EXPECT_TRUE(decoded_amount == amount);
-
-    encoded_amount = encode_jamtis_amount_selfsend(amount, rct::sk2rct(sender_receiver_secret));
-    decoded_amount = decode_jamtis_amount_selfsend(encoded_amount, rct::sk2rct(sender_receiver_secret));
     //EXPECT_TRUE(encoded_amount != amount);  //might fail (collision in ~ 2^32 attempts)
     EXPECT_TRUE(decoded_amount == amount);
 }

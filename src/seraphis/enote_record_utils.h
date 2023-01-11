@@ -154,6 +154,7 @@ bool try_get_enote_record_v1_plain(const SpIntermediateEnoteRecordV1 &intermedia
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
 * param: s_generate_address -
+* param: cipher_context -
 * outparam: record_out -
 * return: true if an extraction succeeded
 */
@@ -163,6 +164,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
+    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     const jamtis::JamtisSelfSendType expected_type,
     SpEnoteRecordV1 &record_out);
 bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
@@ -171,6 +173,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
+    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     SpEnoteRecordV1 &record_out);
 bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,

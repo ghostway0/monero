@@ -238,6 +238,7 @@ static std::unordered_set<rct::key> process_chunk_full_sp_selfsend_pass(
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
+    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
     const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
     std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records_inout,
@@ -276,6 +277,7 @@ static std::unordered_set<rct::key> process_chunk_full_sp_selfsend_pass(
                         jamtis_spend_pubkey,
                         k_view_balance,
                         s_generate_address,
+                        cipher_context,
                         new_enote_record))
                     continue;
 
@@ -751,6 +753,7 @@ void process_chunk_full_sp(const rct::key &jamtis_spend_pubkey,
                 jamtis_spend_pubkey,
                 k_view_balance,
                 s_generate_address,
+                cipher_context,
                 chunk_basic_records_per_tx,
                 chunk_contextual_key_images,
                 found_enote_records_inout,

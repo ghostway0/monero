@@ -79,7 +79,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_g - k^j_g
-*   - k^j_g = H_n(K_s, j, k^j_gen)
+*   - k^j_g = H_n("..g..", K_s, j, k^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
@@ -91,7 +91,7 @@ void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_x - k^j_x
-*   - k^j_x = H_n(K_s, j, k^j_gen)
+*   - k^j_x = H_n("..x..", K_s, j, k^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
@@ -103,7 +103,7 @@ void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_u - k^j_u
-*   - k^j_u = H_n(K_s, j, k^j_gen)
+*   - k^j_u = H_n("..u..", K_s, j, k^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index

@@ -158,8 +158,9 @@ static bool try_get_amount_commitment_information_plaintext(const rct::xmr_amoun
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_get_amount_commitment_information_selfsend(const SpEnoteVariant &enote,
+static bool try_get_amount_commitment_information(const SpEnoteVariant &enote,
     const rct::key &sender_receiver_secret,
+    const rct::key &amount_baked_key,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
@@ -171,32 +172,7 @@ static bool try_get_amount_commitment_information_selfsend(const SpEnoteVariant 
     }
     else if (enote.is_type<SpEnoteV1>())
     {
-        return jamtis::try_get_jamtis_amount_selfsend(sender_receiver_secret,
-            amount_commitment_ref(enote),
-            enote.unwrap<SpEnoteV1>().m_encoded_amount,
-            amount_out,
-            amount_blinding_factor_out);
-    }
-
-    return false;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static bool try_get_amount_commitment_information_plain(const SpEnoteVariant &enote,
-    const rct::key &sender_receiver_secret,
-    const crypto::x25519_pubkey &amount_baked_key,
-    rct::xmr_amount &amount_out,
-    crypto::secret_key &amount_blinding_factor_out)
-{
-    if (enote.is_type<SpCoinbaseEnoteV1>())
-    {
-        return try_get_amount_commitment_information_plaintext(enote.unwrap<SpCoinbaseEnoteV1>().m_core.m_amount,
-            amount_out,
-            amount_blinding_factor_out);
-    }
-    else if (enote.is_type<SpEnoteV1>())
-    {
-        return jamtis::try_get_jamtis_amount_plain(sender_receiver_secret,
+        return jamtis::try_get_jamtis_amount(sender_receiver_secret,
             amount_baked_key,
             amount_commitment_ref(enote),
             enote.unwrap<SpEnoteV1>().m_encoded_amount,
@@ -262,7 +238,9 @@ static bool try_handle_basic_record_info_v1_helper(const SpEnoteVariant &enote,
     jamtis::address_index_t &nominal_address_index_out,
     rct::key &nominal_sender_receiver_secret_out)
 {
-    // j (fails if deciphered address tag hint is not 0)
+    // use basic record info to try and get the nominal address index and recover the nominal sender-receiver secret
+
+    // j' (fails if deciphered address tag hint is not 0)
     if (!jamtis::try_decipher_address_index(cipher_context, nominal_address_tag, nominal_address_index_out))
         return false;
 
@@ -310,14 +288,14 @@ static bool try_get_intermediate_record_info_v1_helper(const SpEnoteVariant &eno
     crypto::x25519_secret_key address_privkey;
     jamtis::make_jamtis_address_privkey(jamtis_spend_pubkey, s_generate_address, nominal_address_index, address_privkey);
 
-    crypto::x25519_pubkey amount_baked_key;
+    rct::key amount_baked_key;
     jamtis::make_jamtis_amount_baked_key_plain_recipient(address_privkey,
         xk_unlock_amounts,
         enote_ephemeral_pubkey,
         amount_baked_key);
 
     // try to recover the amount
-    if (!try_get_amount_commitment_information_plain(enote,
+    if (!try_get_amount_commitment_information(enote,
             nominal_sender_receiver_secret,
             amount_baked_key,
             amount_out,
@@ -756,12 +734,13 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
+    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     const jamtis::JamtisSelfSendType expected_type,
     SpEnoteRecordV1 &record_out)
 {
     // note: do not test the view tag here (for efficiency, assume it was already checked)
 
-    // sender-receiver secret for expected self-send type
+    // 1. sender-receiver secret for expected self-send type
     rct::key q;
     jamtis::make_jamtis_sender_receiver_secret_selfsend(k_view_balance,
         enote_ephemeral_pubkey,
@@ -769,41 +748,46 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
         expected_type,
         q);
 
-    // decrypt encrypted address tag
+    // 2. decrypt encrypted address tag
     const jamtis::address_tag_t decrypted_addr_tag{
             decrypt_address_tag(q, onetime_address_ref(enote), addr_tag_enc_ref(enote))
         };
 
-    // try to get the address index
-    // - for self-sends, the decrypted address tag should be a raw address index + empty address tag hint
-    if (!try_get_address_index_raw(decrypted_addr_tag, record_out.m_address_index))
+    // 3. try to get the address index
+    if (!jamtis::try_decipher_address_index(cipher_context, decrypted_addr_tag, record_out.m_address_index))
         return false;
 
-    // save a copy of the amount commitment (optimization: it needs to be computed for enotes with plaintext amounts)
-    const rct::key amount_commitment{amount_commitment_ref(enote)};
-
-    // nominal spend key
+    // 4. nominal spend key
     rct::key nominal_recipient_spendkey;
     jamtis::make_jamtis_address_spend_key(jamtis_spend_pubkey,
         s_generate_address,
         record_out.m_address_index,
         nominal_recipient_spendkey);
 
-    // check that the onetime address can be recomputed
+    // 5. save a copy of the amount commitment
+    const rct::key amount_commitment{amount_commitment_ref(enote)};
+
+    // 6. check that the onetime address can be recomputed
     if (!jamtis::test_jamtis_onetime_address(q,
             amount_commitment,
             nominal_recipient_spendkey,
             onetime_address_ref(enote)))
         return false;
 
-    // try to recover the amount and blinding factor
-    if (!try_get_amount_commitment_information_selfsend(enote,
+    // 7. compute the amount baked key (selfsend)
+    rct::key amount_baked_key;
+    jamtis::make_jamtis_amount_baked_key_selfsend(k_view_balance, q, amount_baked_key);
+
+    // 8. try to recover the amount and blinding factor
+    if (!try_get_amount_commitment_information(enote,
             q,
+            amount_baked_key,
             record_out.m_amount,
             record_out.m_amount_blinding_factor))
         return false;
 
-    // construct enote view privkey for G: k_g = k^o_g + k^j_g
+    // 9. construct enote view extensions
+    // a. G: k_g = k^o_g + k^j_g
     make_enote_view_extension_g_helper(jamtis_spend_pubkey,
         s_generate_address,
         record_out.m_address_index,
@@ -812,7 +796,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
         amount_commitment,
         record_out.m_enote_view_extension_g);
 
-    // construct enote view privkey for X: k_x = k^o_x + k^j_x
+    // b. X: k_x = k^o_x + k^j_x
     make_enote_view_extension_x_helper(jamtis_spend_pubkey,
         s_generate_address,
         record_out.m_address_index,
@@ -821,7 +805,7 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
         amount_commitment,
         record_out.m_enote_view_extension_x);
 
-    // construct enote view privkey for U: k_u = k^o_u + k^j_u
+    // c. U: k_u = k^o_u + k^j_u
     make_enote_view_extension_u_helper(jamtis_spend_pubkey,
         s_generate_address,
         record_out.m_address_index,
@@ -830,14 +814,14 @@ bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
         amount_commitment,
         record_out.m_enote_view_extension_u);
 
-    // make key image: (k_u + k_m)/(k_x + k_vb) U
+    // 10. make key image: (k_u + k_m)/(k_x + k_vb) U
     make_seraphis_key_image_helper(jamtis_spend_pubkey,
         k_view_balance,
         record_out.m_enote_view_extension_x,
         record_out.m_enote_view_extension_u,
         record_out.m_key_image);
 
-    // copy enote and set type
+    // 11. copy enote and set type
     record_out.m_enote = enote;
     record_out.m_enote_ephemeral_pubkey = enote_ephemeral_pubkey;
     record_out.m_input_context = input_context;
@@ -853,6 +837,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
+    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     SpEnoteRecordV1 &record_out)
 {
     // try to get an enote record with all the self-send types
@@ -866,6 +851,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
             jamtis_spend_pubkey,
             k_view_balance,
             s_generate_address,
+            cipher_context,
             static_cast<jamtis::JamtisSelfSendType>(self_send_type),
             record_out))
         return true;
@@ -883,7 +869,11 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
 {
     // make generate-address secret then get enote record
     crypto::secret_key s_generate_address;
+    crypto::secret_key s_cipher_tag;
     jamtis::make_jamtis_generateaddress_secret(k_view_balance, s_generate_address);
+    jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
+
+    const jamtis::jamtis_address_tag_cipher_context cipher_context{s_cipher_tag};
 
     return try_get_enote_record_v1_selfsend(enote,
         enote_ephemeral_pubkey,
@@ -891,6 +881,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
         jamtis_spend_pubkey,
         k_view_balance,
         s_generate_address,
+        cipher_context,
         record_out);
 }
 //-------------------------------------------------------------------------------------------------------------------

@@ -306,18 +306,18 @@ namespace config
   const constexpr char HASH_KEY_JAMTIS_ENCRYPTED_ADDRESS_TAG[] = "jamtis_encrypted_address_tag";
   const constexpr char HASH_KEY_JAMTIS_VIEW_TAG[] = "jamtis_view_tag";
   const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_PLAIN[] = "jamtis_sr_secret_plain";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_G[] = "jamtis_sender_onetime_address_extension_g";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_X[] = "jamtis_sender_onetime_address_extension_x";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_U[] = "jamtis_sender_onetime_address_extension_u";
-  const constexpr char HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_PLAIN[] = "jamtis_enote_amount_commitment_blinding_factor_plain";
-  const constexpr char HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR_SELF[] = "jamtis_enote_amount_commitment_blinding_factor_self";
-  const constexpr char HASH_KEY_JAMTIS_AMOUNT_ENC_PLAIN[] = "jamtis_enote_amount_encoding_plain";
-  const constexpr char HASH_KEY_JAMTIS_AMOUNT_ENC_SELF[] = "jamtis_enote_amount_encoding_self";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_DUMMY[] = "jamtis_self_send_enote_dummy";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_CHANGE[] = "jamtis_self_send_change";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_SELF_SPEND[] = "jamtis_self_send_self_spend";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_G[] = "jamtis_sender_extension_g";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_X[] = "jamtis_sender_extension_x";
+  const constexpr char HASH_KEY_JAMTIS_SENDER_ONETIME_ADDRESS_EXTENSION_U[] = "jamtis_sender_extension_u";
+  const constexpr char HASH_KEY_JAMTIS_AMOUNT_BAKED_KEY_PLAIN[] = "jamtis_enote_amount_baked_key_plain";
+  const constexpr char HASH_KEY_JAMTIS_AMOUNT_BAKED_KEY_SELFSEND[] = "jamtis_enote_amount_baked_key_selfsend";
+  const constexpr char HASH_KEY_JAMTIS_AMOUNT_BLINDING_FACTOR[] = "jamtis_enote_amount_commitment_blinding_factor";
+  const constexpr char HASH_KEY_JAMTIS_ENCODED_AMOUNT_MASK[] = "jamtis_enote_encoded_amount_mask";
   const constexpr char HASH_KEY_JAMTIS_INPUT_CONTEXT_COINBASE[] = "jamtis_input_context_coinbase";
   const constexpr char HASH_KEY_JAMTIS_INPUT_CONTEXT_STANDARD[] = "jamtis_input_context_standard";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_DUMMY[] = "jamtis_self_send_enote_dummy";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_CHANGE[] = "jamtis_self_send_enote_change";
-  const constexpr char HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_ENOTE_SELF_SPEND[] = "jamtis_self_send_enote_self_spend";
 
   // Multisig
   const uint32_t MULTISIG_MAX_SIGNERS{16};
