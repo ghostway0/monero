@@ -298,6 +298,7 @@ namespace config
   const constexpr char HASH_KEY_JAMTIS_CIPHERTAG_SECRET[] = "jamtis_cipher_tag_secret";
   const constexpr char HASH_KEY_JAMTIS_FINDRECEIVED_KEY[] = "jamtis_find_received_key";
   const constexpr char HASH_KEY_JAMTIS_ADDRESS_PRIVKEY[] = "jamtis_address_privkey";
+  const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_GENERATOR[] = "jamtis_spendkey_extension_generator";
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_G[] = "jamtis_spendkey_extension_g";
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_X[] = "jamtis_spendkey_extension_x";
   const constexpr char HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_U[] = "jamtis_spendkey_extension_u";

@@ -72,7 +72,7 @@ void make_jamtis_destination_v1(const rct::key &spend_pubkey,
 
     // xK_2 = xk^j_a xK_fr
     crypto::x25519_secret_key address_privkey;
-    make_jamtis_address_privkey(s_generate_address, j, address_privkey);  //xk^j_a
+    make_jamtis_address_privkey(spend_pubkey, s_generate_address, j, address_privkey);  //xk^j_a
 
     x25519_scmul_key(address_privkey, findreceived_pubkey, destination_out.m_addr_K2);
 

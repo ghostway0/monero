@@ -57,6 +57,8 @@ void sp_hash_to_32(const void *data, const std::size_t data_length, void *hash_o
 void sp_hash_to_64(const void *data, const std::size_t data_length, void *hash_out);
 /// H_n(x): Ed25519 group scalar output (32 bytes)
 void sp_hash_to_scalar(const void *data, const std::size_t data_length, void *hash_out);
+/// H_n_x25519(x): canonical X25519 group scalar output (32 bytes)
+void sp_hash_to_x25519_scalar(const void *data, const std::size_t data_length, void *hash_out);
 /// H_n[k](x): 32-byte key; Ed25519 group scalar output (32 bytes)
 void sp_derive_key(const void *derivation_key, const void *data, const std::size_t data_length, void *hash_out);
 /// H_32[k](x): 32-byte key; 32-byte output

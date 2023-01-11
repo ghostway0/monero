@@ -113,6 +113,15 @@ void sp_hash_to_scalar(const void *data, const std::size_t data_length, void *ha
     memcpy(hash_out, temp, 32);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void sp_hash_to_x25519_scalar(const void *data, const std::size_t data_length, void *hash_out)
+{
+    // H_n_x25519(x): canonical X25519 group scalar output (32 bytes)
+    // - bits 0, 1, 2, 255 set to zero
+    hash_base(nullptr, data, data_length, hash_out, 32);
+    reinterpret_cast<unsigned char*>(hash_out)[0] &= 255 - 7;
+    reinterpret_cast<unsigned char*>(hash_out)[31] &= 127;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void sp_derive_key(const void *derivation_key, const void *data, const std::size_t data_length, void *hash_out)
 {
     // H_n[k](x): Ed25519 group scalar output (32 bytes)
