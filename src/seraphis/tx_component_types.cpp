@@ -358,7 +358,7 @@ SpCoinbaseEnoteV1 gen_sp_coinbase_enote_v1()
     temp.m_core = gen_sp_coinbase_enote_core();
 
     // memo
-    temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(0));
+    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
     crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
 
     return temp;
@@ -373,7 +373,7 @@ SpEnoteV1 gen_sp_enote_v1()
 
     // memo
     crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
-    temp.m_view_tag = crypto::rand_idx(static_cast<jamtis::view_tag_t>(0));
+    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
     crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
 
     return temp;

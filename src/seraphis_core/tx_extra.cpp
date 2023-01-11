@@ -224,7 +224,7 @@ void accumulate_extra_field_elements(const TxExtra &partial_memo,
 ExtraFieldElement gen_extra_field_element()
 {
     ExtraFieldElement temp;
-    temp.m_type = crypto::rand_idx(static_cast<std::uint64_t>(0));
+    temp.m_type = crypto::rand_idx<std::uint64_t>(0);
     temp.m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit length to 100 bytes for performance
     crypto::rand(temp.m_value.size(), temp.m_value.data());
     return temp;
