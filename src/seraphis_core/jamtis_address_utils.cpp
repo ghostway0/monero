@@ -57,7 +57,7 @@ namespace jamtis
 {
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &generator_out)
 {
     // k^j_gen = H_32[s_ga](j)
@@ -69,7 +69,7 @@ void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const rct::key &spend_pubkey,
-    const address_index_t j,
+    const address_index_t &j,
     const crypto::secret_key &generator,
     crypto::secret_key &extension_out)
 {
@@ -85,7 +85,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
 void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out)
 {
     // k^j_gen
@@ -98,7 +98,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out)
 {
     // k^j_g = H_n("..g..", K_s, j, H_32[s_ga](j))
@@ -111,7 +111,7 @@ void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out)
 {
     // k^j_x = H_n("..x..", K_s, j, H_32[s_ga](j))
@@ -124,7 +124,7 @@ void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out)
 {
     // k^j_u = H_n("..u..", K_s, j, H_32[s_ga](j))
@@ -137,7 +137,7 @@ void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_address_privkey(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::x25519_secret_key &address_privkey_out)
 {
     // k^j_gen
@@ -155,7 +155,7 @@ void make_jamtis_address_privkey(const rct::key &spend_pubkey,
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     rct::key &address_spendkey_out)
 {
     // K_1 = k^j_g G + k^j_x X + k^j_u U + K_s

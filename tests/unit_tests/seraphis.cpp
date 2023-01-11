@@ -106,7 +106,7 @@ static void check_is_owned_with_intermediate_record(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
     const jamtis_mock_keys &keys,
-    const address_index_t j_expected,
+    const address_index_t &j_expected,
     const rct::xmr_amount amount_expected)
 {
     // try to extract intermediate information from the enote
@@ -150,7 +150,7 @@ static void check_is_owned(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
     const jamtis_mock_keys &keys,
-    const address_index_t j_expected,
+    const address_index_t &j_expected,
     const rct::xmr_amount amount_expected,
     const JamtisEnoteType type_expected)
 {
@@ -194,7 +194,7 @@ static void check_is_owned(const SpEnoteVariant &enote,
 static void check_is_owned(const SpCoinbaseOutputProposalV1 &test_proposal,
     const std::uint64_t block_height,
     const jamtis_mock_keys &keys,
-    const address_index_t j_expected,
+    const address_index_t &j_expected,
     const rct::xmr_amount amount_expected,
     const JamtisEnoteType type_expected)
 {
@@ -215,7 +215,7 @@ static void check_is_owned(const SpCoinbaseOutputProposalV1 &test_proposal,
 //-------------------------------------------------------------------------------------------------------------------
 static void check_is_owned(const SpOutputProposalV1 &test_proposal,
     const jamtis_mock_keys &keys,
-    const address_index_t j_expected,
+    const address_index_t &j_expected,
     const rct::xmr_amount amount_expected,
     const JamtisEnoteType type_expected)
 {
@@ -236,7 +236,7 @@ static void check_is_owned(const SpOutputProposalV1 &test_proposal,
 //-------------------------------------------------------------------------------------------------------------------
 static void check_is_owned(const JamtisPaymentProposalSelfSendV1 &test_proposal,
     const jamtis_mock_keys &keys,
-    const address_index_t j_expected,
+    const address_index_t &j_expected,
     const rct::xmr_amount amount_expected,
     const JamtisEnoteType type_expected)
 {
@@ -482,7 +482,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool test_info_recovery_addressindex(const address_index_t j)
+static bool test_info_recovery_addressindex(const address_index_t &j)
 {
     // cipher and decipher the index
     crypto::secret_key cipher_key;

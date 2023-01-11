@@ -80,7 +80,7 @@ void make_jamtis_destination_v1(const rct::key &spend_pubkey,
     const crypto::x25519_pubkey &unlockamounts_pubkey,
     const crypto::x25519_pubkey &findreceived_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     JamtisDestinationV1 &destination_out);
 /**
 * brief: try_get_jamtis_index_from_destination_v1 - check if a destination can be recreated, then return its address index

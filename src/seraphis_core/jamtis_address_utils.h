@@ -57,7 +57,7 @@ namespace jamtis
 * outparam: generator_out - k^j_gen
 */
 void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &generator_out);
 /**
 * brief: make_jamtis_spendkey_extension - k^j_?
@@ -69,13 +69,13 @@ void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_
 */
 void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const rct::key &spend_pubkey,
-    const address_index_t j,
+    const address_index_t &j,
     const crypto::secret_key &generator,
     crypto::secret_key &extension_out);
 void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_g - k^j_g
@@ -87,7 +87,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
 */
 void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_x - k^j_x
@@ -99,7 +99,7 @@ void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
 */
 void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_u - k^j_u
@@ -111,7 +111,7 @@ void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
 */
 void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_address_privkey - xk^j_a
@@ -123,7 +123,7 @@ void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
 */
 void make_jamtis_address_privkey(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     crypto::x25519_secret_key &address_privkey_out);
 /**
 * brief: make_jamtis_address_spend_key - K_1
@@ -135,7 +135,7 @@ void make_jamtis_address_privkey(const rct::key &spend_pubkey,
 */
 void make_jamtis_address_spend_key(const rct::key &spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const address_index_t j,
+    const address_index_t &j,
     rct::key &address_spendkey_out);
 /**
 * brief: make_seraphis_key_image_jamtis_style - KI

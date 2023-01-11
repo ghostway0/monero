@@ -63,7 +63,7 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 static void make_enote_view_extension_g_helper(const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const jamtis::address_index_t j,
+    const jamtis::address_index_t &j,
     const rct::key &address_spendkey,
     const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
@@ -87,7 +87,7 @@ static void make_enote_view_extension_g_helper(const rct::key &jamtis_spend_pubk
 //-------------------------------------------------------------------------------------------------------------------
 static void make_enote_view_extension_x_helper(const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const jamtis::address_index_t j,
+    const jamtis::address_index_t &j,
     const rct::key &address_spendkey,
     const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
@@ -109,7 +109,7 @@ static void make_enote_view_extension_x_helper(const rct::key &jamtis_spend_pubk
 //-------------------------------------------------------------------------------------------------------------------
 static void make_enote_view_extension_u_helper(const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &s_generate_address,
-    const jamtis::address_index_t j,
+    const jamtis::address_index_t &j,
     const rct::key &address_spendkey,
     const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
@@ -308,7 +308,7 @@ static bool try_get_intermediate_record_info_v1_helper(const SpEnoteVariant &eno
 //-------------------------------------------------------------------------------------------------------------------
 static void get_final_record_info_v1_helper(const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const jamtis::address_index_t j,
+    const jamtis::address_index_t &j,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
     const crypto::secret_key &s_generate_address,
