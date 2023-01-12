@@ -35,8 +35,8 @@
 
 //local headers
 #include "enote_store_mocks.h"
-#include "seraphis/contextual_enote_record_types.h"
-#include "seraphis/tx_input_selection.h"
+#include "seraphis_main/contextual_enote_record_types.h"
+#include "seraphis_main/tx_input_selection.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"

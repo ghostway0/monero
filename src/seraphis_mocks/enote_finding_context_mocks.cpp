@@ -32,7 +32,7 @@
 #include "enote_finding_context_mocks.h"
 
 //local headers
-#include "seraphis/enote_scanning.h"
+#include "seraphis_main/enote_scanning.h"
 
 //third party headers
 

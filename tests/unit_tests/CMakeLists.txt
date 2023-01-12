@@ -133,9 +133,9 @@ target_link_libraries(unit_tests
     rpc
     net
     serialization
-    seraphis
     seraphis_core
     seraphis_crypto
+    seraphis_main
     seraphis_mocks
     wallet
     p2p

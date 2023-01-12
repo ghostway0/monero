@@ -35,7 +35,7 @@
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_input_selection_output_context.h"
+#include "seraphis_main/tx_input_selection_output_context.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"

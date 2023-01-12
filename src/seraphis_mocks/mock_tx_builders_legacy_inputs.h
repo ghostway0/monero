@@ -37,9 +37,9 @@
 #include "crypto/crypto.h"
 #include "mock_ledger_context.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/contextual_enote_record_types.h"
-#include "seraphis/tx_builder_types_legacy.h"
-#include "seraphis/tx_builder_types_multisig.h"
+#include "seraphis_main/contextual_enote_record_types.h"
+#include "seraphis_main/tx_builder_types_legacy.h"
+#include "seraphis_main/tx_builder_types_multisig.h"
 
 //third party headers
 

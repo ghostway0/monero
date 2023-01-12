@@ -35,7 +35,7 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "seraphis/contextual_enote_record_types.h"
+#include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"

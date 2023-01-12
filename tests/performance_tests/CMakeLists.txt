@@ -73,9 +73,9 @@ target_link_libraries(performance_tests
     epee
     randomx
     ringct
-    seraphis
     seraphis_core
     seraphis_crypto
+    seraphis_main
     seraphis_mocks
     ${Boost_CHRONO_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT}

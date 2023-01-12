@@ -32,9 +32,9 @@
 #include "tx_input_selector_mocks.h"
 
 //local headers
-#include "seraphis/contextual_enote_record_types.h"
-#include "seraphis/contextual_enote_record_utils.h"
-#include "seraphis/tx_input_selection.h"
+#include "seraphis_main/contextual_enote_record_types.h"
+#include "seraphis_main/contextual_enote_record_utils.h"
+#include "seraphis_main/tx_input_selection.h"
 
 //third party headers
 #include "boost/container/map.hpp"

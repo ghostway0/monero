@@ -39,8 +39,8 @@
 #include "mock_ledger_context.h"
 #include "mock_offchain_context.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/enote_finding_context.h"
-#include "seraphis/enote_scanning.h"
+#include "seraphis_main/enote_finding_context.h"
+#include "seraphis_main/enote_scanning.h"
 
 //third party headers
 

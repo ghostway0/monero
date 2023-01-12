@@ -37,8 +37,8 @@
 #include "crypto/crypto.h"
 #include "mock_ledger_context.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_builder_types.h"
 #include "seraphis_core/binned_reference_set.h"
+#include "seraphis_main/tx_builder_types.h"
 
 //third party headers
 

@@ -36,10 +36,10 @@
 #include "crypto/x25519.h"
 #include "enote_store_mocks.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/enote_record_types.h"
-#include "seraphis/enote_scanning.h"
-#include "seraphis/enote_scanning_utils.h"
 #include "seraphis_core/jamtis_core_utils.h"
+#include "seraphis_main/enote_record_types.h"
+#include "seraphis_main/enote_scanning.h"
+#include "seraphis_main/enote_scanning_utils.h"
 
 //third party headers
 

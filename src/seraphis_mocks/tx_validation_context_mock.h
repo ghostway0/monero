@@ -37,7 +37,7 @@
 #include "crypto/crypto.h"
 #include "mock_ledger_context.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_validation_context.h"
+#include "seraphis_main/tx_validation_context.h"
 
 //third party headers
 

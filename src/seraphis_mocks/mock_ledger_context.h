@@ -41,9 +41,9 @@
 #include "cryptonote_basic/subaddress_index.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_component_types.h"
 #include "seraphis_core/legacy_enote_types.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_main/tx_component_types.h"
 
 //third party headers
 #include <boost/thread/shared_mutex.hpp>

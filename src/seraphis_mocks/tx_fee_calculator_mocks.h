@@ -35,7 +35,7 @@
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_fee_calculator.h"
+#include "seraphis_main/tx_fee_calculator.h"
 
 //third party headers
 

@@ -34,11 +34,6 @@
 #include "performance_tests.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/enote_record_types.h"
-#include "seraphis/enote_record_utils.h"
-#include "seraphis/tx_builder_types.h"
-#include "seraphis/tx_builders_outputs.h"
-#include "seraphis/tx_component_types.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
 #include "seraphis_core/jamtis_core_utils.h"
 #include "seraphis_core/jamtis_destination.h"
@@ -48,6 +43,11 @@
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_main/enote_record_types.h"
+#include "seraphis_main/enote_record_utils.h"
+#include "seraphis_main/tx_builder_types.h"
+#include "seraphis_main/tx_builders_outputs.h"
+#include "seraphis_main/tx_component_types.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
 //---------------------------------------------------------------------------------------------------------------------

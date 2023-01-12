@@ -32,7 +32,7 @@
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_builder_types.h"
+#include "seraphis_main/tx_builder_types.h"
 
 //third party headers
 

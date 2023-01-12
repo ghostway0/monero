@@ -26,7 +26,7 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(seraphis_sources
+set(seraphis_main_sources
   contextual_enote_record_types.cpp
   contextual_enote_record_utils.cpp
   enote_record_utils.cpp
@@ -52,13 +52,13 @@ set(seraphis_sources
   txtype_coinbase_v1.cpp
   txtype_squashed_v1.cpp)
 
-monero_find_all_headers(seraphis_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
+monero_find_all_headers(seraphis_main_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
 
-monero_add_library(seraphis
-  ${seraphis_sources}
-  ${seraphis_headers})
+monero_add_library(seraphis_main
+  ${seraphis_main_sources}
+  ${seraphis_main_headers})
 
-target_link_libraries(seraphis
+target_link_libraries(seraphis_main
   PUBLIC
     cncrypto
     common
@@ -72,7 +72,7 @@ target_link_libraries(seraphis
   PRIVATE
     ${EXTRA_LIBRARIES})
 
-target_include_directories(seraphis
+target_include_directories(seraphis_main
   PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}"
   PRIVATE

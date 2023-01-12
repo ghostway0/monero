@@ -38,13 +38,13 @@
 #include "mock_ledger_context.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/tx_builder_types.h"
-#include "seraphis/tx_builders_inputs.h"
-#include "seraphis/tx_component_types.h"
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/binned_reference_set_utils.h"
 #include "seraphis_core/sp_core_types.h"
 #include "seraphis_core/sp_ref_set_index_mapper_flat.h"
+#include "seraphis_main/tx_builder_types.h"
+#include "seraphis_main/tx_builders_inputs.h"
+#include "seraphis_main/tx_component_types.h"
 
 
 //third party headers

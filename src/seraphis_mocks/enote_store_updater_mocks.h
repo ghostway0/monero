@@ -38,9 +38,9 @@
 #include "crypto/x25519.h"
 #include "enote_store_mocks.h"
 #include "ringct/rctTypes.h"
-#include "seraphis/enote_record_types.h"
-#include "seraphis/enote_store_updater.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
+#include "seraphis_main/enote_record_types.h"
+#include "seraphis_main/enote_store_updater.h"
 
 //third party headers
 
