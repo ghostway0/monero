@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 #pragma once
 
 //local headers
@@ -42,9 +40,9 @@
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"
+#include "boost/optional/optional.hpp"
 
 //standard headers
-#include <string>
 #include <vector>
 
 //forward declarations
@@ -53,30 +51,29 @@
 namespace sp
 {
 
-enum class OutputProposalSetExtraTypesV1
+enum class OutputProposalSetExtraTypeV1
 {
-    // a plain dummy output (random recipient, random enote ephemeral pubkey)
+    // a plain dummy output             (random recipient, random enote ephemeral pubkey, zero amount)
     NORMAL_DUMMY,
-    // a self-send dummy output (specified recipient, normal enote ephemeral pubkey)
+    // a self-send dummy output         (self recipient,   normal enote ephemeral pubkey, zero amount)
     NORMAL_SELF_SEND_DUMMY,
-    // a normal change output (specified recipient, normal enote ephemeral pubkey)
+    // a normal change output           (self recipient,   normal enote ephemeral pubkey, non-zero amount)
     NORMAL_CHANGE,
-    // a special dummy output (random recipient, shared enote ephemeral pubkey)
+    // a special dummy output           (random recipient, shared enote ephemeral pubkey, zero amount)
     SPECIAL_DUMMY,
-    // a special self-send dummy output (specified recipient, shared enote ephemeral pubkey)
+    // a special self-send dummy output (self recipient,   shared enote ephemeral pubkey, zero amount)
     SPECIAL_SELF_SEND_DUMMY,
-    // a special change output (specified recipient, shared enote ephemeral pubkey)
+    // a special change output          (self recipient,   shared enote ephemeral pubkey, non-zero amount)
     SPECIAL_CHANGE
 };
 
 /**
 * brief: check_jamtis_payment_proposal_selfsend_semantics_v1 - validate semantics of a self-send payment proposal
-* param: output_proposal -
+* param: selfsend_payment_proposal -
 * param: input_context -
 * param: spend_pubkey -
 * param: k_view_balance -
-* outparam: type_out -
-* return: true if it's a self-send proposal
+* return: true if it's a valid self-send proposal
 */
 void check_jamtis_payment_proposal_selfsend_semantics_v1(
     const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_payment_proposal,
@@ -86,33 +83,24 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(
 /**
 * brief: check_v1_coinbase_output_proposal_semantics_v1 - check semantics of a coinbase output proposal
 *   - throws if a check fails
-*   - partial memo should be valid
 * param: output_proposal -
 */
 void check_v1_coinbase_output_proposal_semantics_v1(const SpCoinbaseOutputProposalV1 &output_proposal);
 /**
-* brief: check_v1_output_proposal_semantics_v1 - check semantics of an output proposal
-*   - throws if a check fails
-*   - partial memo should be valid
-* param: output_proposal -
-*/
-void check_v1_output_proposal_semantics_v1(const SpOutputProposalV1 &output_proposal);
-/**
 * brief: check_v1_coinbase_output_proposal_set_semantics_v1 - check semantics of a set of coinbase output proposals
 *   - throws if a check fails
-*   - enote ephemeral pubkeys should be unique
-*   - proposals should be sorted
-*   - proposals should have unique and canonical onetime addresses
 * param: output_proposals -
 */
 void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals);
 /**
+* brief: check_v1_output_proposal_semantics_v1 - check semantics of an output proposal
+*   - throws if a check fails
+* param: output_proposal -
+*/
+void check_v1_output_proposal_semantics_v1(const SpOutputProposalV1 &output_proposal);
+/**
 * brief: check_v1_output_proposal_set_semantics_v1 - check semantics of a set of output proposals
 *   - throws if a check fails
-*   - if 2 proposals, should be 1 unique enote ephemeral pubkey
-*   - if >2 proposals, should be 1 unique enote ephemeral pubkey per output
-*   - proposals should be sorted
-*   - proposals should have unique and canonical onetime addresses
 * param: output_proposals -
 */
 void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposalV1> &output_proposals);
@@ -135,7 +123,7 @@ void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
     const rct::key &input_context,
     SpOutputProposalV1 &output_proposal_out);
 /**
-* brief: make_v1_output_proposal_v1 - convert a jamtis selfsend proposal to a concrete output proposal
+* brief: make_v1_output_proposal_v1 - convert a jamtis selfsend proposal to an output proposal
 * param: proposal -
 * param: k_view_balance -
 * param: input_context -
@@ -145,27 +133,6 @@ void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &p
     const crypto::secret_key &k_view_balance,
     const rct::key &input_context,
     SpOutputProposalV1 &output_proposal_out);
-/**
-* brief: check_v1_tx_supplement_semantics_v1 - check semantics of a tx supplement
-*   - throws if a check fails
-*   - check: num_outputs == enote ephemeral pubkeys
-*   - check: all enote ephemeral pubkeys should be unique
-* param: tx_supplement -
-* param: num_outputs -
-* param: ephemeral_pubkey_optimization -
-*/
-void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
-/**
-* brief: check_v1_tx_supplement_semantics_v2 - check semantics of a tx supplement
-*   - throws if a check fails
-*   - check: if num_outputs == 2, there should be 1 enote ephemeral pubkey
-*   - check: otherwise, should be 'num_outputs' enote ephemeral pubkeys
-*   - check: all enote ephemeral pubkeys should be unique
-* param: tx_supplement -
-* param: num_outputs -
-* param: ephemeral_pubkey_optimization -
-*/
-void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
 /**
 * brief: make_v1_coinbase_outputs_v1 - make v1 coinbase tx outputs
 * param: output_proposals -
@@ -188,28 +155,25 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
     std::vector<rct::xmr_amount> &output_amounts_out,
     std::vector<crypto::secret_key> &output_amount_commitment_blinding_factors_out,
     std::vector<crypto::x25519_pubkey> &output_enote_ephemeral_pubkeys_out);
-//todo
-void finalize_tx_extra_v1(const TxExtra &partial_memo,
-    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,
-    TxExtra &tx_extra_out);
-void finalize_tx_extra_v1(const TxExtra &partial_memo,
-    const std::vector<SpOutputProposalV1> &output_proposals,
-    TxExtra &tx_extra_out);
 /**
-* brief: finalize_v1_output_proposal_set_v1 - finalize a set of output proposals (new proposals are appended)
+* brief: finalize_v1_output_proposal_set_v1 - finalize a set of output proposals by adding 0-1 new proposals
+*        (new proposals are appended)
+*   - NOT FOR COINBASE OUTPUT SETS (coinbase output sets don't need to be finalized)
 *   - add a change output if necessary
 *   - add a dummy output if appropriate
-*   - All output sets will contain at least 1 self-send, either from the original set passed in, a change, or a dummy.
-*     - Only very rare txs should acquire an extra output due to this invariant. Most txs will contain a change output
-*       or have a 'natural' dummy output (a dummy that would be there anyway, so it can be made a self-send trivially).
+*   - All output sets will contain at least 1 self-send, either from the original set passed in, or by adding a change
+*     or selfsend dummy here.
+*     - Only very rare txs should have more than two outputs and include a dummy output (i.e. have numerically more outputs
+*       than if this invariant weren't enforced; note that all txs must have at least two outputs). Only txs with at least
+*       two outputs and zero change amount and zero specified self-sends will acquire an additional dummy selfsend output.
 *     - A self-send dummy will only be made if there are no other self-sends; otherwise dummies will be purely random.
-*     - The goal of this is for all txs made from output sets produced by this function to be identifiable by view
-*       tag checks. If the local signer is scanning for enotes, then they only need key images from txs that are flagged
-*       by a view tag check in order to identify all of their self-send enotes spent in txs that use output sets from this
-*       function. This optimizes third-party view-tag scanning services, which only need to transmit key images from txs
-*       with view tag matches to the local client. Only txs that don't use this function to define the output set _might_
-*       cause failures to identify spent enotes in that workflow. At the time of writing this, it is assumed there are no
-*       workflows where skipping this function would be valuable.
+*     - The goal of this function is for all txs made from output sets produced by this function to be identifiable by view
+*       tag checks. That way, a signer scanning for balance recovery only needs key images from txs that are flagged by a
+*       view tag check in order to A) identify all spent enotes, B) identify all of their self-send enotes in txs that use
+*       output sets from this function. This optimizes third-party view-tag scanning services, which only need to transmit
+*       key images from txs with view tag matches to the local client. Txs with no user-specified selfsends that don't use
+*       this function (or an equivalent) to define the output set WILL cause failures to identify spent enotes in that
+*       workflow.
 * param: total_input_amount -
 * param: transaction_fee -
 * param: change_destination -
@@ -219,11 +183,11 @@ void finalize_tx_extra_v1(const TxExtra &partial_memo,
 * inoutparam: normal_payment_proposals_inout -
 * inoutparam: selfsend_payment_proposals_inout -
 */
-void get_additional_output_types_for_output_set_v1(const std::size_t num_outputs,
+boost::optional<OutputProposalSetExtraTypeV1> try_get_additional_output_type_for_output_set_v1(
+    const std::size_t num_outputs,
     const std::vector<jamtis::JamtisSelfSendType> &self_send_output_types,
     const bool output_ephemeral_pubkeys_are_unique,
-    const rct::xmr_amount change_amount,
-    std::vector<OutputProposalSetExtraTypesV1> &additional_outputs_out);
+    const rct::xmr_amount change_amount);
 void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &total_input_amount,
     const rct::xmr_amount transaction_fee,
     const jamtis::JamtisDestinationV1 &change_destination,
@@ -231,5 +195,36 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
     const crypto::secret_key &k_view_balance,
     std::vector<jamtis::JamtisPaymentProposalV1> &normal_payment_proposals_inout,
     std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals_inout);
+/**
+* brief: finalize_tx_extra_v1 - combine partial memos into a complete tx extra field
+* param: partial_memo -
+* param: output_proposals -
+* outparam: tx_extra_out -
+*/
+void finalize_tx_extra_v1(const TxExtra &partial_memo,
+    const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,
+    TxExtra &tx_extra_out);
+void finalize_tx_extra_v1(const TxExtra &partial_memo,
+    const std::vector<SpOutputProposalV1> &output_proposals,
+    TxExtra &tx_extra_out);
+/**
+* brief: check_v1_tx_supplement_semantics_v1 - check semantics of a tx supplement (v1)
+*   - throws if a check fails
+*   - check: num enote ephemeral pubkeys == num outputs
+*   - check: all enote ephemeral pubkeys should be unique
+* param: tx_supplement -
+* param: num_outputs -
+*/
+void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
+/**
+* brief: check_v1_tx_supplement_semantics_v2 - check semantics of a tx supplement (v2)
+*   - throws if a check fails
+*   - check: if num outputs == 2, there should be 1 enote ephemeral pubkey
+*   - check: otherwise, should be 'num_outputs' enote ephemeral pubkeys
+*   - check: all enote ephemeral pubkeys should be unique
+* param: tx_supplement -
+* param: num_outputs -
+*/
+void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs);
 
 } //namespace sp

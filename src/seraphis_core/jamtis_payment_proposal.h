@@ -27,6 +27,8 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // A 'payment proposal' is a proposal to make an enote sending funds to a Jamtis address.
+// NOTE: Coinbase output proposals cannot be made from selfsend payment proposals because selfsend balance recovery
+//       depends on looking in txs with known key images, but coinbase txs don't have key images.
 
 #pragma once
 

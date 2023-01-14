@@ -169,41 +169,11 @@ std::uint64_t MockLedgerContext::max_sp_enote_index() const
     return m_sp_squashed_enotes.size() - 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start_height,
-    const std::uint64_t chunk_max_size,
-    const rct::key &legacy_base_spend_pubkey,
-    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const crypto::secret_key &legacy_view_privkey,
-    const LegacyScanMode legacy_scan_mode,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
+bool MockLedgerContext::try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx)
 {
-    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+    boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    this->get_onchain_chunk_legacy_impl(chunk_start_height,
-        chunk_max_size,
-        legacy_base_spend_pubkey,
-        legacy_subaddress_map,
-        legacy_view_privkey,
-        legacy_scan_mode,
-        chunk_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_height,
-    const std::uint64_t chunk_max_size,
-    const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
-{
-    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
-
-    this->get_onchain_chunk_sp_impl(chunk_start_height, chunk_max_size, xk_find_received, chunk_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
-
-    return this->try_get_unconfirmed_chunk_sp_impl(xk_find_received, chunk_out);
+    return this->try_add_unconfirmed_tx_v1_impl(tx);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::add_legacy_coinbase(const rct::key &tx_id,
@@ -221,20 +191,6 @@ std::uint64_t MockLedgerContext::add_legacy_coinbase(const rct::key &tx_id,
         std::move(output_enotes));
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx)
-{
-    boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
-
-    return this->try_add_unconfirmed_tx_v1_impl(tx);
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx)
-{
-    boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
-
-    return this->commit_unconfirmed_txs_v1_impl(coinbase_tx);
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const rct::key &mock_coinbase_input_context,
     SpTxSupplementV1 mock_coinbase_tx_supplement,
     std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
@@ -245,6 +201,13 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const rct::key &mock_
         mock_coinbase_input_context,
         std::move(mock_coinbase_tx_supplement),
         std::move(mock_coinbase_output_enotes));
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx)
+{
+    boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->commit_unconfirmed_txs_v1_impl(coinbase_tx);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::remove_tx_from_unconfirmed_cache(const rct::key &tx_id)
@@ -275,6 +238,43 @@ std::uint64_t MockLedgerContext::pop_blocks(const std::size_t num_blocks)
     return this->pop_blocks_impl(num_blocks);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::try_get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+    EnoteScanningChunkNonLedgerV1 &chunk_out) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->try_get_unconfirmed_chunk_sp_impl(xk_find_received, chunk_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start_height,
+    const std::uint64_t chunk_max_size,
+    const rct::key &legacy_base_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    const LegacyScanMode legacy_scan_mode,
+    EnoteScanningChunkLedgerV1 &chunk_out) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    this->get_onchain_chunk_legacy_impl(chunk_start_height,
+        chunk_max_size,
+        legacy_base_spend_pubkey,
+        legacy_subaddress_map,
+        legacy_view_privkey,
+        legacy_scan_mode,
+        chunk_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_height,
+    const std::uint64_t chunk_max_size,
+    const crypto::x25519_secret_key &xk_find_received,
+    EnoteScanningChunkLedgerV1 &chunk_out) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    this->get_onchain_chunk_sp_impl(chunk_start_height, chunk_max_size, xk_find_received, chunk_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 // internal implementation details
 //-------------------------------------------------------------------------------------------------------------------
 bool MockLedgerContext::cryptonote_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const
@@ -295,6 +295,460 @@ bool MockLedgerContext::cryptonote_key_image_exists_onchain_impl(const crypto::k
 bool MockLedgerContext::seraphis_key_image_exists_onchain_impl(const crypto::key_image &key_image) const
 {
     return m_sp_key_images.find(key_image) != m_sp_key_images.end();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
+    const rct::key &input_context,
+    SpTxSupplementV1 tx_supplement,
+    std::vector<SpEnoteVariant> output_enotes)
+{
+    /// check failure modes
+
+    // 1. fail if tx id is duplicated (bug since coinbase block height check should prevent this)
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(coinbase_tx_id) == m_unconfirmed_tx_key_images.end(),
+        "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in key image map (bug).");
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(coinbase_tx_id) ==
+            m_unconfirmed_tx_output_contents.end(),
+        "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in output contents map (bug).");
+
+
+    /// update state
+
+    // 1. add key images (there are none, but we want an entry in the map)
+    m_unconfirmed_tx_key_images[coinbase_tx_id];
+
+    // 2. add tx outputs
+    m_unconfirmed_tx_output_contents[coinbase_tx_id] =
+        {
+            input_context,
+            std::move(tx_supplement),
+            std::move(output_enotes)
+        };
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
+{
+    /// check failure modes
+
+    // 1. fail if new tx overlaps with cached key images: unconfirmed, onchain
+    std::vector<crypto::key_image> legacy_key_images_collected;
+    std::vector<crypto::key_image> sp_key_images_collected;
+
+    for (const LegacyEnoteImageV2 &legacy_enote_image : tx.m_legacy_input_images)
+    {
+        if (this->cryptonote_key_image_exists_unconfirmed_impl(legacy_enote_image.m_key_image) ||
+            this->cryptonote_key_image_exists_onchain_impl(legacy_enote_image.m_key_image))
+            return false;
+
+        legacy_key_images_collected.emplace_back(legacy_enote_image.m_key_image);
+    }
+
+    for (const SpEnoteImageV1 &sp_enote_image : tx.m_sp_input_images)
+    {
+        if (this->seraphis_key_image_exists_unconfirmed_impl(key_image_ref(sp_enote_image)) ||
+            this->seraphis_key_image_exists_onchain_impl(key_image_ref(sp_enote_image)))
+            return false;
+
+        sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
+    }
+
+    // 2. fail if tx id is duplicated (bug since key image check should prevent this)
+    rct::key tx_id;
+    get_sp_squashed_v1_txid(tx, tx_id);
+
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_id) == m_unconfirmed_tx_key_images.end(),
+        "mock tx ledger (adding unconfirmed tx): tx id already exists in key image map (bug).");
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_id) == m_unconfirmed_tx_output_contents.end(),
+        "mock tx ledger (adding unconfirmed tx): tx id already exists in output contents map (bug).");
+
+    // 3. prepare input context
+    rct::key input_context;
+    jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context);
+
+
+    /// update state
+
+    // 1. add key images
+    for (const crypto::key_image &legacy_key_image : legacy_key_images_collected)
+        m_unconfirmed_legacy_key_images.insert(legacy_key_image);
+
+    for (const crypto::key_image &sp_key_image : sp_key_images_collected)
+        m_unconfirmed_sp_key_images.insert(sp_key_image);
+
+    m_unconfirmed_tx_key_images[tx_id] = {std::move(legacy_key_images_collected), std::move(sp_key_images_collected)};
+
+    // 2. add tx outputs
+    std::vector<SpEnoteVariant> output_enote_variants;
+    output_enote_variants.reserve(tx.m_outputs.size());
+
+    for (const SpEnoteV1 &enote : tx.m_outputs)
+        output_enote_variants.emplace_back(enote);
+
+    m_unconfirmed_tx_output_contents[tx_id] = {input_context, tx.m_tx_supplement, output_enote_variants};
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::add_legacy_coinbase_impl(const rct::key &tx_id,
+    const std::uint64_t unlock_time,
+    TxExtra memo,
+    std::vector<crypto::key_image> legacy_key_images_for_block,
+    std::vector<LegacyEnoteVariant> output_enotes)
+{
+    /// checks
+
+    // a. can only add blocks with a mock legacy coinbase tx prior to first seraphis-enabled block
+    CHECK_AND_ASSERT_THROW_MES(this->chain_height() + 1 < m_first_seraphis_only_block,
+        "mock tx ledger (adding legacy coinbase tx): chain height is above last block that can have a legacy coinbase tx.");
+
+    // b. accumulated output count is consistent
+    const std::uint64_t accumulated_output_count =
+        m_accumulated_legacy_output_counts.size()
+        ? (m_accumulated_legacy_output_counts.rbegin())->second  //last block's accumulated legacy output count
+        : 0;
+
+    CHECK_AND_ASSERT_THROW_MES(accumulated_output_count == m_legacy_enote_references.size(),
+        "mock tx ledger (adding legacy coinbase tx): inconsistent number of accumulated outputs (bug).");
+
+
+    /// update state
+    const std::uint64_t new_height{this->chain_height() + 1};
+
+    // 1. add legacy key images (mockup: force key images into chain as part of coinbase tx)
+    for (const crypto::key_image &legacy_key_image : legacy_key_images_for_block)
+        m_legacy_key_images.insert(legacy_key_image);
+
+    m_blocks_of_tx_key_images[new_height][tx_id] = {std::move(legacy_key_images_for_block), {}};
+
+    // 2. add tx outputs
+
+    // a. initialize with current total legacy output count
+    std::uint64_t total_legacy_output_count{m_legacy_enote_references.size()};
+
+    // b. insert all legacy enotes to the reference set
+    for (const LegacyEnoteVariant &enote : output_enotes)
+    {
+        m_legacy_enote_references[total_legacy_output_count] = {onetime_address_ref(enote), amount_commitment_ref(enote)};
+
+        ++total_legacy_output_count;
+    }
+
+    // c. add this block's accumulated output count
+    m_accumulated_legacy_output_counts[new_height] = total_legacy_output_count;
+
+    if (new_height >= m_first_seraphis_allowed_block)
+        m_accumulated_sp_output_counts[new_height] = m_sp_squashed_enotes.size();
+
+    // d. add this block's tx output contents
+    m_blocks_of_legacy_tx_output_contents[new_height][tx_id] = {unlock_time, std::move(memo), std::move(output_enotes)};
+
+    if (new_height >= m_first_seraphis_allowed_block)
+        m_blocks_of_sp_tx_output_contents[new_height];
+
+    // 3. add block info (random block ID and zero timestamp in mockup)
+    m_block_infos[new_height] = {rct::pkGen(), 0};
+
+    // 4. clear unconfirmed cache
+    this->clear_unconfirmed_cache_impl();
+
+    return new_height;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
+    const rct::key &mock_coinbase_input_context,
+    SpTxSupplementV1 mock_coinbase_tx_supplement,
+    std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
+{
+    /// sanity checks: check unconfirmed key images and txids
+    for (const auto &tx_key_images : m_unconfirmed_tx_key_images)
+    {
+        // a. tx ids are present in both unconfirmed data maps
+        CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_key_images.first) !=
+                m_unconfirmed_tx_output_contents.end(),
+            "mock tx ledger (committing unconfirmed txs): tx id not in all unconfirmed data maps (bug).");
+
+        // b. tx ids are not present onchain
+        for (const auto &block_tx_key_images : m_blocks_of_tx_key_images)
+        {
+            CHECK_AND_ASSERT_THROW_MES(block_tx_key_images.second.find(tx_key_images.first) ==
+                    block_tx_key_images.second.end(),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed tx id found in ledger (bug).");
+        }
+
+        for (const auto &block_tx_outputs : m_blocks_of_sp_tx_output_contents)
+        {
+            CHECK_AND_ASSERT_THROW_MES(block_tx_outputs.second.find(tx_key_images.first) == block_tx_outputs.second.end(),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed tx id found in ledger (bug).");
+        }
+
+        // c. legacy key images are not present onchain
+        for (const crypto::key_image &key_image : std::get<0>(tx_key_images.second))
+        {
+            CHECK_AND_ASSERT_THROW_MES(!this->cryptonote_key_image_exists_onchain_impl(key_image),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed legacy tx key image exists in ledger (bug).");
+        }
+
+        // d. seraphis key images are not present onchain
+        for (const crypto::key_image &key_image : std::get<1>(tx_key_images.second))
+        {
+            CHECK_AND_ASSERT_THROW_MES(!this->seraphis_key_image_exists_onchain_impl(key_image),
+                "mock tx ledger (committing unconfirmed txs): unconfirmed seraphis tx key image exists in ledger (bug).");
+        }
+    }
+
+    // d. unconfirmed maps line up
+    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.size() == m_unconfirmed_tx_output_contents.size(),
+        "mock tx ledger (committing unconfirmed txs): unconfirmed data maps mismatch (bug).");
+
+    // e. accumulated output count is consistent
+    const std::uint64_t accumulated_output_count =
+        m_accumulated_sp_output_counts.size()
+        ? (m_accumulated_sp_output_counts.rbegin())->second  //last block's accumulated output count
+        : 0;
+
+    CHECK_AND_ASSERT_THROW_MES(accumulated_output_count == m_sp_squashed_enotes.size(),
+        "mock tx ledger (committing unconfirmed txs): inconsistent number of accumulated outputs (bug).");
+
+    // f. can only add blocks with seraphis txs at first seraphis-enabled block
+    CHECK_AND_ASSERT_THROW_MES(this->chain_height() + 1 >= m_first_seraphis_allowed_block,
+        "mock tx ledger (committing unconfirmed txs): cannot make seraphis block because block height is too low.");
+
+
+    /// add mock coinbase tx to unconfirmed cache
+    // note: this should not invalidate the result of any of the prior checks
+    CHECK_AND_ASSERT_THROW_MES(this->try_add_unconfirmed_coinbase_v1_impl(coinbase_tx_id,
+            mock_coinbase_input_context,
+            std::move(mock_coinbase_tx_supplement),
+            std::move(mock_coinbase_output_enotes)),
+        "mock tx ledger (committing unconfirmed txs): unable to add mock coinbase tx to unconfirmed cache (bug).");
+
+
+    /// update state
+    const std::uint64_t new_height{this->chain_height() + 1};
+
+    // 1. add key images
+    m_legacy_key_images.insert(m_unconfirmed_legacy_key_images.begin(), m_unconfirmed_legacy_key_images.end());
+    m_sp_key_images.insert(m_unconfirmed_sp_key_images.begin(), m_unconfirmed_sp_key_images.end());
+    m_blocks_of_tx_key_images[new_height] = std::move(m_unconfirmed_tx_key_images);
+
+    // 2. add tx outputs
+
+    // a. initialize with current total output count
+    std::uint64_t total_sp_output_count{m_sp_squashed_enotes.size()};
+
+    // b. insert all squashed enotes to the reference set
+    for (const auto &tx_info : m_unconfirmed_tx_output_contents)
+    {
+        const auto &tx_enotes = std::get<std::vector<SpEnoteVariant>>(tx_info.second);
+        for (const SpEnoteVariant &enote : tx_enotes)
+        {
+            make_seraphis_squashed_enote_Q(onetime_address_ref(enote),
+                amount_commitment_ref(enote),
+                m_sp_squashed_enotes[total_sp_output_count]);
+
+            ++total_sp_output_count;
+        }
+    }
+
+    // c. add this block's accumulated output count
+    m_accumulated_sp_output_counts[new_height] = total_sp_output_count;
+
+    if (new_height < m_first_seraphis_only_block)
+        m_accumulated_legacy_output_counts[new_height] = m_legacy_enote_references.size();
+
+    // d. steal the unconfirmed cache's tx output contents
+    m_blocks_of_sp_tx_output_contents[new_height] = std::move(m_unconfirmed_tx_output_contents);
+
+    if (new_height < m_first_seraphis_only_block)
+        m_blocks_of_legacy_tx_output_contents[new_height];
+
+    // 3. add block info (random block ID and zero timestamp in mockup)
+    m_block_infos[new_height] = {rct::pkGen(), 0};
+
+    // 4. clear unconfirmed chache
+    this->clear_unconfirmed_cache_impl();
+
+    return new_height;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx)
+{
+    /// checks
+    CHECK_AND_ASSERT_THROW_MES(coinbase_tx.m_block_height == this->chain_height() + 1,
+        "mock tx ledger (committing a coinbase tx): coinbase tx's block height does not match chain height.");
+
+
+    /// commit a new block
+
+    // 1. convert output enotes to type-erased enote variants
+    std::vector<SpEnoteVariant> coinbase_output_enotes;
+    coinbase_output_enotes.reserve(coinbase_tx.m_outputs.size());
+
+    for (const SpCoinbaseEnoteV1 &coinbase_enote : coinbase_tx.m_outputs)
+        coinbase_output_enotes.emplace_back(coinbase_enote);
+
+    // 2. compute coinbase input context
+    rct::key coinbase_input_context;
+    jamtis::make_jamtis_input_context_coinbase(coinbase_tx.m_block_height, coinbase_input_context);
+
+    // 3. coinbase tx id
+    rct::key tx_id;
+    get_sp_coinbase_v1_txid(coinbase_tx, tx_id);
+
+    // 3. punt to mock commit function
+    return this->commit_unconfirmed_txs_v1_impl(tx_id,
+        coinbase_input_context,
+        coinbase_tx.m_tx_supplement,
+        std::move(coinbase_output_enotes));
+}
+//-------------------------------------------------------------------------------------------------------------------
+void MockLedgerContext::remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id)
+{
+    // clear key images
+    if (m_unconfirmed_tx_key_images.find(tx_id) != m_unconfirmed_tx_key_images.end())
+    {
+        for (const crypto::key_image &key_image : std::get<0>(m_unconfirmed_tx_key_images[tx_id]))
+            m_unconfirmed_legacy_key_images.erase(key_image);
+        for (const crypto::key_image &key_image : std::get<1>(m_unconfirmed_tx_key_images[tx_id]))
+            m_unconfirmed_sp_key_images.erase(key_image);
+
+        m_unconfirmed_tx_key_images.erase(tx_id);
+    }
+
+    // clear output contents
+    m_unconfirmed_tx_output_contents.erase(tx_id);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void MockLedgerContext::clear_unconfirmed_cache_impl()
+{
+    m_unconfirmed_legacy_key_images.clear();
+    m_unconfirmed_sp_key_images.clear();
+    m_unconfirmed_tx_key_images.clear();
+    m_unconfirmed_tx_output_contents.clear();
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::pop_chain_at_height_impl(const std::uint64_t pop_height)
+{
+    if (pop_height > this->chain_height())
+        return 0;
+
+    const std::uint64_t num_blocks_to_pop{this->chain_height() - pop_height + 1};
+
+    // 1. remove key images
+    for (std::uint64_t height_to_pop{pop_height}; height_to_pop < pop_height + num_blocks_to_pop; ++height_to_pop)
+    {
+        if (m_blocks_of_tx_key_images.find(height_to_pop) != m_blocks_of_tx_key_images.end())
+        {
+            for (const auto &tx_key_images : m_blocks_of_tx_key_images[height_to_pop])
+            {
+                for (const crypto::key_image &key_image : std::get<0>(tx_key_images.second))
+                    m_legacy_key_images.erase(key_image);
+                for (const crypto::key_image &key_image : std::get<1>(tx_key_images.second))
+                    m_sp_key_images.erase(key_image);
+            }
+        }
+    }
+
+    // 2. remove legacy enote references
+    if (m_accumulated_legacy_output_counts.size() > 0)
+    {
+        // sanity check
+        if (pop_height > 0)
+        {
+            CHECK_AND_ASSERT_THROW_MES(m_accumulated_legacy_output_counts.find(pop_height - 1) !=
+                    m_accumulated_legacy_output_counts.end(),
+                "mock ledger context (popping chain): accumulated legacy output counts has a hole (bug).");
+        }
+
+        // remove all outputs starting in the pop_height block
+        const std::uint64_t first_output_to_remove =
+            pop_height > 0
+            ? m_accumulated_legacy_output_counts[pop_height - 1]
+            : 0;
+
+        m_legacy_enote_references.erase(m_legacy_enote_references.find(first_output_to_remove),
+            m_legacy_enote_references.end());
+    }
+
+    // 3. remove squashed enotes
+    if (m_accumulated_sp_output_counts.size() > 0)
+    {
+        // sanity check
+        if (pop_height > m_first_seraphis_allowed_block)
+        {
+            CHECK_AND_ASSERT_THROW_MES(m_accumulated_sp_output_counts.find(pop_height - 1) !=
+                    m_accumulated_sp_output_counts.end(),
+                "mock ledger context (popping chain): accumulated seraphis output counts has a hole (bug).");
+        }
+
+        // remove all outputs starting in the pop_height block
+        const std::uint64_t first_output_to_remove =
+            pop_height > m_first_seraphis_allowed_block
+            ? m_accumulated_sp_output_counts[pop_height - 1]
+            : 0;
+
+        m_sp_squashed_enotes.erase(m_sp_squashed_enotes.find(first_output_to_remove), m_sp_squashed_enotes.end());
+    }
+
+    // 4. clean up block maps
+    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_tx_key_images);
+    erase_ledger_cache_map_from_height(pop_height, m_accumulated_legacy_output_counts);
+    erase_ledger_cache_map_from_height(pop_height, m_accumulated_sp_output_counts);
+    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_legacy_tx_output_contents);
+    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_sp_tx_output_contents);
+    erase_ledger_cache_map_from_height(pop_height, m_block_infos);
+
+    return num_blocks_to_pop;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t MockLedgerContext::pop_blocks_impl(const std::size_t num_blocks)
+{
+    const std::uint64_t chain_height{this->chain_height()};
+    return pop_chain_at_height_impl(chain_height + 1 >= num_blocks ? chain_height + 1 - num_blocks : 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockLedgerContext::try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+    EnoteScanningChunkNonLedgerV1 &chunk_out) const
+{
+    // no chunk if no txs to scan
+    if (m_unconfirmed_tx_output_contents.size() == 0)
+        return false;
+
+    // find-received scan each tx in the unconfirmed chache
+    chunk_out.m_basic_records_per_tx.clear();
+    chunk_out.m_contextual_key_images.clear();
+
+    for (const auto &tx_with_output_contents : m_unconfirmed_tx_output_contents)
+    {
+        // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
+        if (try_find_sp_enotes_in_tx(xk_find_received,
+            -1,
+            -1,
+            sortable2rct(tx_with_output_contents.first),
+            0,
+            std::get<rct::key>(tx_with_output_contents.second),
+            std::get<SpTxSupplementV1>(tx_with_output_contents.second),
+            std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
+            SpEnoteOriginStatus::UNCONFIRMED,
+            chunk_out.m_basic_records_per_tx))
+        {
+            CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_with_output_contents.first) !=
+                    m_unconfirmed_tx_key_images.end(),
+                "unconfirmed chunk find-received scanning (mock ledger context): key image map missing tx (bug).");
+
+            collect_key_images_from_tx(-1,
+                -1,
+                sortable2rct(tx_with_output_contents.first),
+                std::get<0>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
+                std::get<1>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
+                SpEnoteSpentStatus::SPENT_UNCONFIRMED,
+                chunk_out.m_contextual_key_images);
+        }
+    }
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,
@@ -614,460 +1068,6 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
                 }
             }
         );
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    // no chunk if no txs to scan
-    if (m_unconfirmed_tx_output_contents.size() == 0)
-        return false;
-
-    // find-received scan each tx in the unconfirmed chache
-    chunk_out.m_basic_records_per_tx.clear();
-    chunk_out.m_contextual_key_images.clear();
-
-    for (const auto &tx_with_output_contents : m_unconfirmed_tx_output_contents)
-    {
-        // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
-        if (try_find_sp_enotes_in_tx(xk_find_received,
-            -1,
-            -1,
-            sortable2rct(tx_with_output_contents.first),
-            0,
-            std::get<rct::key>(tx_with_output_contents.second),
-            std::get<SpTxSupplementV1>(tx_with_output_contents.second),
-            std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
-            SpEnoteOriginStatus::UNCONFIRMED,
-            chunk_out.m_basic_records_per_tx))
-        {
-            CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_with_output_contents.first) !=
-                    m_unconfirmed_tx_key_images.end(),
-                "unconfirmed chunk find-received scanning (mock ledger context): key image map missing tx (bug).");
-
-            collect_key_images_from_tx(-1,
-                -1,
-                sortable2rct(tx_with_output_contents.first),
-                std::get<0>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
-                std::get<1>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
-                SpEnoteSpentStatus::SPENT_UNCONFIRMED,
-                chunk_out.m_contextual_key_images);
-        }
-    }
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::add_legacy_coinbase_impl(const rct::key &tx_id,
-    const std::uint64_t unlock_time,
-    TxExtra memo,
-    std::vector<crypto::key_image> legacy_key_images_for_block,
-    std::vector<LegacyEnoteVariant> output_enotes)
-{
-    /// checks
-
-    // a. can only add blocks with a mock legacy coinbase tx prior to first seraphis-enabled block
-    CHECK_AND_ASSERT_THROW_MES(this->chain_height() + 1 < m_first_seraphis_only_block,
-        "mock tx ledger (adding legacy coinbase tx): chain height is above last block that can have a legacy coinbase tx.");
-
-    // b. accumulated output count is consistent
-    const std::uint64_t accumulated_output_count =
-        m_accumulated_legacy_output_counts.size()
-        ? (m_accumulated_legacy_output_counts.rbegin())->second  //last block's accumulated legacy output count
-        : 0;
-
-    CHECK_AND_ASSERT_THROW_MES(accumulated_output_count == m_legacy_enote_references.size(),
-        "mock tx ledger (adding legacy coinbase tx): inconsistent number of accumulated outputs (bug).");
-
-
-    /// update state
-    const std::uint64_t new_height{this->chain_height() + 1};
-
-    // 1. add legacy key images (mockup: force key images into chain as part of coinbase tx)
-    for (const crypto::key_image &legacy_key_image : legacy_key_images_for_block)
-        m_legacy_key_images.insert(legacy_key_image);
-
-    m_blocks_of_tx_key_images[new_height][tx_id] = {std::move(legacy_key_images_for_block), {}};
-
-    // 2. add tx outputs
-
-    // a. initialize with current total legacy output count
-    std::uint64_t total_legacy_output_count{m_legacy_enote_references.size()};
-
-    // b. insert all legacy enotes to the reference set
-    for (const LegacyEnoteVariant &enote : output_enotes)
-    {
-        m_legacy_enote_references[total_legacy_output_count] = {onetime_address_ref(enote), amount_commitment_ref(enote)};
-
-        ++total_legacy_output_count;
-    }
-
-    // c. add this block's accumulated output count
-    m_accumulated_legacy_output_counts[new_height] = total_legacy_output_count;
-
-    if (new_height >= m_first_seraphis_allowed_block)
-        m_accumulated_sp_output_counts[new_height] = m_sp_squashed_enotes.size();
-
-    // d. add this block's tx output contents
-    m_blocks_of_legacy_tx_output_contents[new_height][tx_id] = {unlock_time, std::move(memo), std::move(output_enotes)};
-
-    if (new_height >= m_first_seraphis_allowed_block)
-        m_blocks_of_sp_tx_output_contents[new_height];
-
-    // 3. add block info (random block ID and zero timestamp in mockup)
-    m_block_infos[new_height] = {rct::pkGen(), 0};
-
-    // 4. clear unconfirmed cache
-    this->clear_unconfirmed_cache_impl();
-
-    return new_height;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
-    const rct::key &input_context,
-    SpTxSupplementV1 tx_supplement,
-    std::vector<SpEnoteVariant> output_enotes)
-{
-    /// check failure modes
-
-    // 1. fail if tx id is duplicated (bug since coinbase block height check should prevent this)
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(coinbase_tx_id) == m_unconfirmed_tx_key_images.end(),
-        "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in key image map (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(coinbase_tx_id) ==
-            m_unconfirmed_tx_output_contents.end(),
-        "mock tx ledger (adding unconfirmed coinbase tx): tx id already exists in output contents map (bug).");
-
-
-    /// update state
-
-    // 1. add key images (there are none, but we want an entry in the map)
-    m_unconfirmed_tx_key_images[coinbase_tx_id];
-
-    // 2. add tx outputs
-    m_unconfirmed_tx_output_contents[coinbase_tx_id] =
-        {
-            input_context,
-            std::move(tx_supplement),
-            std::move(output_enotes)
-        };
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
-{
-    /// check failure modes
-
-    // 1. fail if new tx overlaps with cached key images: unconfirmed, onchain
-    std::vector<crypto::key_image> legacy_key_images_collected;
-    std::vector<crypto::key_image> sp_key_images_collected;
-
-    for (const LegacyEnoteImageV2 &legacy_enote_image : tx.m_legacy_input_images)
-    {
-        if (this->cryptonote_key_image_exists_unconfirmed_impl(legacy_enote_image.m_key_image) ||
-            this->cryptonote_key_image_exists_onchain_impl(legacy_enote_image.m_key_image))
-            return false;
-
-        legacy_key_images_collected.emplace_back(legacy_enote_image.m_key_image);
-    }
-
-    for (const SpEnoteImageV1 &sp_enote_image : tx.m_sp_input_images)
-    {
-        if (this->seraphis_key_image_exists_unconfirmed_impl(key_image_ref(sp_enote_image)) ||
-            this->seraphis_key_image_exists_onchain_impl(key_image_ref(sp_enote_image)))
-            return false;
-
-        sp_key_images_collected.emplace_back(key_image_ref(sp_enote_image));
-    }
-
-    // 2. fail if tx id is duplicated (bug since key image check should prevent this)
-    rct::key tx_id;
-    get_sp_squashed_v1_txid(tx, tx_id);
-
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_id) == m_unconfirmed_tx_key_images.end(),
-        "mock tx ledger (adding unconfirmed tx): tx id already exists in key image map (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_id) == m_unconfirmed_tx_output_contents.end(),
-        "mock tx ledger (adding unconfirmed tx): tx id already exists in output contents map (bug).");
-
-    // 3. prepare input context
-    rct::key input_context;
-    jamtis::make_jamtis_input_context_standard(legacy_key_images_collected, sp_key_images_collected, input_context);
-
-
-    /// update state
-
-    // 1. add key images
-    for (const crypto::key_image &legacy_key_image : legacy_key_images_collected)
-        m_unconfirmed_legacy_key_images.insert(legacy_key_image);
-
-    for (const crypto::key_image &sp_key_image : sp_key_images_collected)
-        m_unconfirmed_sp_key_images.insert(sp_key_image);
-
-    m_unconfirmed_tx_key_images[tx_id] = {std::move(legacy_key_images_collected), std::move(sp_key_images_collected)};
-
-    // 2. add tx outputs
-    std::vector<SpEnoteVariant> output_enote_variants;
-    output_enote_variants.reserve(tx.m_outputs.size());
-
-    for (const SpEnoteV1 &enote : tx.m_outputs)
-        output_enote_variants.emplace_back(enote);
-
-    m_unconfirmed_tx_output_contents[tx_id] = {input_context, tx.m_tx_supplement, output_enote_variants};
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx)
-{
-    /// checks
-    CHECK_AND_ASSERT_THROW_MES(coinbase_tx.m_block_height == this->chain_height() + 1,
-        "mock tx ledger (committing a coinbase tx): coinbase tx's block height does not match chain height.");
-
-
-    /// commit a new block
-
-    // 1. convert output enotes to type-erased enote variants
-    std::vector<SpEnoteVariant> coinbase_output_enotes;
-    coinbase_output_enotes.reserve(coinbase_tx.m_outputs.size());
-
-    for (const SpCoinbaseEnoteV1 &coinbase_enote : coinbase_tx.m_outputs)
-        coinbase_output_enotes.emplace_back(coinbase_enote);
-
-    // 2. compute coinbase input context
-    rct::key coinbase_input_context;
-    jamtis::make_jamtis_input_context_coinbase(coinbase_tx.m_block_height, coinbase_input_context);
-
-    // 3. coinbase tx id
-    rct::key tx_id;
-    get_sp_coinbase_v1_txid(coinbase_tx, tx_id);
-
-    // 3. punt to mock commit function
-    return this->commit_unconfirmed_txs_v1_impl(tx_id,
-        coinbase_input_context,
-        coinbase_tx.m_tx_supplement,
-        std::move(coinbase_output_enotes));
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
-    const rct::key &mock_coinbase_input_context,
-    SpTxSupplementV1 mock_coinbase_tx_supplement,
-    std::vector<SpEnoteVariant> mock_coinbase_output_enotes)
-{
-    /// sanity checks: check unconfirmed key images and txids
-    for (const auto &tx_key_images : m_unconfirmed_tx_key_images)
-    {
-        // a. tx ids are present in both unconfirmed data maps
-        CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_output_contents.find(tx_key_images.first) !=
-                m_unconfirmed_tx_output_contents.end(),
-            "mock tx ledger (committing unconfirmed txs): tx id not in all unconfirmed data maps (bug).");
-
-        // b. tx ids are not present onchain
-        for (const auto &block_tx_key_images : m_blocks_of_tx_key_images)
-        {
-            CHECK_AND_ASSERT_THROW_MES(block_tx_key_images.second.find(tx_key_images.first) ==
-                    block_tx_key_images.second.end(),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed tx id found in ledger (bug).");
-        }
-
-        for (const auto &block_tx_outputs : m_blocks_of_sp_tx_output_contents)
-        {
-            CHECK_AND_ASSERT_THROW_MES(block_tx_outputs.second.find(tx_key_images.first) == block_tx_outputs.second.end(),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed tx id found in ledger (bug).");
-        }
-
-        // c. legacy key images are not present onchain
-        for (const crypto::key_image &key_image : std::get<0>(tx_key_images.second))
-        {
-            CHECK_AND_ASSERT_THROW_MES(!this->cryptonote_key_image_exists_onchain_impl(key_image),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed legacy tx key image exists in ledger (bug).");
-        }
-
-        // d. seraphis key images are not present onchain
-        for (const crypto::key_image &key_image : std::get<1>(tx_key_images.second))
-        {
-            CHECK_AND_ASSERT_THROW_MES(!this->seraphis_key_image_exists_onchain_impl(key_image),
-                "mock tx ledger (committing unconfirmed txs): unconfirmed seraphis tx key image exists in ledger (bug).");
-        }
-    }
-
-    // d. unconfirmed maps line up
-    CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.size() == m_unconfirmed_tx_output_contents.size(),
-        "mock tx ledger (committing unconfirmed txs): unconfirmed data maps mismatch (bug).");
-
-    // e. accumulated output count is consistent
-    const std::uint64_t accumulated_output_count =
-        m_accumulated_sp_output_counts.size()
-        ? (m_accumulated_sp_output_counts.rbegin())->second  //last block's accumulated output count
-        : 0;
-
-    CHECK_AND_ASSERT_THROW_MES(accumulated_output_count == m_sp_squashed_enotes.size(),
-        "mock tx ledger (committing unconfirmed txs): inconsistent number of accumulated outputs (bug).");
-
-    // f. can only add blocks with seraphis txs at first seraphis-enabled block
-    CHECK_AND_ASSERT_THROW_MES(this->chain_height() + 1 >= m_first_seraphis_allowed_block,
-        "mock tx ledger (committing unconfirmed txs): cannot make seraphis block because block height is too low.");
-
-
-    /// add mock coinbase tx to unconfirmed cache
-    // note: this should not invalidate the result of any of the prior checks
-    CHECK_AND_ASSERT_THROW_MES(this->try_add_unconfirmed_coinbase_v1_impl(coinbase_tx_id,
-            mock_coinbase_input_context,
-            std::move(mock_coinbase_tx_supplement),
-            std::move(mock_coinbase_output_enotes)),
-        "mock tx ledger (committing unconfirmed txs): unable to add mock coinbase tx to unconfirmed cache (bug).");
-
-
-    /// update state
-    const std::uint64_t new_height{this->chain_height() + 1};
-
-    // 1. add key images
-    m_legacy_key_images.insert(m_unconfirmed_legacy_key_images.begin(), m_unconfirmed_legacy_key_images.end());
-    m_sp_key_images.insert(m_unconfirmed_sp_key_images.begin(), m_unconfirmed_sp_key_images.end());
-    m_blocks_of_tx_key_images[new_height] = std::move(m_unconfirmed_tx_key_images);
-
-    // 2. add tx outputs
-
-    // a. initialize with current total output count
-    std::uint64_t total_sp_output_count{m_sp_squashed_enotes.size()};
-
-    // b. insert all squashed enotes to the reference set
-    for (const auto &tx_info : m_unconfirmed_tx_output_contents)
-    {
-        const auto &tx_enotes = std::get<std::vector<SpEnoteVariant>>(tx_info.second);
-        for (const SpEnoteVariant &enote : tx_enotes)
-        {
-            make_seraphis_squashed_enote_Q(onetime_address_ref(enote),
-                amount_commitment_ref(enote),
-                m_sp_squashed_enotes[total_sp_output_count]);
-
-            ++total_sp_output_count;
-        }
-    }
-
-    // c. add this block's accumulated output count
-    m_accumulated_sp_output_counts[new_height] = total_sp_output_count;
-
-    if (new_height < m_first_seraphis_only_block)
-        m_accumulated_legacy_output_counts[new_height] = m_legacy_enote_references.size();
-
-    // d. steal the unconfirmed cache's tx output contents
-    m_blocks_of_sp_tx_output_contents[new_height] = std::move(m_unconfirmed_tx_output_contents);
-
-    if (new_height < m_first_seraphis_only_block)
-        m_blocks_of_legacy_tx_output_contents[new_height];
-
-    // 3. add block info (random block ID and zero timestamp in mockup)
-    m_block_infos[new_height] = {rct::pkGen(), 0};
-
-    // 4. clear unconfirmed chache
-    this->clear_unconfirmed_cache_impl();
-
-    return new_height;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void MockLedgerContext::remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id)
-{
-    // clear key images
-    if (m_unconfirmed_tx_key_images.find(tx_id) != m_unconfirmed_tx_key_images.end())
-    {
-        for (const crypto::key_image &key_image : std::get<0>(m_unconfirmed_tx_key_images[tx_id]))
-            m_unconfirmed_legacy_key_images.erase(key_image);
-        for (const crypto::key_image &key_image : std::get<1>(m_unconfirmed_tx_key_images[tx_id]))
-            m_unconfirmed_sp_key_images.erase(key_image);
-
-        m_unconfirmed_tx_key_images.erase(tx_id);
-    }
-
-    // clear output contents
-    m_unconfirmed_tx_output_contents.erase(tx_id);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void MockLedgerContext::clear_unconfirmed_cache_impl()
-{
-    m_unconfirmed_legacy_key_images.clear();
-    m_unconfirmed_sp_key_images.clear();
-    m_unconfirmed_tx_key_images.clear();
-    m_unconfirmed_tx_output_contents.clear();
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::pop_chain_at_height_impl(const std::uint64_t pop_height)
-{
-    if (pop_height > this->chain_height())
-        return 0;
-
-    const std::uint64_t num_blocks_to_pop{this->chain_height() - pop_height + 1};
-
-    // 1. remove key images
-    for (std::uint64_t height_to_pop{pop_height}; height_to_pop < pop_height + num_blocks_to_pop; ++height_to_pop)
-    {
-        if (m_blocks_of_tx_key_images.find(height_to_pop) != m_blocks_of_tx_key_images.end())
-        {
-            for (const auto &tx_key_images : m_blocks_of_tx_key_images[height_to_pop])
-            {
-                for (const crypto::key_image &key_image : std::get<0>(tx_key_images.second))
-                    m_legacy_key_images.erase(key_image);
-                for (const crypto::key_image &key_image : std::get<1>(tx_key_images.second))
-                    m_sp_key_images.erase(key_image);
-            }
-        }
-    }
-
-    // 2. remove legacy enote references
-    if (m_accumulated_legacy_output_counts.size() > 0)
-    {
-        // sanity check
-        if (pop_height > 0)
-        {
-            CHECK_AND_ASSERT_THROW_MES(m_accumulated_legacy_output_counts.find(pop_height - 1) !=
-                    m_accumulated_legacy_output_counts.end(),
-                "mock ledger context (popping chain): accumulated legacy output counts has a hole (bug).");
-        }
-
-        // remove all outputs starting in the pop_height block
-        const std::uint64_t first_output_to_remove =
-            pop_height > 0
-            ? m_accumulated_legacy_output_counts[pop_height - 1]
-            : 0;
-
-        m_legacy_enote_references.erase(m_legacy_enote_references.find(first_output_to_remove),
-            m_legacy_enote_references.end());
-    }
-
-    // 3. remove squashed enotes
-    if (m_accumulated_sp_output_counts.size() > 0)
-    {
-        // sanity check
-        if (pop_height > m_first_seraphis_allowed_block)
-        {
-            CHECK_AND_ASSERT_THROW_MES(m_accumulated_sp_output_counts.find(pop_height - 1) !=
-                    m_accumulated_sp_output_counts.end(),
-                "mock ledger context (popping chain): accumulated seraphis output counts has a hole (bug).");
-        }
-
-        // remove all outputs starting in the pop_height block
-        const std::uint64_t first_output_to_remove =
-            pop_height > m_first_seraphis_allowed_block
-            ? m_accumulated_sp_output_counts[pop_height - 1]
-            : 0;
-
-        m_sp_squashed_enotes.erase(m_sp_squashed_enotes.find(first_output_to_remove), m_sp_squashed_enotes.end());
-    }
-
-    // 4. clean up block maps
-    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_tx_key_images);
-    erase_ledger_cache_map_from_height(pop_height, m_accumulated_legacy_output_counts);
-    erase_ledger_cache_map_from_height(pop_height, m_accumulated_sp_output_counts);
-    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_legacy_tx_output_contents);
-    erase_ledger_cache_map_from_height(pop_height, m_blocks_of_sp_tx_output_contents);
-    erase_ledger_cache_map_from_height(pop_height, m_block_infos);
-
-    return num_blocks_to_pop;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t MockLedgerContext::pop_blocks_impl(const std::size_t num_blocks)
-{
-    const std::uint64_t chain_height{this->chain_height()};
-    return pop_chain_at_height_impl(chain_height + 1 >= num_blocks ? chain_height + 1 - num_blocks : 0);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // free functions

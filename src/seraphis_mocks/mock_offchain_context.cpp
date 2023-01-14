@@ -73,14 +73,6 @@ bool MockOffchainContext::seraphis_key_image_exists(const crypto::key_image &key
     return this->seraphis_key_image_exists_impl(key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
-
-    return this->try_get_offchain_chunk_sp_impl(xk_find_received, chunk_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::try_add_partial_tx_v1(const SpPartialTxV1 &partial_tx)
 {
     boost::unique_lock<boost::shared_mutex> lock{m_context_mutex};
@@ -116,6 +108,14 @@ void MockOffchainContext::clear_cache()
     this->clear_cache_impl();
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool MockOffchainContext::try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+    EnoteScanningChunkNonLedgerV1 &chunk_out) const
+{
+    boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
+
+    return this->try_get_offchain_chunk_sp_impl(xk_find_received, chunk_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
 // internal implementation details
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::cryptonote_key_image_exists_impl(const crypto::key_image &key_image) const
@@ -126,47 +126,6 @@ bool MockOffchainContext::cryptonote_key_image_exists_impl(const crypto::key_ima
 bool MockOffchainContext::seraphis_key_image_exists_impl(const crypto::key_image &key_image) const
 {
     return m_sp_key_images.find(key_image) != m_sp_key_images.end();
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    // no chunk if no txs to scan
-    if (m_output_contents.size() == 0)
-        return false;
-
-    // find-received scan each tx in the unconfirmed chache
-    chunk_out.m_basic_records_per_tx.clear();
-    chunk_out.m_contextual_key_images.clear();
-
-    for (const auto &tx_with_output_contents : m_output_contents)
-    {
-        // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
-        if (try_find_sp_enotes_in_tx(xk_find_received,
-            -1,
-            -1,
-            tx_with_output_contents.first,  //use input context as proxy for tx id
-            0,
-            tx_with_output_contents.first,
-            std::get<SpTxSupplementV1>(tx_with_output_contents.second),
-            std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
-            SpEnoteOriginStatus::OFFCHAIN,
-            chunk_out.m_basic_records_per_tx))
-        {
-            CHECK_AND_ASSERT_THROW_MES(m_tx_key_images.find(tx_with_output_contents.first) != m_tx_key_images.end(),
-                "offchain find-received scanning (mock offchain context): key image map missing input context (bug).");
-
-            collect_key_images_from_tx(-1,
-                -1,
-                sortable2rct(tx_with_output_contents.first),
-                std::get<0>(m_tx_key_images.at(tx_with_output_contents.first)),
-                std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
-                SpEnoteSpentStatus::SPENT_OFFCHAIN,
-                chunk_out.m_contextual_key_images);
-        }
-    }
-
-    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::try_add_v1_impl(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
@@ -298,6 +257,47 @@ void MockOffchainContext::clear_cache_impl()
     m_sp_key_images.clear();
     m_output_contents.clear();
     m_tx_key_images.clear();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool MockOffchainContext::try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+    EnoteScanningChunkNonLedgerV1 &chunk_out) const
+{
+    // no chunk if no txs to scan
+    if (m_output_contents.size() == 0)
+        return false;
+
+    // find-received scan each tx in the unconfirmed chache
+    chunk_out.m_basic_records_per_tx.clear();
+    chunk_out.m_contextual_key_images.clear();
+
+    for (const auto &tx_with_output_contents : m_output_contents)
+    {
+        // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
+        if (try_find_sp_enotes_in_tx(xk_find_received,
+            -1,
+            -1,
+            tx_with_output_contents.first,  //use input context as proxy for tx id
+            0,
+            tx_with_output_contents.first,
+            std::get<SpTxSupplementV1>(tx_with_output_contents.second),
+            std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
+            SpEnoteOriginStatus::OFFCHAIN,
+            chunk_out.m_basic_records_per_tx))
+        {
+            CHECK_AND_ASSERT_THROW_MES(m_tx_key_images.find(tx_with_output_contents.first) != m_tx_key_images.end(),
+                "offchain find-received scanning (mock offchain context): key image map missing input context (bug).");
+
+            collect_key_images_from_tx(-1,
+                -1,
+                sortable2rct(tx_with_output_contents.first),
+                std::get<0>(m_tx_key_images.at(tx_with_output_contents.first)),
+                std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
+                SpEnoteSpentStatus::SPENT_OFFCHAIN,
+                chunk_out.m_contextual_key_images);
+        }
+    }
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

@@ -59,9 +59,12 @@ x25519_scalar x25519_eight()
 x25519_secret_key x25519_secret_key_gen()
 {
     x25519_secret_key privkey;
-    crypto::rand(32, privkey.data);
-    privkey.data[0] &= 255 - 7;
-    privkey.data[31] &= 127;
+    do
+    {
+        crypto::rand(32, privkey.data);
+        privkey.data[0] &= 255 - 7;
+        privkey.data[31] &= 127;
+    } while (privkey == x25519_secret_key{});
 
     return privkey;
 }

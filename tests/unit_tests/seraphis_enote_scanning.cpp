@@ -640,7 +640,7 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
     ASSERT_TRUE(enote_store_PV_A.get_received_sum({SpEnoteOriginStatus::ONCHAIN},
         {EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED}) == 1);  //amount 2 locked
 
-    send_sp_coinbase_amounts_to_users({}, {}, ledger_context);
+    ledger_context.commit_unconfirmed_txs_v1({}, {}, {});
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store_PV(user_keys_A, refresh_config, ledger_context, enote_store_PV_A);
 

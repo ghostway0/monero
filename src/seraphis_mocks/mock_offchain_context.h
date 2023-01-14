@@ -81,14 +81,6 @@ public:
     */
     bool seraphis_key_image_exists(const crypto::key_image &key_image) const;
     /**
-    * brief: try_get_offchain_chunk_sp - try to find-received scan the offchain tx cache
-    * param: xk_find_received -
-    * outparam: chunk_out -
-    * return: true if chunk is not empty
-    */
-    bool try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
-    /**
     * brief: try_add_partial_tx_v1 - try to add a partial transaction to the offchain tx cache
     *   - fails if there are key image duplicates with: offchain
     * param: partial_tx -
@@ -116,13 +108,19 @@ public:
     * brief: clear_cache - remove all data stored in offchain cache
     */
     void clear_cache();
+    /**
+    * brief: try_get_offchain_chunk_sp - try to find-received scan the offchain tx cache
+    * param: xk_find_received -
+    * outparam: chunk_out -
+    * return: true if chunk is not empty
+    */
+    bool try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
 
 private:
     /// implementations of the above, without internally locking the mutex (all expected to be no-fail)
     bool cryptonote_key_image_exists_impl(const crypto::key_image &key_image) const;
     bool seraphis_key_image_exists_impl(const crypto::key_image &key_image) const;
-    bool try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     bool try_add_v1_impl(const std::vector<LegacyEnoteImageV2> &legacy_input_images,
         const std::vector<SpEnoteImageV1> &sp_input_images,
         const SpTxSupplementV1 &tx_supplement,
@@ -132,6 +130,8 @@ private:
     void remove_tx_from_cache_impl(const rct::key &input_context);
     void remove_tx_with_key_image_from_cache_impl(const crypto::key_image &key_image);
     void clear_cache_impl();
+    bool try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
 
     /// context mutex (mutable for use in const member functions)
     mutable boost::shared_mutex m_context_mutex;

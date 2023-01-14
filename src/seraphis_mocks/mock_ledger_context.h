@@ -167,6 +167,14 @@ public:
     bool try_get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     /**
+    * brief: try_add_unconfirmed_tx_v1 - try to add a full transaction to the 'unconfirmed' tx cache
+    *   - fails if there are key image duplicates with: unconfirmed, onchain
+    *   - auto-removes any offchain entries that have overlapping key images with this tx
+    * param: tx -
+    * return: true if adding succeeded
+    */
+    bool try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx);
+    /**
     * brief: add_legacy_coinbase - make a block with a mock legacy coinbase tx (containing legacy key images)
     * param: tx_id -
     * param: unlock_time -
@@ -181,25 +189,6 @@ public:
         std::vector<crypto::key_image> legacy_key_images_for_block,
         std::vector<LegacyEnoteVariant> output_enotes);
     /**
-    * brief: try_add_unconfirmed_tx_v1 - try to add a full transaction to the 'unconfirmed' tx cache
-    *   - fails if there are key image duplicates with: unconfirmed, onchain
-    *   - auto-removes any offchain entries that have overlapping key images with this tx
-    * param: tx -
-    * return: true if adding succeeded
-    */
-    bool try_add_unconfirmed_tx_v1(const SpTxSquashedV1 &tx);
-    /**
-    * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new
-    *      coinbase tx
-    *   - throws if the coinbase tx's block height does not equal the ledger's next block height
-    *   - clears the unconfirmed tx cache
-    *   - note: currently does NOT validate the coinbase tx
-    *   - note2: currently does nothing with the block reward
-    * param: coinbase_tx -
-    * return: block height of newly added block
-    */
-    std::uint64_t commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx);
-    /**
     * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new mock coinbase tx
     *   - clears the unconfirmed tx cache
     *   - note: currently does NOT validate if coinbase enotes are sorted properly
@@ -212,6 +201,17 @@ public:
     std::uint64_t commit_unconfirmed_txs_v1(const rct::key &mock_coinbase_input_context,
         SpTxSupplementV1 mock_coinbase_tx_supplement,
         std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
+    /**
+    * brief: commit_unconfirmed_cache_v1 - move all unconfirmed txs onto the chain in a new block, with new
+    *      coinbase tx
+    *   - throws if the coinbase tx's block height does not equal the ledger's next block height
+    *   - clears the unconfirmed tx cache
+    *   - note: currently does NOT validate the coinbase tx
+    *   - note2: currently does nothing with the block reward
+    * param: coinbase_tx -
+    * return: block height of newly added block
+    */
+    std::uint64_t commit_unconfirmed_txs_v1(const SpTxCoinbaseV1 &coinbase_tx);
     /**
     * brief: remove_tx_from_unconfirmed_cache - remove a tx from the unconfirmed cache
     * param: tx_id - tx id of tx to remove
@@ -240,6 +240,27 @@ private:
     bool seraphis_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const;
     bool cryptonote_key_image_exists_onchain_impl(const crypto::key_image &key_image) const;
     bool seraphis_key_image_exists_onchain_impl(const crypto::key_image &key_image) const;
+    bool try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
+        const rct::key &input_context,
+        SpTxSupplementV1 tx_supplement,
+        std::vector<SpEnoteVariant> output_enotes);
+    bool try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx);
+    std::uint64_t add_legacy_coinbase_impl(const rct::key &tx_id,
+        const std::uint64_t unlock_time,
+        TxExtra memo,
+        std::vector<crypto::key_image> legacy_key_images_for_block,
+        std::vector<LegacyEnoteVariant> output_enotes);
+    std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
+        const rct::key &mock_coinbase_input_context,
+        SpTxSupplementV1 mock_coinbase_tx_supplement,
+        std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
+    std::uint64_t commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx);
+    void remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id);
+    void clear_unconfirmed_cache_impl();
+    std::uint64_t pop_chain_at_height_impl(const std::uint64_t pop_height);
+    std::uint64_t pop_blocks_impl(const std::size_t num_blocks);
+    bool try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     void get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         const rct::key &legacy_base_spend_pubkey,
@@ -251,27 +272,6 @@ private:
         const std::uint64_t chunk_max_size,
         const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkLedgerV1 &chunk_out) const;
-    bool try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
-    std::uint64_t add_legacy_coinbase_impl(const rct::key &tx_id,
-        const std::uint64_t unlock_time,
-        TxExtra memo,
-        std::vector<crypto::key_image> legacy_key_images_for_block,
-        std::vector<LegacyEnoteVariant> output_enotes);
-    bool try_add_unconfirmed_coinbase_v1_impl(const rct::key &coinbase_tx_id,
-        const rct::key &input_context,
-        SpTxSupplementV1 tx_supplement,
-        std::vector<SpEnoteVariant> output_enotes);
-    bool try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx);
-    std::uint64_t commit_unconfirmed_txs_v1_impl(const SpTxCoinbaseV1 &coinbase_tx);
-    std::uint64_t commit_unconfirmed_txs_v1_impl(const rct::key &coinbase_tx_id,
-        const rct::key &mock_coinbase_input_context,
-        SpTxSupplementV1 mock_coinbase_tx_supplement,
-        std::vector<SpEnoteVariant> mock_coinbase_output_enotes);
-    void remove_tx_from_unconfirmed_cache_impl(const rct::key &tx_id);
-    void clear_unconfirmed_cache_impl();
-    std::uint64_t pop_chain_at_height_impl(const std::uint64_t pop_height);
-    std::uint64_t pop_blocks_impl(const std::size_t num_blocks);
 
     /// context mutex (mutable for use in const member functions)
     mutable boost::shared_mutex m_context_mutex;
