@@ -91,11 +91,11 @@ std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtr
 std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx);
 
 /**
-* brief: get_sp_coinbase_v1_txid - get the transaction id
+* brief: get_sp_tx_coinbase_v1_txid - get the transaction id
 * param: tx -
 * outparam: tx_id_out -
 */
-void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out);
+void get_sp_tx_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out);
 /**
 * brief: make_seraphis_tx_coinbase_v1 - make an SpTxCoinbaseV1 transaction
 * ...
@@ -156,5 +156,8 @@ template <>
 bool validate_tx_input_proofs<SpTxCoinbaseV1>(const SpTxCoinbaseV1&, const TxValidationContext&);
 template <>
 bool validate_txs_batchable<SpTxCoinbaseV1>(const std::vector<const SpTxCoinbaseV1*>&, const TxValidationContext&);
+
+/// contextual validation id
+bool try_get_tx_contextual_validation_id(const SpTxCoinbaseV1 &tx, const TxValidationContext&, rct::key &validation_id_out);
 
 } //namespace sp

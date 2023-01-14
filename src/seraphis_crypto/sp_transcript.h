@@ -187,6 +187,12 @@ private:
     {
         this->append_labeled_buffer(label, key_buffer.bytes, sizeof(key_buffer));
     }
+    void append_impl(const boost::string_ref label, const rct::ctkey &ctkey)
+    {
+        this->append_label(label);
+        this->append_impl("ctmask", ctkey.mask);
+        this->append_impl("ctdest", ctkey.dest);
+    }
     void append_impl(const boost::string_ref label, const crypto::secret_key &point_buffer)
     {
         this->append_labeled_buffer(label, point_buffer.data, sizeof(point_buffer));

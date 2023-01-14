@@ -595,7 +595,7 @@ std::uint64_t MockLedgerContext::commit_unconfirmed_txs_v1_impl(const SpTxCoinba
 
     // 3. coinbase tx id
     rct::key tx_id;
-    get_sp_coinbase_v1_txid(coinbase_tx, tx_id);
+    get_sp_tx_coinbase_v1_txid(coinbase_tx, tx_id);
 
     // 3. punt to mock commit function
     return this->commit_unconfirmed_txs_v1_impl(tx_id,

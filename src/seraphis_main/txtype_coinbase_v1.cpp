@@ -88,7 +88,7 @@ std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
     return sp_tx_coinbase_v1_weight(tx.m_outputs.size(), tx.m_tx_supplement.m_tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_sp_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
+void get_sp_tx_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
 {
     // tx_id = H_32(tx version, block height, block reward, output enotes, tx supplement)
     const tx_version_t tx_version{tx_version_from(tx.m_tx_semantic_rules_version)};
@@ -246,6 +246,24 @@ template <>
 bool validate_txs_batchable<SpTxCoinbaseV1>(const std::vector<const SpTxCoinbaseV1*>&, const TxValidationContext&)
 {
     // coinbase txs have no batchable proofs to verify
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_tx_contextual_validation_id(const SpTxCoinbaseV1 &tx, const TxValidationContext&, rct::key &validation_id_out)
+{
+    try
+    {
+        // 1. tx id
+        rct::key tx_id;
+        get_sp_tx_coinbase_v1_txid(tx, tx_id);
+
+        // 2. validation_id = H_32(tx_id)
+        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID, sizeof(tx_id)};
+        transcript.append("tx_id", tx_id);
+
+        sp_hash_to_32(transcript.data(), transcript.size(), validation_id_out.bytes);
+    } catch (...) { return false; }
+
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------

@@ -242,4 +242,9 @@ template <>
 bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashedV1*> &txs,
     const TxValidationContext &tx_validation_context);
 
+/// contextual validation id
+bool try_get_tx_contextual_validation_id(const SpTxSquashedV1 &tx,
+    const TxValidationContext &tx_validation_context,
+    rct::key &validation_id_out);
+
 } //namespace sp

@@ -30,11 +30,13 @@
 #include "txtype_squashed_v1.h"
 
 //local headers
+#include "common/container_helpers.h"
 #include "cryptonote_config.h"
 #include "misc_log_ex.h"
 #include "ringct/multiexp.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/binned_reference_set.h"
+#include "seraphis_core/binned_reference_set_utils.h"
 #include "seraphis_core/discretized_fee.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/sp_core_enote_utils.h"
@@ -203,7 +205,7 @@ std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx)
         tx.m_tx_supplement.m_tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
+void get_sp_tx_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
 {
     // tx_id = H_32(tx_proposal_prefix, input images, proofs)
 
@@ -657,6 +659,61 @@ bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashed
 
     if (!SpMultiexp{validation_data}.evaluates_to_point_at_infinity())
         return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_tx_contextual_validation_id(const SpTxSquashedV1 &tx,
+    const TxValidationContext &tx_validation_context,
+    rct::key &validation_id_out)
+{
+    try
+    {
+        // 1. check key images
+        if (!validate_sp_key_images_v1(tx.m_legacy_input_images, tx.m_sp_input_images, tx_validation_context))
+            return false;
+
+        // 2. get legacy ring members
+        std::vector<rct::ctkeyV> legacy_ring_members;
+        legacy_ring_members.reserve(tx.m_legacy_ring_signatures.size());
+
+        for (const LegacyRingSignatureV3 &legacy_ring_signature : tx.m_legacy_ring_signatures)
+        {
+            // get the legacy ring members
+            tx_validation_context.get_reference_set_proof_elements_v1(
+                legacy_ring_signature.m_reference_set,
+                tools::add_element(legacy_ring_members));
+        }
+
+        // 3. get seraphis reference set elements
+        std::vector<std::uint64_t> sp_reference_indices_temp;
+        std::vector<rct::keyV> sp_membership_proof_refs;
+        sp_membership_proof_refs.reserve(tx.m_sp_membership_proofs.size());
+
+        for (const SpMembershipProofV1 &sp_membership_proof : tx.m_sp_membership_proofs)
+        {
+            // a. decompress the reference set indices
+            if(!try_get_reference_indices_from_binned_reference_set_v1(sp_membership_proof.m_binned_reference_set,
+                    sp_reference_indices_temp))
+                return false;
+
+            // b. get the seraphis reference set elements
+            tx_validation_context.get_reference_set_proof_elements_v2(sp_reference_indices_temp,
+                tools::add_element(sp_membership_proof_refs));
+        }
+
+        // 4. transaction id
+        rct::key tx_id;
+        get_sp_tx_squashed_v1_txid(tx, tx_id);
+
+        // 5. validation_id = H_32(tx_id, legacy ring members, seraphis membership proof reference elements)
+        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID, sizeof(tx_id)};
+        transcript.append("tx_id", tx_id);
+        transcript.append("legacy_ring_members", legacy_ring_members);
+        transcript.append("sp_membership_proof_refs", sp_membership_proof_refs);
+
+        sp_hash_to_32(transcript.data(), transcript.size(), validation_id_out.bytes);
+    } catch (...) { return false; }
 
     return true;
 }
