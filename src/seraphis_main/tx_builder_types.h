@@ -228,7 +228,7 @@ struct SpPartialTxV1 final
     /// balance proof (balance proof and range proofs)
     SpBalanceProofV1 m_balance_proof;
     /// legacy ring signatures: membership/ownership/unspentness for each legacy input (ALIGNED TO LEGACY INPUTS)
-    std::vector<LegacyRingSignatureV3> m_legacy_ring_signatures;
+    std::vector<LegacyRingSignatureV4> m_legacy_ring_signatures;
     /// composition proofs: ownership/unspentness for each seraphis input (ALIGNED TO SERAPHIS INPUTS)
     std::vector<SpImageProofV1> m_sp_image_proofs;
     /// tx fee (discretized representation)

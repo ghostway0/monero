@@ -178,7 +178,7 @@ void make_v3_legacy_ring_signature(const rct::key &message,
     const crypto::secret_key &reference_commitment_mask,
     const crypto::secret_key &legacy_spend_privkey,
     hw::device &hwdev,
-    LegacyRingSignatureV3 &ring_signature_out)
+    LegacyRingSignatureV4 &ring_signature_out)
 {
     // make ring signature
 
@@ -248,7 +248,7 @@ void make_v3_legacy_ring_signature(const rct::key &message,
 void make_v3_legacy_ring_signature_v1(LegacyRingSignaturePrepV1 ring_signature_prep,
     const crypto::secret_key &legacy_spend_privkey,
     hw::device &hwdev,
-    LegacyRingSignatureV3 &ring_signature_out)
+    LegacyRingSignatureV4 &ring_signature_out)
 {
     // proof message
     rct::key message;
@@ -272,7 +272,7 @@ void make_v3_legacy_ring_signature_v1(LegacyRingSignaturePrepV1 ring_signature_p
 void make_v3_legacy_ring_signatures_v1(std::vector<LegacyRingSignaturePrepV1> ring_signature_preps,
     const crypto::secret_key &legacy_spend_privkey,
     hw::device &hwdev,
-    std::vector<LegacyRingSignatureV3> &ring_signatures_out)
+    std::vector<LegacyRingSignatureV4> &ring_signatures_out)
 {
     // only allow signatures on the same tx proposal
     for (const LegacyRingSignaturePrepV1 &signature_prep : ring_signature_preps)
@@ -335,7 +335,7 @@ void check_v1_legacy_input_semantics_v1(const LegacyInputV1 &input)
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_legacy_input_v1(const rct::key &tx_proposal_prefix,
     const LegacyInputProposalV1 &input_proposal,
-    LegacyRingSignatureV3 ring_signature,
+    LegacyRingSignatureV4 ring_signature,
     rct::ctkeyV referenced_enotes,
     const rct::key &legacy_spend_pubkey,
     LegacyInputV1 &input_out)
@@ -372,7 +372,7 @@ void make_v1_legacy_input_v1(const rct::key &tx_proposal_prefix,
     const rct::key legacy_spend_pubkey{rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey))};
 
     // 3. construct ring signature
-    LegacyRingSignatureV3 ring_signature;
+    LegacyRingSignatureV4 ring_signature;
     make_v3_legacy_ring_signature_v1(std::move(ring_signature_prep), legacy_spend_privkey, hwdev, ring_signature);
 
     // 4. finish making the input

@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis transaction component types.
-
 
 #pragma once
 
@@ -45,7 +42,6 @@
 
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
-
 
 namespace sp
 {
@@ -80,26 +76,31 @@ inline std::size_t legacy_enote_image_v2_size_bytes() { return 32 + 32; }
 
 ////
 // LegacyRingSignatureV2: not used in seraphis
-// - MLSAG (using LegacyEnoteImageV2)
+// - MLSAG combined inputs (using LegacyEnoteImageV2)
 ///
 
 ////
-// LegacyRingSignatureV3
+// LegacyRingSignatureV3: not used in seraphis
+// - MLSAG split inputs (using LegacyEnoteImageV2)
+///
+
+////
+// LegacyRingSignatureV4
 // - CLSAG (using LegacyEnoteImageV2)
 ///
-struct LegacyRingSignatureV3 final
+struct LegacyRingSignatureV4 final
 {
     /// a clsag proof
     rct::clsag m_clsag_proof;
     /// on-chain indices of the proof's ring members
     std::vector<std::uint64_t> m_reference_set;
 };
-inline const boost::string_ref container_name(const LegacyRingSignatureV3&) { return "LegacyRingSignatureV3"; }
-void append_to_transcript(const LegacyRingSignatureV3 &container, SpTranscriptBuilder &transcript_inout);
+inline const boost::string_ref container_name(const LegacyRingSignatureV4&) { return "LegacyRingSignatureV4"; }
+void append_to_transcript(const LegacyRingSignatureV4 &container, SpTranscriptBuilder &transcript_inout);
 
 /// get the size in bytes
-std::size_t legacy_ring_signature_v3_size_bytes(const std::size_t num_ring_members);
-std::size_t legacy_ring_signature_v3_size_bytes(const LegacyRingSignatureV3 &ring_signature);
+std::size_t legacy_ring_signature_v4_size_bytes(const std::size_t num_ring_members);
+std::size_t legacy_ring_signature_v4_size_bytes(const LegacyRingSignatureV4 &ring_signature);
 
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b);

@@ -142,7 +142,7 @@ bool validate_sp_semantics_component_counts_v1(const SemanticConfigComponentCoun
 * return: true/false on validation result
 */
 bool validate_sp_semantics_legacy_reference_sets_v1(const SemanticConfigLegacyRefSetV1 &config,
-    const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures);
+    const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures);
 /**
 * brief: validate_sp_semantics_sp_reference_sets_v1 - check seraphis membership proofs have consistent and
 *   valid reference sets
@@ -210,7 +210,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
 * param: tx_extra -
 * return: true/false on validation result
 */
-bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<SpMembershipProofV1> &sp_membership_proofs,
     const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const std::vector<SpEnoteImageV1> &sp_input_images,
@@ -269,7 +269,7 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
 * param: tx_validation_context -
 * return: true/false on validation result
 */
-bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const rct::key &tx_proposal_prefix,
     const TxValidationContext &tx_validation_context);

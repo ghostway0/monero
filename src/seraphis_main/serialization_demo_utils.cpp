@@ -116,20 +116,20 @@ static void indices_from_offsets(std::vector<std::uint64_t> &indices_inout)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void recover_legacy_ring_signatures_v3(
-    std::vector<ser_LegacyRingSignatureV3_PARTIAL> &serializable_legacy_ring_signatures_in,
+static void recover_legacy_ring_signatures_v4(
+    std::vector<ser_LegacyRingSignatureV4_PARTIAL> &serializable_legacy_ring_signatures_in,
     const std::vector<LegacyEnoteImageV2> &legacy_enote_images,
-    std::vector<LegacyRingSignatureV3> &legacy_ring_signatures_out)
+    std::vector<LegacyRingSignatureV4> &legacy_ring_signatures_out)
 {
     CHECK_AND_ASSERT_THROW_MES(legacy_enote_images.size() == serializable_legacy_ring_signatures_in.size(),
-        "recovering legacy ring signature v3s: legacy input images don't line up with legacy ring signatures.");
+        "recovering legacy ring signature v4s: legacy input images don't line up with legacy ring signatures.");
 
     legacy_ring_signatures_out.clear();
     legacy_ring_signatures_out.reserve(serializable_legacy_ring_signatures_in.size());
 
     for (std::size_t legacy_input_index{0}; legacy_input_index < legacy_enote_images.size(); ++legacy_input_index)
     {
-        recover_legacy_ring_signature_v3(serializable_legacy_ring_signatures_in[legacy_input_index],
+        recover_legacy_ring_signature_v4(serializable_legacy_ring_signatures_in[legacy_input_index],
             legacy_enote_images[legacy_input_index].m_key_image,
             tools::add_element(legacy_ring_signatures_out));
     }
@@ -167,15 +167,15 @@ static void recover_sp_membership_proofs_v1(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void make_serializable_legacy_ring_signatures_v3(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
-    std::vector<ser_LegacyRingSignatureV3_PARTIAL> &serializable_legacy_ring_signatures_out)
+static void make_serializable_legacy_ring_signatures_v4(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
+    std::vector<ser_LegacyRingSignatureV4_PARTIAL> &serializable_legacy_ring_signatures_out)
 {
     serializable_legacy_ring_signatures_out.clear();
     serializable_legacy_ring_signatures_out.reserve(legacy_ring_signatures.size());
 
-    for (const LegacyRingSignatureV3 &legacy_ring_signature : legacy_ring_signatures)
+    for (const LegacyRingSignatureV4 &legacy_ring_signature : legacy_ring_signatures)
     {
-        make_serializable_legacy_ring_signature_v3(legacy_ring_signature,
+        make_serializable_legacy_ring_signature_v4(legacy_ring_signature,
             tools::add_element(serializable_legacy_ring_signatures_out));
     }
 }
@@ -298,8 +298,8 @@ void make_serializable_sp_balance_proof_v1(const SpBalanceProofV1 &proof,
     serializable_proof_out.m_remainder_blinding_factor = proof.m_remainder_blinding_factor;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_legacy_ring_signature_v3(const LegacyRingSignatureV3 &signature,
-    ser_LegacyRingSignatureV3_PARTIAL &serializable_signature_out)
+void make_serializable_legacy_ring_signature_v4(const LegacyRingSignatureV4 &signature,
+    ser_LegacyRingSignatureV4_PARTIAL &serializable_signature_out)
 {
     make_serializable_clsag(signature.m_clsag_proof, serializable_signature_out.m_clsag_proof_PARTIAL);
     serializable_signature_out.m_reference_set_COMPACT = signature.m_reference_set;
@@ -371,7 +371,7 @@ void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquas
     make_serializable_sp_balance_proof_v1(tx.m_balance_proof, serializable_tx_out.m_balance_proof);
 
     // ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    make_serializable_legacy_ring_signatures_v3(tx.m_legacy_ring_signatures, serializable_tx_out.m_legacy_ring_signatures);
+    make_serializable_legacy_ring_signatures_v4(tx.m_legacy_ring_signatures, serializable_tx_out.m_legacy_ring_signatures);
 
     // composition proofs: ownership/key-image-legitimacy for each seraphis input
     copy_array(&make_serializable_sp_image_proof_v1, tx.m_sp_image_proofs, serializable_tx_out.m_sp_image_proofs);
@@ -511,9 +511,9 @@ void recover_sp_balance_proof_v1(ser_SpBalanceProofV1_PARTIAL &serializable_proo
     proof_out.m_remainder_blinding_factor = serializable_proof_in.m_remainder_blinding_factor;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void recover_legacy_ring_signature_v3(ser_LegacyRingSignatureV3_PARTIAL &serializable_signature_in,
+void recover_legacy_ring_signature_v4(ser_LegacyRingSignatureV4_PARTIAL &serializable_signature_in,
     const crypto::key_image &key_image,
-    LegacyRingSignatureV3 &signature_out)
+    LegacyRingSignatureV4 &signature_out)
 {
     // clsag
     recover_clsag(serializable_signature_in.m_clsag_proof_PARTIAL, key_image, signature_out.m_clsag_proof);
@@ -606,7 +606,7 @@ void recover_sp_tx_squashed_v1(ser_SpTxSquashedV1 &serializable_tx_in,
         tx_out.m_balance_proof);
 
     // ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    recover_legacy_ring_signatures_v3(serializable_tx_in.m_legacy_ring_signatures,
+    recover_legacy_ring_signatures_v4(serializable_tx_in.m_legacy_ring_signatures,
         tx_out.m_legacy_input_images,
         tx_out.m_legacy_ring_signatures);
 

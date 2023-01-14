@@ -48,7 +48,7 @@ namespace crypto
 {
 
 /// constexpr assert for old gcc bug: https://stackoverflow.com/questions/34280729/throw-in-constexpr-function
-/// - this function won't compile in a constexpr function if b == false
+/// - this function won't compile in a constexpr context if b == false
 constexpr void constexpr_assert(const bool b) { b ? 0 : throw std::runtime_error("constexpr assert failed"); };
 
 /// constexpr paste bytes into an array-of-bytes type
@@ -184,10 +184,10 @@ static void init_gens()
         [&](){
 
         // sanity check the generators
-        static_assert(static_cast<unsigned char>(G.data[0]) == 0x58, "compiletime constant sanity check");
-        static_assert(static_cast<unsigned char>(H.data[0]) == 0x8b, "compiletime constant sanity check");
-        static_assert(static_cast<unsigned char>(X.data[0]) == 0xa4, "compiletime constant sanity check");
-        static_assert(static_cast<unsigned char>(U.data[0]) == 0x10, "compiletime constant sanity check");
+        static_assert(static_cast<unsigned char>(G.data[0]) == 0x58, "compile-time constant sanity check");
+        static_assert(static_cast<unsigned char>(H.data[0]) == 0x8b, "compile-time constant sanity check");
+        static_assert(static_cast<unsigned char>(X.data[0]) == 0xa4, "compile-time constant sanity check");
+        static_assert(static_cast<unsigned char>(U.data[0]) == 0x10, "compile-time constant sanity check");
 
         // build ge_p3 representations of generators
         const int G_deserialize = ge_frombytes_vartime(&G_p3, to_bytes(G));

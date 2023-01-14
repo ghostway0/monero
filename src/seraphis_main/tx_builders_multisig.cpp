@@ -528,7 +528,7 @@ static bool try_make_v1_legacy_input_v1(const rct::key &tx_proposal_prefix,
         }
 
         // 3. assemble proof (will throw if partial sig assembly doesn't produce a valid proof)
-        LegacyRingSignatureV3 ring_signature;
+        LegacyRingSignatureV4 ring_signature;
         multisig::finalize_clsag_multisig_proof(input_proof_partial_sigs,
             referenced_enotes,
             masked_commitment,

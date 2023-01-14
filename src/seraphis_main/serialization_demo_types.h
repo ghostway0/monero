@@ -289,8 +289,8 @@ struct ser_SpBalanceProofV1_PARTIAL final
     END_SERIALIZE()
 };
 
-/// partially serializable LegacyRingSignatureV3
-struct ser_LegacyRingSignatureV3_PARTIAL final
+/// partially serializable LegacyRingSignatureV4
+struct ser_LegacyRingSignatureV4_PARTIAL final
 {
     /// a clsag proof
     ser_clsag_PARTIAL m_clsag_proof_PARTIAL;
@@ -384,7 +384,7 @@ struct ser_SpTxSquashedV1 final
     /// balance proof (balance proof and range proofs)
     ser_SpBalanceProofV1_PARTIAL m_balance_proof;
     /// ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    std::vector<ser_LegacyRingSignatureV3_PARTIAL> m_legacy_ring_signatures;
+    std::vector<ser_LegacyRingSignatureV4_PARTIAL> m_legacy_ring_signatures;
     /// composition proofs: ownership/key-image-legitimacy for each seraphis input
     std::vector<ser_SpImageProofV1> m_sp_image_proofs;
     /// Grootle proofs on squashed enotes: membership for each seraphis input

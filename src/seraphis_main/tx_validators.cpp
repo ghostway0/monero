@@ -165,14 +165,14 @@ bool validate_sp_semantics_component_counts_v1(const SemanticConfigComponentCoun
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool validate_sp_semantics_legacy_reference_sets_v1(const SemanticConfigLegacyRefSetV1 &config,
-    const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures)
+    const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures)
 {
     // assume valid if no signatures
     if (legacy_ring_signatures.size() == 0)
         return true;
 
     // check ring size in each ring signature
-    for (const LegacyRingSignatureV3 &legacy_ring_signature : legacy_ring_signatures)
+    for (const LegacyRingSignatureV4 &legacy_ring_signature : legacy_ring_signatures)
     {
         // reference set
         if (legacy_ring_signature.m_reference_set.size() < config.m_ring_size_min ||
@@ -326,7 +326,7 @@ bool validate_sp_semantics_coinbase_layout_v1(const std::vector<SpCoinbaseEnoteV
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<SpMembershipProofV1> &sp_membership_proofs,
     const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const std::vector<SpEnoteImageV1> &sp_input_images,
@@ -335,7 +335,7 @@ bool validate_sp_semantics_layout_v1(const std::vector<LegacyRingSignatureV3> &l
     const TxExtra &tx_extra)
 {
     // legacy reference sets should be sorted (ascending) without duplicates
-    for (const LegacyRingSignatureV3 &legacy_ring_signature : legacy_ring_signatures)
+    for (const LegacyRingSignatureV4 &legacy_ring_signature : legacy_ring_signatures)
     {
         if (!tools::is_sorted_and_unique(legacy_ring_signature.m_reference_set))
             return false;
@@ -473,7 +473,7 @@ bool validate_sp_amount_balance_v1(const std::vector<LegacyEnoteImageV2> &legacy
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+bool validate_sp_legacy_input_proofs_v1(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<LegacyEnoteImageV2> &legacy_input_images,
     const rct::key &tx_proposal_prefix,
     const TxValidationContext &tx_validation_context)

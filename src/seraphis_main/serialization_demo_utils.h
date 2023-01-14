@@ -111,8 +111,8 @@ void make_serializable_sp_enote_v1(const SpEnoteV1 &enote, ser_SpEnoteV1 &serial
 void make_serializable_sp_enote_image_v1(const SpEnoteImageV1 &image, ser_SpEnoteImageV1 &serializable_image_out);
 void make_serializable_sp_balance_proof_v1(const SpBalanceProofV1 &proof,
     ser_SpBalanceProofV1_PARTIAL &serializable_proof_out);
-void make_serializable_legacy_ring_signature_v3(const LegacyRingSignatureV3 &signature,
-    ser_LegacyRingSignatureV3_PARTIAL &serializable_signature_out);
+void make_serializable_legacy_ring_signature_v4(const LegacyRingSignatureV4 &signature,
+    ser_LegacyRingSignatureV4_PARTIAL &serializable_signature_out);
 void make_serializable_sp_membership_proof_v1(const SpMembershipProofV1 &proof,
     ser_SpMembershipProofV1_PARTIAL &serializable_proof_out);
 void make_serializable_sp_image_proof_v1(const SpImageProofV1 &image_proof,
@@ -145,9 +145,9 @@ void recover_sp_enote_image_v1(const ser_SpEnoteImageV1 &serializable_image, SpE
 void recover_sp_balance_proof_v1(ser_SpBalanceProofV1_PARTIAL &serializable_proof_in,
     std::vector<rct::key> commitments_inv8,
     SpBalanceProofV1 &proof_out);
-void recover_legacy_ring_signature_v3(ser_LegacyRingSignatureV3_PARTIAL &serializable_signature_in,
+void recover_legacy_ring_signature_v4(ser_LegacyRingSignatureV4_PARTIAL &serializable_signature_in,
     const crypto::key_image &key_image,
-    LegacyRingSignatureV3 &signature_out);
+    LegacyRingSignatureV4 &signature_out);
 void recover_sp_membership_proof_v1(ser_SpMembershipProofV1_PARTIAL &serializable_proof_in,
     const SpBinnedReferenceSetConfigV1 &bin_config,
     const rct::key &generator_seed,

@@ -483,7 +483,7 @@ static void check_tx_proposal_semantics_output_proposals_v1(const std::vector<Sp
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void collect_legacy_ring_signature_ring_members(const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+static void collect_legacy_ring_signature_ring_members(const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<rct::ctkeyV> &legacy_ring_signature_rings,
     std::unordered_map<std::uint64_t, rct::ctkey> &legacy_reference_set_proof_elements_out)
 {
@@ -704,7 +704,7 @@ void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
-    const std::vector<LegacyRingSignatureV3> &legacy_ring_signatures,
+    const std::vector<LegacyRingSignatureV4> &legacy_ring_signatures,
     const std::vector<SpImageProofV1> &sp_image_proofs,
     const std::vector<SpMembershipProofV1> &sp_membership_proofs,
     rct::key &tx_proofs_prefix_out)
@@ -714,7 +714,7 @@ void make_tx_proofs_prefix_v1(const SpBalanceProofV1 &balance_proof,
             config::HASH_KEY_SERAPHIS_TRANSACTION_PROOFS_PREFIX_V1,
             sp_balance_proof_v1_size_bytes(balance_proof) +
                 (legacy_ring_signatures.size()
-                    ? legacy_ring_signatures.size() * legacy_ring_signature_v3_size_bytes(legacy_ring_signatures[0])
+                    ? legacy_ring_signatures.size() * legacy_ring_signature_v4_size_bytes(legacy_ring_signatures[0])
                     : 0) +
                 sp_image_proofs.size() * sp_image_proof_v1_size_bytes() +
                 (sp_membership_proofs.size()

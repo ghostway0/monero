@@ -94,7 +94,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs + num_outputs);
 
     // legacy ring signatures
-    size += num_legacy_inputs * legacy_ring_signature_v3_size_bytes(legacy_ring_size);
+    size += num_legacy_inputs * legacy_ring_signature_v4_size_bytes(legacy_ring_size);
 
     // ownership/key-image-legitimacy proof for all seraphis inputs
     size += num_sp_inputs * sp_image_proof_v1_size_bytes();
@@ -244,7 +244,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     std::vector<SpEnoteImageV1> sp_input_images,
     std::vector<SpEnoteV1> outputs,
     SpBalanceProofV1 balance_proof,
-    std::vector<LegacyRingSignatureV3> legacy_ring_signatures,
+    std::vector<LegacyRingSignatureV4> legacy_ring_signatures,
     std::vector<SpImageProofV1> sp_image_proofs,
     std::vector<SpMembershipProofV1> sp_membership_proofs,
     SpTxSupplementV1 tx_supplement,
@@ -677,7 +677,7 @@ bool try_get_tx_contextual_validation_id(const SpTxSquashedV1 &tx,
         std::vector<rct::ctkeyV> legacy_ring_members;
         legacy_ring_members.reserve(tx.m_legacy_ring_signatures.size());
 
-        for (const LegacyRingSignatureV3 &legacy_ring_signature : tx.m_legacy_ring_signatures)
+        for (const LegacyRingSignatureV4 &legacy_ring_signature : tx.m_legacy_ring_signatures)
         {
             // get the legacy ring members
             tx_validation_context.get_reference_set_proof_elements_v1(

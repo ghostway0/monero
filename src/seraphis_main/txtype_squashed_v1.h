@@ -90,7 +90,7 @@ struct SpTxSquashedV1 final
     /// balance proof (balance proof and range proofs)
     SpBalanceProofV1 m_balance_proof;
     /// ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    std::vector<LegacyRingSignatureV3> m_legacy_ring_signatures;
+    std::vector<LegacyRingSignatureV4> m_legacy_ring_signatures;
     /// composition proofs: ownership/key-image-legitimacy for each seraphis input
     std::vector<SpImageProofV1> m_sp_image_proofs;
     /// Grootle proofs on squashed enotes: membership for each seraphis input
@@ -140,7 +140,7 @@ void make_seraphis_tx_squashed_v1(const SpTxSquashedV1::SemanticRulesVersion sem
     std::vector<SpEnoteImageV1> sp_input_images,
     std::vector<SpEnoteV1> outputs,
     SpBalanceProofV1 balance_proof,
-    std::vector<LegacyRingSignatureV3> legacy_ring_signatures,
+    std::vector<LegacyRingSignatureV4> legacy_ring_signatures,
     std::vector<SpImageProofV1> sp_image_proofs,
     std::vector<SpMembershipProofV1> sp_membership_proofs,
     SpTxSupplementV1 tx_supplement,

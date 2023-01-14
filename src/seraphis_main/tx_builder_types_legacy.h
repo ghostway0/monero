@@ -107,7 +107,7 @@ struct LegacyInputV1 final
     LegacyEnoteImageV2 m_input_image;
     /// input's ring signature (demonstrates ownership and membership of the underlying enote, and that the enote image
     ///   is correct)
-    LegacyRingSignatureV3 m_ring_signature;
+    LegacyRingSignatureV4 m_ring_signature;
 
     /// input amount
     rct::xmr_amount m_input_amount;

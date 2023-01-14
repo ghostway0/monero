@@ -392,7 +392,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
     std::vector<SpEnoteImageV1> sp_input_images;
     std::vector<SpEnoteV1> outputs;
     SpBalanceProofV1 balance_proof;
-    std::vector<LegacyRingSignatureV3> tx_legacy_ring_signatures;
+    std::vector<LegacyRingSignatureV4> tx_legacy_ring_signatures;
     std::vector<SpImageProofV1> tx_sp_image_proofs;
     std::vector<SpAlignableMembershipProofV1> tx_sp_alignable_membership_proofs;
     std::vector<SpMembershipProofV1> tx_sp_membership_proofs;
