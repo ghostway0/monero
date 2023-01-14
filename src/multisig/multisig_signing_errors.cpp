@@ -45,7 +45,7 @@ namespace multisig
 //-------------------------------------------------------------------------------------------------------------------
 const std::string& error_message_ref(const MultisigSigningErrorVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const std::string&>
+    struct visitor final : public tools::variant_static_visitor<const std::string&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const std::string& operator()(const MultisigSigningErrorBadInitSet &error) const

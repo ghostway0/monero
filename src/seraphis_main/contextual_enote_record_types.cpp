@@ -89,7 +89,7 @@ rct::xmr_amount amount_ref(const SpContextualEnoteRecordV1 &record)
 //-------------------------------------------------------------------------------------------------------------------
 const SpEnoteOriginContextV1& origin_context_ref(const ContextualBasicRecordVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const SpEnoteOriginContextV1&>
+    struct visitor final : public tools::variant_static_visitor<const SpEnoteOriginContextV1&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const SpEnoteOriginContextV1& operator()(const LegacyContextualBasicEnoteRecordV1 &record) const
@@ -103,7 +103,7 @@ const SpEnoteOriginContextV1& origin_context_ref(const ContextualBasicRecordVari
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount amount_ref(const ContextualRecordVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<rct::xmr_amount>
+    struct visitor final : public tools::variant_static_visitor<rct::xmr_amount>
     {
         using variant_static_visitor::operator();  //for blank overload
         rct::xmr_amount operator()(const LegacyContextualEnoteRecordV1 &record) const { return amount_ref(record); }
@@ -115,7 +115,7 @@ rct::xmr_amount amount_ref(const ContextualRecordVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const SpEnoteOriginContextV1& origin_context_ref(const ContextualRecordVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const SpEnoteOriginContextV1&>
+    struct visitor final : public tools::variant_static_visitor<const SpEnoteOriginContextV1&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const SpEnoteOriginContextV1& operator()(const LegacyContextualEnoteRecordV1 &record) const
@@ -129,7 +129,7 @@ const SpEnoteOriginContextV1& origin_context_ref(const ContextualRecordVariant &
 //-------------------------------------------------------------------------------------------------------------------
 const SpEnoteSpentContextV1& spent_context_ref(const ContextualRecordVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const SpEnoteSpentContextV1&>
+    struct visitor final : public tools::variant_static_visitor<const SpEnoteSpentContextV1&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const SpEnoteSpentContextV1& operator()(const LegacyContextualEnoteRecordV1 &record) const

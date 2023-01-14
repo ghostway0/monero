@@ -48,7 +48,7 @@ namespace multisig
 //-------------------------------------------------------------------------------------------------------------------
 const rct::key& proof_key_ref(const MultisigPartialSigVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const rct::key&>
+    struct visitor final : public tools::variant_static_visitor<const rct::key&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const rct::key& operator()(const CLSAGMultisigPartial &partial_sig) const
@@ -62,7 +62,7 @@ const rct::key& proof_key_ref(const MultisigPartialSigVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const rct::key& message_ref(const MultisigPartialSigVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const rct::key&>
+    struct visitor final : public tools::variant_static_visitor<const rct::key&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const rct::key& operator()(const CLSAGMultisigPartial &partial_sig) const

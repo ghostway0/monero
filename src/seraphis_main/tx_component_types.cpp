@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_component_types.h"
 
@@ -79,14 +77,14 @@ void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &trans
 std::size_t sp_enote_v1_size_bytes()
 {
     return sp_enote_core_size_bytes() +
-        sizeof(rct::xmr_amount) +
+        sizeof(jamtis::encoded_amount_t) +
         sizeof(jamtis::encrypted_address_tag_t) +
         sizeof(jamtis::view_tag_t);
 }
 //-------------------------------------------------------------------------------------------------------------------
 SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<SpEnoteCoreVariant>
+    struct visitor final : public tools::variant_static_visitor<SpEnoteCoreVariant>
     {
         using variant_static_visitor::operator();  //for blank overload
         SpEnoteCoreVariant operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core; }
@@ -98,7 +96,7 @@ SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const rct::key& onetime_address_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const rct::key&>
+    struct visitor final : public tools::variant_static_visitor<const rct::key&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const rct::key& operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_core.m_onetime_address; }
@@ -110,7 +108,7 @@ const rct::key& onetime_address_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 rct::key amount_commitment_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<rct::key>
+    struct visitor final : public tools::variant_static_visitor<rct::key>
     {
         using variant_static_visitor::operator();  //for blank overload
         rct::key operator()(const SpCoinbaseEnoteV1 &enote) const { return rct::zeroCommit(enote.m_core.m_amount); }
@@ -122,7 +120,7 @@ rct::key amount_commitment_ref(const SpEnoteVariant &variant)
 //-------------------------------------------------------------------------------------------------------------------
 const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<const jamtis::encrypted_address_tag_t&>
+    struct visitor final : public tools::variant_static_visitor<const jamtis::encrypted_address_tag_t&>
     {
         using variant_static_visitor::operator();  //for blank overload
         const jamtis::encrypted_address_tag_t& operator()(const SpCoinbaseEnoteV1 &enote) const
@@ -136,7 +134,7 @@ const jamtis::encrypted_address_tag_t& addr_tag_enc_ref(const SpEnoteVariant &va
 //-------------------------------------------------------------------------------------------------------------------
 jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant)
 {
-    struct visitor : public tools::variant_static_visitor<jamtis::view_tag_t>
+    struct visitor final : public tools::variant_static_visitor<jamtis::view_tag_t>
     {
         using variant_static_visitor::operator();  //for blank overload
         jamtis::view_tag_t operator()(const SpCoinbaseEnoteV1 &enote) const { return enote.m_view_tag; }
@@ -224,12 +222,12 @@ void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder
     transcript_inout.append("remainder_blinding_factor", container.m_remainder_blinding_factor);
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_range_proofs)
 {
     std::size_t size{0};
 
     // BP+ proof
-    size += bpp_size_bytes(num_sp_inputs + num_outputs, true);  //include commitments
+    size += bpp_size_bytes(num_range_proofs, true);  //include commitments
 
     // remainder blinding factor
     size += 32;
@@ -239,26 +237,26 @@ std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_sp_inputs, cons
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_balance_proof_v1_size_bytes(const SpBalanceProofV1 &proof)
 {
-    return sp_balance_proof_v1_size_bytes(proof.m_bpp2_proof.V.size(), 0);
+    return sp_balance_proof_v1_size_bytes(proof.m_bpp2_proof.V.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_range_proofs)
 {
     // proof size minus cached amount commitments
-    return sp_balance_proof_v1_size_bytes(num_sp_inputs, num_outputs) - 32*(num_sp_inputs + num_outputs);
+    return sp_balance_proof_v1_size_bytes(num_range_proofs) - 32*(num_range_proofs);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_balance_proof_v1_size_bytes_compact(const SpBalanceProofV1 &proof)
 {
-    return sp_balance_proof_v1_size_bytes_compact(proof.m_bpp2_proof.V.size(), 0);
+    return sp_balance_proof_v1_size_bytes_compact(proof.m_bpp2_proof.V.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t sp_balance_proof_v1_weight(const std::size_t num_sp_inputs, const std::size_t num_outputs)
+std::size_t sp_balance_proof_v1_weight(const std::size_t num_range_proofs)
 {
     std::size_t weight{0};
 
     // BP+ proof
-    weight += bpp_weight(num_sp_inputs + num_outputs, false);  //weight without cached amount commitments
+    weight += bpp_weight(num_range_proofs, false);  //weight without cached amount commitments
 
     // remainder blinding factor
     weight += 32;
@@ -268,7 +266,7 @@ std::size_t sp_balance_proof_v1_weight(const std::size_t num_sp_inputs, const st
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_balance_proof_v1_weight(const SpBalanceProofV1 &proof)
 {
-    return sp_balance_proof_v1_weight(proof.m_bpp2_proof.V.size(), 0);
+    return sp_balance_proof_v1_weight(proof.m_bpp2_proof.V.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout)
@@ -284,7 +282,8 @@ std::size_t sp_tx_supplement_v1_size_bytes(const std::size_t num_outputs,
     std::size_t size{0};
 
     // enote ephemeral pubkeys
-    if (use_shared_ephemeral_key_assumption && num_outputs == 2)
+    if (use_shared_ephemeral_key_assumption &&
+            num_outputs == 2)
         size += 32;
     else
         size += 32 * num_outputs;
@@ -321,8 +320,8 @@ bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2)
     if (!SpEnoteVariant::same_type(variant1, variant2))
         return false;
 
-    // use a visitor to test equality with variant2
-    struct visitor : public tools::variant_static_visitor<bool>
+    // use a visitor to test equality
+    struct visitor final : public tools::variant_static_visitor<bool>
     {
         visitor(const SpEnoteVariant &other_ref) : other{other_ref} {}
         const SpEnoteVariant &other;
@@ -357,9 +356,9 @@ SpCoinbaseEnoteV1 gen_sp_coinbase_enote_v1()
     // gen base of enote
     temp.m_core = gen_sp_coinbase_enote_core();
 
-    // memo
-    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
+    // extra pieces
     crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
+    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
 
     return temp;
 }
@@ -371,10 +370,10 @@ SpEnoteV1 gen_sp_enote_v1()
     // gen base of enote
     temp.m_core = gen_sp_enote_core();
 
-    // memo
+    // extra pieces
     crypto::rand(sizeof(temp.m_encoded_amount), temp.m_encoded_amount.bytes);
-    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
     crypto::rand(sizeof(jamtis::encrypted_address_tag_t), temp.m_addr_tag_enc.bytes);
+    temp.m_view_tag = crypto::rand_idx<jamtis::view_tag_t>(0);
 
     return temp;
 }

@@ -68,20 +68,23 @@ inline const rct::key& sortable2rct(const sortable_key &k) { return reinterpret_
 */
 constexpr std::uint64_t uint_pow(const std::size_t n, const std::size_t m) noexcept
 {
-    // n^m
+    // 1. special case: 0^m = 0
+    if (n == 0)
+        return 0;
+
+    // 2. special case: n^0 = 1
+    if (m == 0)
+        return 1;
+
+    // 3. normal case: n^m
     std::uint64_t result{n};
 
-    if (n == 0 || m == 0)
-        result = 1;
-    else
+    for (std::size_t mul{1}; mul < m; ++mul)
     {
-        for (std::size_t mul{1}; mul < m; ++mul)
-        {
-            if (result*n < result)  //overflow
-                return -1;
-            else
-                result *= n;
-        }
+        if (result*n < result)  //overflow
+            return -1;
+
+        result *= n;
     }
 
     return result;

@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Seraphis transaction component types.
-
 
 #pragma once
 
@@ -50,11 +47,9 @@
 #include <boost/utility/string_ref.hpp>
 
 //standard headers
-#include <string>
 
 //forward declarations
 namespace sp { class SpTranscriptBuilder; }
-
 
 namespace sp
 {
@@ -64,7 +59,7 @@ namespace sp
 ///
 struct SpCoinbaseEnoteV1 final
 {
-    /// enote core (one-time address, amount)
+    /// enote core (onetime address, amount)
     SpCoinbaseEnoteCore m_core;
 
     /// addr_tag_enc
@@ -83,7 +78,7 @@ std::size_t sp_coinbase_enote_v1_size_bytes();
 ///
 struct SpEnoteV1 final
 {
-    /// enote core (one-time address, amount commitment)
+    /// enote core (onetime address, amount commitment)
     SpEnoteCore m_core;
 
     /// enc(a)
@@ -108,8 +103,7 @@ std::size_t sp_enote_v1_size_bytes();
 // amount_commitment_ref(): get the enote's amount commitment (this is a copy because coinbase enotes need to
 //                          compute the commitment)
 // addr_tag_enc_ref(): get the enote's encrypted address tag
-// view_tag_ref(): get the enote's view tag
-// operator==(): check if two enotes are equal
+// view_tag_ref(): get the enote's view tag (copies are cheap)
 ///
 using SpEnoteVariant = tools::variant<SpCoinbaseEnoteV1, SpEnoteV1>;
 SpEnoteCoreVariant core_ref(const SpEnoteVariant &variant);
@@ -139,7 +133,7 @@ const rct::key& masked_commitment_ref(const SpEnoteImageV1 &enote_image);
 
 ////
 // SpMembershipProofV1
-// - Grootle
+// - grootle proof
 ///
 struct SpMembershipProofV1 final
 {
@@ -167,8 +161,8 @@ std::size_t sp_membership_proof_v1_size_bytes_compact(const SpMembershipProofV1 
 
 ////
 // SpImageProofV1
-// - ownership and unspentness (legitimacy of key image)
-// - Seraphis composition proof
+// - ownership and legitimacy of the key image
+// - seraphis composition proof
 ///
 struct SpImageProofV1 final
 {
@@ -184,8 +178,7 @@ inline std::size_t sp_image_proof_v1_size_bytes() { return sp_composition_size_b
 ////
 // SpBalanceProofV1
 // - balance proof: implicit with a remainder blinding factor: [sum(inputs) == sum(outputs) + remainder_blinding_factor*G]
-// - range proof: Bulletproofs+ v2
-// note: only seraphis inputs are range proofed (legacy inputs are not)
+// - range proofs: Bulletproofs+ v2
 ///
 struct SpBalanceProofV1 final
 {
@@ -199,18 +192,18 @@ void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder
 
 /// get the size in bytes
 /// - note: the compact version does not include the bulletproof's cached amount commitments
-std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_size_bytes(const std::size_t num_range_proofs);
 std::size_t sp_balance_proof_v1_size_bytes(const SpBalanceProofV1 &proof);
-std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_size_bytes_compact(const std::size_t num_range_proofs);
 std::size_t sp_balance_proof_v1_size_bytes_compact(const SpBalanceProofV1 &proof);
 /// get the proof weight (using compact size)
-std::size_t sp_balance_proof_v1_weight(const std::size_t num_sp_inputs, const std::size_t num_outputs);
+std::size_t sp_balance_proof_v1_weight(const std::size_t num_range_proofs);
 std::size_t sp_balance_proof_v1_weight(const SpBalanceProofV1 &proof);
 
 ////
 // SpTxSupplementV1
 // - supplementary info about a tx
-//   - enote ephemeral pubkeys: may not line up 1:1 with output enotes, so store in separate field
+//   - enote ephemeral pubkeys (stored here instead of in enotes since enotes can share them)
 //   - tx memo
 ///
 struct SpTxSupplementV1 final
@@ -231,17 +224,14 @@ std::size_t sp_tx_supplement_v1_size_bytes(const SpTxSupplementV1 &tx_supplement
 
 /// comparison operator for equivalence testing
 bool operator==(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
-/// comparison operator for equivalence testing
 bool operator==(const SpEnoteV1 &a, const SpEnoteV1 &b);
-/// comparison operator for equivalence testing
 bool operator==(const SpEnoteVariant &variant1, const SpEnoteVariant &variant2);
-
 /// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpCoinbaseEnoteV1 &a, const SpCoinbaseEnoteV1 &b);
-/// comparison method for sorting: a.Ko < b.Ko
 bool compare_Ko(const SpEnoteV1 &a, const SpEnoteV1 &b);
 /// comparison method for sorting: a.KI < b.KI
 bool compare_KI(const SpEnoteImageV1 &a, const SpEnoteImageV1 &b);
+
 /// generate a dummy v1 coinbase enote
 SpCoinbaseEnoteV1 gen_sp_coinbase_enote_v1();
 /// generate a dummy v1 enote

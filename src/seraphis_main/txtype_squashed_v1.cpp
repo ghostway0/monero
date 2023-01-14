@@ -89,7 +89,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     size += num_outputs * sp_enote_v1_size_bytes();
 
     // balance proof (note: only seraphis inputs and outputs are range proofed)
-    size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
+    size += sp_balance_proof_v1_size_bytes_compact(num_sp_inputs + num_outputs);
 
     // legacy ring signatures
     size += num_legacy_inputs * legacy_ring_signature_v3_size_bytes(legacy_ring_size);
@@ -164,8 +164,8 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
         };
 
     // subtract balance proof size and add its weight
-    weight -= sp_balance_proof_v1_size_bytes_compact(num_sp_inputs, num_outputs);
-    weight += sp_balance_proof_v1_weight(num_sp_inputs, num_outputs);
+    weight -= sp_balance_proof_v1_size_bytes_compact(num_sp_inputs + num_outputs);
+    weight += sp_balance_proof_v1_weight(num_sp_inputs + num_outputs);
 
     return weight;
 }
