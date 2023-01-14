@@ -125,11 +125,11 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
 std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx);
 
 /**
-* brief: get_sp_squashed_v1_txid - get the transaction id
+* brief: get_sp_tx_squashed_v1_txid - get the transaction id
 * param: tx -
 * outparam: tx_id_out -
 */
-void get_sp_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out);
+void get_sp_tx_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out);
 /**
 * brief: make_seraphis_tx_squashed_v1 - make an SpTxSquashedV1 transaction
 * ...

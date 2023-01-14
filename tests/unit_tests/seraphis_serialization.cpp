@@ -101,8 +101,8 @@ TEST(seraphis_serialization_demo, seraphis_squashed_empty)
     rct::key original_tx_id;
     rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(get_sp_squashed_v1_txid(tx, original_tx_id));
-    EXPECT_NO_THROW(get_sp_squashed_v1_txid(recovered_tx, recovered_tx_id));
+    EXPECT_NO_THROW(get_sp_tx_squashed_v1_txid(tx, original_tx_id));
+    EXPECT_NO_THROW(get_sp_tx_squashed_v1_txid(recovered_tx, recovered_tx_id));
 
     EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(sp_tx_squashed_v1_size_bytes(tx) == sp_tx_squashed_v1_size_bytes(recovered_tx)));
@@ -201,8 +201,8 @@ TEST(seraphis_serialization_demo, seraphis_squashed_standard)
     rct::key original_tx_id;
     rct::key recovered_tx_id;
 
-    EXPECT_NO_THROW(get_sp_squashed_v1_txid(tx, original_tx_id));
-    EXPECT_NO_THROW(get_sp_squashed_v1_txid(recovered_tx, recovered_tx_id));
+    EXPECT_NO_THROW(get_sp_tx_squashed_v1_txid(tx, original_tx_id));
+    EXPECT_NO_THROW(get_sp_tx_squashed_v1_txid(recovered_tx, recovered_tx_id));
 
     EXPECT_TRUE(original_tx_id == recovered_tx_id);
     EXPECT_NO_THROW(EXPECT_TRUE(sp_tx_squashed_v1_size_bytes(tx) == sp_tx_squashed_v1_size_bytes(recovered_tx)));

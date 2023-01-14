@@ -356,7 +356,7 @@ bool MockLedgerContext::try_add_unconfirmed_tx_v1_impl(const SpTxSquashedV1 &tx)
 
     // 2. fail if tx id is duplicated (bug since key image check should prevent this)
     rct::key tx_id;
-    get_sp_squashed_v1_txid(tx, tx_id);
+    get_sp_tx_squashed_v1_txid(tx, tx_id);
 
     CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_id) == m_unconfirmed_tx_key_images.end(),
         "mock tx ledger (adding unconfirmed tx): tx id already exists in key image map (bug).");
