@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_fee_calculator_squashed_v1.h"
 
@@ -39,6 +37,7 @@
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -60,10 +59,8 @@ FeeCalculatorSpTxSquashedV1::FeeCalculatorSpTxSquashedV1(const std::size_t legac
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_per_weight, const std::size_t weight)
 {
-    const DiscretizedFee fee_discretized{discretize_fee(fee_per_weight * weight)};
-
     rct::xmr_amount fee_value;
-    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(fee_discretized, fee_value),
+    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(discretize_fee(fee_per_weight * weight), fee_value),
         "tx fee getter (SpTxSquashedV1): extracting discretized fee failed (bug).");
 
     return fee_value;
