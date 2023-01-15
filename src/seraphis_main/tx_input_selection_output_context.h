@@ -26,26 +26,17 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Output set context for use during input selection.
-
 
 #pragma once
 
 //local headers
-#include "crypto/crypto.h"
-#include "enote_record_types.h"
-#include "ringct/rctTypes.h"
-#include "tx_builder_types.h"
-#include "tx_fee_calculator.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
-#include <list>
-#include <vector>
+#include <cstddef>
 
 //forward declarations
 

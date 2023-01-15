@@ -93,13 +93,13 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)
     {
-        get_enote_ephemeral_pubkey(normal_proposal, temp_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(normal_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
     {
-        get_enote_ephemeral_pubkey(selfsend_proposal, temp_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(selfsend_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 
@@ -705,9 +705,9 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
     crypto::x25519_pubkey first_enote_ephemeral_pubkey{};
 
     if (normal_payment_proposals_inout.size() > 0)
-        get_enote_ephemeral_pubkey(normal_payment_proposals_inout[0], first_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(normal_payment_proposals_inout[0], first_enote_ephemeral_pubkey);
     else if (selfsend_payment_proposals_inout.size() > 0)
-        get_enote_ephemeral_pubkey(selfsend_payment_proposals_inout[0], first_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(selfsend_payment_proposals_inout[0], first_enote_ephemeral_pubkey);
 
     // 4. add an additional output if necessary
     if (const auto additional_output_type =

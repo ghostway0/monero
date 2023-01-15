@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "tx_input_selection_output_context_v1.h"
 
@@ -44,7 +42,6 @@
 #include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
-#include <algorithm>
 #include <unordered_set>
 #include <vector>
 
@@ -59,19 +56,18 @@ namespace sp
 static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPaymentProposalV1> &normal_payment_proposals,
     const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals)
 {
-    // record all as 8*K_e to remove torsion elements if they exist
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
     crypto::x25519_pubkey temp_enote_ephemeral_pubkey;
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)
     {
-        get_enote_ephemeral_pubkey(normal_proposal, temp_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(normal_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
     {
-        get_enote_ephemeral_pubkey(selfsend_proposal, temp_enote_ephemeral_pubkey);
+        jamtis::get_enote_ephemeral_pubkey(selfsend_proposal, temp_enote_ephemeral_pubkey);
         enote_ephemeral_pubkeys.insert(temp_enote_ephemeral_pubkey);
     }
 
@@ -100,11 +96,13 @@ OutputSetContextForInputSelectionV1::OutputSetContextForInputSelectionV1(
                 ephemeral_pubkeys_are_unique(normal_payment_proposals, selfsend_payment_proposals)
             }
 {
-    // collect self-send output types
+    // 1. collect self-send output types
+    m_self_send_output_types.reserve(selfsend_payment_proposals.size());
+
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
         m_self_send_output_types.emplace_back(selfsend_proposal.m_type);
 
-    // collect total amount
+    // 2. collect total amount
     m_total_output_amount = 0;
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)

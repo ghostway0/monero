@@ -26,17 +26,13 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Utilities for selecting tx inputs from an enote storage.
-
+// Output set context for use during input selection.
 
 #pragma once
 
 //local headers
-#include "crypto/crypto.h"
-#include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/jamtis_support_types.h"
 #include "tx_input_selection_output_context.h"
 
 //third party headers
@@ -59,7 +55,7 @@ public:
         const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals);
 
 //overloaded operators
-    /// disable copy/move (this is a scoped manager (reference wrapper))
+    /// disable copy/move (this is a scoped manager (concept: context binding))
     OutputSetContextForInputSelectionV1& operator=(OutputSetContextForInputSelectionV1&&) = delete;
 
 //member functions

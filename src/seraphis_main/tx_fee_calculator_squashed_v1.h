@@ -50,16 +50,11 @@ class FeeCalculatorSpTxSquashedV1 final : public FeeCalculator
 {
 public:
 //constructors
-    /// default constructor: disabled
-
-    /// normal constructor
     FeeCalculatorSpTxSquashedV1(const std::size_t legacy_ring_size,
         const std::size_t ref_set_decomp_n,
         const std::size_t ref_set_decomp_m,
         const std::size_t num_bin_members,
         const TxExtra &tx_extra);
-
-//destructor: default
 
 //member functions
     static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const std::size_t weight);
