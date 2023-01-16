@@ -51,7 +51,8 @@ namespace sp
 namespace mocks
 {
 
-/// simple input selector: select the next available input in the enote store (input selection with this is not thread-safe)
+/// simple input selector
+/// - select the next available input in the enote store (input selection with this is not thread-safe)
 class InputSelectorMockSimpleV1 final : public InputSelectorV1
 {
 public:
@@ -70,9 +71,9 @@ public:
 
 //member functions
     /// select the next available input
-    bool try_select_input_v1(const boost::multiprecision::uint128_t desired_total_amount,
-        const input_set_tracker_t &already_added_inputs,
-        const input_set_tracker_t &already_excluded_inputs,
+    bool try_select_input_candidate_v1(const boost::multiprecision::uint128_t desired_total_amount,
+        const input_set_tracker_t &added_inputs,
+        const input_set_tracker_t &candidate_inputs,
         ContextualRecordVariant &selected_input_out) const override;
 
 //member variables
@@ -81,7 +82,8 @@ private:
     const SpEnoteStoreMockSimpleV1 &m_enote_store;
 };
 
-/// mock input selector: select a pseudo-random available input in the enote store (input selection with this is not thread-safe)
+/// mock input selector
+/// - select a pseudo-random available input in the enote store (input selection with this is not thread-safe)
 class InputSelectorMockV1 final : public InputSelectorV1
 {
 public:
@@ -102,9 +104,9 @@ public:
     /// select the next available input
     /// NOTE: this is a mock-up; a real input selector would contain many complicated mechanisms, e.g. the option to ignore
     ///       locked enotes, heuristics to avoid input timing correlations, etc.
-    bool try_select_input_v1(const boost::multiprecision::uint128_t desired_total_amount,
-        const input_set_tracker_t &already_added_inputs,
-        const input_set_tracker_t &already_excluded_inputs,
+    bool try_select_input_candidate_v1(const boost::multiprecision::uint128_t desired_total_amount,
+        const input_set_tracker_t &added_inputs,
+        const input_set_tracker_t &candidate_inputs,
         ContextualRecordVariant &selected_input_out) const override;
 
 //member variables

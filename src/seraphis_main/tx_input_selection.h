@@ -26,18 +26,13 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Utilities for selecting tx inputs from an enote storage.
-
 
 #pragma once
 
 //local headers
-#include "crypto/crypto.h"
 #include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
-#include "tx_builder_types.h"
 #include "tx_fee_calculator.h"
 #include "tx_input_selection_output_context.h"
 
@@ -47,7 +42,6 @@
 
 //standard headers
 #include <unordered_map>
-#include <vector>
 
 //forward declarations
 
@@ -76,24 +70,33 @@ public:
 
 //member functions
     /// select an available input
-    virtual bool try_select_input_v1(const boost::multiprecision::uint128_t desired_total_amount,
-        const input_set_tracker_t &already_added_inputs,
-        const input_set_tracker_t &already_excluded_inputs,
+    virtual bool try_select_input_candidate_v1(const boost::multiprecision::uint128_t desired_total_amount,
+        const input_set_tracker_t &added_inputs,
+        const input_set_tracker_t &candidate_inputs,
         ContextualRecordVariant &selected_input_out) const = 0;
 };
 
-//todo
-/*
-    - note: this algorithm will fail to find a possible solution if there are combinations that lead to 0-change successes,
-      but the combination that was found has non-zero change that doesn't cover the differential fee of adding a change
-      output (and there are no solutions that can cover that additional change output differential fee)
-        - only an O(N!) brute force search can find the success solution(s) to this problem (e.g. if step (4) fails, you could
-          fall-back to brute force search on the 0-change case); however, failure cases will be extremely rare if they ever
-          actually occur, so it probably isn't worthwhile to implement
-    - note2: this algorithm has a 'select range of inputs' trial pass that is implemented naively - only ranges of same-type
-      excluded inputs are considered; a no-fail algorithm would use brute force to test all possible combinations of excluded
-      inputs; brute force is O(N^2) instead of O(N) (for max inputs allowed N), so it was not implemented here for efficiency
-        - the naive approach will have lower rates of false negatives as the proportion of seraphis enotes increases
+/**
+* brief: try_get_input_set_v1 - try to select a set of inputs for a tx
+*   - This algorithm will fail to find a possible solution if there exist combinations that lead to 0-change successes,
+*     but the combination that was found has non-zero change that doesn't cover the differential fee of adding a change
+*     output (and there are no solutions that can cover that additional change output differential fee). Only an O(N!)
+*     brute force search can find the success solution(s) to that problem (e.g. on complete failures you could fall-back
+*     to brute force search on the 0-change case). However, that failure case will be extremely rare, so it probably
+*     isn't worthwhile to implement a brute force fall-back.
+*   - This algorithm includes a 'select range of inputs' trial pass that is implemented naively - only ranges of same-type
+*     candidate inputs are considered. A no-fail algorithm would use brute force to test all possible combinations of
+*     candiate inputs of different types. Brute force is O(N^2) instead of O(N) (for N = max inputs allowed), so it was
+*     not implemented here for efficiency.
+*       - The naive approach will have lower rates of false negatives as the proportion of seraphis to legacy enotes
+*         increases.
+* param: output_set_context -
+* param: max_inputs_allowed -
+* param: input_selector -
+* param: fee_per_tx_weight -
+* param: tx_fee_calculator -
+* outparam: final_fee_out -
+* outparam: input_set_out -
 */
 bool try_get_input_set_v1(const OutputSetContextForInputSelection &output_set_context,
     const std::size_t max_inputs_allowed,

@@ -70,9 +70,9 @@ static bool pred_has_match(const input_set_tracker_t &input_set,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision::uint128_t desired_total_amount,
-    const input_set_tracker_t &already_added_inputs,
-    const input_set_tracker_t &already_excluded_inputs,
+bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multiprecision::uint128_t desired_total_amount,
+    const input_set_tracker_t &added_inputs,
+    const input_set_tracker_t &candidate_inputs,
     ContextualRecordVariant &selected_input_out) const
 {
     // try to select a legacy input
@@ -94,11 +94,11 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
             };
 
         // ignore already added legacy inputs
-        if (pred_has_match(already_added_inputs, InputSelectionType::LEGACY, record_finder))
+        if (pred_has_match(added_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
-        // ignore already excluded legacy inputs
-        if (pred_has_match(already_excluded_inputs, InputSelectionType::LEGACY, record_finder))
+        // ignore legacy input candidates
+        if (pred_has_match(candidate_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
         selected_input_out = contextual_enote_record;
@@ -124,11 +124,11 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
             };
 
         // ignore already added seraphis inputs
-        if (pred_has_match(already_added_inputs, InputSelectionType::SERAPHIS, record_finder))
+        if (pred_has_match(added_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
-        // ignore already excluded seraphis inputs
-        if (pred_has_match(already_excluded_inputs, InputSelectionType::SERAPHIS, record_finder))
+        // ignore already seraphis input candidates
+        if (pred_has_match(candidate_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
         selected_input_out = contextual_enote_record;
@@ -138,9 +138,9 @@ bool InputSelectorMockSimpleV1::try_select_input_v1(const boost::multiprecision:
     return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint128_t desired_total_amount,
-    const input_set_tracker_t &already_added_inputs,
-    const input_set_tracker_t &already_excluded_inputs,
+bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecision::uint128_t desired_total_amount,
+    const input_set_tracker_t &added_inputs,
+    const input_set_tracker_t &candidate_inputs,
     ContextualRecordVariant &selected_input_out) const
 {
     // 1. try to select from legacy enotes
@@ -167,11 +167,11 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
             };
 
         // ignore already added legacy inputs
-        if (pred_has_match(already_added_inputs, InputSelectionType::LEGACY, record_finder))
+        if (pred_has_match(added_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
-        // ignore already excluded legacy inputs
-        if (pred_has_match(already_excluded_inputs, InputSelectionType::LEGACY, record_finder))
+        // ignore existing legacy input candidates
+        if (pred_has_match(candidate_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
         // if this legacy enote shares a onetime address with any other legacy enotes, only proceed if this one
@@ -227,11 +227,11 @@ bool InputSelectorMockV1::try_select_input_v1(const boost::multiprecision::uint1
             };
 
         // ignore already added seraphis inputs
-        if (pred_has_match(already_added_inputs, InputSelectionType::SERAPHIS, record_finder))
+        if (pred_has_match(added_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
         // ignore already excluded seraphis inputs
-        if (pred_has_match(already_excluded_inputs, InputSelectionType::SERAPHIS, record_finder))
+        if (pred_has_match(candidate_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
         selected_input_out = mapped_enote_record.second;
