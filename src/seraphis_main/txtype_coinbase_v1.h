@@ -158,6 +158,8 @@ template <>
 bool validate_txs_batchable<SpTxCoinbaseV1>(const std::vector<const SpTxCoinbaseV1*>&, const TxValidationContext&);
 
 /// contextual validation id
+/// - can be used for checking if an already-validated tx (whose contextual validation id was recorded) is still valid
+///   against a validation context that may have changed (e.g. due to a reorg)
 bool try_get_tx_contextual_validation_id(const SpTxCoinbaseV1 &tx, const TxValidationContext&, rct::key &validation_id_out);
 
 } //namespace sp

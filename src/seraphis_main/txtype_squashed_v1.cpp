@@ -707,7 +707,7 @@ bool try_get_tx_contextual_validation_id(const SpTxSquashedV1 &tx,
         get_sp_tx_squashed_v1_txid(tx, tx_id);
 
         // 5. validation_id = H_32(tx_id, legacy ring members, seraphis membership proof reference elements)
-        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID, sizeof(tx_id)};
+        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID_V2, sizeof(tx_id)};
         transcript.append("tx_id", tx_id);
         transcript.append("legacy_ring_members", legacy_ring_members);
         transcript.append("sp_membership_proof_refs", sp_membership_proof_refs);

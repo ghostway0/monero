@@ -243,6 +243,8 @@ bool validate_txs_batchable<SpTxSquashedV1>(const std::vector<const SpTxSquashed
     const TxValidationContext &tx_validation_context);
 
 /// contextual validation id
+/// - can be used for checking if an already-validated tx (whose contextual validation id was recorded) is still valid
+///   against a validation context that may have changed (e.g. due to a reorg)
 bool try_get_tx_contextual_validation_id(const SpTxSquashedV1 &tx,
     const TxValidationContext &tx_validation_context,
     rct::key &validation_id_out);

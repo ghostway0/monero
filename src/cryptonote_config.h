@@ -272,7 +272,8 @@ namespace config
 
   const constexpr char HASH_KEY_SERAPHIS_GENERATOR_FACTORY[] = "sp_generator_factory";
   const constexpr char HASH_KEY_SERAPHIS_SQUASHED_ENOTE[] = "sp_squashed_enote";
-  const constexpr char HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID[] = "sp_tx_contextual_validation_id";
+  const constexpr char HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID_V1[] = "sp_tx_contextual_validation_id_v1";
+  const constexpr char HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID_V2[] = "sp_tx_contextual_validation_id_v2";
   const constexpr char HASH_KEY_SERAPHIS_TX_PROPOSAL_MESSAGE_V1[] = "sp_tx_proposal_message_v1";
   const constexpr char HASH_KEY_SERAPHIS_MEMBERSHIP_PROOF_MESSAGE_V1[] = "sp_membership_proof_message_v1";
   const constexpr char HASH_KEY_SERAPHIS_INPUT_IMAGES_PREFIX_V1[] = "sp_input_images_prefix_v1";

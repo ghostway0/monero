@@ -258,7 +258,7 @@ bool try_get_tx_contextual_validation_id(const SpTxCoinbaseV1 &tx, const TxValid
         get_sp_tx_coinbase_v1_txid(tx, tx_id);
 
         // 2. validation_id = H_32(tx_id)
-        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID, sizeof(tx_id)};
+        SpFSTranscript transcript{config::HASH_KEY_SERAPHIS_TX_CONTEXTUAL_VALIDATION_ID_V1, sizeof(tx_id)};
         transcript.append("tx_id", tx_id);
 
         sp_hash_to_32(transcript.data(), transcript.size(), validation_id_out.bytes);
