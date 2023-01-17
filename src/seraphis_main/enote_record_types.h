@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Records of Seraphis enotes owned by some wallet.
-
+// Records of seraphis enotes owned by some wallet.
 
 #pragma once
 
@@ -37,20 +34,15 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
-#include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_support_types.h"
 #include "seraphis_core/legacy_enote_types.h"
-#include "seraphis_core/sp_core_types.h"
-#include "seraphis_core/tx_extra.h"
-#include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_component_types.h"
 
 //third party headers
 #include <boost/optional/optional.hpp>
 
 //standard headers
-#include <algorithm>
 #include <vector>
 
 //forward declarations
@@ -59,9 +51,13 @@
 namespace sp
 {
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////// Legacy ////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////
 // LegacyBasicEnoteRecord
-// - a cryptonote/ringct enote that has been identified as owned by view-key scanning
+// - a cryptonote/ringct enote that has been identified as owned with view-key scanning
 ///
 struct LegacyBasicEnoteRecord final
 {
@@ -87,7 +83,7 @@ struct LegacyIntermediateEnoteRecord final
     LegacyEnoteVariant m_enote;
     /// the enote's ephemeral pubkey
     rct::key m_enote_ephemeral_pubkey;
-    /// enote view privkey = [address: Hn(r K^v, t)] [subaddress: Hn(r K^{v,i}, t) + Hn(k^v, i)]
+    /// enote view privkey = [address: Hn(r K^v, t)] [subaddress (i): Hn(r K^{v,i}, t) + Hn(k^v, i)]
     crypto::secret_key m_enote_view_extension;
     /// a: amount
     rct::xmr_amount m_amount;
@@ -111,7 +107,7 @@ struct LegacyEnoteRecord final
     LegacyEnoteVariant m_enote;
     /// the enote's ephemeral pubkey
     rct::key m_enote_ephemeral_pubkey;
-    /// enote view privkey = [address: Hn(r K^v, t)] [subaddress: Hn(r K^{v,i}, t) + Hn(k^v, i)]
+    /// enote view privkey = [address: Hn(r K^v, t)] [subaddress (i): Hn(r K^{v,i}, t) + Hn(k^v, i)]
     crypto::secret_key m_enote_view_extension;
     /// a: amount
     rct::xmr_amount m_amount;
@@ -127,9 +123,13 @@ struct LegacyEnoteRecord final
     std::uint64_t m_unlock_time;
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// Seraphis ///////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////
-// SpBasicEnoteRecordV1  (jamtis 'plain' enote type only)
-// - nominal address tag extracted from a seraphis enote using a jamtis find-received key
+// SpBasicEnoteRecordV1  (jamtis non-selfsend enote type only)
+// - a seraphis enote that has passed the view-tag check using a jamtis find-received key
 ///
 struct SpBasicEnoteRecordV1 final
 {
@@ -144,8 +144,8 @@ struct SpBasicEnoteRecordV1 final
 };
 
 ////
-// SpIntermediateEnoteRecordV1  (jamtis 'plain' enote type only)
-// - info extracted from a seraphis enote using a jamtis find-received key and generate-address secret
+// SpIntermediateEnoteRecordV1  (jamtis non-selfsend enote type only)
+// - a seraphis enote with info extracted using a jamtis find-received key, generate-address secret, and unlock-amounts key
 ///
 struct SpIntermediateEnoteRecordV1 final
 {
@@ -164,8 +164,8 @@ struct SpIntermediateEnoteRecordV1 final
 };
 
 ////
-// SpEnoteRecordV1
-// - info extracted from a seraphis enote
+// SpEnoteRecordV1  (all jamtis enote types)
+// - a seraphis enote that has been fully view-scanned with a jamtis view-balance key
 ///
 struct SpEnoteRecordV1 final
 {
