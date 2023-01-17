@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Utilities for obtaining enote records.
-
+// Utilities for making enote records from enotes.
 
 #pragma once
 
@@ -59,7 +56,7 @@ namespace sp
 * param: input_context -
 * param: sender_receiver_DH_derivation -
 * outparam: basic_record_out -
-* return: true if an extraction succeeded
+* return: true if extraction succeeded
 */
 bool try_get_basic_enote_record_v1(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
@@ -82,7 +79,7 @@ bool try_get_basic_enote_record_v1(const SpEnoteVariant &enote,
 * param: s_generate_address -
 * param: cipher_context -
 * outparam: record_out -
-* return: true if an extraction succeeded
+* return: true if extraction succeeded
 */
 bool try_get_intermediate_enote_record_v1(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
@@ -115,14 +112,15 @@ bool try_get_intermediate_enote_record_v1(const SpBasicEnoteRecordV1 &basic_reco
     const crypto::secret_key &s_generate_address,
     SpIntermediateEnoteRecordV1 &record_out);
 /**
-* brief: try_get_enote_record_v1_plain - try to extract an enote record from an enote treated as a plain jamtis enote
+* brief: try_get_enote_record_v1_plain - try to extract an enote record from an enote
+*   - plain jamtis enote type attempt
 * param: enote -
 * param: enote_ephemeral_pubkey -
 * param: input_context -
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
 * outparam: record_out -
-* return: true if an extraction succeeded
+* return: true if extraction succeeded
 */
 bool try_get_enote_record_v1_plain(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
@@ -147,7 +145,8 @@ bool try_get_enote_record_v1_plain(const SpIntermediateEnoteRecordV1 &intermedia
     const crypto::secret_key &k_view_balance,
     SpEnoteRecordV1 &record_out);
 /**
-* brief: try_get_enote_record_v1_selfsend - try to extract an enote record from an enote treated as a selfsend jamtis enote
+* brief: try_get_enote_record_v1_selfsend - try to extract an enote record from an enote
+*   - selfsend jamtis enote type attempt
 * param: enote -
 * param: enote_ephemeral_pubkey -
 * param: input_context -
@@ -156,17 +155,8 @@ bool try_get_enote_record_v1_plain(const SpIntermediateEnoteRecordV1 &intermedia
 * param: s_generate_address -
 * param: cipher_context -
 * outparam: record_out -
-* return: true if an extraction succeeded
+* return: true if extraction succeeded
 */
-bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enote,
-    const crypto::x25519_pubkey &enote_ephemeral_pubkey,
-    const rct::key &input_context,
-    const rct::key &jamtis_spend_pubkey,
-    const crypto::secret_key &k_view_balance,
-    const crypto::secret_key &s_generate_address,
-    const jamtis::jamtis_address_tag_cipher_context &cipher_context,
-    const jamtis::JamtisSelfSendType expected_type,
-    SpEnoteRecordV1 &record_out);
 bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,
     const rct::key &input_context,
@@ -189,7 +179,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
 * outparam: record_out -
-* return: true if an extraction succeeded
+* return: true if extraction succeeded
 */
 bool try_get_enote_record_v1(const SpEnoteVariant &enote,
     const crypto::x25519_pubkey &enote_ephemeral_pubkey,

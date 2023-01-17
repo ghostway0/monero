@@ -306,9 +306,9 @@ void make_jamtis_onetime_address_extension_u(const rct::key &recipient_address_s
     sp_hash_to_scalar(transcript.data(), transcript.size(), to_bytes(sender_extension_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_jamtis_onetime_address(const rct::key &sender_receiver_secret,
+void make_jamtis_onetime_address(const rct::key &recipient_address_spend_key,
+    const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::key &recipient_address_spend_key,
     rct::key &onetime_address_out)
 {
     // Ko = k^o_g G + k^o_x X + k^o_u U + K_1
@@ -401,16 +401,16 @@ rct::xmr_amount decode_jamtis_amount(const encoded_amount_t &encoded_amount,
     return dec_amount(encoded_amount, jamtis_encoded_amount_mask(sender_receiver_secret, baked_key));
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool test_jamtis_onetime_address(const rct::key &sender_receiver_secret,
+bool test_jamtis_onetime_address(const rct::key &recipient_address_spend_key,
+    const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::key &recipient_address_spend_key,
     const rct::key &expected_onetime_address)
 {
     // compute a nominal onetime address: K'o
     rct::key nominal_onetime_address;
-    make_jamtis_onetime_address(sender_receiver_secret,
+    make_jamtis_onetime_address(recipient_address_spend_key,
+        sender_receiver_secret,
         amount_commitment,
-        recipient_address_spend_key,
         nominal_onetime_address);
 
     // check if the nominal onetime address matches the real onetime address: K'o ?= Ko

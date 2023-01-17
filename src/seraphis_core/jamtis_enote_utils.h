@@ -182,14 +182,14 @@ void make_jamtis_onetime_address_extension_u(const rct::key &recipient_address_s
 /**
 * brief: make_jamtis_onetime_address - create a onetime address
 *    Ko = k^o_g G + k^o_x X + k^o_u U + K_1
+* param: recipient_address_spend_key - K_1
 * param: sender_receiver_secret - q
 * param: amount_commitment - C
-* param: recipient_address_spend_key - K_1
 * outparam: onetime_address_out - Ko
 */
-void make_jamtis_onetime_address(const rct::key &sender_receiver_secret,
+void make_jamtis_onetime_address(const rct::key &recipient_address_spend_key,
+    const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::key &recipient_address_spend_key,
     rct::key &onetime_address_out);
 /**
 * brief: make_jamtis_amount_baked_key_plain_sender - key baked into amount encodings of plain enotes, to provide
@@ -258,15 +258,15 @@ rct::xmr_amount decode_jamtis_amount(const encoded_amount_t &encoded_amount,
     const rct::key &baked_key);
 /**
 * brief: test_jamtis_onetime_address - see if a onetime address can be reconstructed
+* param: recipient_address_spend_key - recipient's address spendkey K_1
 * param: sender_receiver_secret - q
 * param: amount_commitment - amount commtiment C
-* param: recipient_address_spend_key - recipient's address spendkey K_1
 * param: expected_onetime_address - onetime address to test Ko
 * return: true if the expected onetime address can be reconstructed
 */
-bool test_jamtis_onetime_address(const rct::key &sender_receiver_secret,
+bool test_jamtis_onetime_address(const rct::key &recipient_address_spend_key,
+    const rct::key &sender_receiver_secret,
     const rct::key &amount_commitment,
-    const rct::key &recipient_address_spend_key,
     const rct::key &expected_onetime_address);
 /**
 * brief: try_get_jamtis_sender_receiver_secret_plain - test view tag; if it passes, get the nominal sender-receiver secret

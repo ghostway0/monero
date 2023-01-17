@@ -89,7 +89,7 @@ static void get_output_proposal_address_parts_v1(const rct::key &q,
     view_tag_t &view_tag_out)
 {
     // 1. onetime address: Ko = k^o_g G + k^o_x X + k^o_u U + K_1
-    make_jamtis_onetime_address(q, amount_commitment, output_destination.m_addr_K1, onetime_address_out);
+    make_jamtis_onetime_address(output_destination.m_addr_K1, q, amount_commitment, onetime_address_out);
 
     // 2. encrypt address tag: addr_tag_enc = addr_tag ^ H(q, Ko)
     addr_tag_enc_out = encrypt_address_tag(q, onetime_address_out, output_destination.m_addr_tag);
