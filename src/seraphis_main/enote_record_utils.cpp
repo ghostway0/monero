@@ -249,12 +249,15 @@ static bool try_handle_basic_record_info_v1_helper(const SpEnoteVariant &enote,
     crypto::x25519_scmul_key(xk_find_received, enote_ephemeral_pubkey, derivation);
 
     // q' (jamtis plain variants)
-    return jamtis::try_get_jamtis_sender_receiver_secret_plain(derivation,
-        enote_ephemeral_pubkey,
-        input_context,
-        onetime_address_ref(enote),
-        view_tag_ref(enote),
-        nominal_sender_receiver_secret_out);
+    if (!jamtis::try_get_jamtis_sender_receiver_secret_plain(derivation,
+            enote_ephemeral_pubkey,
+            input_context,
+            onetime_address_ref(enote),
+            view_tag_ref(enote),
+            nominal_sender_receiver_secret_out))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -477,7 +480,7 @@ bool try_get_basic_enote_record_v1(const SpEnoteVariant &enote,
 {
     // compute DH derivation then get basic record
 
-    // sender-receiver DH derivation
+    // 1. sender-receiver DH derivation
     crypto::x25519_pubkey derivation;
     crypto::x25519_scmul_key(xk_find_received, enote_ephemeral_pubkey, derivation);
 
@@ -513,15 +516,19 @@ bool try_get_intermediate_enote_record_v1(const SpEnoteVariant &enote,
     if (!jamtis::try_decipher_address_index(cipher_context, nominal_address_tag, nominal_address_index))
         return false;
 
-    return try_get_intermediate_enote_record_v1_finalize(enote,
-        enote_ephemeral_pubkey,
-        input_context,
-        nominal_address_index,
-        nominal_sender_receiver_secret,
-        jamtis_spend_pubkey,
-        xk_unlock_amounts,
-        s_generate_address,
-        record_out);
+    // try to finalize the intermediate enote record
+    if (!try_get_intermediate_enote_record_v1_finalize(enote,
+            enote_ephemeral_pubkey,
+            input_context,
+            nominal_address_index,
+            nominal_sender_receiver_secret,
+            jamtis_spend_pubkey,
+            xk_unlock_amounts,
+            s_generate_address,
+            record_out))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_intermediate_enote_record_v1(const SpEnoteVariant &enote,
@@ -572,15 +579,18 @@ bool try_get_intermediate_enote_record_v1(const SpBasicEnoteRecordV1 &basic_reco
             nominal_sender_receiver_secret))
         return false;
 
-    return try_get_intermediate_enote_record_v1_finalize(basic_record.m_enote,
-        basic_record.m_enote_ephemeral_pubkey,
-        basic_record.m_input_context,
-        nominal_address_index,
-        nominal_sender_receiver_secret,
-        jamtis_spend_pubkey,
-        xk_unlock_amounts,
-        s_generate_address,
-        record_out);
+    if (!try_get_intermediate_enote_record_v1_finalize(basic_record.m_enote,
+            basic_record.m_enote_ephemeral_pubkey,
+            basic_record.m_input_context,
+            nominal_address_index,
+            nominal_sender_receiver_secret,
+            jamtis_spend_pubkey,
+            xk_unlock_amounts,
+            s_generate_address,
+            record_out))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_intermediate_enote_record_v1(const SpBasicEnoteRecordV1 &basic_record,
@@ -640,16 +650,19 @@ bool try_get_enote_record_v1_plain(const SpEnoteVariant &enote,
     if (!jamtis::try_decipher_address_index(cipher_context, nominal_address_tag, nominal_address_index))
         return false;
 
-    return try_get_enote_record_v1_plain_finalize(enote,
-        enote_ephemeral_pubkey,
-        input_context,
-        nominal_address_index,
-        nominal_sender_receiver_secret,
-        jamtis_spend_pubkey,
-        k_view_balance,
-        xk_unlock_amounts,
-        s_generate_address,
-        record_out);
+    if (!try_get_enote_record_v1_plain_finalize(enote,
+            enote_ephemeral_pubkey,
+            input_context,
+            nominal_address_index,
+            nominal_sender_receiver_secret,
+            jamtis_spend_pubkey,
+            k_view_balance,
+            xk_unlock_amounts,
+            s_generate_address,
+            record_out))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_enote_record_v1_plain(const SpBasicEnoteRecordV1 &basic_record,
@@ -675,16 +688,19 @@ bool try_get_enote_record_v1_plain(const SpBasicEnoteRecordV1 &basic_record,
             nominal_sender_receiver_secret))
         return false;
 
-    return try_get_enote_record_v1_plain_finalize(basic_record.m_enote,
-        basic_record.m_enote_ephemeral_pubkey,
-        basic_record.m_input_context,
-        nominal_address_index,
-        nominal_sender_receiver_secret,
-        jamtis_spend_pubkey,
-        k_view_balance,
-        xk_unlock_amounts,
-        s_generate_address,
-        record_out);
+    if (!try_get_enote_record_v1_plain_finalize(basic_record.m_enote,
+            basic_record.m_enote_ephemeral_pubkey,
+            basic_record.m_input_context,
+            nominal_address_index,
+            nominal_sender_receiver_secret,
+            jamtis_spend_pubkey,
+            k_view_balance,
+            xk_unlock_amounts,
+            s_generate_address,
+            record_out))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_enote_record_v1_plain(const SpBasicEnoteRecordV1 &basic_record,

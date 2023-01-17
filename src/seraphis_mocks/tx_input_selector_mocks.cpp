@@ -89,8 +89,10 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
                 if (!comparison_record.second.is_type<LegacyContextualEnoteRecordV1>())
                     return false;
 
-                return have_same_destination(contextual_enote_record,
-                    comparison_record.second.unwrap<LegacyContextualEnoteRecordV1>());
+                return have_same_destination(
+                        contextual_enote_record,
+                        comparison_record.second.unwrap<LegacyContextualEnoteRecordV1>()
+                    );
             };
 
         // ignore already added legacy inputs
@@ -119,8 +121,10 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
                 if (!comparison_record.second.is_type<SpContextualEnoteRecordV1>())
                     return false;
 
-                return have_same_destination(contextual_enote_record,
-                    comparison_record.second.unwrap<SpContextualEnoteRecordV1>());
+                return have_same_destination(
+                        contextual_enote_record,
+                        comparison_record.second.unwrap<SpContextualEnoteRecordV1>()
+                    );
             };
 
         // ignore already added seraphis inputs

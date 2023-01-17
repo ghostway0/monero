@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Records of Seraphis enotes owned by some wallet.
-
+// Records of Seraphis enotes with context about their origin and their spent status.
 
 #pragma once
 
@@ -65,11 +62,11 @@ namespace sp
 ///
 enum class SpEnoteOriginStatus : unsigned char
 {
-    // is only located off-chain
+    // is only located outside the mining network and blockchain (e.g. is sitting on the user's machine)
     OFFCHAIN,
-    // is in the tx pool (but not the blockchain)
+    // is submitted to the mining network but not yet added to the blockchain (e.g. is in some node's tx pool)
     UNCONFIRMED,
-    // is in the blockchain
+    // is in a block in the blockchain
     ONCHAIN
 };
 
@@ -83,29 +80,30 @@ enum class SpEnoteSpentStatus : unsigned char
     UNSPENT,
     // is spent in an off-chain tx
     SPENT_OFFCHAIN,
-    // is spent in a tx in the mempool
+    // is spent in a tx submitted to the mining network but not yet added to the blockchain
     SPENT_UNCONFIRMED,
-    // is spent in the ledger
+    // is spent in a tx in a block in the blockchain
     SPENT_ONCHAIN
 };
 
 ////
 // SpEnoteOriginContextV1
-// - info related to where an enote record was found
+// - info related to the transaction where an enote was found
+// - note that an enote may originate off-chain in a partial tx where the tx id is unknown
 ///
 struct SpEnoteOriginContextV1 final
 {
-    /// block height of transaction (-1 if height is unknown)
+    /// block height of tx (-1 if height is unknown)
     std::uint64_t m_block_height{static_cast<std::uint64_t>(-1)};
-    /// timestamp of transaction's block (-1 if timestamp is unknown)
+    /// timestamp of tx's block (-1 if timestamp is unknown)
     std::uint64_t m_block_timestamp{static_cast<std::uint64_t>(-1)};
-    /// tx id (0 if tx is unknown)
+    /// tx id of the tx (0 if tx is unknown)
     rct::key m_transaction_id{rct::zero()};
     /// index of the enote in the tx's output set (-1 if index is unknown)
     std::uint64_t m_enote_tx_index{static_cast<std::uint16_t>(-1)};
     /// ledger index of the enote (-1 if index is unknown)
     std::uint64_t m_enote_ledger_index{static_cast<std::uint64_t>(-1)};
-    /// origin status (off chain by default)
+    /// origin status (off-chain by default)
     SpEnoteOriginStatus m_origin_status{SpEnoteOriginStatus::OFFCHAIN};
 
     /// associated memo field (none by default)
@@ -115,14 +113,15 @@ struct SpEnoteOriginContextV1 final
 ////
 // SpEnoteSpentContextV1
 // - info related to where an enote was spent
+// - note that an enote may be spent off-chain in a partial tx where the tx id is unknown
 ///
 struct SpEnoteSpentContextV1 final
 {
-    /// block height of transaction where it was spent (-1 if unspent or height is unknown)
+    /// block height of tx where it was spent (-1 if unspent or height is unknown)
     std::uint64_t m_block_height{static_cast<std::uint64_t>(-1)};
-    /// timestamp of transaction's block (-1 if timestamp is unknown)
+    /// timestamp of tx's block (-1 if timestamp is unknown)
     std::uint64_t m_block_timestamp{static_cast<std::uint64_t>(-1)};
-    /// tx id where it was spent (0 if unspent or tx is unknown)
+    /// tx id of the tx where it was spent (0 if unspent or tx is unknown)
     rct::key m_transaction_id{rct::zero()};
     /// spent status (unspent by default)
     SpEnoteSpentStatus m_spent_status{SpEnoteSpentStatus::UNSPENT};
@@ -134,7 +133,7 @@ struct SpEnoteSpentContextV1 final
 
 ////
 // LegacyContextualBasicEnoteRecordV1
-// - a legacy enote basic record, with additional info related to where it was found
+// - a legacy basic enote record, with additional info related to where it was found
 ///
 struct LegacyContextualBasicEnoteRecordV1 final
 {
@@ -146,7 +145,8 @@ struct LegacyContextualBasicEnoteRecordV1 final
 
 ////
 // LegacyContextualIntermediateEnoteRecordV1
-// - info extracted from a legacy enote, with additional info related to where it was found
+// - a legacy intermediate enote record, with additional info related to where it was found
+// - the key image is unknown, so spent status is also unknown
 ///
 struct LegacyContextualIntermediateEnoteRecordV1 final
 {
@@ -158,12 +158,12 @@ struct LegacyContextualIntermediateEnoteRecordV1 final
 
 /// get the record's onetime address
 const rct::key& onetime_address_ref(const LegacyContextualIntermediateEnoteRecordV1 &record);
-/// get the record's enote's amount
+/// get the record's amount
 rct::xmr_amount amount_ref(const LegacyContextualIntermediateEnoteRecordV1 &record);
 
 ////
 // LegacyContextualEnoteRecordV1
-// - an enote with all related contextual information, including spent status
+// - a legacy full enote record with all related contextual information, including spent status
 ///
 struct LegacyContextualEnoteRecordV1 final
 {
@@ -175,9 +175,9 @@ struct LegacyContextualEnoteRecordV1 final
     SpEnoteSpentContextV1 m_spent_context;
 };
 
-/// get the record's enote's key image
+/// get the record's key image
 const crypto::key_image& key_image_ref(const LegacyContextualEnoteRecordV1 &record);
-/// get the record's enote's amount
+/// get the record's amount
 rct::xmr_amount amount_ref(const LegacyContextualEnoteRecordV1 &record);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +186,7 @@ rct::xmr_amount amount_ref(const LegacyContextualEnoteRecordV1 &record);
 
 ////
 // SpContextualBasicEnoteRecordV1
-// - info extracted from a v1 enote, with additional info related to where it was found
+// - a seraphis basic enote record, with additional info related to where it was found
 ///
 struct SpContextualBasicEnoteRecordV1 final
 {
@@ -198,7 +198,8 @@ struct SpContextualBasicEnoteRecordV1 final
 
 ////
 // SpContextualIntermediateEnoteRecordV1
-// - info extracted from a v1 enote, with additional info related to where it was found
+// - a seraphis intermediate enote record, with additional info related to where it was found
+// - the key image is unknown, so spent status is also unknown
 ///
 struct SpContextualIntermediateEnoteRecordV1 final
 {
@@ -215,7 +216,7 @@ rct::xmr_amount amount_ref(const SpContextualIntermediateEnoteRecordV1 &record);
 
 ////
 // SpContextualEnoteRecordV1
-// - an enote with all related contextual information, including spent status
+// - a seraphis full enote record with all related contextual information, including spent status
 ///
 struct SpContextualEnoteRecordV1 final
 {
@@ -227,9 +228,9 @@ struct SpContextualEnoteRecordV1 final
     SpEnoteSpentContextV1 m_spent_context;
 };
 
-/// get the record's enote's key image
+/// get the record's key image
 const crypto::key_image& key_image_ref(const SpContextualEnoteRecordV1 &record);
-/// get the record's enote's amount
+/// get the record's amount
 rct::xmr_amount amount_ref(const SpContextualEnoteRecordV1 &record);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,18 +279,17 @@ struct SpContextualKeyImageSetV1 final
 
 /// check if a context is older than another (returns false if apparently the same age, or younger)
 bool is_older_than(const SpEnoteOriginContextV1 &context, const SpEnoteOriginContextV1 &other_context);
-/// check if a context is older than another
 bool is_older_than(const SpEnoteSpentContextV1 &context, const SpEnoteSpentContextV1 &other_context);
 /// check if records have onetime address equivalence
-bool have_same_destination(const LegacyContextualBasicEnoteRecordV1 &record1,
-    const LegacyContextualBasicEnoteRecordV1 &record2);
-bool have_same_destination(const LegacyContextualIntermediateEnoteRecordV1 &record1,
-    const LegacyContextualIntermediateEnoteRecordV1 &record2);
-bool have_same_destination(const LegacyContextualEnoteRecordV1 &record1, const LegacyContextualEnoteRecordV1 &record2);
-bool have_same_destination(const SpContextualBasicEnoteRecordV1 &record1, const SpContextualBasicEnoteRecordV1 &record2);
-bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &record1,
-    const SpContextualIntermediateEnoteRecordV1 &record2);
-bool have_same_destination(const SpContextualEnoteRecordV1 &record1, const SpContextualEnoteRecordV1 &record2);
+bool have_same_destination(const LegacyContextualBasicEnoteRecordV1 &a,
+    const LegacyContextualBasicEnoteRecordV1 &b);
+bool have_same_destination(const LegacyContextualIntermediateEnoteRecordV1 &a,
+    const LegacyContextualIntermediateEnoteRecordV1 &b);
+bool have_same_destination(const LegacyContextualEnoteRecordV1 &a, const LegacyContextualEnoteRecordV1 &b);
+bool have_same_destination(const SpContextualBasicEnoteRecordV1 &a, const SpContextualBasicEnoteRecordV1 &b);
+bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &a,
+    const SpContextualIntermediateEnoteRecordV1 &b);
+bool have_same_destination(const SpContextualEnoteRecordV1 &a, const SpContextualEnoteRecordV1 &b);
 /// check origin status
 bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 bool has_origin_status(const SpContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);

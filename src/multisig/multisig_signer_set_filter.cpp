@@ -33,7 +33,7 @@
 #include "crypto/crypto.h"
 #include "misc_log_ex.h"
 
-//third-party headers
+//third party headers
 #include <boost/math/special_functions/binomial.hpp>
 
 //standard headers

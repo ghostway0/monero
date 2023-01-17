@@ -32,7 +32,7 @@
 #include "crypto/crypto.h"
 #include "cryptonote_config.h"
 
-//third-party headers
+//third party headers
 
 //standard headers
 #include <cstdint>

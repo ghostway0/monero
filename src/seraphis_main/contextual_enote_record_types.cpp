@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "contextual_enote_record_types.h"
 
@@ -40,6 +38,7 @@
 
 //standard headers
 #include <algorithm>
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -146,20 +145,28 @@ bool is_older_than(const SpEnoteOriginContextV1 &context, const SpEnoteOriginCon
     // 1. origin status (higher statuses are assumed to be 'older')
     if (context.m_origin_status > other_context.m_origin_status)
         return true;
+    if (context.m_origin_status < other_context.m_origin_status)
+        return false;
 
     // 2. block height
     if (context.m_block_height < other_context.m_block_height)
         return true;
+    if (context.m_block_height > other_context.m_block_height)
+        return false;
 
     // note: don't assess the tx output index
 
     // 3. enote ledger index
     if (context.m_enote_ledger_index < other_context.m_enote_ledger_index)
         return true;
+    if (context.m_enote_ledger_index > other_context.m_enote_ledger_index)
+        return false;
 
     // 4. block timestamp
     if (context.m_block_timestamp < other_context.m_block_timestamp)
         return true;
+    if (context.m_block_timestamp > other_context.m_block_timestamp)
+        return false;
 
     return false;
 }
@@ -169,49 +176,53 @@ bool is_older_than(const SpEnoteSpentContextV1 &context, const SpEnoteSpentConte
     // 1. spent status (higher statuses are assumed to be 'older')
     if (context.m_spent_status > other_context.m_spent_status)
         return true;
+    if (context.m_spent_status < other_context.m_spent_status)
+        return false;
 
     // 2. block height
     if (context.m_block_height < other_context.m_block_height)
         return true;
+    if (context.m_block_height > other_context.m_block_height)
+        return false;
 
     // 3. block timestamp
     if (context.m_block_timestamp < other_context.m_block_timestamp)
         return true;
+    if (context.m_block_timestamp > other_context.m_block_timestamp)
+        return false;
 
     return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const LegacyContextualBasicEnoteRecordV1 &record1,
-    const LegacyContextualBasicEnoteRecordV1 &record2)
+bool have_same_destination(const LegacyContextualBasicEnoteRecordV1 &a, const LegacyContextualBasicEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(a.m_record.m_enote) == onetime_address_ref(b.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const LegacyContextualIntermediateEnoteRecordV1 &record1,
-    const LegacyContextualIntermediateEnoteRecordV1 &record2)
+bool have_same_destination(const LegacyContextualIntermediateEnoteRecordV1 &a,
+    const LegacyContextualIntermediateEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(a.m_record.m_enote) == onetime_address_ref(b.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const LegacyContextualEnoteRecordV1 &record1, const LegacyContextualEnoteRecordV1 &record2)
+bool have_same_destination(const LegacyContextualEnoteRecordV1 &a, const LegacyContextualEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(a.m_record.m_enote) == onetime_address_ref(b.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const SpContextualBasicEnoteRecordV1 &record1, const SpContextualBasicEnoteRecordV1 &record2)
+bool have_same_destination(const SpContextualBasicEnoteRecordV1 &a, const SpContextualBasicEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(a.m_record.m_enote) == onetime_address_ref(b.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &record1,
-    const SpContextualIntermediateEnoteRecordV1 &record2)
+bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &a, const SpContextualIntermediateEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1) == onetime_address_ref(record2);
+    return onetime_address_ref(a) == onetime_address_ref(b);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool have_same_destination(const SpContextualEnoteRecordV1 &record1, const SpContextualEnoteRecordV1 &record2)
+bool have_same_destination(const SpContextualEnoteRecordV1 &a, const SpContextualEnoteRecordV1 &b)
 {
-    return onetime_address_ref(record1.m_record.m_enote) == onetime_address_ref(record2.m_record.m_enote);
+    return onetime_address_ref(a.m_record.m_enote) == onetime_address_ref(b.m_record.m_enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
