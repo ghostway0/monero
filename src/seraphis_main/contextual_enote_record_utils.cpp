@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "contextual_enote_record_utils.h"
 
@@ -43,8 +41,7 @@
 
 //standard headers
 #include <functional>
-#include <list>
-#include <map>
+#include <set>
 #include <unordered_set>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
@@ -59,58 +56,76 @@ bool onchain_legacy_enote_is_locked(const std::uint64_t enote_origin_height,
     const std::uint64_t default_spendable_age,
     const std::uint64_t current_time)
 {
-    // check default spendable age
+    // 1. check default spendable age
+    // - test: is the next minable block lower than the first block where the enote is spendable?
+    // - an enote is not spendable in the block where it originates, so the default spendable age is always at least 1
     if (chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age))
         return true;
 
-    // check unlock time: height encoding
+    // 2. check unlock time: height encoding
+    // - test: is the next minable block lower than the block where the enote is unlocked?
     if (enote_unlock_time < CRYPTONOTE_MAX_BLOCK_NUMBER &&
         chain_height + 1 < enote_unlock_time)
         return true;
 
-    // check unlock time: UNIX encoding
-    return current_time < enote_unlock_time;
+    // 3. check unlock time: UNIX encoding
+    // - test: is the current time lower than the UNIX time when the enote is unlocked?
+    if (enote_unlock_time >= CRYPTONOTE_MAX_BLOCK_NUMBER &&
+        current_time < enote_unlock_time)
+        return true;
+
+    return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool onchain_sp_enote_is_locked(const std::uint64_t enote_origin_height,
     const std::uint64_t chain_height,
     const std::uint64_t default_spendable_age)
 {
+    // check default spendable age
+    // - test: is the next minable block lower than the first block where the enote is spendable?
+    // - an enote is not spendable in the block where it originates, so the default spendable age is always at least 1
     return chain_height + 1 < enote_origin_height + std::max(std::uint64_t{1}, default_spendable_age);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool legacy_enote_has_highest_amount_amoung_duplicates(const rct::key &searched_for_record_identifier,
-    const rct::xmr_amount &searched_for_record_amount,
-    const std::unordered_set<SpEnoteOriginStatus> &requested_origin_statuses,
-    const std::unordered_set<rct::key> &duplicate_onetime_address_identifiers,
+bool legacy_enote_has_highest_amount_in_set(const rct::key &specified_enote_identifier,
+    const rct::xmr_amount specified_enote_amount,
+    const std::unordered_set<SpEnoteOriginStatus> &allowed_origin_statuses,
+    const std::unordered_set<rct::key> &enote_identifier_set,
     const std::function<const SpEnoteOriginStatus&(const rct::key&)> &get_record_origin_status_for_identifier_func,
     const std::function<rct::xmr_amount(const rct::key&)> &get_record_amount_for_identifier_func)
 {
-    std::map<rct::xmr_amount, rct::key> eligible_amounts;
+    // 1. collect enote amounts from the set of enote identifiers
+    std::set<rct::xmr_amount> collected_amounts;
+    bool found_specified_enote{false};
 
-    for (const rct::key &candidate_identifier : duplicate_onetime_address_identifiers)
+    for (const rct::key &identifier : enote_identifier_set)
     {
-        // only include enotes with requested origin statuses
-        if (requested_origin_statuses.find(get_record_origin_status_for_identifier_func(candidate_identifier)) ==
-                requested_origin_statuses.end())
+        // a. ignore enotes with unwanted origin statuses
+        if (allowed_origin_statuses.find(get_record_origin_status_for_identifier_func(identifier)) ==
+                allowed_origin_statuses.end())
             continue;
 
-        // record this identifier
-        const rct::xmr_amount amount{get_record_amount_for_identifier_func(candidate_identifier)};
-        CHECK_AND_ASSERT_THROW_MES(eligible_amounts.find(amount) == eligible_amounts.end(),
-            "legacy enote duplicate onetime address amount search: found the same amount multiple times (legacy enote "
-            "identifiers are a hash of the amount, so there should not be multiple identifiers with the same amount, "
-            "assuming all identifiers correspond to the same onetime address as they should here).");
+        // b. record this amount
+        const rct::xmr_amount amount{get_record_amount_for_identifier_func(identifier)};
+        collected_amounts.insert(amount);
 
-        eligible_amounts[amount] = candidate_identifier;
+        // c. expect that we got the same amount for our specified enote
+        if (identifier == specified_enote_identifier)
+        {
+            CHECK_AND_ASSERT_THROW_MES(amount == specified_enote_amount,
+                "legacy enote highest amount search: mismatch between specified amount and found amount.");
+            found_specified_enote = true;
+        }
     }
 
-    // we should have found the searched-for record's amount
-    CHECK_AND_ASSERT_THROW_MES(eligible_amounts.find(searched_for_record_amount) != eligible_amounts.end(),
-        "legacy enote duplicate onetime address amount search: could not find the searched-for record's amount.");
+    // 2. expect that we found our specified identifier
+    // - do this instead of calling .find() on the identifier set in case the origin status check skips our identifier
+    CHECK_AND_ASSERT_THROW_MES(found_specified_enote,
+        "legacy enote highest amount search: the specified enote's identifier was not found.");
 
-    // success if the highest eligible amount is attached to the searched-for identifier
-    return eligible_amounts.rbegin()->second == searched_for_record_identifier;
+    // 3. success if the specified amount is the highest in the set
+    // - note: it is fine if identifiers in the set have the same amount
+    return *(collected_amounts.rbegin()) == specified_enote_amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void split_selected_input_set(const input_set_tracker_t &input_set,
@@ -120,6 +135,7 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
     legacy_contextual_records_out.clear();
     sp_contextual_records_out.clear();
 
+    // 1. obtain legacy records
     if (input_set.find(InputSelectionType::LEGACY) != input_set.end())
     {
         legacy_contextual_records_out.reserve(input_set.at(InputSelectionType::LEGACY).size());
@@ -127,7 +143,7 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
         for (const auto &mapped_contextual_enote_record : input_set.at(InputSelectionType::LEGACY))
         {
             CHECK_AND_ASSERT_THROW_MES(mapped_contextual_enote_record.second.is_type<LegacyContextualEnoteRecordV1>(),
-                "splitting an input set (legacy): record is supposed to be legacy but is not.");
+                "splitting an input set: record is supposed to be legacy but is not.");
 
             legacy_contextual_records_out.emplace_back(
                     mapped_contextual_enote_record.second.unwrap<LegacyContextualEnoteRecordV1>()
@@ -135,6 +151,7 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
         }
     }
 
+    // 2. obtain seraphis records
     if (input_set.find(InputSelectionType::SERAPHIS) != input_set.end())
     {
         sp_contextual_records_out.reserve(input_set.at(InputSelectionType::SERAPHIS).size());
@@ -142,7 +159,7 @@ void split_selected_input_set(const input_set_tracker_t &input_set,
         for (const auto &mapped_contextual_enote_record : input_set.at(InputSelectionType::SERAPHIS))
         {
             CHECK_AND_ASSERT_THROW_MES(mapped_contextual_enote_record.second.is_type<SpContextualEnoteRecordV1>(),
-                "splitting an input set (legacy): record is supposed to be seraphis but is not.");
+                "splitting an input set: record is supposed to be seraphis but is not.");
 
             sp_contextual_records_out.emplace_back(
                     mapped_contextual_enote_record.second.unwrap<SpContextualEnoteRecordV1>()
@@ -172,36 +189,38 @@ boost::multiprecision::uint128_t total_amount(const std::vector<SpContextualEnot
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_membership_proof_real_reference_mappings(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records,
-    std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out)
+    std::unordered_map<crypto::key_image, std::uint64_t> &enote_ledger_mappings_out)
 {
-    ledger_mappings_out.clear();
+    enote_ledger_mappings_out.clear();
 
     for (const LegacyContextualEnoteRecordV1 &contextual_record : contextual_records)
     {
-        // only onchain enotes have ledger indices
+        // 1. only onchain enotes have ledger indices
         if (!has_origin_status(contextual_record, SpEnoteOriginStatus::ONCHAIN))
             return false;
 
-        // save the [ KI : enote ledger index ] entry
-        ledger_mappings_out[key_image_ref(contextual_record)] = contextual_record.m_origin_context.m_enote_ledger_index;
+        // 2. save the [ KI : enote ledger index ] entry
+        enote_ledger_mappings_out[key_image_ref(contextual_record)] =
+            contextual_record.m_origin_context.m_enote_ledger_index;
     }
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContextualEnoteRecordV1> &contextual_records,
-    std::unordered_map<crypto::key_image, std::uint64_t> &ledger_mappings_out)
+    std::unordered_map<crypto::key_image, std::uint64_t> &enote_ledger_mappings_out)
 {
-    ledger_mappings_out.clear();
+    enote_ledger_mappings_out.clear();
 
     for (const SpContextualEnoteRecordV1 &contextual_record : contextual_records)
     {
-        // only onchain enotes have ledger indices
+        // 1. only onchain enotes have ledger indices
         if (!has_origin_status(contextual_record, SpEnoteOriginStatus::ONCHAIN))
             return false;
 
-        // save the [ KI : enote ledger index ] entry
-        ledger_mappings_out[key_image_ref(contextual_record)] = contextual_record.m_origin_context.m_enote_ledger_index;
+        // 2. save the [ KI : enote ledger index ] entry
+        enote_ledger_mappings_out[key_image_ref(contextual_record)] =
+            contextual_record.m_origin_context.m_enote_ledger_index;
     }
 
     return true;
@@ -210,10 +229,11 @@ bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContex
 bool try_update_enote_origin_context_v1(const SpEnoteOriginContextV1 &fresh_origin_context,
     SpEnoteOriginContextV1 &current_origin_context_inout)
 {
-    // use the oldest origin context available (overwrite if apparently the same age)
+    // 1. fail if the current context is older than the fresh one
     if (is_older_than(current_origin_context_inout, fresh_origin_context))
         return false;
 
+    // 2. overwrite with the fresh context (do this even if the fresh one seems to have the same age)
     current_origin_context_inout = fresh_origin_context;
 
     return true;
@@ -222,10 +242,11 @@ bool try_update_enote_origin_context_v1(const SpEnoteOriginContextV1 &fresh_orig
 bool try_update_enote_spent_context_v1(const SpEnoteSpentContextV1 &fresh_spent_context,
     SpEnoteSpentContextV1 &current_spent_context_inout)
 {
-    // use the oldest origin context available (overwrite if apparently the same age)
+    // 1. fail if the current context is older than the fresh one
     if (is_older_than(current_spent_context_inout, fresh_spent_context))
         return false;
 
+    // 2. overwrite with the fresh context (do this even if the fresh one seems to have the same age)
     current_spent_context_inout = fresh_spent_context;
 
     return true;
@@ -234,11 +255,16 @@ bool try_update_enote_spent_context_v1(const SpEnoteSpentContextV1 &fresh_spent_
 bool try_update_contextual_enote_record_spent_context_v1(const SpContextualKeyImageSetV1 &contextual_key_image_set,
     SpContextualEnoteRecordV1 &contextual_enote_record_inout)
 {
+    // 1. fail if our record doesn't have a key image in the set
     if (!has_key_image(contextual_key_image_set, key_image_ref(contextual_enote_record_inout)))
         return false;
 
-    return try_update_enote_spent_context_v1(contextual_key_image_set.m_spent_context,
-        contextual_enote_record_inout.m_spent_context);
+    // 2. try to update the record's spent context
+    if (!try_update_enote_spent_context_v1(contextual_key_image_set.m_spent_context,
+            contextual_enote_record_inout.m_spent_context))
+        return false;
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 SpEnoteOriginStatus origin_status_from_spent_status_v1(const SpEnoteSpentStatus spent_status)
@@ -246,8 +272,6 @@ SpEnoteOriginStatus origin_status_from_spent_status_v1(const SpEnoteSpentStatus 
     switch (spent_status)
     {
         case (SpEnoteSpentStatus::UNSPENT) :
-            return SpEnoteOriginStatus::OFFCHAIN;
-
         case (SpEnoteSpentStatus::SPENT_OFFCHAIN) :
             return SpEnoteOriginStatus::OFFCHAIN;
 
@@ -265,11 +289,14 @@ SpEnoteOriginStatus origin_status_from_spent_status_v1(const SpEnoteSpentStatus 
 bool try_bump_enote_record_origin_status_v1(const SpEnoteSpentStatus spent_status,
     SpEnoteOriginStatus &origin_status_inout)
 {
+    // 1. get the implied origin status
     const SpEnoteOriginStatus implied_origin_status{origin_status_from_spent_status_v1(spent_status)};
 
+    // 2. check if our existing origin status is older than the new implied one
     if (origin_status_inout > implied_origin_status)
         return false;
 
+    // 3. bump our origin status
     origin_status_inout = implied_origin_status;
 
     return true;
@@ -280,10 +307,14 @@ void update_contextual_enote_record_contexts_v1(const SpEnoteOriginContextV1 &ne
     SpEnoteOriginContextV1 &origin_context_inout,
     SpEnoteSpentContextV1 &spent_context_inout)
 {
-    try_update_enote_spent_context_v1(new_spent_context, spent_context_inout);
+    // 1. update the origin context
     try_update_enote_origin_context_v1(new_origin_context, origin_context_inout);
-    try_bump_enote_record_origin_status_v1(spent_context_inout.m_spent_status,
-       origin_context_inout.m_origin_status);
+
+    // 2. update the spent context
+    try_update_enote_spent_context_v1(new_spent_context, spent_context_inout);
+
+    // 3. bump the origin status based on the new spent status
+    try_bump_enote_record_origin_status_v1(spent_context_inout.m_spent_status, origin_context_inout.m_origin_status);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void update_contextual_enote_record_contexts_v1(const SpContextualEnoteRecordV1 &fresh_record,

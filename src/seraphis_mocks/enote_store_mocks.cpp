@@ -1011,7 +1011,7 @@ boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_intermediate_le
                 m_tracked_legacy_onetime_address_duplicates.end(),
             "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
 
-        if (!legacy_enote_has_highest_amount_amoung_duplicates(mapped_contextual_record.first,
+        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
                 current_contextual_record.m_record.m_amount,
                 origin_statuses,
                 m_tracked_legacy_onetime_address_duplicates.at(
@@ -1089,7 +1089,7 @@ boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_full_legacy(
                 m_tracked_legacy_onetime_address_duplicates.end(),
             "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
 
-        if (!legacy_enote_has_highest_amount_amoung_duplicates(mapped_contextual_record.first,
+        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
                 current_contextual_record.m_record.m_amount,
                 origin_statuses,
                 m_tracked_legacy_onetime_address_duplicates.at(

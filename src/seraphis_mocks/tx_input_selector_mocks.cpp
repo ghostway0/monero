@@ -180,7 +180,7 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
 
         // if this legacy enote shares a onetime address with any other legacy enotes, only proceed if this one
         //   has the highest amount
-        if (!legacy_enote_has_highest_amount_amoung_duplicates(mapped_enote_record.first,
+        if (!legacy_enote_has_highest_amount_in_set(mapped_enote_record.first,
                 mapped_enote_record.second.m_record.m_amount,
                 {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED, SpEnoteOriginStatus::ONCHAIN},
                 m_enote_store.m_tracked_legacy_onetime_address_duplicates.at(
