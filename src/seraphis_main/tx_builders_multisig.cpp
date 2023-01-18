@@ -224,6 +224,7 @@ static void replace_legacy_input_proposal_destination_for_tx_simulation_v1(
     make_legacy_key_image(input_proposal_inout.m_enote_view_extension,
         legacy_spend_privkey_mock,
         input_proposal_inout.m_onetime_address,
+        hw::get_device("default"),
         input_proposal_inout.m_key_image);
 
     // 4. make a legacy ring signature prep for this input
@@ -378,9 +379,9 @@ static void prepare_legacy_input_proof_proposal_v1(const rct::key &tx_proposal_p
 
     // 3. legacy auxilliary key image: D
     crypto::key_image auxilliary_key_image;
-    make_legacy_auxilliary_key_image_v1(
-        legacy_input_proposal.m_commitment_mask,
+    make_legacy_auxilliary_key_image_v1(legacy_input_proposal.m_commitment_mask,
         legacy_input_proposal.m_onetime_address,
+        hw::get_device("default"),
         auxilliary_key_image);
 
     // 4. legacy multisig proof proposal

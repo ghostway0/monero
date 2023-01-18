@@ -185,7 +185,7 @@ static bool try_get_amount_commitment_information_plaintext(const rct::xmr_amoun
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    amount_out = enote_amount;
+    amount_out                 = enote_amount;
     amount_blinding_factor_out = rct::rct2sk(rct::I);
 
     return true;

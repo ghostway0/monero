@@ -87,6 +87,7 @@ void EnoteStoreUpdaterLedgerMockLegacy::process_chunk(
         },
         chunk_basic_records_per_tx,
         chunk_contextual_key_images,
+        hw::get_device("default"),
         m_found_enote_records,
         m_found_spent_key_images);
 }
@@ -271,6 +272,7 @@ void EnoteStoreUpdaterLedgerMockLegacyIntermediate::process_chunk(
         },
         chunk_basic_records_per_tx,
         chunk_contextual_key_images,
+        hw::get_device("default"),
         m_found_enote_records,
         m_found_spent_key_images);
 }

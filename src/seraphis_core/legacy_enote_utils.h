@@ -30,6 +30,7 @@
 // These are not fully-featured.
 // - does not support encrypted payment ids
 // - does not support nuanced output creation rules (w.r.t. change outputs and subaddresses in txs with normal addresses)
+// - only works for hw::device "default"
 // Note: The legacy hash functions Hn(), Hx(), Hp() are built on the keccak hash function.
 
 #pragma once

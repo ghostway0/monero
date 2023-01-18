@@ -42,6 +42,7 @@ extern "C"
 #include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/sp_crypto_utils.h"
 #include "tx_extra.h"
 
 //third party headers
@@ -58,16 +59,17 @@ namespace sp
 void make_legacy_subaddress_spendkey(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
     const cryptonote::subaddress_index &subaddress_index,
+    hw::device &hwdev,
     rct::key &subaddress_spendkey_out)
 {
     // Hn(k^v, i) = Hn("SubAddr" || k^v || index_major || index_minor)
     const crypto::secret_key subaddress_modifier{
-            hw::get_device("default").get_subaddress_secret_key(legacy_view_privkey, subaddress_index)
+            hwdev.get_subaddress_secret_key(legacy_view_privkey, subaddress_index)
         };
 
     // Hn(k^v, i) G
     rct::key subaddress_extension;
-    rct::scalarmultBase(subaddress_extension, rct::sk2rct(subaddress_modifier));
+    hwdev.scalarmultBase(subaddress_extension, rct::sk2rct(subaddress_modifier));
 
     // K^{s,i} = Hn(k^v, i) G + k^s G
     rct::addKeys(subaddress_spendkey_out, subaddress_extension, legacy_base_spend_pubkey);
@@ -76,35 +78,37 @@ void make_legacy_subaddress_spendkey(const rct::key &legacy_base_spend_pubkey,
 void make_legacy_sender_receiver_secret(const rct::key &base_key,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &DH_privkey,
+    hw::device &hwdev,
     crypto::secret_key &legacy_sender_receiver_secret_out)
 {
     // r K^v
     crypto::key_derivation derivation;
-    hw::get_device("default").generate_key_derivation(rct::rct2pk(base_key), DH_privkey, derivation);
+    hwdev.generate_key_derivation(rct::rct2pk(base_key), DH_privkey, derivation);
 
     // Hn(r K^v, t)
-    hw::get_device("default").derivation_to_scalar(derivation, tx_output_index, legacy_sender_receiver_secret_out);
+    hwdev.derivation_to_scalar(derivation, tx_output_index, legacy_sender_receiver_secret_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_view_extension(const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
     const crypto::secret_key &legacy_view_privkey,
     const boost::optional<cryptonote::subaddress_index> &subaddress_index,
+    hw::device &hwdev,
     crypto::secret_key &enote_view_extension_out)
 {
     // Hn(r K^v, t)
-    crypto::derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, enote_view_extension_out);
+    hwdev.derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, enote_view_extension_out);
 
     // subaddress index modifier
     if (subaddress_index)
     {
         // Hn(k^v, i) = Hn(k^v || index_major || index_minor)
         const crypto::secret_key subaddress_modifier{
-                hw::get_device("default").get_subaddress_secret_key(legacy_view_privkey, *subaddress_index)
+                hwdev.get_subaddress_secret_key(legacy_view_privkey, *subaddress_index)
             };
 
         // Hn(r K^v, t) + Hn(k^v, i)
-        sc_add(to_bytes(enote_view_extension_out), to_bytes(enote_view_extension_out), to_bytes(subaddress_modifier));
+        hwdev.sc_secret_add(enote_view_extension_out, enote_view_extension_out, subaddress_modifier);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -112,20 +116,16 @@ void make_legacy_onetime_address(const rct::key &destination_spendkey,
     const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
+    hw::device &hwdev,
     rct::key &onetime_address_out)
 {
     // r K^v
     crypto::key_derivation derivation;
-    hw::get_device("default").generate_key_derivation(rct::rct2pk(destination_viewkey),
-        enote_ephemeral_privkey,
-        derivation);
+    hwdev.generate_key_derivation(rct::rct2pk(destination_viewkey), enote_ephemeral_privkey, derivation);
 
     // K^o = Hn(r K^v, t) G + K^s
     crypto::public_key onetime_address_temp;
-    hw::get_device("default").derive_public_key(derivation,
-        tx_output_index,
-        rct::rct2pk(destination_spendkey),
-        onetime_address_temp);
+    hwdev.derive_public_key(derivation, tx_output_index, rct::rct2pk(destination_spendkey), onetime_address_temp);
 
     onetime_address_out = rct::pk2rct(onetime_address_temp);
 }
@@ -133,38 +133,42 @@ void make_legacy_onetime_address(const rct::key &destination_spendkey,
 void make_legacy_key_image(const crypto::secret_key &enote_view_extension,
     const crypto::secret_key &legacy_spend_privkey,
     const rct::key &onetime_address,
+    hw::device &hwdev,
     crypto::key_image &key_image_out)
 {
     // KI = (view_key_stuff + k^s) * Hp(Ko)
     crypto::secret_key onetime_address_privkey;
-    sc_add(to_bytes(onetime_address_privkey), to_bytes(enote_view_extension), to_bytes(legacy_spend_privkey));
+    hwdev.sc_secret_add(onetime_address_privkey, enote_view_extension, legacy_spend_privkey);
 
-    crypto::generate_key_image(rct::rct2pk(onetime_address), onetime_address_privkey, key_image_out);
+    hwdev.generate_key_image(rct::rct2pk(onetime_address), onetime_address_privkey, key_image_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_auxilliary_key_image_v1(const crypto::secret_key &commitment_mask,
     const rct::key &onetime_address,
+    hw::device &hwdev,
     crypto::key_image &auxilliary_key_image_out)
 {
-    // z = - mask
-    crypto::secret_key z;
-    sc_0(to_bytes(z));
-    sc_sub(to_bytes(z), to_bytes(z), to_bytes(commitment_mask));
+    // mask Hp(Ko)
+    hwdev.generate_key_image(rct::rct2pk(onetime_address), commitment_mask, auxilliary_key_image_out);
 
-    // z Hp(Ko)
-    crypto::generate_key_image(rct::rct2pk(onetime_address), z, auxilliary_key_image_out);
+    // z Hp(Ko) = - mask Hp(Ko)
+    // note: do this after making the key image instead of computing it directly because there is no way to
+    //       compute the scalar 'z = - mask' with hwdev
+    auxilliary_key_image_out = rct::rct2ki(rct::scalarmultKey(rct::ki2rct(auxilliary_key_image_out), minus_one()));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_amount_blinding_factor_v2(const crypto::secret_key &sender_receiver_secret,
+    hw::device &hwdev,
     crypto::secret_key &amount_blinding_factor_out)
 {
     // Hn("commitment_mask", Hn(r K^v, t))
-    amount_blinding_factor_out = rct::rct2sk(genCommitmentMask(rct::sk2rct(sender_receiver_secret)));
+    amount_blinding_factor_out = rct::rct2sk(hwdev.genCommitmentMask(rct::sk2rct(sender_receiver_secret)));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_amount_blinding_factor_v2(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
+    hw::device &hwdev,
     crypto::secret_key &amount_blinding_factor_out)
 {
     // Hn(r K^v, t)
@@ -172,42 +176,11 @@ void make_legacy_amount_blinding_factor_v2(const rct::key &destination_viewkey,
     make_legacy_sender_receiver_secret(destination_viewkey,
         tx_output_index,
         enote_ephemeral_privkey,
+        hwdev,
         sender_receiver_secret);
 
     // amount mask: Hn("commitment_mask", Hn(r K^v, t))
-    make_legacy_amount_blinding_factor_v2(sender_receiver_secret, amount_blinding_factor_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_legacy_amount_encoding_factor_v2(const crypto::secret_key &sender_receiver_secret,
-    rct::key &amount_encoding_factor_out)
-{
-    // H32("amount", Hn(r K^v, t))
-    amount_encoding_factor_out = genAmountEncodingFactor(rct::sk2rct(sender_receiver_secret));
-}
-//-------------------------------------------------------------------------------------------------------------------
-jamtis::encoded_amount_t legacy_xor_amount(const rct::xmr_amount amount, const rct::key &encoding_factor)
-{
-    // a XOR_8 factor
-    jamtis::encoded_amount_t factor;
-    memcpy(factor.bytes, encoding_factor.bytes, sizeof(jamtis::encoded_amount_t));
-
-    jamtis::encoded_amount_t amount_LE;
-    memcpy_swap64le(amount_LE.bytes, &amount, 1);
-
-    return amount_LE ^ factor;
-}
-//-------------------------------------------------------------------------------------------------------------------
-rct::xmr_amount legacy_xor_encoded_amount(const jamtis::encoded_amount_t &encoded_amount, const rct::key &encoding_factor)
-{
-    // enc(a) XOR_8 factor
-    jamtis::encoded_amount_t factor;
-    memcpy(factor.bytes, encoding_factor.bytes, sizeof(jamtis::encoded_amount_t));
-
-    const jamtis::encoded_amount_t decoded_amount{encoded_amount ^ factor};
-    rct::xmr_amount amount;
-    memcpy_swap64le(&amount, decoded_amount.bytes, 1);
-
-    return amount;
+    make_legacy_amount_blinding_factor_v2(sender_receiver_secret, hwdev, amount_blinding_factor_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_encoded_amount_v1(const rct::key &destination_viewkey,
@@ -215,6 +188,7 @@ void make_legacy_encoded_amount_v1(const rct::key &destination_viewkey,
     const crypto::secret_key &enote_ephemeral_privkey,
     const crypto::secret_key &amount_mask,
     const rct::xmr_amount amount,
+    hw::device &hwdev,
     rct::key &encoded_amount_blinding_factor_out,
     rct::key &encoded_amount_out)
 {
@@ -223,22 +197,26 @@ void make_legacy_encoded_amount_v1(const rct::key &destination_viewkey,
     make_legacy_sender_receiver_secret(destination_viewkey,
         tx_output_index,
         enote_ephemeral_privkey,
+        hwdev,
         sender_receiver_secret);
 
     // encoded amount blinding factor: enc(x) = x + Hn(Hn(r K^v, t))
-    const rct::key mask_factor{rct::hash_to_scalar(rct::sk2rct(sender_receiver_secret))};  //Hn(Hn(r K^v, t))
-    sc_add(encoded_amount_blinding_factor_out.bytes, to_bytes(amount_mask), mask_factor.bytes);
-
     // encoded amount: enc(a) = to_key(little_endian(a)) + Hn(Hn(Hn(r K^v, t)))
-    const rct::key amount_factor{rct::hash_to_scalar(mask_factor)};                        //Hn(Hn(Hn(r K^v, t)))
-    d2h(encoded_amount_out, amount);
-    sc_add(encoded_amount_out.bytes, encoded_amount_out.bytes, amount_factor.bytes);
+    rct::ecdhTuple encoded_amount_info{
+            .mask   = rct::sk2rct(amount_mask),
+            .amount = rct::d2h(amount)
+        };
+    hwdev.ecdhEncode(encoded_amount_info, rct::sk2rct(sender_receiver_secret), false);
+
+    encoded_amount_blinding_factor_out = encoded_amount_info.mask;
+    encoded_amount_out                 = encoded_amount_info.amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_encoded_amount_v2(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
     const rct::xmr_amount amount,
+    hw::device &hwdev,
     jamtis::encoded_amount_t &encoded_amount_out)
 {
     // Hn(r K^v, t)
@@ -246,28 +224,140 @@ void make_legacy_encoded_amount_v2(const rct::key &destination_viewkey,
     make_legacy_sender_receiver_secret(destination_viewkey,
         tx_output_index,
         enote_ephemeral_privkey,
+        hwdev,
         sender_receiver_secret);
 
     // encoded amount: enc(a) = a XOR_8 H32("amount", Hn(r K^v, t))
-    rct::key encoded_amount_factor;
-    make_legacy_amount_encoding_factor_v2(sender_receiver_secret, encoded_amount_factor);
+    rct::ecdhTuple encoded_amount_info{
+            .mask   = rct::zero(),
+            .amount = rct::d2h(amount)
+        };
+    hwdev.ecdhEncode(encoded_amount_info, rct::sk2rct(sender_receiver_secret), true);
 
-    encoded_amount_out = legacy_xor_amount(amount, encoded_amount_factor);
+    static_assert(sizeof(encoded_amount_info.amount) >= sizeof(encoded_amount_out), "");
+    memcpy(encoded_amount_out.bytes, encoded_amount_info.amount.bytes, sizeof(encoded_amount_out));
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_legacy_amount_v1(const rct::key &expected_amount_commitment,
+    const crypto::secret_key &sender_receiver_secret,
+    const rct::key &encoded_amount_blinding_factor,
+    const rct::key &encoded_amount,
+    hw::device &hwdev,
+    crypto::secret_key &amount_blinding_factor_out,
+    rct::xmr_amount &amount_out)
+{
+    // 1. get amount and blinding factor
+    // x = enc(x) - Hn(Hn(r K^v, t))
+    // a = system_endian(trunc_8(enc(a) - Hn(Hn(Hn(r K^v, t)))))
+    rct::ecdhTuple decoded_amount_info{
+            .mask   = encoded_amount_blinding_factor,
+            .amount = encoded_amount
+        };
+    hwdev.ecdhDecode(decoded_amount_info, rct::sk2rct(sender_receiver_secret), false);
+
+    amount_blinding_factor_out = rct::rct2sk(decoded_amount_info.mask);
+    amount_out                 = h2d(decoded_amount_info.amount);  //todo: is this endian-aware?
+
+    // 2. try to reproduce the amount commitment (sanity check)
+    if (!(rct::commit(amount_out, rct::sk2rct(amount_blinding_factor_out)) == expected_amount_commitment))
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_legacy_amount_v1(const rct::key &expected_amount_commitment,
+    const rct::key &destination_viewkey,
+    const std::uint64_t tx_output_index,
+    const crypto::secret_key &enote_ephemeral_privkey,
+    const rct::key &encoded_amount_blinding_factor,
+    const rct::key &encoded_amount,
+    hw::device &hwdev,
+    crypto::secret_key &amount_blinding_factor_out,
+    rct::xmr_amount &amount_out)
+{
+    // Hn(r K^v, t)
+    crypto::secret_key sender_receiver_secret;
+    make_legacy_sender_receiver_secret(destination_viewkey,
+        tx_output_index,
+        enote_ephemeral_privkey,
+        hwdev,
+        sender_receiver_secret);
+
+    // complete the decoding
+    return try_get_legacy_amount_v1(expected_amount_commitment,
+        sender_receiver_secret,
+        encoded_amount_blinding_factor,
+        encoded_amount,
+        hwdev,
+        amount_blinding_factor_out,
+        amount_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_legacy_amount_v2(const rct::key &expected_amount_commitment,
+    const crypto::secret_key &sender_receiver_secret,
+    const jamtis::encoded_amount_t &encoded_amount,
+    hw::device &hwdev,
+    crypto::secret_key &amount_blinding_factor_out,
+    rct::xmr_amount &amount_out)
+{
+    // 1. a = enc(a) XOR_8 H32("amount", Hn(r K^v, t))
+    rct::ecdhTuple decoded_amount_info;
+    static_assert(sizeof(decoded_amount_info.amount) >= sizeof(encoded_amount), "");
+    memcpy(decoded_amount_info.amount.bytes, encoded_amount.bytes, sizeof(encoded_amount));
+    hwdev.ecdhDecode(decoded_amount_info, rct::sk2rct(sender_receiver_secret), true);
+
+    amount_out = h2d(decoded_amount_info.amount);  //todo: is this endian-aware?
+
+    // 2. x = Hn("commitment_mask", Hn(r K^v, t))
+    make_legacy_amount_blinding_factor_v2(sender_receiver_secret, hwdev, amount_blinding_factor_out);
+
+    // 3. try to reproduce the amount commitment (sanity check)
+    if (!(rct::commit(amount_out, rct::sk2rct(amount_blinding_factor_out)) == expected_amount_commitment))
+        return false;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool try_get_legacy_amount_v2(const rct::key &expected_amount_commitment,
+    const rct::key &destination_viewkey,
+    const std::uint64_t tx_output_index,
+    const crypto::secret_key &enote_ephemeral_privkey,
+    const jamtis::encoded_amount_t &encoded_amount,
+    hw::device &hwdev,
+    crypto::secret_key &amount_blinding_factor_out,
+    rct::xmr_amount &amount_out)
+{
+    // Hn(r K^v, t)
+    crypto::secret_key sender_receiver_secret;
+    make_legacy_sender_receiver_secret(destination_viewkey,
+        tx_output_index,
+        enote_ephemeral_privkey,
+        hwdev,
+        sender_receiver_secret);
+
+    // complete the decoding
+    return try_get_legacy_amount_v2(expected_amount_commitment,
+        sender_receiver_secret,
+        encoded_amount,
+        hwdev,
+        amount_blinding_factor_out,
+        amount_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_view_tag(const rct::key &destination_viewkey,
     const std::uint64_t tx_output_index,
     const crypto::secret_key &enote_ephemeral_privkey,
+    hw::device &hwdev,
     crypto::view_tag &view_tag_out)
 {
     // r K^v
     crypto::key_derivation derivation;
-    hw::get_device("default").generate_key_derivation(rct::rct2pk(destination_viewkey),
+    hwdev.generate_key_derivation(rct::rct2pk(destination_viewkey),
         enote_ephemeral_privkey,
         derivation);
 
     // view_tag = H_1("view_tag", r K^v, t)
-    crypto::derive_view_tag(derivation, tx_output_index, view_tag_out);
+    hwdev.derive_view_tag(derivation, tx_output_index, view_tag_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_append_legacy_enote_ephemeral_pubkeys_to_tx_extra(const std::vector<rct::key> &enote_ephemeral_pubkeys,

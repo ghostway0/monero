@@ -202,6 +202,7 @@ static void prepare_mock_v5_legacy_enote_for_transfer(const rct::key &destinatio
         legacy_subaddress_map,
         legacy_spend_privkey,
         legacy_view_privkey,
+        hw::get_device("default"),
         full_record_recovered));
 
     key_image_out = full_record_recovered.m_key_image;

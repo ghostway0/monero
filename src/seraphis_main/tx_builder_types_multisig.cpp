@@ -82,6 +82,7 @@ void get_legacy_input_proposal_v1(const LegacyMultisigInputProposalV1 &multisig_
             legacy_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
+            hw::get_device("default"),
             legacy_intermediate_record),
         "legacy multisig input proposal to legacy input proposal: could not recover intermediate enote record for input"
         "proposal's enote.");
@@ -208,6 +209,7 @@ bool matches_with(const LegacyMultisigInputProposalV1 &multisig_input_proposal,
     crypto::key_image auxilliary_key_image;
     make_legacy_auxilliary_key_image_v1(multisig_input_proposal.m_commitment_mask,
         onetime_address_ref(multisig_input_proposal.m_enote),
+        hw::get_device("default"),
         auxilliary_key_image);
 
     if (!(auxilliary_key_image == proof_proposal.D))

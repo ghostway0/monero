@@ -70,6 +70,7 @@ void make_legacy_enote_v1(const rct::key &destination_spendkey,
         destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
+        hw::get_device("default"),
         enote_out.m_onetime_address);
 
     // amount: a
@@ -88,6 +89,7 @@ void make_legacy_enote_v2(const rct::key &destination_spendkey,
         destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
+        hw::get_device("default"),
         enote_out.m_onetime_address);
 
     // amount commitment: x G + a H
@@ -101,6 +103,7 @@ void make_legacy_enote_v2(const rct::key &destination_spendkey,
         enote_ephemeral_privkey,
         amount_mask,
         amount,
+        hw::get_device("default"),
         enote_out.m_encoded_amount_blinding_factor,
         enote_out.m_encoded_amount);
 }
@@ -117,11 +120,16 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
         destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
+        hw::get_device("default"),
         enote_out.m_onetime_address);
 
     // amount commitment: Hn("commitment_mask", Hn(r K^v, t)) G + a H
     crypto::secret_key amount_mask;
-    make_legacy_amount_blinding_factor_v2(destination_viewkey, output_index, enote_ephemeral_privkey, amount_mask);
+    make_legacy_amount_blinding_factor_v2(destination_viewkey,
+        output_index,
+        enote_ephemeral_privkey,
+        hw::get_device("default"),
+        amount_mask);
 
     enote_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
 
@@ -130,6 +138,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         amount,
+        hw::get_device("default"),
         enote_out.m_encoded_amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -145,13 +154,18 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
         destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
+        hw::get_device("default"),
         enote_out.m_onetime_address);
 
     // amount: a
     enote_out.m_amount = amount;
 
     // view tag: 
-    make_legacy_view_tag(destination_viewkey, output_index, enote_ephemeral_privkey, enote_out.m_view_tag);
+    make_legacy_view_tag(destination_viewkey,
+        output_index,
+        enote_ephemeral_privkey,
+        hw::get_device("default"),
+        enote_out.m_view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v5(const rct::key &destination_spendkey,
@@ -166,11 +180,16 @@ void make_legacy_enote_v5(const rct::key &destination_spendkey,
         destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
+        hw::get_device("default"),
         enote_out.m_onetime_address);
 
     // amount commitment: Hn("commitment_mask", Hn(r K^v, t)) G + a H
     crypto::secret_key amount_mask;
-    make_legacy_amount_blinding_factor_v2(destination_viewkey, output_index, enote_ephemeral_privkey, amount_mask);
+    make_legacy_amount_blinding_factor_v2(destination_viewkey,
+        output_index,
+        enote_ephemeral_privkey,
+        hw::get_device("default"),
+        amount_mask);
 
     enote_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
 
@@ -179,10 +198,15 @@ void make_legacy_enote_v5(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         amount,
+        hw::get_device("default"),
         enote_out.m_encoded_amount);
 
     // view tag: 
-    make_legacy_view_tag(destination_viewkey, output_index, enote_ephemeral_privkey, enote_out.m_view_tag);
+    make_legacy_view_tag(destination_viewkey,
+        output_index,
+        enote_ephemeral_privkey,
+        hw::get_device("default"),
+        enote_out.m_view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_ephemeral_pubkey_shared(const crypto::secret_key &enote_ephemeral_privkey,

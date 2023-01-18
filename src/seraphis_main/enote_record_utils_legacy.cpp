@@ -26,23 +26,18 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "enote_record_utils_legacy.h"
 
 //local headers
-#include "contextual_enote_record_types.h"
 #include "crypto/crypto.h"
 extern "C"
 {
 #include "crypto/crypto-ops.h"
-#include "crypto/hash-ops.h"
 }
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
 #include "enote_record_types.h"
-#include "int-util.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/legacy_core_utils.h"
@@ -54,6 +49,7 @@ extern "C"
 #include <boost/optional/optional.hpp>
 
 //standard headers
+#include <unordered_map>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
@@ -62,12 +58,39 @@ namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+bool try_add_legacy_subaddress_spendkey(const boost::optional<cryptonote::subaddress_index> &address_index,
+    const rct::key &legacy_base_spend_pubkey,
+    const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
+    std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map_inout)
+{
+    // 1. check if there is an address index
+    if (!address_index)
+        return false;
+
+    // 2. make the subaddress spendkey
+    rct::key subaddress_spendkey;
+    make_legacy_subaddress_spendkey(legacy_base_spend_pubkey,
+        legacy_view_privkey,
+        *address_index,
+        hwdev,
+        subaddress_spendkey);
+
+    // 3. add it to the map
+    legacy_subaddress_map_inout[subaddress_spendkey] = *address_index;
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static bool try_check_legacy_view_tag(const LegacyEnoteVariant &enote,
     const rct::key &enote_ephemeral_pubkey,
     const std::uint64_t tx_output_index,
-    const crypto::key_derivation &sender_receiver_DH_derivation)
+    const crypto::key_derivation &sender_receiver_DH_derivation,
+    hw::device &hwdev)
 {
-    // only legacy enotes v4 and v5 have a view tag
+    // 1. obtain the view tag
+    // - only legacy enotes v4 and v5 have a view tag
     crypto::view_tag enote_view_tag;
 
     if (enote.is_type<LegacyEnoteV4>())
@@ -75,13 +98,17 @@ static bool try_check_legacy_view_tag(const LegacyEnoteVariant &enote,
     else if (enote.is_type<LegacyEnoteV5>())
         enote_view_tag = enote.unwrap<LegacyEnoteV5>().m_view_tag;
     else
+        return true;  //check succeeds automatically for enotes with no view tag
+
+    // 2. view_tag = H_1("view_tag", r K^v, t)
+    crypto::view_tag nominal_view_tag;
+    hwdev.derive_view_tag(sender_receiver_DH_derivation, tx_output_index, nominal_view_tag);
+
+    // 3. check the view tag
+    if (nominal_view_tag == enote_view_tag)
         return true;
 
-    // view_tag = H_1("view_tag", r K^v, t)
-    crypto::view_tag nominal_view_tag;
-    crypto::derive_view_tag(sender_receiver_DH_derivation, tx_output_index, nominal_view_tag);
-
-    return nominal_view_tag == enote_view_tag;
+    return false;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -93,21 +120,21 @@ static bool try_check_legacy_nominal_spendkey(const rct::key &onetime_address,
     hw::device &hwdev,
     boost::optional<cryptonote::subaddress_index> &address_index_out)
 {
-    // Ko - Hn(r Kv, t) G
+    // 1. nominal spendkey = Ko - Hn(r Kv, t) G
     crypto::public_key nominal_spendkey;
     hwdev.derive_subaddress_public_key(rct::rct2pk(onetime_address),
         sender_receiver_DH_derivation,
         tx_output_index,
         nominal_spendkey);
 
-    // check base spendkey
+    // 2. check base spendkey
     if (rct::pk2rct(nominal_spendkey) == legacy_base_spend_pubkey)
     {
         address_index_out = boost::none;
         return true;
     }
 
-    // check subaddress map
+    // 3. check subaddress map
     if (legacy_subaddress_map.find(rct::pk2rct(nominal_spendkey)) != legacy_subaddress_map.end())
     {
         address_index_out = legacy_subaddress_map.at(rct::pk2rct(nominal_spendkey));
@@ -122,8 +149,8 @@ static bool try_get_amount_commitment_information_v1(const rct::xmr_amount &enot
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    amount_out = enote_amount;
-    amount_blinding_factor_out = rct::rct2sk(rct::identity());
+    amount_out                 = enote_amount;
+    amount_blinding_factor_out = rct::rct2sk(rct::I);
 
     return true;
 }
@@ -134,26 +161,25 @@ static bool try_get_amount_commitment_information_v2(const rct::key &amount_comm
     const rct::key &encoded_amount,
     const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
+    hw::device &hwdev,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    // 1. recover amount and blinding factor
-    // a. Hn(k^v R_t, t)
+    // 1. Hn(k^v R_t, t)
     crypto::secret_key sender_receiver_secret;
-    crypto::derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, sender_receiver_secret);
+    hwdev.derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, sender_receiver_secret);
 
-    // b. decode amount mask: x = enc(x) - Hn(Hn(r K^v, t))
-    const rct::key mask_factor{rct::hash_to_scalar(rct::sk2rct(sender_receiver_secret))};  //Hn(Hn(r K^v, t))
-    sc_sub(to_bytes(amount_blinding_factor_out), encoded_amount_mask.bytes, mask_factor.bytes);
+    // 2. recover the amount mask and amount
+    if (!try_get_legacy_amount_v1(amount_commitment,
+            sender_receiver_secret,
+            encoded_amount_mask,
+            encoded_amount,
+            hwdev,
+            amount_blinding_factor_out,
+            amount_out))
+        return false;
 
-    // c. decode amount: to_key(a) = enc(a) - Hn(Hn(Hn(r K^v, t)))
-    const rct::key amount_factor{rct::hash_to_scalar(mask_factor)};                        //Hn(Hn(Hn(r K^v, t)))
-    rct::key amount_serialized;
-    sc_sub(amount_serialized.bytes, encoded_amount.bytes, amount_factor.bytes);
-    amount_out = h2d(amount_serialized);
-
-    // 2. try to reproduce amount commitment (sanity check)
-    return rct::commit(amount_out, rct::sk2rct(amount_blinding_factor_out)) == amount_commitment;
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -161,30 +187,31 @@ static bool try_get_amount_commitment_information_v3(const rct::key &amount_comm
     const jamtis::encoded_amount_t &encoded_amount,
     const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
+    hw::device &hwdev,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    // 1. recover amount and blinding factor
-    // a. Hn(k^v R_t, t)
+    // 1. Hn(k^v R_t, t)
     crypto::secret_key sender_receiver_secret;
-    crypto::derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, sender_receiver_secret);
+    hwdev.derivation_to_scalar(sender_receiver_DH_derivation, tx_output_index, sender_receiver_secret);
 
-    // b. recover amount mask: x = Hn("commitment_mask", Hn(r K^v, t))
-    make_legacy_amount_blinding_factor_v2(sender_receiver_secret, amount_blinding_factor_out);
+    // 2. recover the amount mask and amount
+    if (!try_get_legacy_amount_v2(amount_commitment,
+            sender_receiver_secret,
+            encoded_amount,
+            hwdev,
+            amount_blinding_factor_out,
+            amount_out))
+        return false;
 
-    // c. decode amount: a = enc(a) XOR8 Hn("amount", Hn(r K^v, t)))
-    rct::key amount_encoding_factor;
-    make_legacy_amount_encoding_factor_v2(sender_receiver_secret, amount_encoding_factor);
-    amount_out = legacy_xor_encoded_amount(encoded_amount, amount_encoding_factor);
-
-    // 2. try to reproduce amount commitment (sanity check)
-    return rct::commit(amount_out, rct::sk2rct(amount_blinding_factor_out)) == amount_commitment;
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enote,
     const std::uint64_t tx_output_index,
     const crypto::key_derivation &sender_receiver_DH_derivation,
+    hw::device &hwdev,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
@@ -201,6 +228,7 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
             enote.unwrap<LegacyEnoteV2>().m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
+            hwdev,
             amount_out,
             amount_blinding_factor_out);
     }
@@ -210,6 +238,7 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
             enote.unwrap<LegacyEnoteV3>().m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
+            hwdev,
             amount_out,
             amount_blinding_factor_out);
     }
@@ -225,6 +254,7 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
             enote.unwrap<LegacyEnoteV5>().m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
+            hwdev,
             amount_out,
             amount_blinding_factor_out);
     }
@@ -239,45 +269,49 @@ static bool try_get_intermediate_legacy_enote_record_info(const LegacyEnoteVaria
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     crypto::secret_key &enote_view_extension_out,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out,
     boost::optional<cryptonote::subaddress_index> &subaddress_index_out)
 {
-    // r K^v = k^v R
+    // 1. r K^v = k^v R
     crypto::key_derivation sender_receiver_DH_derivation;
-    crypto::generate_key_derivation(rct::rct2pk(enote_ephemeral_pubkey),
+    hwdev.generate_key_derivation(rct::rct2pk(enote_ephemeral_pubkey),
         legacy_view_privkey,
         sender_receiver_DH_derivation);
 
-    // check view tag (for enotes that have it)
+    // 2. check view tag (for enotes that have it)
     if (!try_check_legacy_view_tag(enote,
             enote_ephemeral_pubkey,
             tx_output_index,
-            sender_receiver_DH_derivation))
+            sender_receiver_DH_derivation,
+            hwdev))
         return false;
 
-    // nominal spendkey check (and get subaddress index if applicable)
+    // 3. nominal spendkey check (and get subaddress index if applicable)
     if (!try_check_legacy_nominal_spendkey(onetime_address_ref(enote),
             tx_output_index,
             sender_receiver_DH_derivation,
             legacy_base_spend_pubkey,
             legacy_subaddress_map,
-            hw::get_device("default"),
+            hwdev,
             subaddress_index_out))
         return false;
 
-    // compute enote view privkey
+    // 4. compute enote view privkey
     make_legacy_enote_view_extension(tx_output_index,
         sender_receiver_DH_derivation,
         legacy_view_privkey,
         subaddress_index_out,
+        hwdev,
         enote_view_extension_out);
 
-    // try to get amount commitment information
+    // 5. try to get amount commitment information
     if (!try_get_amount_commitment_information(enote,
             tx_output_index,
             sender_receiver_DH_derivation,
+            hwdev,
             amount_out,
             amount_blinding_factor_out))
         return false;
@@ -296,14 +330,15 @@ bool try_get_legacy_basic_enote_record(const LegacyEnoteVariant &enote,
     hw::device &hwdev,
     LegacyBasicEnoteRecord &basic_record_out)
 {
-    // check view tag (for enotes that have it)
+    // 1. check view tag (for enotes that have it)
     if (!try_check_legacy_view_tag(enote,
             enote_ephemeral_pubkey,
             tx_output_index,
-            sender_receiver_DH_derivation))
+            sender_receiver_DH_derivation,
+            hwdev))
         return false;
 
-    // nominal spendkey check (and get subaddress index if applicable)
+    // 2. nominal spendkey check (and get subaddress index if applicable)
     if (!try_check_legacy_nominal_spendkey(onetime_address_ref(enote),
             tx_output_index,
             sender_receiver_DH_derivation,
@@ -313,11 +348,11 @@ bool try_get_legacy_basic_enote_record(const LegacyEnoteVariant &enote,
             basic_record_out.m_address_index))
         return false;
 
-    // set miscellaneous fields
-    basic_record_out.m_enote = enote;
+    // 3. set miscellaneous fields
+    basic_record_out.m_enote                  = enote;
     basic_record_out.m_enote_ephemeral_pubkey = enote_ephemeral_pubkey;
-    basic_record_out.m_tx_output_index = tx_output_index;
-    basic_record_out.m_unlock_time = unlock_time;
+    basic_record_out.m_tx_output_index        = tx_output_index;
+    basic_record_out.m_unlock_time            = unlock_time;
 
     return true;
 }
@@ -332,11 +367,13 @@ bool try_get_legacy_basic_enote_record(const LegacyEnoteVariant &enote,
     hw::device &hwdev,
     LegacyBasicEnoteRecord &basic_record_out)
 {
-    // r K^v = k^v R
+    // 1. r K^v = k^v R
     crypto::key_derivation sender_receiver_DH_derivation;
-    hwdev.generate_key_derivation(rct::rct2pk(enote_ephemeral_pubkey), legacy_view_privkey, sender_receiver_DH_derivation);
+    hwdev.generate_key_derivation(rct::rct2pk(enote_ephemeral_pubkey),
+        legacy_view_privkey,
+        sender_receiver_DH_derivation);
 
-    // finish getting record
+    // 2. finish getting the record
     return try_get_legacy_basic_enote_record(enote,
         enote_ephemeral_pubkey,
         tx_output_index,
@@ -355,26 +392,28 @@ bool try_get_legacy_intermediate_enote_record(const LegacyEnoteVariant &enote,
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyIntermediateEnoteRecord &record_out)
 {
-    // try to get intermediate info
+    // 1. try to get intermediate info
     if (!try_get_intermediate_legacy_enote_record_info(enote,
             enote_ephemeral_pubkey,
             tx_output_index,
             legacy_base_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
+            hwdev,
             record_out.m_enote_view_extension,
             record_out.m_amount,
             record_out.m_amount_blinding_factor,
             record_out.m_address_index))
         return false;
 
-    // collect miscellaneous pieces
-    record_out.m_enote = enote;
+    // 2. collect miscellaneous pieces
+    record_out.m_enote                  = enote;
     record_out.m_enote_ephemeral_pubkey = enote_ephemeral_pubkey;
-    record_out.m_tx_output_index = tx_output_index;
-    record_out.m_unlock_time = unlock_time;
+    record_out.m_tx_output_index        = tx_output_index;
+    record_out.m_unlock_time            = unlock_time;
 
     return true;
 }
@@ -382,23 +421,18 @@ bool try_get_legacy_intermediate_enote_record(const LegacyEnoteVariant &enote,
 bool try_get_legacy_intermediate_enote_record(const LegacyBasicEnoteRecord &basic_record,
     const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyIntermediateEnoteRecord &record_out)
 {
-    // if the enote is owned by a subaddress, make the subaddress spendkey
+    // 1. if the enote is owned by a subaddress, make the subaddress spendkey
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
+    try_add_legacy_subaddress_spendkey(basic_record.m_address_index,
+        legacy_base_spend_pubkey,
+        legacy_view_privkey,
+        hwdev,
+        legacy_subaddress_map);
 
-    if (basic_record.m_address_index)
-    {
-        rct::key subaddress_spendkey;
-        make_legacy_subaddress_spendkey(legacy_base_spend_pubkey,
-            legacy_view_privkey,
-            *(basic_record.m_address_index),
-            subaddress_spendkey);
-
-        legacy_subaddress_map[subaddress_spendkey] = *(basic_record.m_address_index);
-    }
-
-    // finish getting the intermediate enote record
+    // 2. finish getting the intermediate enote record
     return try_get_legacy_intermediate_enote_record(basic_record.m_enote,
         basic_record.m_enote_ephemeral_pubkey,
         basic_record.m_tx_output_index,
@@ -406,6 +440,7 @@ bool try_get_legacy_intermediate_enote_record(const LegacyBasicEnoteRecord &basi
         legacy_base_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
+        hwdev,
         record_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -417,32 +452,35 @@ bool try_get_legacy_enote_record(const LegacyEnoteVariant &enote,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out)
 {
-    // try to get intermediate info (non-spendkey information)
+    // 1. try to get intermediate info
     if (!try_get_intermediate_legacy_enote_record_info(enote,
             enote_ephemeral_pubkey,
             tx_output_index,
             legacy_base_spend_pubkey,
             legacy_subaddress_map,
             legacy_view_privkey,
+            hwdev,
             record_out.m_enote_view_extension,
             record_out.m_amount,
             record_out.m_amount_blinding_factor,
             record_out.m_address_index))
         return false;
 
-    // compute the key image
+    // 2. compute the key image
     make_legacy_key_image(record_out.m_enote_view_extension,
         legacy_spend_privkey,
         onetime_address_ref(enote),
+        hwdev,
         record_out.m_key_image);
 
-    // collect miscellaneous pieces
-    record_out.m_enote = enote;
+    // 3. collect miscellaneous pieces
+    record_out.m_enote                  = enote;
     record_out.m_enote_ephemeral_pubkey = enote_ephemeral_pubkey;
-    record_out.m_tx_output_index = tx_output_index;
-    record_out.m_unlock_time = unlock_time;
+    record_out.m_tx_output_index        = tx_output_index;
+    record_out.m_unlock_time            = unlock_time;
 
     return true;
 }
@@ -451,23 +489,18 @@ bool try_get_legacy_enote_record(const LegacyBasicEnoteRecord &basic_record,
     const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out)
 {
-    // if the enote is owned by a subaddress, make the subaddress spendkey
+    // 1. if the enote is owned by a subaddress, make the subaddress spendkey
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
+    try_add_legacy_subaddress_spendkey(basic_record.m_address_index,
+        legacy_base_spend_pubkey,
+        legacy_view_privkey,
+        hwdev,
+        legacy_subaddress_map);
 
-    if (basic_record.m_address_index)
-    {
-        rct::key subaddress_spendkey;
-        make_legacy_subaddress_spendkey(legacy_base_spend_pubkey,
-            legacy_view_privkey,
-            *(basic_record.m_address_index),
-            subaddress_spendkey);
-
-        legacy_subaddress_map[subaddress_spendkey] = *(basic_record.m_address_index);
-    }
-
-    // finish getting the full enote record
+    // 2. finish getting the full enote record
     return try_get_legacy_enote_record(basic_record.m_enote,
         basic_record.m_enote_ephemeral_pubkey,
         basic_record.m_tx_output_index,
@@ -476,6 +509,7 @@ bool try_get_legacy_enote_record(const LegacyBasicEnoteRecord &basic_record,
         legacy_subaddress_map,
         legacy_spend_privkey,
         legacy_view_privkey,
+        hwdev,
         record_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -483,29 +517,31 @@ void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_r
     const crypto::key_image &key_image,
     LegacyEnoteRecord &record_out)
 {
-    record_out.m_enote = intermediate_record.m_enote;
+    record_out.m_enote                  = intermediate_record.m_enote;
     record_out.m_enote_ephemeral_pubkey = intermediate_record.m_enote_ephemeral_pubkey;
-    record_out.m_enote_view_extension = intermediate_record.m_enote_view_extension;
-    record_out.m_amount = intermediate_record.m_amount;
+    record_out.m_enote_view_extension   = intermediate_record.m_enote_view_extension;
+    record_out.m_amount                 = intermediate_record.m_amount;
     record_out.m_amount_blinding_factor = intermediate_record.m_amount_blinding_factor;
-    record_out.m_key_image = key_image;
-    record_out.m_address_index = intermediate_record.m_address_index;
-    record_out.m_tx_output_index = intermediate_record.m_tx_output_index;
-    record_out.m_unlock_time = intermediate_record.m_unlock_time;
+    record_out.m_key_image              = key_image;
+    record_out.m_address_index          = intermediate_record.m_address_index;
+    record_out.m_tx_output_index        = intermediate_record.m_tx_output_index;
+    record_out.m_unlock_time            = intermediate_record.m_unlock_time;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_record,
     const crypto::secret_key &legacy_spend_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out)
 {
-    // make key image: ((view key stuff) + k^s) * Hp(Ko)
+    // 1. make key image: ((view key stuff) + k^s) * Hp(Ko)
     crypto::key_image key_image;
     make_legacy_key_image(intermediate_record.m_enote_view_extension,
         legacy_spend_privkey,
         onetime_address_ref(intermediate_record.m_enote),
+        hwdev,
         key_image);
 
-    // assemble data
+    // 2. assemble data
     get_legacy_enote_record(intermediate_record, key_image, record_out);
 }
 //-------------------------------------------------------------------------------------------------------------------

@@ -26,16 +26,13 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Utilities for obtaining legacy enote records.
-
 
 #pragma once
 
 //local headers
-#include "contextual_enote_record_types.h"
 #include "crypto/crypto.h"
+#include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
 #include "enote_record_types.h"
 #include "ringct/rctTypes.h"
@@ -44,6 +41,7 @@
 //third party headers
 
 //standard headers
+#include <unordered_map>
 
 //forward declarations
 
@@ -101,10 +99,12 @@ bool try_get_legacy_intermediate_enote_record(const LegacyEnoteVariant &enote,
     const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyIntermediateEnoteRecord &record_out);
 bool try_get_legacy_intermediate_enote_record(const LegacyBasicEnoteRecord &basic_record,
     const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyIntermediateEnoteRecord &record_out);
 /**
 * brief: try_get_legacy_enote_record - try to extract a legacy enote record from a legacy enote
@@ -127,17 +127,20 @@ bool try_get_legacy_enote_record(const LegacyEnoteVariant &enote,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out);
 bool try_get_legacy_enote_record(const LegacyBasicEnoteRecord &basic_record,
     const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out);
 void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_record,
     const crypto::key_image &key_image,
     LegacyEnoteRecord &record_out);
 void get_legacy_enote_record(const LegacyIntermediateEnoteRecord &intermediate_record,
     const crypto::secret_key &legacy_spend_privkey,
+    hw::device &hwdev,
     LegacyEnoteRecord &record_out);
 
 } //namespace sp

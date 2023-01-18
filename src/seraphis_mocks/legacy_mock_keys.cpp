@@ -65,6 +65,7 @@ void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
     make_legacy_subaddress_spendkey(legacy_base_spend_pubkey,
         legacy_view_privkey,
         subaddr_index_out,
+        hw::get_device("default"),
         subaddr_spendkey_out);
 
     // subaddress viewkey: k^v * K^{s,i}

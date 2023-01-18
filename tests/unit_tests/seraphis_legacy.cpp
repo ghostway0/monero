@@ -91,6 +91,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
     ASSERT_NO_THROW(ASSERT_TRUE(try_get_legacy_intermediate_enote_record(basic_record_recovered,
         legacy_base_spend_pubkey,
         legacy_view_privkey,
+        hw::get_device("default"),
         intermediate_record_recovered_from_basic)));
 
     ASSERT_TRUE(intermediate_record_recovered_from_basic.m_address_index == expected_recieving_index);
@@ -106,6 +107,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         legacy_base_spend_pubkey,
         legacy_subaddress_map,
         legacy_view_privkey,
+        hw::get_device("default"),
         intermediate_record_recovered)));
 
     ASSERT_TRUE(intermediate_record_recovered.m_address_index == expected_recieving_index);
@@ -118,6 +120,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         legacy_base_spend_pubkey,
         legacy_spend_privkey,
         legacy_view_privkey,
+        hw::get_device("default"),
         full_record_recovered_from_basic)));
 
     ASSERT_TRUE(full_record_recovered_from_basic.m_address_index == expected_recieving_index);
@@ -128,6 +131,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
 
     ASSERT_NO_THROW(get_legacy_enote_record(intermediate_record_recovered,
         legacy_spend_privkey,
+        hw::get_device("default"),
         full_record_recovered_from_intermediate));
 
     ASSERT_TRUE(full_record_recovered_from_intermediate.m_address_index == expected_recieving_index);
@@ -145,6 +149,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         legacy_subaddress_map,
         legacy_spend_privkey,
         legacy_view_privkey,
+        hw::get_device("default"),
         full_record_recovered));
 
     ASSERT_TRUE(full_record_recovered.m_address_index == expected_recieving_index);

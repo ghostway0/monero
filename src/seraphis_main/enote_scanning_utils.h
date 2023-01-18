@@ -94,6 +94,7 @@ void process_chunk_intermediate_legacy(const rct::key &legacy_base_spend_pubkey,
     const std::function<bool(const crypto::key_image&)> &check_key_image_is_known_func,
     const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
     const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+    hw::device &hwdev,
     // note: mapped to H32(Ko, a) so enotes with the same key image but different amounts will be recovered
     std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records_inout,
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images_inout);
@@ -110,6 +111,7 @@ void process_chunk_full_legacy(const rct::key &legacy_base_spend_pubkey,
     const std::function<bool(const crypto::key_image&)> &check_key_image_is_known_func,
     const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
     const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+    hw::device &hwdev,
     // note: mapped to H32(Ko, a) so enotes with the same key image but different amounts will be recovered
     std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records_inout,
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images_inout);
