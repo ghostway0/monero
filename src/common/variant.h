@@ -105,7 +105,7 @@ public:
 
     /// check the variant type
     template <typename T>
-    bool is_type() const noexcept { return boost::strict_get<T>(&m_value) != nullptr; }
+    bool is_type() const noexcept { return this->index() == this->type_index_of<T>(); }
 
     /// get a read-only handle to the embedded value
     template <typename T>
