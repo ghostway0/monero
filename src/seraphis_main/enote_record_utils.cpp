@@ -213,6 +213,8 @@ static bool try_get_amount_commitment_information(const SpEnoteVariant &enote,
             amount_out,
             amount_blinding_factor_out);
     }
+    else
+        CHECK_AND_ASSERT_THROW_MES(false, "try get amount commitment information: unknown enote type.");
 
     return false;
 }

@@ -30,6 +30,7 @@
 #include "enote_record_utils_legacy.h"
 
 //local headers
+#include "common/variant.h"
 #include "crypto/crypto.h"
 extern "C"
 {
@@ -91,13 +92,19 @@ static bool try_check_legacy_view_tag(const LegacyEnoteVariant &enote,
 {
     // 1. obtain the view tag
     // - only legacy enotes v4 and v5 have a view tag
-    crypto::view_tag enote_view_tag;
+    struct visitor final : public tools::variant_static_visitor<boost::optional<crypto::view_tag>>
+    {
+        using variant_static_visitor::operator();  //for blank overload
+        boost::optional<crypto::view_tag> operator()(const LegacyEnoteV1 &enote) const { return boost::none; }
+        boost::optional<crypto::view_tag> operator()(const LegacyEnoteV2 &enote) const { return boost::none; }
+        boost::optional<crypto::view_tag> operator()(const LegacyEnoteV3 &enote) const { return boost::none; }
+        boost::optional<crypto::view_tag> operator()(const LegacyEnoteV4 &enote) const { return enote.m_view_tag; }
+        boost::optional<crypto::view_tag> operator()(const LegacyEnoteV5 &enote) const { return enote.m_view_tag; }
+    };
 
-    if (enote.is_type<LegacyEnoteV4>())
-        enote_view_tag = enote.unwrap<LegacyEnoteV4>().m_view_tag;
-    else if (enote.is_type<LegacyEnoteV5>())
-        enote_view_tag = enote.unwrap<LegacyEnoteV5>().m_view_tag;
-    else
+    const boost::optional<crypto::view_tag> enote_view_tag{enote.visit(visitor{})};
+
+    if (!enote_view_tag)
         return true;  //check succeeds automatically for enotes with no view tag
 
     // 2. view_tag = H_1("view_tag", r K^v, t)
@@ -105,7 +112,7 @@ static bool try_check_legacy_view_tag(const LegacyEnoteVariant &enote,
     hwdev.derive_view_tag(sender_receiver_DH_derivation, tx_output_index, nominal_view_tag);
 
     // 3. check the view tag
-    if (nominal_view_tag == enote_view_tag)
+    if (nominal_view_tag == *enote_view_tag)
         return true;
 
     return false;
@@ -258,6 +265,8 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
             amount_out,
             amount_blinding_factor_out);
     }
+    else
+        CHECK_AND_ASSERT_THROW_MES(false, "try get legacy amount commitment information: unknown enote type.");
 
     return false;
 }
