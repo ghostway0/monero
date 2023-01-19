@@ -41,6 +41,7 @@
 #include <iostream>
 #include <memory>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
 
 using namespace sp;
@@ -214,6 +215,103 @@ static void run_mock_tx_test_batch(const std::vector<SpTxGenData> &gen_data)
     {
         // validate tx
         EXPECT_TRUE(validate_txs(txs_to_verify_ptrs, tx_validation_context));
+    }
+    catch (...)
+    {
+        EXPECT_TRUE(expected_result == TestType::ExpectAnyThrow);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename SpTxType>
+static bool validate_tx_against_cache(const SpTxType &tx,
+    const TxValidationContextMock &validation_context,
+    const bool tx_should_be_in_cache_flag,
+    std::unordered_set<rct::key> &valid_txs_cache_inout)
+{
+    // 1. try to get this tx's contextual validation id
+    rct::key tx_contextual_validation_id;
+    if (!try_get_tx_contextual_validation_id(tx, validation_context, tx_contextual_validation_id))
+        return false;
+
+    // 2. check the id against the cache of known-valid txs
+    if ((valid_txs_cache_inout.find(tx_contextual_validation_id) != valid_txs_cache_inout.end()) !=
+        tx_should_be_in_cache_flag)
+        return false;
+
+    // 3. early return if the result is cached
+    if (tx_should_be_in_cache_flag)
+        return true;
+
+    // 4. fully validate the tx (result was not cached)
+    // NOTE: this duplicates some work done by try_get_tx_contextual_validation_id()
+    if (!validate_tx(tx, validation_context))
+        return false;
+
+    // 5. cache the tx since it is known to be valid
+    valid_txs_cache_inout.insert(tx_contextual_validation_id);
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename SpTxType>
+static void run_mock_tx_test_cached(const std::size_t legacy_ring_size,
+    const std::size_t ref_set_decomp_n,
+    const std::size_t ref_set_decomp_m,
+    const SpBinnedReferenceSetConfigV1 bin_config,
+    const std::vector<rct::xmr_amount> legacy_input_amounts,
+    const std::vector<rct::xmr_amount> sp_input_amounts,
+    const std::vector<rct::xmr_amount> output_amounts,
+    const DiscretizedFee discretized_transaction_fee,
+    const TestType expected_result,
+    const bool test_double_spend,
+    MockLedgerContext &ledger_context_inout)
+{
+    const TxValidationContextMock tx_validation_context{ledger_context_inout};
+
+    try
+    {
+        // mock params
+        SpTxParamPackV1 tx_params;
+
+        tx_params.legacy_ring_size = legacy_ring_size;
+        tx_params.ref_set_decomp_n = ref_set_decomp_n;
+        tx_params.ref_set_decomp_m = ref_set_decomp_m;
+        tx_params.bin_config = bin_config;
+
+        // make tx
+        SpTxType tx;
+        make_mock_tx<SpTxType>(tx_params,
+            legacy_input_amounts,
+            sp_input_amounts,
+            output_amounts,
+            discretized_transaction_fee,
+            ledger_context_inout,
+            tx);
+
+        // validate tx
+        EXPECT_TRUE(validate_tx(tx, tx_validation_context));
+
+        // validate tx against cache
+        std::unordered_set<rct::key> valid_txs_cache;
+        EXPECT_TRUE(validate_tx_against_cache(tx, tx_validation_context, false, valid_txs_cache));  //result isn't cached
+        EXPECT_TRUE(validate_tx_against_cache(tx, tx_validation_context, true, valid_txs_cache));  //result is cached
+
+        if (test_double_spend)
+        {
+            // add key images once validated
+            EXPECT_TRUE(try_add_tx_to_ledger(tx, ledger_context_inout));
+
+            // re-validate tx
+            // - should fail now that key images were added to the ledger
+            EXPECT_FALSE(validate_tx(tx, tx_validation_context));
+            EXPECT_FALSE(validate_tx_against_cache(tx, tx_validation_context, true, valid_txs_cache));
+
+            // re-validate tx with a fresh cache
+            std::unordered_set<rct::key> valid_txs_cache_fresh;
+            EXPECT_FALSE(validate_tx_against_cache(tx, tx_validation_context, false, valid_txs_cache_fresh));
+        }
     }
     catch (...)
     {
@@ -425,6 +523,17 @@ TEST(seraphis_tx, seraphis_coinbase)
         TestType::ExpectTrue,
         false,
         ledger_context);
+    run_mock_tx_test_cached<SpTxCoinbaseV1>(0,
+        0,
+        0,
+        SpBinnedReferenceSetConfigV1{},
+        {1},
+        {},
+        {1},
+        discretize_fee(0),
+        TestType::ExpectTrue,
+        false,
+        ledger_context);
 
     // 2 outputs
     run_mock_tx_test<SpTxCoinbaseV1>(0,
@@ -455,6 +564,17 @@ TEST(seraphis_tx, seraphis_squashed_multi_input_type)
     MockLedgerContext ledger_context{0, 10000};
 
     run_mock_tx_test<SpTxSquashedV1>(2,
+        2,
+        2,
+        SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
+        {2, 2},
+        {1, 1},
+        {5},
+        discretize_fee(1),
+        TestType::ExpectTrue,
+        true,
+        ledger_context);
+    run_mock_tx_test_cached<SpTxSquashedV1>(2,
         2,
         2,
         SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
