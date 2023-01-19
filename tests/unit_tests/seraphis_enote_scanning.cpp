@@ -1352,6 +1352,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
 
     // 6. pass funds back and forth to the same account, with a max chunk size > 1 so multiple self-sends can be sent
     //    and spent within a single chunk
+    // NOTE: the run-time of this test varies around 10-20% since the amount of funds transfered in each loop is
+    //       random so some runs will have more total tx inputs and outputs than others
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
