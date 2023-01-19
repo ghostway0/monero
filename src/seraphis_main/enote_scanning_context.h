@@ -26,10 +26,8 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Dependency injector for managing the find-received step of enote scanning.
-
+// Dependency injector for managing the find-received step of enote scanning. Intended to be stateful, managing
+//   a connection to a ledger context and linking together successive 'get chunk' calls.
 
 #pragma once
 
@@ -48,7 +46,7 @@ namespace sp
 
 ////
 // EnoteScanningContextLedger
-// - manages a source of ledger-based enote scanning chunks (i.e. finding potentially owned enotes)
+// - manages a source of ledger-based enote scanning chunks (i.e. finding potentially owned enotes in a ledger)
 ///
 class EnoteScanningContextLedger
 {
@@ -61,15 +59,15 @@ public:
     EnoteScanningContextLedger& operator=(EnoteScanningContextLedger&&) = delete;
 
 //member functions
-    /// tell the enote finder it can start scanning from a specified block height
+    /// tell the scanning context a block height to start scanning from
     virtual void begin_scanning_from_height(const std::uint64_t initial_start_height,
         const std::uint64_t max_chunk_size) = 0;
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
-    /// note: if the chunk is empty, it should represent the top of the current chain
+    /// note: if there is no chunk to return, return an empty chunk representing the top of the current chain
     virtual void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) = 0;
     /// try to get a scanning chunk for the unconfirmed txs in a ledger
     virtual bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
-    /// tell the enote finder to stop its scanning process (should be no-throw no-fail)
+    /// tell the scanning context to stop its scanning process (should be no-throw no-fail)
     virtual void terminate_scanning() = 0;
 };
 

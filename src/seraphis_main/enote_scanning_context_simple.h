@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Simple implementation of a ledger-based enote scanning context.
-
 
 #pragma once
 
@@ -73,7 +70,7 @@ public:
         m_max_chunk_size = max_chunk_size;
     }
     /// get the next available onchain chunk (or empty chunk representing top of current chain)
-    /// - starting past the end of the last chunk acquired since starting to scan
+    /// - start past the end of the last chunk acquired since starting to scan
     void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) override
     {
         m_enote_finding_context.get_onchain_chunk(m_next_start_height, m_max_chunk_size, chunk_out);
@@ -95,7 +92,5 @@ private:
     std::uint64_t m_next_start_height{static_cast<std::uint64_t>(-1)};
     std::uint64_t m_max_chunk_size{0};
 };
-
-//EnoteScanningContextLedgerTest: use mock ledger context, define test case that includes reorgs
 
 } //namespace sp

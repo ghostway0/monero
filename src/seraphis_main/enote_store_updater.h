@@ -26,10 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-//todo
-
+// Dependency injectors for updating an enote storage with new enotes during balance recovery.
 
 #pragma once
 
@@ -76,7 +73,7 @@ public:
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) = 0;
 
-    /// try to get the internal recorded block id for a given height
+    /// try to get the recorded block id for a given height
     virtual bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const = 0;
     /// get height of first block the internal enote store cares about
     virtual std::uint64_t refresh_height() const = 0;
@@ -86,7 +83,7 @@ public:
 
 ////
 // EnoteStoreUpdaterNonLedger
-// - provides an API for updating an enote store with chunks of enotes from find-received scanning(from an offchain context)
+// - provides an API for updating an enote store with chunks of enotes from find-received scanning (from an offchain context)
 ///
 class EnoteStoreUpdaterNonLedger
 {

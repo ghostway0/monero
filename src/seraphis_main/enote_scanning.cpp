@@ -492,7 +492,7 @@ void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         }
 
         // 6. set initial alignment marker (the heighest scanned block that matches with our current enote store's
-        //   recorded block ids)
+        //    recorded block ids)
         ChainContiguityMarker alignment_marker{contiguity_marker};
 
 
