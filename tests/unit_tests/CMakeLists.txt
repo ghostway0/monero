@@ -82,7 +82,7 @@ set(unit_tests_sources
   rolling_median.cpp
   scaling_2021.cpp
   serialization.cpp
-  seraphis.cpp
+  seraphis_basic.cpp
   seraphis_crypto.cpp
   seraphis_enote_scanning.cpp
   seraphis_input_selection.cpp
