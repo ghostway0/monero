@@ -48,7 +48,6 @@
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_legacy_proof_helpers.h"
 #include "seraphis_crypto/sp_transcript.h"
-#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_legacy_inputs.h"
@@ -57,6 +56,7 @@
 #include "tx_component_types_legacy.h"
 #include "tx_input_selection_output_context_v1.h"
 #include "tx_validators.h"
+#include "txtype_base.h"
 #include "txtype_squashed_v1.h"
 
 //third party headers

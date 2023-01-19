@@ -34,12 +34,12 @@
 #include "crypto/crypto.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/discretized_fee.h"
-#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
 #include "tx_input_selection.h"
+#include "txtype_base.h"
 #include "txtype_squashed_v1.h"
 
 //third party headers

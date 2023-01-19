@@ -36,11 +36,11 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/sp_core_types.h"
-#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_component_types.h"
 #include "tx_validation_context.h"
 #include "tx_validators.h"
+#include "txtype_base.h"
 
 //third party headers
 

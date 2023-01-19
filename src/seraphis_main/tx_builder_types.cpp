@@ -36,11 +36,11 @@
 #include "misc_log_ex.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
-#include "tx_base.h"
 #include "tx_builders_inputs.h"
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
+#include "txtype_base.h"
 
 //third party headers
 

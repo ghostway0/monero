@@ -58,7 +58,6 @@
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
-#include "tx_base.h"
 #include "tx_builder_types.h"
 #include "tx_builder_types_legacy.h"
 #include "tx_builder_types_multisig.h"
@@ -68,6 +67,7 @@
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
 #include "tx_input_selection_output_context_v1.h"
+#include "txtype_base.h"
 
 //third party headers
 

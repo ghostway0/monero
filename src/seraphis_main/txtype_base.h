@@ -129,7 +129,7 @@ tx_version_t tx_version_from(const unsigned char tx_semantic_rules_version)
 
 //// core validators
 
-/// specialize the following functions with definitions in tx_base.cpp, so the validate_txs_impl() function from that
+/// specialize the following functions with definitions in txtype_base.cpp, so the validate_txs_impl() function from that
 ///   file will be explicitly instantiated using the formula written there (this way maliciously injected overloads
 ///   of validate_txs_impl() won't be available to the compiler)
 /// bool validate_tx(const SpTxType &tx, const TxValidationContext &tx_validation_context);

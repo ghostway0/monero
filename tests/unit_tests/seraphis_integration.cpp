@@ -54,7 +54,6 @@
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/enote_scanning.h"
 #include "seraphis_main/enote_scanning_context_simple.h"
-#include "seraphis_main/tx_base.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_builders_legacy_inputs.h"
@@ -64,6 +63,7 @@
 #include "seraphis_main/tx_fee_calculator_squashed_v1.h"
 #include "seraphis_main/tx_input_selection.h"
 #include "seraphis_main/tx_input_selection_output_context_v1.h"
+#include "seraphis_main/txtype_base.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 

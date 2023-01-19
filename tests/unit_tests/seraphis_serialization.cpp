@@ -30,7 +30,7 @@
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_main/serialization_demo_types.h"
 #include "seraphis_main/serialization_demo_utils.h"
-#include "seraphis_main/tx_base.h"
+#include "seraphis_main/txtype_base.h"
 #include "seraphis_main/txtype_coinbase_v1.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"

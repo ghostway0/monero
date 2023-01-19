@@ -34,7 +34,6 @@ set(seraphis_main_sources
   enote_scanning.cpp
   enote_scanning_utils.cpp
   serialization_demo_utils.cpp
-  tx_base.cpp
   tx_builder_types.cpp
   tx_builder_types_legacy.cpp
   tx_builder_types_multisig.cpp
@@ -49,6 +48,7 @@ set(seraphis_main_sources
   tx_input_selection.cpp
   tx_input_selection_output_context_v1.cpp
   tx_validators.cpp
+  txtype_base.cpp
   txtype_coinbase_v1.cpp
   txtype_squashed_v1.cpp)
 
