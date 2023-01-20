@@ -49,13 +49,12 @@
 //forward declarations
 namespace sp
 {
-    struct tx_version_t;
-
 namespace jamtis
 {
     struct JamtisPaymentProposalV1;
     struct JamtisPaymentProposalSelfSendV1;
 }
+    struct tx_version_t;
 }
 
 namespace sp
