@@ -373,28 +373,29 @@ bool try_append_legacy_enote_ephemeral_pubkeys_to_tx_extra(const std::vector<rct
 }
 //-------------------------------------------------------------------------------------------------------------------
 void extract_legacy_enote_ephemeral_pubkeys_from_tx_extra(const TxExtra &tx_extra,
-    std::vector<crypto::public_key> &legacy_enote_ephemeral_pubkeys_out)
+    crypto::public_key &legacy_main_enote_ephemeral_pubkey_out,
+    std::vector<crypto::public_key> &legacy_additional_enote_ephemeral_pubkeys)
 {
-    legacy_enote_ephemeral_pubkeys_out.clear();
-
-    // parse field
+    // 1. parse field
     std::vector<cryptonote::tx_extra_field> tx_extra_fields;
     parse_tx_extra(tx_extra, tx_extra_fields);
 
-    // try to get solitary enote ephemeral pubkey: r G
+    // 2. try to get solitary enote ephemeral pubkey: r G
+    // note: we must ALWAYS get this even if there are 'additional pub keys' because change outputs always use the
+    //       main enote ephemeral pubkey for key derivations
     cryptonote::tx_extra_pub_key pub_key_field;
-    if (cryptonote::find_tx_extra_field_by_type(tx_extra_fields, pub_key_field))
-    {
-        legacy_enote_ephemeral_pubkeys_out.emplace_back(pub_key_field.pub_key);
-        return;
-    }
 
-    // try to get 'additional' enote ephemeral pubkeys (one per output): r_t K^v_t
+    if (cryptonote::find_tx_extra_field_by_type(tx_extra_fields, pub_key_field))
+        legacy_main_enote_ephemeral_pubkey_out = pub_key_field.pub_key;
+    else
+        legacy_main_enote_ephemeral_pubkey_out = rct::rct2pk(rct::I);
+
+    // 3. try to get 'additional' enote ephemeral pubkeys (one per output): r_t K^v_t
     cryptonote::tx_extra_additional_pub_keys additional_pub_keys_field;
+    legacy_additional_enote_ephemeral_pubkeys.clear();
+
     if (cryptonote::find_tx_extra_field_by_type(tx_extra_fields, additional_pub_keys_field))
-    {
-        legacy_enote_ephemeral_pubkeys_out = additional_pub_keys_field.data;
-    }
+        legacy_additional_enote_ephemeral_pubkeys = additional_pub_keys_field.data;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

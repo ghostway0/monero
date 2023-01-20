@@ -307,6 +307,53 @@ static std::unordered_set<rct::key> process_chunk_full_sp_selfsend_pass(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+bool try_basic_view_scan_legacy_enote_v1(const rct::key &legacy_base_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const std::uint64_t block_height,
+    const std::uint64_t block_timestamp,
+    const rct::key &transaction_id,
+    const std::uint64_t total_enotes_before_tx,
+    const std::uint64_t enote_index,
+    const std::uint64_t unlock_time,
+    const TxExtra &tx_memo,
+    const LegacyEnoteVariant &legacy_enote,
+    const crypto::public_key &legacy_enote_ephemeral_pubkey,
+    const crypto::key_derivation &DH_derivation,
+    const SpEnoteOriginStatus origin_status,
+    hw::device &hwdev,
+    LegacyContextualBasicEnoteRecordV1 &contextual_record_out)
+{
+    // 1. view scan the enote (in try block in case the enote is malformed)
+    try
+    {
+        if (!try_get_legacy_basic_enote_record(legacy_enote,
+                rct::pk2rct(legacy_enote_ephemeral_pubkey),
+                enote_index,
+                unlock_time,
+                DH_derivation,
+                legacy_base_spend_pubkey,
+                legacy_subaddress_map,
+                hwdev,
+                contextual_record_out.m_record))
+            return false;
+    } catch (...) {}
+
+    // 2. set the origin context
+    contextual_record_out.m_origin_context =
+        SpEnoteOriginContextV1{
+                .m_block_height       = block_height,
+                .m_block_timestamp    = block_timestamp,
+                .m_transaction_id     = transaction_id,
+                .m_enote_tx_index     = enote_index,
+                .m_enote_ledger_index = total_enotes_before_tx + enote_index,
+                .m_origin_status      = origin_status,
+                .m_memo = tx_memo
+            };
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
@@ -321,63 +368,94 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
     hw::device &hwdev,
     std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout)
 {
-    // extract enote ephemeral pubkeys from memo
-    std::vector<crypto::public_key> legacy_enote_ephemeral_pubkeys;
-    extract_legacy_enote_ephemeral_pubkeys_from_tx_extra(tx_memo, legacy_enote_ephemeral_pubkeys);
+    // 1. extract enote ephemeral pubkeys from the memo
+    crypto::public_key legacy_main_enote_ephemeral_pubkey;
+    std::vector<crypto::public_key> legacy_additional_enote_ephemeral_pubkeys;
 
-    if (legacy_enote_ephemeral_pubkeys.size() == 0)
+    extract_legacy_enote_ephemeral_pubkeys_from_tx_extra(tx_memo,
+        legacy_main_enote_ephemeral_pubkey,
+        legacy_additional_enote_ephemeral_pubkeys);
+
+    // 2. check if there are a valid number of additional enote ephemeral pubkeys
+    if (legacy_additional_enote_ephemeral_pubkeys.size() > 0 &&
+        legacy_additional_enote_ephemeral_pubkeys.size() != enotes_in_tx.size())
         return false;
 
-    // scan each enote in the tx
-    std::size_t ephemeral_pubkey_index{0};
+    // 3. scan each enote in the tx using the 'additional enote ephemeral pubkeys'
+    // - this step is automatically skipped if legacy_additional_enote_ephemeral_pubkeys.size() == 0
     crypto::key_derivation temp_DH_derivation;
     LegacyContextualBasicEnoteRecordV1 temp_contextual_record{};
     bool found_an_enote{false};
 
+    for (std::size_t enote_index{0}; enote_index < legacy_additional_enote_ephemeral_pubkeys.size(); ++enote_index)
+    {
+        // a. compute the DH derivation for this enote ephemeral pubkey
+        hwdev.generate_key_derivation(legacy_additional_enote_ephemeral_pubkeys[enote_index],
+            legacy_view_privkey,
+            temp_DH_derivation);
+
+        // b. try to recover a contextual basic record from the enote
+        if (!try_basic_view_scan_legacy_enote_v1(legacy_base_spend_pubkey,
+                legacy_subaddress_map,
+                block_height,
+                block_timestamp,
+                transaction_id,
+                total_enotes_before_tx,
+                enote_index,
+                unlock_time,
+                tx_memo,
+                enotes_in_tx[enote_index],
+                legacy_additional_enote_ephemeral_pubkeys[enote_index],
+                temp_DH_derivation,
+                origin_status,
+                hwdev,
+                temp_contextual_record))
+            continue;
+
+        // c. save the contextual basic record
+        // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
+        //       upstream caller will be able to handle those without problems
+        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
+
+        // d. record that an owned enote has been found
+        found_an_enote = true;
+    }
+
+    // 4. check if there is a main enote ephemeral pubkey
+    if (legacy_main_enote_ephemeral_pubkey == rct::rct2pk(rct::I))
+        return found_an_enote;
+
+    // 5. compute the key derivation for the main enote ephemeral pubkey
+    hwdev.generate_key_derivation(legacy_main_enote_ephemeral_pubkey, legacy_view_privkey, temp_DH_derivation);
+
+    // 6. scan all enotes using the main key derivation
     for (std::size_t enote_index{0}; enote_index < enotes_in_tx.size(); ++enote_index)
     {
-        // there can be fewer ephemeral pubkeys than enotes
-        // - when we get to the end, keep using the last one
-        if (enote_index < legacy_enote_ephemeral_pubkeys.size())
-        {
-            ephemeral_pubkey_index = enote_index;
-            hwdev.generate_key_derivation(
-                legacy_enote_ephemeral_pubkeys[ephemeral_pubkey_index],
-                legacy_view_privkey,
-                temp_DH_derivation);
-        }
+        // a. try to recover a contextual basic record from the enote
+        if (!try_basic_view_scan_legacy_enote_v1(legacy_base_spend_pubkey,
+                legacy_subaddress_map,
+                block_height,
+                block_timestamp,
+                transaction_id,
+                total_enotes_before_tx,
+                enote_index,
+                unlock_time,
+                tx_memo,
+                enotes_in_tx[enote_index],
+                legacy_main_enote_ephemeral_pubkey,
+                temp_DH_derivation,
+                origin_status,
+                hwdev,
+                temp_contextual_record))
+            continue;
 
-        // view scan the enote (in try block in case enote is malformed)
-        try
-        {
-            if (!try_get_legacy_basic_enote_record(enotes_in_tx[enote_index],
-                    rct::pk2rct(legacy_enote_ephemeral_pubkeys[ephemeral_pubkey_index]),
-                    enote_index,
-                    unlock_time,
-                    temp_DH_derivation,
-                    legacy_base_spend_pubkey,
-                    legacy_subaddress_map,
-                    hwdev,
-                    temp_contextual_record.m_record))
-                continue;
+        // b. save the contextual basic record
+        // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
+        //       upstream caller will be able to handle those without problems
+        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
 
-            temp_contextual_record.m_origin_context =
-                SpEnoteOriginContextV1{
-                        .m_block_height = block_height,
-                        .m_block_timestamp = block_timestamp,
-                        .m_transaction_id = transaction_id,
-                        .m_enote_tx_index = enote_index,
-                        .m_enote_ledger_index = total_enotes_before_tx + enote_index,
-                        .m_origin_status = origin_status,
-                        .m_memo = tx_memo
-                    };
-
-            // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
-            //       upstream caller will be able to handle those without problems
-            basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
-
-            found_an_enote = true;
-        } catch (...) {}
+        // c. record that an owned enote has been found
+        found_an_enote = true;
     }
 
     return found_an_enote;
@@ -394,10 +472,12 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     const SpEnoteOriginStatus origin_status,
     std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout)
 {
-    if (tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 0)
+    // 1. check if any enotes can be scanned
+    if (tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 0 ||
+        enotes_in_tx.size() == 0)
         return false;
 
-    // scan each enote in the tx
+    // 2. find-received scan each enote in the tx
     std::size_t ephemeral_pubkey_index{0};
     crypto::x25519_pubkey temp_DH_derivation;
     SpContextualBasicEnoteRecordV1 temp_contextual_record{};
@@ -405,8 +485,8 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
 
     for (std::size_t enote_index{0}; enote_index < enotes_in_tx.size(); ++enote_index)
     {
-        // there can be fewer ephemeral pubkeys than enotes
-        // - when we get to the end, keep using the last one
+        // a. get the next Diffie-Hellman derivation
+        // - there can be fewer ephemeral pubkeys than enotes; when we get to the end, keep using the last one
         if (enote_index < tx_supplement.m_output_enote_ephemeral_pubkeys.size())
         {
             ephemeral_pubkey_index = enote_index;
@@ -415,7 +495,7 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
                 temp_DH_derivation);
         }
 
-        // find-receive scan the enote (in try block in case enote is malformed)
+        // b, find-receive scan the enote (in try block in case enote is malformed)
         try
         {
             if (!try_get_basic_enote_record_v1(enotes_in_tx[enote_index],
@@ -424,24 +504,27 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
                     temp_DH_derivation,
                     temp_contextual_record.m_record))
                 continue;
-
-            temp_contextual_record.m_origin_context =
-                SpEnoteOriginContextV1{
-                        .m_block_height = block_height,
-                        .m_block_timestamp = block_timestamp,
-                        .m_transaction_id = transaction_id,
-                        .m_enote_tx_index = enote_index,
-                        .m_enote_ledger_index = total_enotes_before_tx + enote_index,
-                        .m_origin_status = origin_status,
-                        .m_memo = tx_supplement.m_tx_extra
-                    };
-
-            // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
-            //       upstream caller will be able to handle those without problems
-            basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
-
-            found_an_enote = true;
         } catch (...) {}
+
+        // c. set the origin context
+        temp_contextual_record.m_origin_context =
+            SpEnoteOriginContextV1{
+                    .m_block_height       = block_height,
+                    .m_block_timestamp    = block_timestamp,
+                    .m_transaction_id     = transaction_id,
+                    .m_enote_tx_index     = enote_index,
+                    .m_enote_ledger_index = total_enotes_before_tx + enote_index,
+                    .m_origin_status      = origin_status,
+                    .m_memo               = tx_supplement.m_tx_extra
+                };
+
+        // d. save the contextual basic record
+        // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
+        //       upstream caller will be able to handle those without problems
+        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
+
+        // e. record that an enote was found
+        found_an_enote = true;
     }
 
     return found_an_enote;
