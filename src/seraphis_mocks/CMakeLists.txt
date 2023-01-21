@@ -28,7 +28,9 @@
 
 set(seraphis_mocks_sources
   enote_finding_context_mocks.cpp
-  enote_store_mocks.cpp
+  enote_store_mock_simple_v1.cpp
+  enote_store_mock_v1.cpp
+  enote_store_mock_validator_v1.cpp
   enote_store_updater_mocks.cpp
   jamtis_mock_keys.cpp
   legacy_mock_keys.cpp

@@ -159,12 +159,11 @@ public:
         const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkLedgerV1 &chunk_out) const;
     /**
-    * brief: try_get_unconfirmed_chunk_sp - try to find-received scan the unconfirmed tx cache
+    * brief: get_unconfirmed_chunk_sp - try to find-received scan the unconfirmed tx cache
     * param: xk_find_received -
     * outparam: chunk_out -
-    * return: true if chunk is not empty
     */
-    bool try_get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+    void get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     /**
     * brief: try_add_unconfirmed_tx_v1 - try to add a full transaction to the 'unconfirmed' tx cache
@@ -259,7 +258,7 @@ private:
     void clear_unconfirmed_cache_impl();
     std::uint64_t pop_chain_at_height_impl(const std::uint64_t pop_height);
     std::uint64_t pop_blocks_impl(const std::size_t num_blocks);
-    bool try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+    void get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
     void get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,

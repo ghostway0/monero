@@ -108,12 +108,12 @@ void MockOffchainContext::clear_cache()
     this->clear_cache_impl();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
     EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
     boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->try_get_offchain_chunk_sp_impl(xk_find_received, chunk_out);
+    this->get_offchain_chunk_sp_impl(xk_find_received, chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // internal implementation details
@@ -259,17 +259,17 @@ void MockOffchainContext::clear_cache_impl()
     m_tx_key_images.clear();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockOffchainContext::try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+void MockOffchainContext::get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
     EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
-    // no chunk if no txs to scan
-    if (m_output_contents.size() == 0)
-        return false;
-
-    // find-received scan each tx in the unconfirmed chache
     chunk_out.m_basic_records_per_tx.clear();
     chunk_out.m_contextual_key_images.clear();
 
+    // no chunk if no txs to scan
+    if (m_output_contents.size() == 0)
+        return;
+
+    // find-received scan each tx in the unconfirmed chache
     for (const auto &tx_with_output_contents : m_output_contents)
     {
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
@@ -296,8 +296,6 @@ bool MockOffchainContext::try_get_offchain_chunk_sp_impl(const crypto::x25519_se
                 chunk_out.m_contextual_key_images);
         }
     }
-
-    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

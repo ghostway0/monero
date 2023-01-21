@@ -26,49 +26,50 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Dependency injector for managing the find-received step of enote scanning. Intended to be stateful, managing
-//   a connection to a ledger context and linking together successive 'get chunk' calls.
+// NOT FOR PRODUCTION
+
+//todo
+
 
 #pragma once
 
 //local headers
-#include "enote_scanning.h"
+#include "crypto/crypto.h"
+#include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
+#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
+#include <list>
 
 //forward declarations
 
 
 namespace sp
 {
+namespace mocks
+{
 
 ////
-// EnoteScanningContextLedger
-// - manages a source of ledger-based enote scanning chunks (i.e. finding potentially owned enotes in a ledger)
+// SpEnoteStoreMockSimpleV1
 ///
-class EnoteScanningContextLedger
+class SpEnoteStoreMockSimpleV1 final
 {
+    friend class InputSelectorMockSimpleV1;
+
 public:
-//destructor
-    virtual ~EnoteScanningContextLedger() = default;
+    /// add a record
+    void add_record(const LegacyContextualEnoteRecordV1 &new_record);
+    void add_record(const SpContextualEnoteRecordV1 &new_record);
 
-//overloaded operators
-    /// disable copy/move (this is a virtual base class)
-    EnoteScanningContextLedger& operator=(EnoteScanningContextLedger&&) = delete;
-
-//member functions
-    /// tell the scanning context a block height to start scanning from
-    virtual void begin_scanning_from_height(const std::uint64_t initial_start_height,
-        const std::uint64_t max_chunk_size) = 0;
-    /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
-    /// note: if there is no chunk to return, return an empty chunk representing the top of the current chain
-    virtual void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) = 0;
-    /// get a scanning chunk for the unconfirmed txs in a ledger
-    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
-    /// tell the scanning context to stop its scanning process (should be no-throw no-fail)
-    virtual void terminate_scanning() = 0;
+//member variables
+protected:
+    /// legacy enotes
+    std::list<LegacyContextualEnoteRecordV1> m_legacy_contextual_enote_records;
+    /// seraphis enotes
+    std::list<SpContextualEnoteRecordV1> m_sp_contextual_enote_records;
 };
 
+} //namespace mocks
 } //namespace sp

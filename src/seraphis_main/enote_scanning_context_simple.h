@@ -76,10 +76,10 @@ public:
         m_enote_finding_context.get_onchain_chunk(m_next_start_height, m_max_chunk_size, chunk_out);
         m_next_start_height = chunk_out.m_end_height;
     }
-    /// try to get a scanning chunk for the unconfirmed txs in a ledger
-    bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    /// get a scanning chunk for the unconfirmed txs in a ledger
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
     {
-        return m_enote_finding_context.try_get_unconfirmed_chunk(chunk_out);
+        m_enote_finding_context.get_unconfirmed_chunk(chunk_out);
     }
     /// stop the current scanning process (should be no-throw no-fail)
     void terminate_scanning() override { /* no-op */ }

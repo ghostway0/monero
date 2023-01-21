@@ -36,7 +36,8 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
-#include "enote_store_mocks.h"
+#include "enote_store_mock_v1.h"
+#include "enote_store_mock_validator_v1.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
 #include "seraphis_main/enote_record_types.h"
@@ -59,168 +60,38 @@ namespace sp
 namespace mocks
 {
 
-class EnoteStoreUpdaterLedgerMockLegacy final : public EnoteStoreUpdaterLedger
+class EnoteStoreUpdaterMockLegacyIntermediate final : public EnoteStoreUpdater
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterLedgerMockLegacy(const rct::key &legacy_base_spend_pubkey,
-        const crypto::secret_key &legacy_spend_privkey,
-        const crypto::secret_key &legacy_view_privkey,
-        SpEnoteStoreMockV1 &enote_store);
-
-//overloaded operators
-    /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterLedgerMockLegacy& operator=(EnoteStoreUpdaterLedgerMockLegacy&&) = delete;
-
-//member functions
-    /// start a chunk-handling session (if previous session wasn't ended, discard it)
-    void start_chunk_handling_session() override;
-    /// process a chunk of basic enote records and save the results
-    void process_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    /// end the current chunk-handling session
-    void end_chunk_handling_session(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) override;
-
-    /// try to get the recorded block id for a given height
-    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
-    /// get height of first block the enote store cares about
-    std::uint64_t refresh_height() const override;
-    /// get height of first block the updater wants to have scanned
-    std::uint64_t desired_first_block() const override;
-
-//member variables
-private:
-    /// static data
-    const rct::key &m_legacy_base_spend_pubkey;
-    const crypto::secret_key &m_legacy_spend_privkey;
-    const crypto::secret_key &m_legacy_view_privkey;
-    SpEnoteStoreMockV1 &m_enote_store;
-
-    /// session data
-    std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> m_found_enote_records;
-    std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_found_spent_key_images;
-};
-
-class EnoteStoreUpdaterLedgerMock final : public EnoteStoreUpdaterLedger
-{
-public:
-//constructors
-    /// normal constructor
-    EnoteStoreUpdaterLedgerMock(const rct::key &jamtis_spend_pubkey,
-        const crypto::secret_key &k_view_balance,
-        SpEnoteStoreMockV1 &enote_store);
-
-//overloaded operators
-    /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterLedgerMock& operator=(EnoteStoreUpdaterLedgerMock&&) = delete;
-
-//member functions
-    /// start a chunk-handling session (if previous session wasn't ended, discard it)
-    void start_chunk_handling_session() override;
-    /// process a chunk of basic enote records and save the results
-    void process_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    /// end the current chunk-handling session
-    void end_chunk_handling_session(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) override;
-
-    /// try to get the recorded block id for a given height
-    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
-    /// get height of first block the enote store cares about
-    std::uint64_t refresh_height() const override;
-    /// get height of first block the updater wants to have scanned
-    std::uint64_t desired_first_block() const override;
-
-//member variables
-private:
-    /// static data
-    const rct::key &m_jamtis_spend_pubkey;
-    const crypto::secret_key &m_k_view_balance;
-    SpEnoteStoreMockV1 &m_enote_store;
-
-    crypto::x25519_secret_key m_xk_unlock_amounts;
-    crypto::x25519_secret_key m_xk_find_received;
-    crypto::secret_key m_s_generate_address;
-    crypto::secret_key m_s_cipher_tag;
-    std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
-
-    /// session data
-    std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> m_found_enote_records;
-    std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_found_spent_key_images;
-    std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_legacy_key_images_in_sp_selfsends;
-};
-
-class EnoteStoreUpdaterNonLedgerMock final : public EnoteStoreUpdaterNonLedger
-{
-public:
-//constructors
-    /// normal constructor
-    EnoteStoreUpdaterNonLedgerMock(const rct::key &jamtis_spend_pubkey,
-        const crypto::secret_key &k_view_balance,
-        SpEnoteStoreMockV1 &enote_store);
-
-//overloaded operators
-    /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterNonLedgerMock& operator=(EnoteStoreUpdaterNonLedgerMock&&) = delete;
-
-//member functions
-    /// process a chunk of basic enote records and handle the results
-    void process_and_handle_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-
-//member variables
-private:
-    /// static data
-    const rct::key &m_jamtis_spend_pubkey;
-    const crypto::secret_key &m_k_view_balance;
-    SpEnoteStoreMockV1 &m_enote_store;
-
-    crypto::x25519_secret_key m_xk_unlock_amounts;
-    crypto::x25519_secret_key m_xk_find_received;
-    crypto::secret_key m_s_generate_address;
-    crypto::secret_key m_s_cipher_tag;
-    std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
-};
-
-class EnoteStoreUpdaterLedgerMockLegacyIntermediate final : public EnoteStoreUpdaterLedger
-{
-public:
-//constructors
-    /// normal constructor
-    EnoteStoreUpdaterLedgerMockLegacyIntermediate(const rct::key &legacy_base_spend_pubkey,
+    EnoteStoreUpdaterMockLegacyIntermediate(const rct::key &legacy_base_spend_pubkey,
         const crypto::secret_key &legacy_view_privkey,
         const LegacyScanMode legacy_scan_mode,
         SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterLedgerMockLegacyIntermediate& operator=(EnoteStoreUpdaterLedgerMockLegacyIntermediate&&) = delete;
+    EnoteStoreUpdaterMockLegacyIntermediate& operator=(EnoteStoreUpdaterMockLegacyIntermediate&&) = delete;
 
 //member functions
-    /// start a chunk-handling session (if previous session wasn't ended, discard it)
-    void start_chunk_handling_session() override;
-    /// process a chunk of basic enote records and save the results
-    void process_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    /// end the current chunk-handling session
-    void end_chunk_handling_session(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) override;
-
     /// try to get the recorded block id for a given height
     bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
     /// get height of first block the enote store cares about
     std::uint64_t refresh_height() const override;
     /// get height of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
+
+    /// consume a chunk of basic enote records and save the results
+    void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
+    void consume_onchain_chunk(
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) override;
 
 //member variables
 private:
@@ -232,43 +103,26 @@ private:
     ///   during a previous scan).
     const LegacyScanMode m_legacy_scan_mode;
 
-    /// static data
     const rct::key &m_legacy_base_spend_pubkey;
     const crypto::secret_key &m_legacy_view_privkey;
     SpEnoteStoreMockV1 &m_enote_store;
-
-    /// session data
-    std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> m_found_enote_records;
-    std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_found_spent_key_images;
 };
 
-class EnoteStoreUpdaterLedgerMockIntermediate final : public EnoteStoreUpdaterLedger
+class EnoteStoreUpdaterMockLegacy final : public EnoteStoreUpdater
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterLedgerMockIntermediate(const rct::key &jamtis_spend_pubkey,
-        const crypto::x25519_secret_key &xk_unlock_amounts,
-        const crypto::x25519_secret_key &xk_find_received,
-        const crypto::secret_key &s_generate_address,
-        SpEnoteStoreMockPaymentValidatorV1 &enote_store);
+    EnoteStoreUpdaterMockLegacy(const rct::key &legacy_base_spend_pubkey,
+        const crypto::secret_key &legacy_spend_privkey,
+        const crypto::secret_key &legacy_view_privkey,
+        SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterLedgerMockIntermediate& operator=(EnoteStoreUpdaterLedgerMockIntermediate&&) = delete;
+    EnoteStoreUpdaterMockLegacy& operator=(EnoteStoreUpdaterMockLegacy&&) = delete;
 
 //member functions
-    /// start a chunk-handling session (if previous session wasn't ended, discard it)
-    void start_chunk_handling_session() override;
-    /// process a chunk of basic enote records and save the results (note: ignore contextual key images)
-    void process_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1>&) override;
-    /// end the current chunk-handling session
-    void end_chunk_handling_session(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) override;
-
     /// try to get the recorded block id for a given height
     bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
     /// get height of first block the enote store cares about
@@ -276,9 +130,62 @@ public:
     /// get height of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
 
+    /// consume a chunk of basic enote records and save the results
+    void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
+    void consume_onchain_chunk(
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) override;
+
 //member variables
 private:
-    /// static data
+    const rct::key &m_legacy_base_spend_pubkey;
+    const crypto::secret_key &m_legacy_spend_privkey;
+    const crypto::secret_key &m_legacy_view_privkey;
+
+    SpEnoteStoreMockV1 &m_enote_store;
+};
+
+class EnoteStoreUpdaterMockSpIntermediate final : public EnoteStoreUpdater
+{
+public:
+//constructors
+    /// normal constructor
+    EnoteStoreUpdaterMockSpIntermediate(const rct::key &jamtis_spend_pubkey,
+        const crypto::x25519_secret_key &xk_unlock_amounts,
+        const crypto::x25519_secret_key &xk_find_received,
+        const crypto::secret_key &s_generate_address,
+        SpEnoteStoreMockPaymentValidatorV1 &enote_store);
+
+//overloaded operators
+    /// disable copy/move (this is a scoped manager [reference wrapper])
+    EnoteStoreUpdaterMockSpIntermediate& operator=(EnoteStoreUpdaterMockSpIntermediate&&) = delete;
+
+//member functions
+    /// try to get the recorded block id for a given height
+    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
+    /// get height of first block the enote store cares about
+    std::uint64_t refresh_height() const override;
+    /// get height of first block the updater wants to have scanned
+    std::uint64_t desired_first_block() const override;
+
+    /// consume a chunk of basic enote records and save the results
+    void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
+    void consume_onchain_chunk(
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) override;
+
+//member variables
+private:
     const rct::key &m_jamtis_spend_pubkey;
     const crypto::x25519_secret_key &m_xk_unlock_amounts;
     const crypto::x25519_secret_key &m_xk_find_received;
@@ -287,41 +194,49 @@ private:
 
     crypto::secret_key m_s_cipher_tag;
     std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
-
-    /// session data
-    std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> m_found_enote_records;
 };
 
-class EnoteStoreUpdaterNonLedgerMockIntermediate final : public EnoteStoreUpdaterNonLedger
+class EnoteStoreUpdaterMockSp final : public EnoteStoreUpdater
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterNonLedgerMockIntermediate(const rct::key &jamtis_spend_pubkey,
-        const crypto::x25519_secret_key &xk_unlock_amounts,
-        const crypto::x25519_secret_key &xk_find_received,
-        const crypto::secret_key &s_generate_address,
-        SpEnoteStoreMockPaymentValidatorV1 &enote_store);
+    EnoteStoreUpdaterMockSp(const rct::key &jamtis_spend_pubkey,
+        const crypto::secret_key &k_view_balance,
+        SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterNonLedgerMockIntermediate& operator=(EnoteStoreUpdaterNonLedgerMockIntermediate&&) = delete;
+    EnoteStoreUpdaterMockSp& operator=(EnoteStoreUpdaterMockSp&&) = delete;
 
 //member functions
-    /// process a chunk of basic enote records and handle the results
-    void process_and_handle_chunk(
+    /// try to get the recorded block id for a given height
+    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const override;
+    /// get height of first block the enote store cares about
+    std::uint64_t refresh_height() const override;
+    /// get height of first block the updater wants to have scanned
+    std::uint64_t desired_first_block() const override;
+
+    /// consume a chunk of basic enote records and save the results
+    void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1>&) override;
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
+    void consume_onchain_chunk(
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) override;
 
 //member variables
 private:
-    /// static data
     const rct::key &m_jamtis_spend_pubkey;
-    const crypto::x25519_secret_key &m_xk_unlock_amounts;
-    const crypto::x25519_secret_key &m_xk_find_received;
-    const crypto::secret_key &m_s_generate_address;
-    SpEnoteStoreMockPaymentValidatorV1 &m_enote_store;
+    const crypto::secret_key &m_k_view_balance;
+    SpEnoteStoreMockV1 &m_enote_store;
 
+    crypto::x25519_secret_key m_xk_unlock_amounts;
+    crypto::x25519_secret_key m_xk_find_received;
+    crypto::secret_key m_s_generate_address;
     crypto::secret_key m_s_cipher_tag;
     std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
 };

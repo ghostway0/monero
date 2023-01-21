@@ -62,8 +62,8 @@ public:
     virtual void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const = 0;
-    /// try to get an unconfirmed chunk (this is expected to contain all enotes in the 'pending txs' pool)
-    virtual bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
+    /// get an unconfirmed chunk (this is expected to contain all enotes in the 'pending txs' pool)
+    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
 };
 
 ////
@@ -81,8 +81,8 @@ public:
     EnoteFindingContextOffchain& operator=(EnoteFindingContextOffchain&&) = delete;
 
 //member functions
-    /// try to get a fresh offchain chunk (this is expected to contain all enotes in the offchain context)
-    virtual bool try_get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
+    /// get a fresh offchain chunk (this is expected to contain all enotes in the offchain context)
+    virtual void get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
 };
 
 } //namespace sp

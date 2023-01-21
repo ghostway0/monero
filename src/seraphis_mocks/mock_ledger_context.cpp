@@ -238,12 +238,12 @@ std::uint64_t MockLedgerContext::pop_blocks(const std::size_t num_blocks)
     return this->pop_blocks_impl(num_blocks);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+void MockLedgerContext::get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
     EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
     boost::shared_lock<boost::shared_mutex> lock{m_context_mutex};
 
-    return this->try_get_unconfirmed_chunk_sp_impl(xk_find_received, chunk_out);
+    this->get_unconfirmed_chunk_sp_impl(xk_find_received, chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start_height,
@@ -709,17 +709,17 @@ std::uint64_t MockLedgerContext::pop_blocks_impl(const std::size_t num_blocks)
     return pop_chain_at_height_impl(chain_height + 1 >= num_blocks ? chain_height + 1 - num_blocks : 0);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MockLedgerContext::try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+void MockLedgerContext::get_unconfirmed_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
     EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
-    // no chunk if no txs to scan
-    if (m_unconfirmed_tx_output_contents.size() == 0)
-        return false;
-
-    // find-received scan each tx in the unconfirmed chache
     chunk_out.m_basic_records_per_tx.clear();
     chunk_out.m_contextual_key_images.clear();
 
+    // no chunk if no txs to scan
+    if (m_unconfirmed_tx_output_contents.size() == 0)
+        return;
+
+    // find-received scan each tx in the unconfirmed chache
     for (const auto &tx_with_output_contents : m_unconfirmed_tx_output_contents)
     {
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
@@ -747,8 +747,6 @@ bool MockLedgerContext::try_get_unconfirmed_chunk_sp_impl(const crypto::x25519_s
                 chunk_out.m_contextual_key_images);
         }
     }
-
-    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_start_height,

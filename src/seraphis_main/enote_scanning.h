@@ -46,8 +46,7 @@ namespace sp
 {
     class EnoteFindingContextOffchain;
     class EnoteScanningContextLedger;
-    class EnoteStoreUpdaterLedger;
-    class EnoteStoreUpdaterNonLedger;
+    class EnoteStoreUpdater;
 }
 
 namespace sp
@@ -138,13 +137,13 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
 */
 void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     EnoteScanningContextLedger &scanning_context_inout,
-    EnoteStoreUpdaterLedger &enote_store_updater_inout);
+    EnoteStoreUpdater &enote_store_updater_inout);
 /**
 * brief: refresh_enote_store_offchain - perform an off-chain balance recovery process
 * param: enote_finding_context -
 * inoutparam: enote_store_updater_inout -
 */
 void refresh_enote_store_offchain(const EnoteFindingContextOffchain &enote_finding_context,
-    EnoteStoreUpdaterNonLedger &enote_store_updater_inout);
+    EnoteStoreUpdater &enote_store_updater_inout);
 
 } //namespace sp

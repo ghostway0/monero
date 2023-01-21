@@ -109,12 +109,12 @@ public:
     */
     void clear_cache();
     /**
-    * brief: try_get_offchain_chunk_sp - try to find-received scan the offchain tx cache
+    * brief: get_offchain_chunk_sp - find-received scan the offchain tx cache
     * param: xk_find_received -
     * outparam: chunk_out -
     * return: true if chunk is not empty
     */
-    bool try_get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
+    void get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
 
 private:
@@ -130,7 +130,7 @@ private:
     void remove_tx_from_cache_impl(const rct::key &input_context);
     void remove_tx_with_key_image_from_cache_impl(const crypto::key_image &key_image);
     void clear_cache_impl();
-    bool try_get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
+    void get_offchain_chunk_sp_impl(const crypto::x25519_secret_key &xk_find_received,
         EnoteScanningChunkNonLedgerV1 &chunk_out) const;
 
     /// context mutex (mutable for use in const member functions)

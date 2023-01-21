@@ -439,7 +439,7 @@ void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
 {
     const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
 
     refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater);
 }
@@ -451,7 +451,7 @@ void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_key
 {
     const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterLedgerMockIntermediate enote_store_updater{
+    EnoteStoreUpdaterMockSpIntermediate enote_store_updater{
             user_keys.K_1_base,
             user_keys.xk_ua,
             user_keys.xk_fr,
@@ -478,7 +478,7 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
             LegacyScanMode::SCAN
         };
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterLedgerMockLegacy enote_store_updater{
+    EnoteStoreUpdaterMockLegacy enote_store_updater{
             legacy_base_spend_pubkey,
             legacy_spend_privkey,
             legacy_view_privkey,
@@ -504,7 +504,7 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
             legacy_scan_mode
         };
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterLedgerMockLegacyIntermediate enote_store_updater{
+    EnoteStoreUpdaterMockLegacyIntermediate enote_store_updater{
             legacy_base_spend_pubkey,
             legacy_view_privkey,
             legacy_scan_mode,

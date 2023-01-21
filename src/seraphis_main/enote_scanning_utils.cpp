@@ -336,7 +336,7 @@ bool try_basic_view_scan_legacy_enote_v1(const rct::key &legacy_base_spend_pubke
                 hwdev,
                 contextual_record_out.m_record))
             return false;
-    } catch (...) {}
+    } catch (...) { return false; }
 
     // 2. set the origin context
     contextual_record_out.m_origin_context =
@@ -504,7 +504,7 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
                     temp_DH_derivation,
                     temp_contextual_record.m_record))
                 continue;
-        } catch (...) {}
+        } catch (...) { continue; }
 
         // c. set the origin context
         temp_contextual_record.m_origin_context =

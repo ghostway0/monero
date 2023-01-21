@@ -134,10 +134,10 @@ public:
         m_core_scanning_context.get_onchain_chunk(chunk_out);
     }
     /// try to get a scanning chunk for the unconfirmed txs in a ledger
-    bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
     {
         m_invocable_get_unconfirmed_chunk.invoke();
-        return m_core_scanning_context.try_get_unconfirmed_chunk(chunk_out);
+        m_core_scanning_context.get_unconfirmed_chunk(chunk_out);
     }
     /// tell the enote finder to stop its scanning process (should be no-throw no-fail)
     void terminate_scanning() override
@@ -258,7 +258,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
         };
     const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
 
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater));
 
@@ -1641,7 +1641,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
         invocable_get_onchain,
         dummy_invocable,
         dummy_invocable);
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
         test_scanning_context_A,
         enote_store_updater));
@@ -1767,7 +1767,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
         invocable_get_onchain,
         dummy_invocable,
         dummy_invocable);
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
         test_scanning_context_A,
         enote_store_updater));
@@ -1865,7 +1865,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     ledger_context.commit_unconfirmed_txs_v1(rct::key{}, SpTxSupplementV1{}, std::vector<SpEnoteVariant>{});
 
     // c. refresh user B with injected invocable
-    // current chain state: {block0[{2, 2, 2, 2} -> A], block1[A -> {1} -> B], block2[A -> {2} -> B]}
+    // current chain state: {block0[{1, 1, 1, 1} -> A], block1[A -> {1} -> B], block2[A -> {2} -> B]}
     // current enote context B: [enotes: none, [blocks: none]
     // expected refresh sequence:
     // 1. desired start height = block 0
@@ -1892,7 +1892,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
         invocable_get_onchain,
         dummy_invocable,
         dummy_invocable);
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
         test_scanning_context_B,
         enote_store_updater));
@@ -2006,7 +2006,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
         invocable_get_onchain,
         dummy_invocable,
         dummy_invocable);
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
     ASSERT_ANY_THROW(refresh_enote_store_ledger(refresh_config,
         test_scanning_context_B,
         enote_store_updater));
@@ -2116,7 +2116,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
         invocable_get_onchain,
         invocable_get_unconfirmed,
         dummy_invocable);
-    EnoteStoreUpdaterLedgerMock enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
         test_scanning_context_B,
         enote_store_updater));
@@ -2377,7 +2377,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 
     // 2. manual scanning with key image imports: test 1
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 10000, 0};
+    SpEnoteStoreMockV1 enote_store{0, 0, 0};
 
     //make enote for test
     LegacyEnoteV5 enote_1;
@@ -2517,7 +2517,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 1);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_height() == -1);
-    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == 1);
+    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == -1);
     ASSERT_TRUE(enote_store.top_block_height() == 1);  //key image recovery scan should not update block height
 
     //update legacy fullscan height in enote store to partialscan height the store had when exporting onetime addresses
@@ -2538,7 +2538,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 2);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_height() == 1);
-    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == 2);
+    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == -1);
     ASSERT_TRUE(enote_store.top_block_height() == 2);
     ASSERT_TRUE(enote_store.legacy_intermediate_records().size() == 0);
 
@@ -2555,9 +2555,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
         ledger_context,
         enote_store);
 
-    ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 1);
+    ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 2);  //key images only mode does't detect reorgs
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_height() == 1);
-    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == 2);
+    ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == -1);
     ASSERT_TRUE(enote_store.top_block_height() == 2);
 
     //mock seraphis refresh to fix enote store block height trackers after reorg
@@ -2566,10 +2566,10 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
         ledger_context,
         enote_store);
 
-    ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 1);
+    ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_height() == 2);  //sp refresh doesn't affect legacy heights
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_height() == 1);
     ASSERT_TRUE(enote_store.top_sp_scanned_block_height() == 1);
-    ASSERT_TRUE(enote_store.top_block_height() == 1);
+    ASSERT_TRUE(enote_store.top_block_height() == 2);  //sp refresh doesn't affect legacy heights
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, legacy_pre_transition_3)

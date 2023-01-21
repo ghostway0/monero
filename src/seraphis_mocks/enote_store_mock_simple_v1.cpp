@@ -29,14 +29,15 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "enote_finding_context_mocks.h"
+#include "enote_store_mock_simple_v1.h"
 
 //local headers
-#include "seraphis_main/enote_scanning.h"
+#include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
 
 //standard headers
+
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis_mocks"
@@ -46,34 +47,15 @@ namespace sp
 namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMockLegacy::get_onchain_chunk(const std::uint64_t chunk_start_height,
-    const std::uint64_t chunk_max_size,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
+void SpEnoteStoreMockSimpleV1::add_record(const LegacyContextualEnoteRecordV1 &new_record)
 {
-    m_mock_ledger_context.get_onchain_chunk_legacy(chunk_start_height,
-        chunk_max_size,
-        m_legacy_base_spend_pubkey,
-        m_legacy_subaddress_map,
-        m_legacy_view_privkey,
-        m_legacy_scan_mode,
-        chunk_out);
+    m_legacy_contextual_enote_records.emplace_back(new_record);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMock::get_onchain_chunk(const std::uint64_t chunk_start_height,
-    const std::uint64_t chunk_max_size,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
-{
-    m_mock_ledger_context.get_onchain_chunk_sp(chunk_start_height, chunk_max_size, m_xk_find_received, chunk_out);
-}
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMock::get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
+void SpEnoteStoreMockSimpleV1::add_record(const SpContextualEnoteRecordV1 &new_record)
 {
-    m_mock_ledger_context.get_unconfirmed_chunk_sp(m_xk_find_received, chunk_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextOffchainMock::get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    m_mock_offchain_context.get_offchain_chunk_sp(m_xk_find_received, chunk_out);
+    m_sp_contextual_enote_records.emplace_back(new_record);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

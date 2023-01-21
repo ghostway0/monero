@@ -85,8 +85,8 @@ public:
     void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const override;
-    /// try to get an unconfirmed chunk (no-op for legacy scanning)
-    bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override { return false; }
+    /// get an unconfirmed chunk (no-op for legacy scanning)
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override {} //noop
 
 //member variables
 private:
@@ -120,8 +120,8 @@ public:
     void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const override;
-    /// try to get an unconfirmed chunk
-    bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
+    /// get an unconfirmed chunk
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
 
 //member variables
 private:
@@ -148,8 +148,8 @@ public:
     EnoteFindingContextOffchainMock& operator=(EnoteFindingContextOffchainMock&&) = delete;
 
 //member functions
-    /// try to get a fresh offchain chunk
-    bool try_get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
+    /// get a fresh offchain chunk
+    void get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
 
 //member variables
 private:

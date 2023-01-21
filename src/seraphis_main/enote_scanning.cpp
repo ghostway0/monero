@@ -40,6 +40,7 @@
 #include <boost/optional/optional.hpp>
 
 //standard headers
+#include <iterator>
 #include <list>
 #include <unordered_map>
 #include <vector>
@@ -86,9 +87,9 @@ public:
         m_enote_scan_context.get_onchain_chunk(chunk_out);
     }
     /// try to get a scanning chunk for the unconfirmed txs that are pending inclusion in a ledger
-    bool try_get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out)
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out)
     {
-        return m_enote_scan_context.try_get_unconfirmed_chunk(chunk_out);
+        m_enote_scan_context.get_unconfirmed_chunk(chunk_out);
     }
 
 //member variables
@@ -128,6 +129,49 @@ struct ChainContiguityMarker final
     boost::optional<rct::key> m_block_id;
 };
 
+//-------------------------------------------------------------------------------------------------------------------
+// - this is the number of extra blocks to scan below our desired start height in case there was a reorg lower
+//   than that start height
+// - we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
+//   the true location of alignment divergence is unknown; moreover, the distance between the desired
+//   start height and the enote store's refresh height may be very large; if a fixed back-off were
+//   used, then it could take many fullscan attempts to find the point of divergence
+//-------------------------------------------------------------------------------------------------------------------
+static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t default_reorg_avoidance_depth,
+    const std::uint64_t completed_fullscan_attempts)
+{
+    // 1. start at the default depth for the first and second fullscan attempts
+    // - back off the default depth twice to better support unit tests that study partial rescans
+    if (completed_fullscan_attempts <= 1)
+        return default_reorg_avoidance_depth;
+
+    // 2. check that the default depth is not 0
+    CHECK_AND_ASSERT_THROW_MES(default_reorg_avoidance_depth > 0,
+        "refresh ledger for enote store: tried more than one fullscan with zero reorg avoidance depth.");
+
+    // 3. 10 ^ (fullscan attempts) * default depth
+    return static_cast<uint64_t>(std::pow(10, completed_fullscan_attempts - 1) * default_reorg_avoidance_depth);    
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static void set_initial_contiguity_marker(const EnoteStoreUpdater &enote_store_updater,
+    const std::uint64_t initial_refresh_height,
+    ChainContiguityMarker &contiguity_marker_inout)
+{
+    // 1. set the block height
+    contiguity_marker_inout.m_block_height = initial_refresh_height - 1;
+
+    // 2. set the block id if we aren't at the unpdater's prefix block
+    if (contiguity_marker_inout.m_block_height != enote_store_updater.refresh_height() - 1)
+    {
+        // getting a block id should always succeed if we are starting past the prefix block of the updater
+        contiguity_marker_inout.m_block_id = rct::zero();
+        CHECK_AND_ASSERT_THROW_MES(enote_store_updater.try_get_block_id(initial_refresh_height - 1,
+                *(contiguity_marker_inout.m_block_id)),
+            "refresh ledger for enote store: could not get block id for start of scanning but a block id was "
+            "expected (bug).");
+    }
+}
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void check_enote_scan_chunk_map_semantics_v1(
@@ -175,6 +219,12 @@ static void check_enote_scan_chunk_map_semantics_v1(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static bool chunk_is_empty(const EnoteScanningChunkLedgerV1 &chunk)
+{
+    return chunk.m_start_height >= chunk.m_end_height;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static bool contiguity_check(const ChainContiguityMarker &marker_A, const ChainContiguityMarker &marker_B)
 {
     // 1. a marker with unspecified block id is contiguous with all markers below and equal to its height (but not
@@ -205,7 +255,7 @@ static bool contiguity_check(const ChainContiguityMarker &marker_A, const ChainC
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanStatus get_chunk_contiguity_status(const ChainContiguityMarker &contiguity_marker,
+static ScanStatus get_scan_status(const ChainContiguityMarker &contiguity_marker,
     const EnoteScanningChunkLedgerV1 &chunk,
     const std::uint64_t first_contiguity_height,
     const std::uint64_t full_discontinuity_test_height)
@@ -227,121 +277,7 @@ static ScanStatus get_chunk_contiguity_status(const ChainContiguityMarker &conti
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64_t first_contiguity_height,
-    EnoteScanProcessLedger &scan_process_inout,
-    EnoteStoreUpdaterLedger &enote_store_updater_inout,
-    ChainContiguityMarker &contiguity_marker_inout,
-    std::vector<rct::key> &scanned_block_ids_inout)
-{
-    // 1. get new chunks until we encounter an empty chunk (or detect a reorg)
-    EnoteScanningChunkLedgerV1 new_onchain_chunk;
-    scan_process_inout.get_onchain_chunk(new_onchain_chunk);
-
-    while (new_onchain_chunk.m_end_height > new_onchain_chunk.m_start_height)
-    {
-        // a. validate chunk semantics (this should check all array bounds to prevent out-of-range accesses below)
-        check_v1_enote_scan_chunk_ledger_semantics_v1(new_onchain_chunk, contiguity_marker_inout.m_block_height);
-
-        // b. check if this chunk is contiguous with the contiguity marker
-        // - if not contiguous, then there must have been a reorg, so we need to rescan
-        const ScanStatus chunk_contiguity_status{
-                get_chunk_contiguity_status(contiguity_marker_inout,
-                    new_onchain_chunk,
-                    first_contiguity_height,
-                    contiguity_marker_inout.m_block_height)
-            };
-
-        if (chunk_contiguity_status != ScanStatus::SUCCESS)
-            return chunk_contiguity_status;
-
-        // c. set contiguity marker to last block of this chunk
-        contiguity_marker_inout.m_block_height = new_onchain_chunk.m_end_height - 1;
-        contiguity_marker_inout.m_block_id     = new_onchain_chunk.m_block_ids.back();
-
-        // d. process the chunk
-        enote_store_updater_inout.process_chunk(new_onchain_chunk.m_basic_records_per_tx,
-            new_onchain_chunk.m_contextual_key_images);
-
-        // e. save new block ids
-        scanned_block_ids_inout.insert(scanned_block_ids_inout.end(),
-            new_onchain_chunk.m_block_ids.begin(),
-            new_onchain_chunk.m_block_ids.end());
-
-        // f. get next chunk
-        scan_process_inout.get_onchain_chunk(new_onchain_chunk);
-    }
-
-    // 2. verify that the last chunk obtained is an empty chunk representing the top of the current blockchain
-    CHECK_AND_ASSERT_THROW_MES(new_onchain_chunk.m_block_ids.size() == 0,
-        "process ledger for onchain pass: final chunk does not have zero block ids as expected.");
-
-    // 3. verify that our termination chunk is contiguous with the chunks received so far
-    // - this can fail if a reorg dropped below our contiguity marker without replacing the dropped blocks, so the first
-    //   chunk obtained after the reorg is this empty termination chunk
-    // note: this test won't fail if the chain height is below our contiguity marker when our contiguity marker has
-    //       an unspecified block id; we don't care if the chain height is lower than our scanning 'backstop' (i.e.
-    //       lowest point in our enote store) when we haven't actually scanned any blocks
-    return get_chunk_contiguity_status(contiguity_marker_inout,
-        new_onchain_chunk,
-        first_contiguity_height,
-        new_onchain_chunk.m_end_height - 1);
-}
-//-------------------------------------------------------------------------------------------------------------------
-// IMPORTANT: chunk processing can't be parallelized since key image checks are sequential/cumulative
-// - 'scanning_context_inout' can internally collect chunks in parallel
-//-------------------------------------------------------------------------------------------------------------------
-static ScanStatus process_ledger_for_full_refresh(const std::uint64_t max_chunk_size,
-    EnoteScanningContextLedger &scanning_context_inout,
-    EnoteStoreUpdaterLedger &enote_store_updater_inout,
-    ChainContiguityMarker &contiguity_marker_inout,
-    std::vector<rct::key> &scanned_block_ids_out)
-{
-    scanned_block_ids_out.clear();
-
-    // 1. save the initial height of our existing known contiguous chain
-    const std::uint64_t first_contiguity_height{contiguity_marker_inout.m_block_height};
-
-    // 2. create the scan process (initiates the scan process on construction)
-    EnoteScanProcessLedger scan_process{first_contiguity_height + 1, max_chunk_size, scanning_context_inout};
-
-    // 3. on-chain initial scanning pass
-    const ScanStatus scan_status_first_onchain_pass{
-        process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
-            scan_process,
-            enote_store_updater_inout,
-            contiguity_marker_inout,
-            scanned_block_ids_out)
-        };
-
-    // 4. early return if the initial onchain pass didn't succeed
-    if (scan_status_first_onchain_pass != ScanStatus::SUCCESS)
-        return scan_status_first_onchain_pass;
-
-    // 5. unconfirmed scanning pass
-    EnoteScanningChunkNonLedgerV1 unconfirmed_chunk;
-
-    if (scan_process.try_get_unconfirmed_chunk(unconfirmed_chunk))
-    {
-        // process the chunk
-        enote_store_updater_inout.process_chunk(unconfirmed_chunk.m_basic_records_per_tx,
-            unconfirmed_chunk.m_contextual_key_images);
-    }
-
-    // 6. on-chain follow-up pass
-    // rationale:
-    // - blocks may have been added between the initial on-chain pass and the unconfirmed pass, and those blocks may
-    //   contain txs not seen by the unconfirmed pass (i.e. sneaky txs)
-    // - we want scan results to be chronologically contiguous (it is better for the unconfirmed scan results to be stale
-    //   than the on-chain scan results)
-    return process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
-        scan_process,
-        enote_store_updater_inout,
-        contiguity_marker_inout,
-        scanned_block_ids_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static void update_alignment_marker(const EnoteStoreUpdaterLedger &enote_store_updater,
+static void update_alignment_marker(const EnoteStoreUpdater &enote_store_updater,
     const std::uint64_t start_height,
     const std::vector<rct::key> &block_ids,
     ChainContiguityMarker &alignment_marker_inout)
@@ -359,6 +295,165 @@ static void update_alignment_marker(const EnoteStoreUpdaterLedger &enote_store_u
         alignment_marker_inout.m_block_height = start_height + block_index;
         alignment_marker_inout.m_block_id     = next_block_id;
     }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static void align_block_ids(const EnoteStoreUpdater &enote_store_updater,
+    const EnoteScanningChunkLedgerV1 &chunk,
+    ChainContiguityMarker &alignment_marker_inout,
+    std::vector<rct::key> &scanned_block_ids_cropped_inout)
+{
+    // 1. update the alignment marker
+    update_alignment_marker(enote_store_updater, chunk.m_start_height, chunk.m_block_ids, alignment_marker_inout);
+
+    // 2. sanity checks
+    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.m_block_height + 1 >= chunk.m_start_height,
+        "enote scanning (align block ids): chunk start height exceeds the post-alignment block (bug).");
+    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.m_block_height + 1 - chunk.m_start_height <=
+            chunk.m_block_ids.size(),
+        "enote scanning (align block ids): the alignment range is larger than the chunk's block range (bug).");
+
+    // 3. crop the chunk block ids
+    scanned_block_ids_cropped_inout.clear();
+    scanned_block_ids_cropped_inout.insert(scanned_block_ids_cropped_inout.end(),
+        std::next(chunk.m_block_ids.begin(), alignment_marker_inout.m_block_height + 1 - chunk.m_start_height),
+        chunk.m_block_ids.end());
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64_t first_contiguity_height,
+    EnoteScanProcessLedger &scan_process_inout,
+    EnoteStoreUpdater &enote_store_updater_inout,
+    ChainContiguityMarker &contiguity_marker_inout)
+{
+    // 1. get new chunks until we encounter an empty chunk (or detect a reorg)
+    EnoteScanningChunkLedgerV1 new_onchain_chunk;
+    scan_process_inout.get_onchain_chunk(new_onchain_chunk);
+    std::vector<rct::key> scanned_block_ids_cropped;
+
+    while (!chunk_is_empty(new_onchain_chunk))
+    {
+        // a. set alignment marker for before the chunk has been processed (assume we always start aligned)
+        // - alignment means a chunk's block id matches the enote store's block id at the alignment block height
+        ChainContiguityMarker alignment_marker{contiguity_marker_inout};
+
+        // b. validate chunk semantics (this should check all array bounds to prevent out-of-range accesses below)
+        check_v1_enote_scan_chunk_ledger_semantics_v1(new_onchain_chunk, contiguity_marker_inout.m_block_height);
+
+        // c. check if this chunk is contiguous with the contiguity marker
+        // - if not contiguous, then there must have been a reorg, so we need to rescan
+        const ScanStatus scan_status{
+                get_scan_status(contiguity_marker_inout,
+                    new_onchain_chunk,
+                    first_contiguity_height,
+                    contiguity_marker_inout.m_block_height)
+            };
+
+        if (scan_status != ScanStatus::SUCCESS)
+            return scan_status;
+
+        // d. align the chunk's block ids with the enote store
+        // - update the point of alignment if this chunk overlaps with blocks known by the enote store
+        // - crop the chunk's block ids to only include block ids unknown to the enote store
+        align_block_ids(enote_store_updater_inout, new_onchain_chunk, alignment_marker, scanned_block_ids_cropped);
+
+        // e. consume the chunk if it's not empty
+        // - if the chunk is empty after aligning, that means our enote store already knows about the entire span
+        //   of the chunk; we don't want to pass the chunk in, because there may be blocks in the NEXT chunk that
+        //   our enote store also knows about; we don't want the enote store to think it needs to roll back its state
+        //   to the top of this chunk
+        if (scanned_block_ids_cropped.size() > 0)
+        {
+            enote_store_updater_inout.consume_onchain_chunk(new_onchain_chunk.m_basic_records_per_tx,
+                new_onchain_chunk.m_contextual_key_images,
+                alignment_marker.m_block_height + 1,
+                alignment_marker.m_block_id ? *(alignment_marker.m_block_id) : rct::zero(),
+                scanned_block_ids_cropped);
+        }
+
+        // f. set contiguity marker to last block of this chunk
+        contiguity_marker_inout.m_block_height = new_onchain_chunk.m_end_height - 1;
+        contiguity_marker_inout.m_block_id     = new_onchain_chunk.m_block_ids.back();
+
+        // g. get next chunk
+        scan_process_inout.get_onchain_chunk(new_onchain_chunk);
+    }
+
+    // 2. verify that the last chunk obtained is an empty chunk representing the top of the current blockchain
+    CHECK_AND_ASSERT_THROW_MES(new_onchain_chunk.m_block_ids.size() == 0,
+        "process ledger for onchain pass: final chunk does not have zero block ids as expected.");
+
+    // 3. verify that our termination chunk is contiguous with the chunks received so far
+    // - this can fail if a reorg dropped below our contiguity marker without replacing the dropped blocks, so the first
+    //   chunk obtained after the reorg is this empty termination chunk
+    // note: this test won't fail if the chain height is below our contiguity marker when our contiguity marker has
+    //       an unspecified block id; we don't care if the chain height is lower than our scanning 'backstop' (i.e.
+    //       lowest point in our enote store) when we haven't actually scanned any blocks
+    const ScanStatus scan_status{
+            get_scan_status(contiguity_marker_inout,
+                new_onchain_chunk,
+                first_contiguity_height,
+                new_onchain_chunk.m_end_height - 1)
+        };
+
+    if (scan_status != ScanStatus::SUCCESS)
+        return scan_status;
+
+    // 4. final update for our enote store
+    // - we need to update with the termination chunk in case a reorg popped blocks, so the enote store can roll back
+    //   its state
+    enote_store_updater_inout.consume_onchain_chunk({},
+        {},
+        contiguity_marker_inout.m_block_height + 1,
+        contiguity_marker_inout.m_block_id ? *(contiguity_marker_inout.m_block_id) : rct::zero(),
+        {});
+
+    return ScanStatus::SUCCESS;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// IMPORTANT: chunk processing can't be parallelized since key image checks are sequential/cumulative
+// - 'scanning_context_inout' can internally collect chunks in parallel
+//-------------------------------------------------------------------------------------------------------------------
+static ScanStatus process_ledger_for_full_refresh(const std::uint64_t max_chunk_size,
+    ChainContiguityMarker contiguity_marker,
+    EnoteScanningContextLedger &scanning_context_inout,
+    EnoteStoreUpdater &enote_store_updater_inout)
+{
+    // 1. save the initial height of our existing known contiguous chain
+    const std::uint64_t first_contiguity_height{contiguity_marker.m_block_height};
+
+    // 2. create the scan process (initiates the scan process on construction)
+    EnoteScanProcessLedger scan_process{first_contiguity_height + 1, max_chunk_size, scanning_context_inout};
+
+    // 3. on-chain initial scanning pass
+    const ScanStatus scan_status_first_onchain_pass{
+        process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
+            scan_process,
+            enote_store_updater_inout,
+            contiguity_marker)
+        };
+
+    // 4. early return if the initial onchain pass didn't succeed
+    if (scan_status_first_onchain_pass != ScanStatus::SUCCESS)
+        return scan_status_first_onchain_pass;
+
+    // 5. unconfirmed scanning pass
+    EnoteScanningChunkNonLedgerV1 unconfirmed_chunk;
+    scan_process.get_unconfirmed_chunk(unconfirmed_chunk);
+    enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::UNCONFIRMED,
+        unconfirmed_chunk.m_basic_records_per_tx,
+        unconfirmed_chunk.m_contextual_key_images);
+
+    // 6. on-chain follow-up pass
+    // rationale:
+    // - blocks may have been added between the initial on-chain pass and the unconfirmed pass, and those blocks may
+    //   contain txs not seen by the unconfirmed pass (i.e. sneaky txs)
+    // - we want scan results to be chronologically contiguous (it is better for the unconfirmed scan results to be stale
+    //   than the on-chain scan results)
+    return process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
+        scan_process,
+        enote_store_updater_inout,
+        contiguity_marker);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -410,7 +505,6 @@ void check_v1_enote_scan_chunk_ledger_semantics_v1(const EnoteScanningChunkLedge
                 contextual_key_image_set.m_spent_context.m_block_height <= allowed_heighest_height,
             "enote chunk semantics check (ledger): contextual key image block height is out of the expected range.");
     }
-
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNonLedgerV1 &nonledger_chunk,
@@ -425,13 +519,9 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     EnoteScanningContextLedger &scanning_context_inout,
-    EnoteStoreUpdaterLedger &enote_store_updater_inout)
+    EnoteStoreUpdater &enote_store_updater_inout)
 {
-    // 1. get the block height of the first block the enote store updater wants to have scanned (e.g. the first block
-    //    after the last block that was scanned)
-    std::uint64_t desired_first_block{enote_store_updater_inout.desired_first_block()};
-
-    // 2. make scan attempts until succeeding or throwing an error
+    // make scan attempts until succeeding or throwing an error
     ScanStatus scan_status{ScanStatus::NEED_FULLSCAN};
     std::size_t partialscan_attempts{0};
     std::size_t fullscan_attempts{0};
@@ -439,9 +529,36 @@ void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     while (scan_status == ScanStatus::NEED_PARTIALSCAN ||
         scan_status == ScanStatus::NEED_FULLSCAN)
     {
-        /// initialization based on scan status
+        // 1. get the block height of the first block the enote store updater wants to have scanned (e.g. the first block
+        //    after the last block that was scanned)
+        const std::uint64_t desired_first_block{enote_store_updater_inout.desired_first_block()};
 
-        // 1. update scan attempt
+        // 2. set reorg avoidance depth
+        // - this is the number of extra blocks to scan below our desired start height in case there was a reorg lower
+        //   than our initial contiguity marker before this scan attempt
+        // note: we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
+        //       the true location of alignment divergence is unknown; moreover, the distance between the first
+        //       desired start height and the enote store's refresh height may be very large; if a fixed back-off were
+        //       used, then it could take many fullscan attempts to find the point of divergence
+        const std::uint64_t reorg_avoidance_depth{
+                get_reorg_avoidance_depth(config.m_reorg_avoidance_depth, fullscan_attempts)
+            };
+
+        // 3. initial block to scan = max(desired first block - reorg depth, enote store's min scan height)
+        std::uint64_t initial_refresh_height;
+
+        if (desired_first_block >= reorg_avoidance_depth + enote_store_updater_inout.refresh_height())
+            initial_refresh_height = desired_first_block - reorg_avoidance_depth;
+        else
+            initial_refresh_height = enote_store_updater_inout.refresh_height();
+
+        // 4. set initial contiguity marker
+        // - this starts as the prefix of the first block to scan, and should either be known to the enote store
+        //   updater or have an unspecified block id
+        ChainContiguityMarker contiguity_marker;
+        set_initial_contiguity_marker(enote_store_updater_inout, initial_refresh_height, contiguity_marker);
+
+        // 5. record the scan attempt
         if (scan_status == ScanStatus::NEED_PARTIALSCAN)
             ++partialscan_attempts;
         else if (scan_status == ScanStatus::NEED_FULLSCAN)
@@ -450,7 +567,7 @@ void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         CHECK_AND_ASSERT_THROW_MES(fullscan_attempts < 50,
             "refresh ledger for enote store: fullscan attempts exceeded 50 (sanity check fail).");
 
-        // 2. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
+        // 6. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
         //    so now we abort)
         if (partialscan_attempts > config.m_max_partialscan_attempts)
         {
@@ -458,132 +575,32 @@ void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
             break;
         }
 
-        // 3. set reorg avoidance depth
-        // - this is the number of extra blocks to scan below our desired start height in case there was a reorg lower
-        //   than our initial contiguity marker before this scan attempt
-        // note: we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
-        //       the true location of alignment divergence is unknown; moreover, the distance between the first
-        //       desired start height and the enote store's refresh height may be very large; if a fixed back-off were
-        //       used, then it could take many fullscan attempts to find the point of divergence
-        const std::uint64_t reorg_avoidance_depth =
-            [&]() -> std::uint64_t
-            {
-                // test '> 1' to support unit tests with reorg avoidance depth == 0 (e.g. for exercising partial scans)
-                if (fullscan_attempts > 1)
-                {
-                    CHECK_AND_ASSERT_THROW_MES(config.m_reorg_avoidance_depth > 0,
-                        "refresh ledger for enote store: tried more than one fullscan with zero reorg avoidance depth.");
-                    return static_cast<uint64_t>(std::pow(10, fullscan_attempts - 1) * config.m_reorg_avoidance_depth);
-                }
-
-                return config.m_reorg_avoidance_depth;
-            }();
-
-        // 4. initial block to scan = max(desired first block - reorg depth, enote store's min scan height)
-        std::uint64_t initial_refresh_height;
-
-        if (desired_first_block >= reorg_avoidance_depth + enote_store_updater_inout.refresh_height())
-            initial_refresh_height = desired_first_block - reorg_avoidance_depth;
-        else
-            initial_refresh_height = enote_store_updater_inout.refresh_height();
-
-        // 5. set initial contiguity marker
-        // - this starts as the prefix of the first block to scan, and should either be known to the enote store
-        //   updater or have an unspecified block id
-        ChainContiguityMarker contiguity_marker;
-        contiguity_marker.m_block_height = initial_refresh_height - 1;
-
-        if (contiguity_marker.m_block_height != enote_store_updater_inout.refresh_height() - 1)
-        {
-            // getting a block id should always succeed if we are starting past the prefix block of the updater
-            contiguity_marker.m_block_id = rct::zero();
-            CHECK_AND_ASSERT_THROW_MES(enote_store_updater_inout.try_get_block_id(initial_refresh_height - 1,
-                    *(contiguity_marker.m_block_id)),
-                "refresh ledger for enote store: could not get block id for start of scanning but a block id was "
-                "expected (bug).");
-        }
-
-        // 6. save initial alignment marker
-        // - for this scan attempt, this marker represents a block that is expected to be contiguous with the new blocks
-        //   scanned; it also represents the prefix of the new blocks to be scanned (i.e. the first new block should have
-        //   block height just above this marker, and the block prior to that block should have a matching block id with
-        //   this marker)
-        ChainContiguityMarker alignment_marker{contiguity_marker};
-
-
-        /// scan
-        // 1. process the ledger
-        enote_store_updater_inout.start_chunk_handling_session();
-        std::vector<rct::key> scanned_block_ids;
-
+        // 7. process the ledger
         scan_status = process_ledger_for_full_refresh(config.m_max_chunk_size,
-            scanning_context_inout,
-            enote_store_updater_inout,
             contiguity_marker,
-            scanned_block_ids);
-
-        // 2. update desired start height for if there needs to be another scan attempt
-        desired_first_block = contiguity_marker.m_block_height + 1;
-
-
-        /// check scan status
-        // 1. give up if scanning failed
-        if (scan_status == ScanStatus::FAIL)
-            break;
-
-        // 2. if we must do a full scan, go back to the top immediately (all data from this loop can be discarded)
-        if (scan_status == ScanStatus::NEED_FULLSCAN)
-            continue;
-
-
-        /// close the scanning session
-
-        // 1. update the alignment marker based on new block ids acquired (block ids acquired may partially match
-        //    with already known block ids)
-        update_alignment_marker(enote_store_updater_inout,
-            alignment_marker.m_block_height + 1,
-            scanned_block_ids,
-            alignment_marker);
-
-        // 2. sanity checks
-        CHECK_AND_ASSERT_THROW_MES(initial_refresh_height <= alignment_marker.m_block_height + 1,
-            "refresh ledger for enote store: initial refresh height exceeds the post-alignment block (bug).");
-        CHECK_AND_ASSERT_THROW_MES(alignment_marker.m_block_height + 1 - initial_refresh_height <=
-                scanned_block_ids.size(),
-            "refresh ledger for enote store: contiguous block ids have fewer blocks than the alignment range (bug).");
-
-        // 3. crop block ids we already know about
-        const std::vector<rct::key> scanned_block_ids_cropped{
-                scanned_block_ids.data() + alignment_marker.m_block_height + 1 - initial_refresh_height,
-                scanned_block_ids.data() + scanned_block_ids.size()
-            };
-
-        // 4. update the enote store
-        enote_store_updater_inout.end_chunk_handling_session(alignment_marker.m_block_height + 1,
-            alignment_marker.m_block_id ? *(alignment_marker.m_block_id) : rct::zero(),
-            scanned_block_ids_cropped);
+            scanning_context_inout,
+            enote_store_updater_inout);
     }
 
     CHECK_AND_ASSERT_THROW_MES(scan_status == ScanStatus::SUCCESS, "refresh ledger for enote store: refreshing failed!");
 }
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_enote_store_offchain(const EnoteFindingContextOffchain &enote_finding_context,
-    EnoteStoreUpdaterNonLedger &enote_store_updater_inout)
+    EnoteStoreUpdater &enote_store_updater_inout)
 {
-    // 1. try to get an offchain scan chunk and process it
+    // 1. get an offchain scan chunk
     EnoteScanningChunkNonLedgerV1 offchain_chunk;
+    enote_finding_context.get_offchain_chunk(offchain_chunk);
 
-    if (enote_finding_context.try_get_offchain_chunk(offchain_chunk))
-    {
-        // a. validate chunk semantics (ensure consistent vector sizes, block heights in contexts are within range)
-        check_v1_enote_scan_chunk_nonledger_semantics_v1(offchain_chunk,
-            SpEnoteOriginStatus::OFFCHAIN,
-            SpEnoteSpentStatus::SPENT_OFFCHAIN);
+    // 2. validate chunk semantics (ensure consistent vector sizes, block heights in contexts are within range)
+    check_v1_enote_scan_chunk_nonledger_semantics_v1(offchain_chunk,
+        SpEnoteOriginStatus::OFFCHAIN,
+        SpEnoteSpentStatus::SPENT_OFFCHAIN);
 
-        // b. process and handle the chunk
-        enote_store_updater_inout.process_and_handle_chunk(offchain_chunk.m_basic_records_per_tx,
-            offchain_chunk.m_contextual_key_images);
-    }
+    // 3. consume the chunk
+    enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::OFFCHAIN,
+        offchain_chunk.m_basic_records_per_tx,
+        offchain_chunk.m_contextual_key_images);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

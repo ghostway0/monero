@@ -34,7 +34,8 @@
 #pragma once
 
 //local headers
-#include "enote_store_mocks.h"
+#include "enote_store_mock_simple_v1.h"
+#include "enote_store_mock_v1.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/tx_input_selection.h"
 

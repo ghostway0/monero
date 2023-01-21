@@ -48,58 +48,37 @@ namespace sp
 {
 
 ////
-// EnoteStoreUpdaterLedger
-// - provides an API for updating an enote store with chunks of enotes from find-received scanning (from a ledger)
+// EnoteStoreUpdater
+// - provides an API for updating an enote store with chunks of enotes from find-received scanning
 ///
-class EnoteStoreUpdaterLedger
+class EnoteStoreUpdater
 {
 public:
 //destructor
-    virtual ~EnoteStoreUpdaterLedger() = default;
+    virtual ~EnoteStoreUpdater() = default;
 
 //overloaded operators
     /// disable copy/move (this is an abstract base class)
-    EnoteStoreUpdaterLedger& operator=(EnoteStoreUpdaterLedger&&) = delete;
+    EnoteStoreUpdater& operator=(EnoteStoreUpdater&&) = delete;
 
 //member functions
-    /// start a chunk-handling session (if previous session wasn't ended, discard it)
-    virtual void start_chunk_handling_session() = 0;
-    /// process a chunk of basic enote records and save the results
-    virtual void process_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) = 0;
-    /// end the current chunk-handling session
-    virtual void end_chunk_handling_session(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) = 0;
-
     /// try to get the recorded block id for a given height
     virtual bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const = 0;
     /// get height of first block the internal enote store cares about
     virtual std::uint64_t refresh_height() const = 0;
     /// get height of first block the updater wants to have scanned
     virtual std::uint64_t desired_first_block() const = 0;
-};
 
-////
-// EnoteStoreUpdaterNonLedger
-// - provides an API for updating an enote store with chunks of enotes from find-received scanning (from an offchain context)
-///
-class EnoteStoreUpdaterNonLedger
-{
-public:
-//destructor
-    virtual ~EnoteStoreUpdaterNonLedger() = default;
-
-//overloaded operators
-    /// disable copy/move (this is an abstract base class)
-    EnoteStoreUpdaterNonLedger& operator=(EnoteStoreUpdaterNonLedger&&) = delete;
-
-//member functions
-    /// process a chunk of basic enote records and handle the results
-    virtual void process_and_handle_chunk(
+    /// consume a chunk of basic enote records and save the results
+    virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
         const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) = 0;
+    virtual void consume_onchain_chunk(
+        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
+        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) = 0;
 };
 
 } //namespace sp

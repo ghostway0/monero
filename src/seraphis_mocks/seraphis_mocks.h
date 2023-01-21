@@ -34,7 +34,9 @@
 #pragma once
 
 #include "enote_finding_context_mocks.h"
-#include "enote_store_mocks.h"
+#include "enote_store_mock_simple_v1.h"
+#include "enote_store_mock_v1.h"
+#include "enote_store_mock_validator_v1.h"
 #include "enote_store_updater_mocks.h"
 #include "jamtis_mock_keys.h"
 #include "legacy_mock_keys.h"
