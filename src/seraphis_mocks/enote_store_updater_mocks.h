@@ -36,6 +36,7 @@
 //local headers
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
+#include "enote_finding_context_mocks.h"
 #include "enote_store_mock_v1.h"
 #include "enote_store_mock_validator_v1.h"
 #include "ringct/rctTypes.h"
@@ -53,7 +54,7 @@
 #include <vector>
 
 //forward declarations
-namespace sp { enum class LegacyScanMode : unsigned char; }
+
 
 namespace sp
 {

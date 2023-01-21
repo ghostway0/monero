@@ -27,6 +27,15 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Interface for robust balance recovery framework (works for both legacy and seraphis backends).
+// PRECONDITIONS:
+// 1. chunks must be built from an atomic view of the source cache (ledger, unconfirmed cache, offchain cache)
+// 2. in chunks, m_contextual_key_images must reference a tx recorded in m_basic_records_per_tx (even if you
+//    need to add empty map entries to achieve that)
+// 3. any call to get a chunk from an enote scanning context should produce a chunk that is at least as fresh as any
+//    other chunk obtained from that context (atomic ordering)
+// 4. any call to consume a chunk in an enote store updater should resolve all side-effects observable via the updater
+//    interface by the time the call is complete (e.g. any changes to block ids observable by try_get_block_id() need
+//    to be completed during the 'consume chunk' call)
 
 #pragma once
 
@@ -51,13 +60,6 @@ namespace sp
 
 namespace sp
 {
-
-/// LegacyScanMode: convenience enum for specifying legacy scan mode ('scan' or 'only process legacy key images')
-enum class LegacyScanMode : unsigned char
-{
-    SCAN,
-    KEY_IMAGES_ONLY
-};
 
 ////
 // EnoteScanningChunkLedgerV1

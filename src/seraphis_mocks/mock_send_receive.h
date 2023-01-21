@@ -36,6 +36,7 @@
 //local headers
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
+#include "enote_finding_context_mocks.h"
 #include "enote_store_mock_v1.h"
 #include "enote_store_mock_validator_v1.h"
 #include "jamtis_mock_keys.h"

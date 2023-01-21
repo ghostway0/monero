@@ -36,6 +36,7 @@
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
+#include "enote_finding_context_mocks.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_enote_utils.h"

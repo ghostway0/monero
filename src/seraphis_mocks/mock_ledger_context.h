@@ -57,11 +57,14 @@
 //forward declarations
 namespace sp
 {
+namespace mocks
+{
+    enum class LegacyScanMode : unsigned char;
+}
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
     struct EnoteScanningChunkLedgerV1;
     struct EnoteScanningChunkNonLedgerV1;
-    enum class LegacyScanMode : unsigned char;
 }
 
 namespace sp

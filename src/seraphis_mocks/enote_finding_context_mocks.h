@@ -55,6 +55,13 @@ namespace sp
 namespace mocks
 {
 
+/// LegacyScanMode: convenience enum for specifying legacy scan mode ('scan' or 'only process legacy key images')
+enum class LegacyScanMode : unsigned char
+{
+    SCAN,
+    KEY_IMAGES_ONLY
+};
+
 ////
 // EnoteFindingContextLedgerMockLegacy
 // - wraps a mock ledger context, produces chunks of potentially owned enotes (from legacy view scanning)
