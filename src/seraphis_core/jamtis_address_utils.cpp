@@ -61,7 +61,7 @@ void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_
     crypto::secret_key &generator_out)
 {
     // k^j_gen = H_32[s_ga](j)
-    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_SPENDKEY_EXTENSION_GENERATOR, ADDRESS_INDEX_BYTES};
+    SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_INDEX_EXTENSION_GENERATOR, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
     sp_derive_secret(to_bytes(s_generate_address), transcript.data(), transcript.size(), to_bytes(generator_out));

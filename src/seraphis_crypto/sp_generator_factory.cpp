@@ -86,10 +86,8 @@ static std::vector<SpFactoryGenerator> prepare_generators()
         rct::hash_to_p3(generators[generator_index].generator_p3, intermediate_hash);
 
         // convert to other representations
-        ge_p3_tobytes(to_bytes(generators[generator_index].generator),
-            &generators[generator_index].generator_p3);
-        ge_p3_to_cached(&generators[generator_index].generator_cached,
-            &generators[generator_index].generator_p3);
+        ge_p3_tobytes(to_bytes(generators[generator_index].generator), &generators[generator_index].generator_p3);
+        ge_p3_to_cached(&generators[generator_index].generator_cached, &generators[generator_index].generator_p3);
     }
 
 /*

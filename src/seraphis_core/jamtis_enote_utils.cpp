@@ -88,15 +88,15 @@ static const boost::string_ref selfsend_sender_receiver_secret_domain_separator(
 
     // dummy self-send
     if (self_send_type == JamtisSelfSendType::DUMMY)
-        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_DUMMY;
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELFSEND_DUMMY;
 
     // change self-send
     if (self_send_type == JamtisSelfSendType::CHANGE)
-        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_CHANGE;
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELFSEND_CHANGE;
 
     // self-spend self-send
     if (self_send_type == JamtisSelfSendType::SELF_SPEND)
-        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELF_SEND_SELF_SPEND;
+        return config::HASH_KEY_JAMTIS_SENDER_RECEIVER_SECRET_SELFSEND_SELF_SPEND;
 
     CHECK_AND_ASSERT_THROW_MES(false, "jamtis self-send sender-receiver secret domain separator error.");
     return "";
