@@ -26,13 +26,10 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Serialization utilities for serializable seraphis types.
+// Serialization utilities for serializable seraphis types (a demonstration).
 // WARNING: All of the deserialization functions are **destructive**, meaning the ser_ objects passed in will
-//          usually be left in an invalid state after a function call. Note that the serialization functions
+//          often be left in an invalid state after a function call. Note that the serialization functions
 //          are copy-only.
-
 
 #pragma once
 
@@ -69,7 +66,13 @@ namespace sp
 namespace serialization
 {
 
-//todo
+/**
+* brief: try_append_serializable - try to serialize an object and append it to an input string
+* type: SerializableT - type of the object to be serialized (the object must support serialization/deserialization)
+* param: serializable -
+* inoutparam: serialized_inout -
+* return: true if serialization succeeded
+*/
 template <typename SerializableT>
 bool try_append_serializable(SerializableT &serializable, std::string &serialized_inout)
 {
@@ -84,7 +87,13 @@ bool try_append_serializable(SerializableT &serializable, std::string &serialize
 
     return true;
 }
-
+/**
+* brief: try_get_serializable - try to deserialize a string into an object
+* type: SerializableT - type of the object to be deserialized into (the object must support serialization/deserialization)
+* param: serialized -
+* outparam: serializable_out -
+* return: true if deserialization succeeded
+*/
 template <typename SerializableT>
 bool try_get_serializable(epee::span<const std::uint8_t> serialized, SerializableT &serializable_out)
 {
@@ -92,8 +101,11 @@ bool try_get_serializable(epee::span<const std::uint8_t> serialized, Serializabl
     binary_archive<false> archived{serialized};
     return ::serialization::serialize(archived, serializable_out);
 }
-
-//todo
+/**
+* brief: make_serializable_* - convert a normal object into one that is serializable
+* param: object - normal object
+* outparam: serializable_object_out - object to map the normal object into; this should be serializable/deserializable
+*/
 void make_serializable_bpp2(const BulletproofPlus2 &bpp2, ser_BulletproofPlus2_PARTIAL &serializable_bpp2_out);
 void make_serializable_clsag(const rct::clsag &clsag, ser_clsag_PARTIAL &serializable_clsag_out);
 void make_serializable_grootle_proof(const GrootleProof &grootle, ser_GrootleProof &serializable_grootle_out);
@@ -123,8 +135,12 @@ void make_serializable_discretized_fee(const DiscretizedFee discretized_fee,
     unsigned char &serializable_discretized_fee_out);
 void make_serializable_sp_tx_coinbase_v1(const SpTxCoinbaseV1 &tx, ser_SpTxCoinbaseV1 &serializable_tx_out);
 void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquashedV1 &serializable_tx_out);
-
-//todo
+/**
+* brief: recover_* - convert a serializable object back into its normal object parent
+* param: serializable_object_in - serializable object to be consumed (destructive: may be left in an unusable state)
+* param: ...params... - additional data not recorded in the serializable object to paste into the normal object
+* outparam: object_out - object to map the serializable object and extra params into
+*/
 void recover_bpp2(ser_BulletproofPlus2_PARTIAL &serializable_bpp2_in,
     std::vector<rct::key> balance_proof_commitments_mulinv8,
     BulletproofPlus2 &bpp2_out);

@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "serialization_demo_utils.h"
 
@@ -61,7 +59,7 @@ namespace sp
 namespace serialization
 {
 //-------------------------------------------------------------------------------------------------------------------
-// array2 ropies array1 via copy_func() on each element
+// array2 copies array1 by invoking copy_func() on each element
 //-------------------------------------------------------------------------------------------------------------------
 template <typename CopyFuncT, typename Type1, typename Type2>
 static void copy_array(const CopyFuncT &copy_func, const std::vector<Type1> &array1, std::vector<Type2> &array2_out)
@@ -72,7 +70,7 @@ static void copy_array(const CopyFuncT &copy_func, const std::vector<Type1> &arr
         copy_func(obj, tools::add_element(array2_out));
 }
 //-------------------------------------------------------------------------------------------------------------------
-// array2 consumes array1 via relay_func() on each element
+// array2 consumes array1 by invoking relay_func() on each element
 //-------------------------------------------------------------------------------------------------------------------
 template <typename RelayFuncT, typename Type1, typename Type2>
 static void relay_array(const RelayFuncT &relay_func, std::vector<Type1> &array1_in, std::vector<Type2> &array2_out)
@@ -188,7 +186,10 @@ static void make_serializable_sp_membership_proofs_v1(const std::vector<SpMember
     serializable_membership_proofs_out.reserve(membership_proofs.size());
 
     for (const SpMembershipProofV1 &membership_proof : membership_proofs)
-        make_serializable_sp_membership_proof_v1(membership_proof, tools::add_element(serializable_membership_proofs_out));
+    {
+        make_serializable_sp_membership_proof_v1(membership_proof,
+            tools::add_element(serializable_membership_proofs_out));
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -221,7 +222,8 @@ void make_serializable_grootle_proof(const GrootleProof &grootle, ser_GrootlePro
     serializable_grootle_out.z  = grootle.z;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void make_serializable_sp_composition_proof(const SpCompositionProof &proof, ser_SpCompositionProof &serializable_proof_out)
+void make_serializable_sp_composition_proof(const SpCompositionProof &proof,
+    ser_SpCompositionProof &serializable_proof_out)
 {
     serializable_proof_out.c    = proof.c;
     serializable_proof_out.r_t1 = proof.r_t1;
@@ -371,7 +373,8 @@ void make_serializable_sp_tx_squashed_v1(const SpTxSquashedV1 &tx, ser_SpTxSquas
     make_serializable_sp_balance_proof_v1(tx.m_balance_proof, serializable_tx_out.m_balance_proof);
 
     // ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    make_serializable_legacy_ring_signatures_v4(tx.m_legacy_ring_signatures, serializable_tx_out.m_legacy_ring_signatures);
+    make_serializable_legacy_ring_signatures_v4(tx.m_legacy_ring_signatures,
+        serializable_tx_out.m_legacy_ring_signatures);
 
     // composition proofs: ownership/key-image-legitimacy for each seraphis input
     copy_array(&make_serializable_sp_image_proof_v1, tx.m_sp_image_proofs, serializable_tx_out.m_sp_image_proofs);
@@ -551,8 +554,9 @@ void recover_sp_image_proof_v1(const ser_SpImageProofV1 &serializable_image_proo
 //-------------------------------------------------------------------------------------------------------------------
 void recover_sp_tx_supplement_v1(ser_SpTxSupplementV1 &serializable_supplement_in, SpTxSupplementV1 &supplement_out)
 {
-    supplement_out.m_output_enote_ephemeral_pubkeys = std::move(serializable_supplement_in.m_output_enote_ephemeral_pubkeys);
-    supplement_out.m_tx_extra                       = std::move(serializable_supplement_in.m_tx_extra);
+    supplement_out.m_output_enote_ephemeral_pubkeys =
+        std::move(serializable_supplement_in.m_output_enote_ephemeral_pubkeys);
+    supplement_out.m_tx_extra = std::move(serializable_supplement_in.m_tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void recover_discretized_fee(const unsigned char serializable_discretized_fee, DiscretizedFee &discretized_fee_out)
