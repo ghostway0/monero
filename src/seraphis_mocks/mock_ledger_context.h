@@ -28,10 +28,9 @@
 
 // NOT FOR PRODUCTION
 
-// Mock ledger context: for testing
-// note: txs added to the mock ledger aren't validated (aside from key image checks)
-// note2: reference set proof element getters do NOT check if the elements are spendable (i.e. if they are unlocked)
-
+// Mock ledger context.
+// WARNING: txs added to the mock ledger aren't auto-validated (aside from key image checks)
+// WARNING: reference set proof element getters do NOT check if the elements are spendable (i.e. if they are unlocked)
 
 #pragma once
 
@@ -78,7 +77,7 @@ public:
 //constructors
     /// define tx era ranges (legacy: [0, first seraphis only); seraphis: [first seraphis allowed,) )
     /// NOTE: blocks with mock legacy coinbase txs are allowed before the first seraphis-only block, but in practice
-    //        legacy coinbase should stop appearing at the first seraphis-allowed block
+    //        legacy coinbases should stop appearing at the first seraphis-allowed block
     MockLedgerContext(const std::uint64_t first_seraphis_allowed_block, const std::uint64_t first_seraphis_only_block);
 
 //member functions
@@ -105,7 +104,7 @@ public:
     void get_reference_set_proof_elements_v1(const std::vector<std::uint64_t> &indices,
         rct::ctkeyV &proof_elements_out) const;
     /**
-    * brief: get_reference_set_proof_elements_v2 - get Seraphis squashed enotes stored in the ledger
+    * brief: get_reference_set_proof_elements_v2 - get seraphis squashed enotes stored in the ledger
     * param: indices -
     * outparam: proof_elements_out - {squashed enote}
     */
@@ -113,13 +112,11 @@ public:
         rct::keyV &proof_elements_out) const;
     /**
     * brief: max_legacy_enote_index - highest index of a legacy enote in the ledger
-    *   TODO: version this somehow?
     * return: highest legacy enote index (defaults to std::uint64_t::max if no enotes)
     */
     std::uint64_t max_legacy_enote_index() const;
     /**
     * brief: max_sp_enote_index - highest index of a seraphis enote in the ledger
-    *   TODO: version this somehow?
     * return: highest seraphis enote index (defaults to std::uint64_t::max if no enotes)
     */
     std::uint64_t max_sp_enote_index() const;
@@ -237,7 +234,7 @@ public:
     std::uint64_t pop_blocks(const std::size_t num_blocks);
 
 private:
-    /// implementations of the above, without internally locking the ledger mutex (all expected to be no-fail)
+    /// implementations of the above, without internally locking the ledger mutex (all expected to either succeed or throw)
     bool cryptonote_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const;
     bool seraphis_key_image_exists_unconfirmed_impl(const crypto::key_image &key_image) const;
     bool cryptonote_key_image_exists_onchain_impl(const crypto::key_image &key_image) const;
@@ -278,7 +275,7 @@ private:
     /// context mutex (mutable for use in const member functions)
     mutable boost::shared_mutex m_context_mutex;
 
-    /// first block where a seraphis tx is allowed (this block and all following must have seraphis coinbase tx)
+    /// first block where a seraphis tx is allowed (this block and all following must have a seraphis coinbase tx)
     std::uint64_t m_first_seraphis_allowed_block;
     /// first block where only seraphis txs are allowed
     std::uint64_t m_first_seraphis_only_block;
@@ -286,9 +283,9 @@ private:
 
     //// UNCONFIRMED TXs
 
-    /// Cryptonote key images (legacy)
+    /// cryptonote key images (legacy)
     std::unordered_set<crypto::key_image> m_unconfirmed_legacy_key_images;
-    /// Seraphis key images
+    /// seraphis key images
     std::unordered_set<crypto::key_image> m_unconfirmed_sp_key_images;
     /// map of tx key images
     std::map<
@@ -298,12 +295,12 @@ private:
             std::vector<crypto::key_image>   // seraphis key images in tx
         >
     > m_unconfirmed_tx_key_images;
-    /// map of Seraphis tx outputs
+    /// map of seraphis tx outputs
     std::map<
         sortable_key,     // tx id
         std::tuple<       // tx output contents
-            rct::key,                // input context
-            SpTxSupplementV1,        // tx supplement
+            rct::key,                     // input context
+            SpTxSupplementV1,             // tx supplement
             std::vector<SpEnoteVariant>   // output enotes
         >
     > m_unconfirmed_tx_output_contents;
@@ -313,7 +310,7 @@ private:
 
     /// Cryptonote key images (legacy)
     std::unordered_set<crypto::key_image> m_legacy_key_images;
-    /// Seraphis key images
+    /// seraphis key images
     std::unordered_set<crypto::key_image> m_sp_key_images;
     /// map of tx key images
     std::map<
@@ -328,14 +325,14 @@ private:
     > m_blocks_of_tx_key_images;
     /// legacy enote references {KI, C} (mapped to output index)
     std::map<std::uint64_t, rct::ctkey> m_legacy_enote_references;
-    /// Seraphis squashed enotes (mapped to output index)
+    /// seraphis squashed enotes (mapped to output index)
     std::map<std::uint64_t, rct::key> m_sp_squashed_enotes;
     /// map of accumulated output counts (legacy)
     std::map<
         std::uint64_t,  // block height
         std::uint64_t   // total number of legacy enotes including those in this block
     > m_accumulated_legacy_output_counts;
-    /// map of accumulated output counts (Seraphis)
+    /// map of accumulated output counts (seraphis)
     std::map<
         std::uint64_t,  // block height
         std::uint64_t   // total number of seraphis enotes including those in this block
@@ -352,14 +349,14 @@ private:
             >
         >
     > m_blocks_of_legacy_tx_output_contents;
-    /// map of Seraphis tx outputs
+    /// map of seraphis tx outputs
     std::map<
         std::uint64_t,        // block height
         std::map<
             sortable_key,     // tx id
             std::tuple<       // tx output contents
-                rct::key,                // input context
-                SpTxSupplementV1,        // tx supplement
+                rct::key,                     // input context
+                SpTxSupplementV1,             // tx supplement
                 std::vector<SpEnoteVariant>   // output enotes
             >
         >

@@ -30,7 +30,6 @@
 
 // Seraphis tx-builder/component-builder mockups (tx inputs).
 
-
 #pragma once
 
 //local headers
@@ -65,8 +64,8 @@ std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secr
     const crypto::secret_key &k_view_balance,
     const std::vector<rct::xmr_amount> &in_amounts);
 /**
-* brief: gen_mock_sp_membership_proof_prep_v1 - create a random reference set for an enote, with real spend at a random index,
-*   and update mock ledger to include all members of the reference set (including squashed enotes)
+* brief: gen_mock_sp_membership_proof_prep_v1 - create a random reference set for an enote, with real spend at a
+*   random index, and update mock ledger to include all members of the reference set (including squashed enotes)
 * param: input_enote -
 * param: ref_set_decomp_n -
 * param: ref_set_decomp_m -
@@ -105,8 +104,7 @@ std::vector<SpMembershipProofPrepV1> gen_mock_sp_membership_proof_preps_v1(
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
 /**
-* brief: make_mock_sp_membership_proof_preps_for_inputs_v1 - use a mock ledger to prepare membership proofs for enotes
-*   in that mock ledger
+* brief: make_mock_sp_membership_proof_preps_for_inputs_v1 - prepare membership proofs for enotes in a mock ledger
 * param: input_ledger_mappings - 
 * param: input_proposals -
 * param: ref_set_decomp_n -

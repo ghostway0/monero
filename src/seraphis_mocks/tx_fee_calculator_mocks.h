@@ -30,7 +30,6 @@
 
 // Calculate a tx fee (mock-ups for testing).
 
-
 #pragma once
 
 //local headers
@@ -78,7 +77,7 @@ public:
     }
 };
 
-/// fee = fee_per_weight * (num_inputs / 2 + num_outputs)
+/// fee = fee_per_weight * (num_inputs / step_size + num_outputs)
 class FeeCalculatorMockInputsStepped final : public FeeCalculator
 {
 public:

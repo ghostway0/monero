@@ -256,7 +256,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
             .m_max_chunk_size = 1,
             .m_max_partialscan_attempts = 0
         };
-    const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
 
@@ -1633,7 +1633,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 0 (range [0, 0) -> DONE)
     // 5. DONE: refresh enote store of A
-    const EnoteFindingContextLedgerMock enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context_A{enote_finding_context_A};
     InvocableTest1 invocable_get_onchain{ledger_context};
     EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_A,
@@ -1759,7 +1759,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 3 (range [3, 3) -> DONE)
     // 5. DONE: refresh enote store of A
-    const EnoteFindingContextLedgerMock enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context_A{enote_finding_context_A};
     InvocableTest2 invocable_get_onchain{destination_A, {3, 5}, ledger_context};
     EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_A,
@@ -1884,7 +1884,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 3 (range [3, 3) -> DONE)
     // 5. DONE: refresh enote store of B
-    const EnoteFindingContextLedgerMock enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
     InvocableTest3 invocable_get_onchain{destination_B, {3, 5}, ledger_context};
     EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_B,
@@ -1998,7 +1998,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     //     iii. get onchain chunk: block 2  (inject: pop 1, +1 blocks) (fail: chunk range [2, 2) -> NEED_PARTIALSCAN)
     //   b. skip unconfirmed chunk: (NEED_PARTIALSCAN)
     // 5. ... etc. until partialscan attempts runs out (then throw)
-    const EnoteFindingContextLedgerMock enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
     InvocableTest4 invocable_get_onchain{destination_B, 1, ledger_context};
     EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_B,
@@ -2107,7 +2107,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     //     i.   get onchain chunk: block 2  (inject: commit unconfirmed)  (success: chunk range [2, 3])
     //     ii.  get onchain chunk: block 3  (success: chunk range [3, 3) -> DONE)
     // 4. DONE: refresh enote store of B
-    const EnoteFindingContextLedgerMock enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
     InvocableTest5Submit invocable_get_onchain{std::move(sneaky_tx), ledger_context};
     InvocableTest5Commit invocable_get_unconfirmed{ledger_context};

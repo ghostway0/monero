@@ -38,6 +38,7 @@
 
 //standard headers
 
+
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis_mocks"
 
@@ -59,19 +60,19 @@ void EnoteFindingContextLedgerMockLegacy::get_onchain_chunk(const std::uint64_t 
         chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMock::get_onchain_chunk(const std::uint64_t chunk_start_height,
+void EnoteFindingContextLedgerMockSp::get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
+{
+    m_mock_ledger_context.get_unconfirmed_chunk_sp(m_xk_find_received, chunk_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void EnoteFindingContextLedgerMockSp::get_onchain_chunk(const std::uint64_t chunk_start_height,
     const std::uint64_t chunk_max_size,
     EnoteScanningChunkLedgerV1 &chunk_out) const
 {
     m_mock_ledger_context.get_onchain_chunk_sp(chunk_start_height, chunk_max_size, m_xk_find_received, chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMock::get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
-{
-    m_mock_ledger_context.get_unconfirmed_chunk_sp(m_xk_find_received, chunk_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextOffchainMock::get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
+void EnoteFindingContextOffchainMockSp::get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
     m_mock_offchain_context.get_offchain_chunk_sp(m_xk_find_received, chunk_out);
 }

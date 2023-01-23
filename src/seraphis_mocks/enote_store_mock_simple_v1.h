@@ -28,8 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-//todo
-
+// Simple mock enote store that just stores enote records.
 
 #pragma once
 
@@ -53,6 +52,7 @@ namespace mocks
 
 ////
 // SpEnoteStoreMockSimpleV1
+// - records are stored in the order they are added (useful for deterministic input selection for unit tests)
 ///
 class SpEnoteStoreMockSimpleV1 final
 {

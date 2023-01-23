@@ -28,8 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Utilities for selecting tx inputs from an enote storage.
-
+// Simple mock output set context for use in input selection.
 
 #pragma once
 

@@ -42,6 +42,7 @@
 
 //standard headers
 
+
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis_mocks"
 
@@ -54,7 +55,7 @@ namespace mocks
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_mock_keys(jamtis_mock_keys &keys_out)
 {
-    keys_out.k_m = rct::rct2sk(rct::skGen());
+    keys_out.k_m  = rct::rct2sk(rct::skGen());
     keys_out.k_vb = rct::rct2sk(rct::skGen());
     make_jamtis_unlockamounts_key(keys_out.k_vb, keys_out.xk_ua);
     make_jamtis_findreceived_key(keys_out.k_vb, keys_out.xk_fr);

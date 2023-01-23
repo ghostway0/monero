@@ -75,16 +75,17 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
     const input_set_tracker_t &candidate_inputs,
     ContextualRecordVariant &selected_input_out) const
 {
-    // try to select a legacy input
+    // 1. try to select a legacy input
     for (const LegacyContextualEnoteRecordV1 &contextual_enote_record : m_enote_store.m_legacy_contextual_enote_records)
     {
-        // only consider unspent enotes
+        // a. only consider unspent enotes
         if (!has_spent_status(contextual_enote_record, SpEnoteSpentStatus::UNSPENT))
             continue;
 
-        // prepare record finder
+        // b. prepare record finder
         auto record_finder =
-            [&contextual_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record) -> bool
+            [&contextual_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record)
+            -> bool
             {
                 if (!comparison_record.second.is_type<LegacyContextualEnoteRecordV1>())
                     return false;
@@ -95,11 +96,11 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
                     );
             };
 
-        // ignore already added legacy inputs
+        // c. ignore already added legacy inputs
         if (pred_has_match(added_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
-        // ignore legacy input candidates
+        // d. ignore legacy input candidates
         if (pred_has_match(candidate_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
@@ -107,16 +108,17 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
         return true;
     }
 
-    // try to select a seraphis input
+    // 2. try to select a seraphis input
     for (const SpContextualEnoteRecordV1 &contextual_enote_record : m_enote_store.m_sp_contextual_enote_records)
     {
-        // only consider unspent enotes
+        // a. only consider unspent enotes
         if (!has_spent_status(contextual_enote_record, SpEnoteSpentStatus::UNSPENT))
             continue;
 
-        // prepare record finder
+        // b. prepare record finder
         auto record_finder =
-            [&contextual_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record) -> bool
+            [&contextual_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record)
+            -> bool
             {
                 if (!comparison_record.second.is_type<SpContextualEnoteRecordV1>())
                     return false;
@@ -127,11 +129,11 @@ bool InputSelectorMockSimpleV1::try_select_input_candidate_v1(const boost::multi
                     );
             };
 
-        // ignore already added seraphis inputs
+        // c. ignore already added seraphis inputs
         if (pred_has_match(added_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
-        // ignore already seraphis input candidates
+        // d. ignore already seraphis input candidates
         if (pred_has_match(candidate_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
@@ -149,15 +151,15 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
 {
     // 1. try to select from legacy enotes
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &mapped_legacy_contextual_enote_records{
-            m_enote_store.m_mapped_legacy_contextual_enote_records
+            m_enote_store.m_legacy_contextual_enote_records
         };
     for (const auto &mapped_enote_record : mapped_legacy_contextual_enote_records)
     {
-        // only consider unspent enotes
+        // a. only consider unspent enotes
         if (!has_spent_status(mapped_enote_record.second, SpEnoteSpentStatus::UNSPENT))
             continue;
 
-        // prepare record finder
+        // b. prepare record finder
         auto record_finder =
             [&mapped_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record) -> bool
             {
@@ -170,15 +172,15 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
                     );
             };
 
-        // ignore already added legacy inputs
+        // c. ignore already added legacy inputs
         if (pred_has_match(added_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
-        // ignore existing legacy input candidates
+        // d. ignore existing legacy input candidates
         if (pred_has_match(candidate_inputs, InputSelectionType::LEGACY, record_finder))
             continue;
 
-        // if this legacy enote shares a onetime address with any other legacy enotes, only proceed if this one
+        // e. if this legacy enote shares a onetime address with any other legacy enotes, only proceed if this one
         //   has the highest amount
         if (!legacy_enote_has_highest_amount_in_set(mapped_enote_record.first,
                 mapped_enote_record.second.m_record.m_amount,
@@ -211,13 +213,13 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
     }
 
     // 2. try to select from seraphis enotes
-    for (const auto &mapped_enote_record : m_enote_store.m_mapped_sp_contextual_enote_records)
+    for (const auto &mapped_enote_record : m_enote_store.m_sp_contextual_enote_records)
     {
-        // only consider unspent enotes
+        // a. only consider unspent enotes
         if (!has_spent_status(mapped_enote_record.second, SpEnoteSpentStatus::UNSPENT))
             continue;
 
-        // prepare record finder
+        // b. prepare record finder
         auto record_finder =
             [&mapped_enote_record](const std::pair<rct::xmr_amount, ContextualRecordVariant> &comparison_record) -> bool
             {
@@ -230,11 +232,11 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
                     );
             };
 
-        // ignore already added seraphis inputs
+        // c. ignore already added seraphis inputs
         if (pred_has_match(added_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 
-        // ignore already excluded seraphis inputs
+        // d. ignore already excluded seraphis inputs
         if (pred_has_match(candidate_inputs, InputSelectionType::SERAPHIS, record_finder))
             continue;
 

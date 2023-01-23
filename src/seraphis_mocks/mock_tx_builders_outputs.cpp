@@ -54,14 +54,14 @@ std::vector<SpCoinbaseOutputProposalV1> gen_mock_sp_coinbase_output_proposals_v1
     const std::vector<rct::xmr_amount> &out_amounts,
     const std::size_t num_random_memo_elements)
 {
-    // generate random output proposals
+    // 1. generate random output proposals
     std::vector<SpCoinbaseOutputProposalV1> output_proposals;
     output_proposals.reserve(out_amounts.size());
 
     for (const rct::xmr_amount out_amount : out_amounts)
-        tools::add_element(output_proposals) = gen_sp_coinbase_output_proposal_v1(out_amount, num_random_memo_elements);
+        output_proposals.emplace_back(gen_sp_coinbase_output_proposal_v1(out_amount, num_random_memo_elements));
 
-    // sort them
+    // 2. sort them
     std::sort(output_proposals.begin(),
         output_proposals.end(),
         tools::compare_func<SpCoinbaseOutputProposalV1>(compare_Ko));
@@ -72,14 +72,14 @@ std::vector<SpCoinbaseOutputProposalV1> gen_mock_sp_coinbase_output_proposals_v1
 std::vector<SpOutputProposalV1> gen_mock_sp_output_proposals_v1(const std::vector<rct::xmr_amount> &out_amounts,
     const std::size_t num_random_memo_elements)
 {
-    // generate random output proposals
+    // 1. generate random output proposals
     std::vector<SpOutputProposalV1> output_proposals;
     output_proposals.reserve(out_amounts.size());
 
     for (const rct::xmr_amount out_amount : out_amounts)
-        tools::add_element(output_proposals) = gen_sp_output_proposal_v1(out_amount, num_random_memo_elements);
+        output_proposals.emplace_back(gen_sp_output_proposal_v1(out_amount, num_random_memo_elements));
 
-    // sort them
+    // 2. sort them
     std::sort(output_proposals.begin(), output_proposals.end(), tools::compare_func<SpOutputProposalV1>(compare_Ko));
 
     return output_proposals;

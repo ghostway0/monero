@@ -28,9 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Base tx interface for Seraphis.
-// WARNING: this file MUST NOT acquire more includes (may open a hole for overload injection)
-
+// Mock seraphis transaction builders.
 
 #pragma once
 
@@ -55,7 +53,6 @@ namespace mocks
     class MockLedgerContext;
 }
 }
-
 
 namespace sp
 {
@@ -84,7 +81,7 @@ void make_mock_tx(const SpTxParamsT &params,
     SpTxType &tx_out);
 
 ////
-// SpTxParamPackV1 - parameter pack (for unit tests/mockups/etc.)
+/// SpTxParamPackV1 - parameter pack (for unit tests/mockups/etc.)
 ///
 struct SpTxParamPackV1
 {
@@ -94,15 +91,7 @@ struct SpTxParamPackV1
     std::size_t num_random_memo_elements{0};
     SpBinnedReferenceSetConfigV1 bin_config{0, 0};
 };
-/**
-* brief: make_mock_tx - make an SpTxCoinbaseV1 transaction
-* param: params -
-* param: legacy_in_amounts -
-* param: sp_in_amounts -
-* param: out_amounts -
-* inoutparam: ledger_context_inout -
-* outparam: tx_out -
-*/
+/// make an SpTxCoinbaseV1 transaction
 template <>
 void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,
@@ -111,15 +100,7 @@ void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     const DiscretizedFee discretized_transaction_fee,
     MockLedgerContext &ledger_context_inout,
     SpTxCoinbaseV1 &tx_out);
-/**
-* brief: make_mock_tx - make an SpTxSquashedV1 transaction
-* param: params -
-* param: legacy_in_amounts -
-* param: sp_in_amounts -
-* param: out_amounts -
-* inoutparam: ledger_context_inout -
-* outparam: tx_out -
-*/
+/// make an SpTxSquashedV1 transaction
 template <>
 void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
     const std::vector<rct::xmr_amount> &legacy_in_amounts,

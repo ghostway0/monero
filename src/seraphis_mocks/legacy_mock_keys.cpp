@@ -51,6 +51,14 @@ namespace sp
 namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
+void make_legacy_mock_keys(legacy_mock_keys &keys_out)
+{
+    keys_out.k_s = rct::rct2sk(rct::skGen());
+    keys_out.k_v = rct::rct2sk(rct::skGen());
+    keys_out.Ks  = rct::scalarmultBase(rct::sk2rct(keys_out.k_s));
+    keys_out.Kv  = rct::scalarmultBase(rct::sk2rct(keys_out.k_v));
+}
+//-------------------------------------------------------------------------------------------------------------------
 void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
     rct::key &subaddr_spendkey_out,
@@ -70,14 +78,6 @@ void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
 
     // subaddress viewkey: k^v * K^{s,i}
     rct::scalarmultKey(subaddr_viewkey_out, subaddr_spendkey_out, rct::sk2rct(legacy_view_privkey));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void make_legacy_mock_keys(legacy_mock_keys &keys_out)
-{
-    keys_out.k_s = rct::rct2sk(rct::skGen());
-    keys_out.k_v = rct::rct2sk(rct::skGen());
-    keys_out.Ks = rct::scalarmultBase(rct::sk2rct(keys_out.k_s));
-    keys_out.Kv = rct::scalarmultBase(rct::sk2rct(keys_out.k_v));
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

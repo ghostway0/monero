@@ -76,7 +76,7 @@ public:
     ~EnoteScanProcessLedger()
     {
         try { m_enote_scan_context.terminate_scanning(); }
-        catch (...) { /* todo: log error */ }
+        catch (...) { LOG_ERROR("seraphis enote scan process ledger (destructor): scan context termination failed."); }
     }
 
 //member functions

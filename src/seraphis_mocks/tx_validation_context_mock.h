@@ -28,8 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Mock-up of interface for interacting with a context where a tx should be valid (a mock ledger).
-
+// Mock-up of interface for interacting with a mock ledger context where txs should be valid.
 
 #pragma once
 
@@ -94,7 +93,7 @@ public:
         m_mock_ledger_context.get_reference_set_proof_elements_v1(indices, proof_elements_out);
     }
     /**
-    * brief: get_reference_set_proof_elements_v2 - gets Seraphis squashed enotes stored in the mock ledger
+    * brief: get_reference_set_proof_elements_v2 - gets seraphis squashed enotes stored in the mock ledger
     * param: indices -
     * outparam: proof_elements_out - {squashed enote}
     */

@@ -52,7 +52,6 @@ void SpEnoteStoreMockSimpleV1::add_record(const LegacyContextualEnoteRecordV1 &n
     m_legacy_contextual_enote_records.emplace_back(new_record);
 }
 //-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockSimpleV1::add_record(const SpContextualEnoteRecordV1 &new_record)
 {
     m_sp_contextual_enote_records.emplace_back(new_record);

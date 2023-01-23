@@ -28,8 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-//todo
-
+// Enote store for a seraphis 'payment validator' that can read the amounts and destinations of incoming normal enotes.
 
 #pragma once
 
@@ -55,7 +54,7 @@ namespace mocks
 
 ////
 // SpEnoteStoreMockPaymentValidatorV1
-// - tracks non-self-send seraphis enotes
+// - tracks amounts and destinations non-selfsend seraphis enotes
 ///
 class SpEnoteStoreMockPaymentValidatorV1 final
 {
@@ -71,8 +70,15 @@ public:
     {}
 
 //member functions
-    /// add a record
-    void add_record(const SpContextualIntermediateEnoteRecordV1 &new_record);
+    /// get current total amount received using specified origin statuses
+    boost::multiprecision::uint128_t get_received_sum(const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions = {}) const;
+    /// get height of first block the enote store cares about
+    std::uint64_t refresh_height() const { return m_refresh_height; }
+    /// get height of heighest recorded block (refresh height - 1 if no recorded blocks) (heighest block PayVal-scanned)
+    std::uint64_t top_block_height() const { return m_refresh_height + m_block_ids.size() - 1; }
+    /// try to get the recorded block id for a given height
+    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const;
 
     /// update the store with enote records, with associated context
     void update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
@@ -82,21 +88,14 @@ public:
         const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::vector<rct::key> &new_block_ids);
 
-    /// try to get the recorded block id for a given height
-    bool try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const;
-
-    /// get height of first block the enote store cares about
-    std::uint64_t refresh_height() const { return m_refresh_height; }
-    /// get height of heighest recorded block (refresh height - 1 if no recorded blocks) (heighest block PayVal-scanned)
-    std::uint64_t top_block_height() const { return m_refresh_height + m_block_ids.size() - 1; }
-    /// get current total amount received using specified origin statuses
-    boost::multiprecision::uint128_t get_received_sum(const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions = {}) const;
+private:
+    /// add a record
+    void add_record(const SpContextualIntermediateEnoteRecordV1 &new_record);
 
 //member variables
 protected:
     /// seraphis enotes
-    std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> m_mapped_sp_contextual_enote_records;
+    std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> m_sp_contextual_enote_records;
 
     /// refresh height
     std::uint64_t m_refresh_height{0};

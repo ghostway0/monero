@@ -91,7 +91,10 @@ void gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(const std::uint6
     CHECK_AND_ASSERT_THROW_MES(ring_size > 0,
         "gen mock legacy ring signature members (for enote at pos): ring size of 0 is not allowed.");
 
-    decoy_selector.get_ring_members(real_reference_index_in_ledger, ring_size, reference_set_out, real_reference_index_out);
+    decoy_selector.get_ring_members(real_reference_index_in_ledger,
+        ring_size,
+        reference_set_out,
+        real_reference_index_out);
 
     CHECK_AND_ASSERT_THROW_MES(real_reference_index_out < reference_set_out.size(),
         "gen mock legacy ring signature members (for enote at pos): real reference index is outside of reference set.");
@@ -101,7 +104,8 @@ void gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(const std::uint6
     ledger_context.get_reference_set_proof_elements_v1(reference_set_out, referenced_enotes_out);
 
     CHECK_AND_ASSERT_THROW_MES(reference_set_out.size() == referenced_enotes_out.size(),
-        "gen mock legacy ring signature members (for enote at pos): reference set doesn't line up with reference enotes.");
+        "gen mock legacy ring signature members (for enote at pos): reference set doesn't line up with reference "
+        "enotes.");
 }
 //-------------------------------------------------------------------------------------------------------------------
 LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v1(const rct::key &tx_proposal_prefix,
@@ -115,7 +119,7 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v
     // generate a mock ring signature prep for a legacy enote at a known position in the mock ledger
     LegacyRingSignaturePrepV1 proof_prep;
 
-    // generate ring members
+    // 1. generate ring members
     gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(real_reference_index_in_ledger,
         ring_size,
         ledger_context,
@@ -123,7 +127,7 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v
         proof_prep.m_referenced_enotes,
         proof_prep.m_real_reference_index);
 
-    // copy misc pieces
+    // 2. copy misc pieces
     proof_prep.m_tx_proposal_prefix        = tx_proposal_prefix;
     proof_prep.m_reference_image           = real_reference_image;
     proof_prep.m_reference_view_privkey    = real_reference_view_privkey;
@@ -156,7 +160,7 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_v1(const rct::key 
 
         if (enote_to_add == add_real_at_pos)
         {
-            temp.m_onetime_address = real_reference_enote.dest;
+            temp.m_onetime_address   = real_reference_enote.dest;
             temp.m_amount_commitment = real_reference_enote.mask;
         }
 
@@ -164,7 +168,9 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_v1(const rct::key 
     }
 
     // 2. add mock legacy enotes as the outputs of a mock legacy coinbase tx
-    const std::uint64_t real_reference_index_in_ledger{ledger_context_inout.max_legacy_enote_index() + add_real_at_pos + 1};
+    const std::uint64_t real_reference_index_in_ledger{
+            ledger_context_inout.max_legacy_enote_index() + add_real_at_pos + 1
+        };
     ledger_context_inout.add_legacy_coinbase(rct::pkGen(), 0, TxExtra{}, {}, std::move(mock_enotes));
 
 
@@ -291,13 +297,13 @@ bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::vector<LegacyCon
     const MockLedgerContext &ledger_context,
     std::unordered_map<crypto::key_image, LegacyMultisigRingSignaturePrepV1> &mapped_preps_out)
 {
-    // extract map [ legacy KI : enote ledger index ] from contextual records
+    // 1. extract map [ legacy KI : enote ledger index ] from contextual records
     std::unordered_map<crypto::key_image, std::uint64_t> enote_ledger_mappings;
 
     if (!try_get_membership_proof_real_reference_mappings(contextual_records, enote_ledger_mappings))
         return false;
 
-    // generate legacy multisig ring signature preps for each legacy enote requested
+    // 2. generate legacy multisig ring signature preps for each legacy enote requested
     for (const auto &enote_ledger_mapping : enote_ledger_mappings)
     {
         LegacyMultisigRingSignaturePrepV1 &prep = mapped_preps_out[enote_ledger_mapping.first];

@@ -46,7 +46,6 @@
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_component_types.h"
 
-
 //third party headers
 
 //standard headers
@@ -76,8 +75,8 @@ std::vector<SpInputProposalV1> gen_mock_sp_input_proposals_v1(const crypto::secr
     return input_proposals;
 }
 //-------------------------------------------------------------------------------------------------------------------
-SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1
-    (const SpEnoteCoreVariant &real_reference_enote,
+SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1(
+    const SpEnoteCoreVariant &real_reference_enote,
     const std::uint64_t &real_reference_index_in_ledger,
     const crypto::secret_key &address_mask,
     const crypto::secret_key &commitment_mask,
@@ -128,11 +127,11 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1
 
 
     /// copy misc pieces
-    proof_prep.m_ref_set_decomp_n = ref_set_decomp_n;
-    proof_prep.m_ref_set_decomp_m = ref_set_decomp_m;
+    proof_prep.m_ref_set_decomp_n     = ref_set_decomp_n;
+    proof_prep.m_ref_set_decomp_m     = ref_set_decomp_m;
     proof_prep.m_real_reference_enote = real_reference_enote;
-    proof_prep.m_address_mask = address_mask;
-    proof_prep.m_commitment_mask = commitment_mask;
+    proof_prep.m_address_mask         = address_mask;
+    proof_prep.m_commitment_mask      = commitment_mask;
 
     return proof_prep;
 }
@@ -237,6 +236,8 @@ std::vector<SpMembershipProofPrepV1> gen_mock_sp_membership_proof_preps_v1(
     std::vector<crypto::secret_key> address_masks;
     std::vector<crypto::secret_key> commitment_masks;
     input_enotes.reserve(input_proposals.size());
+    address_masks.reserve(input_proposals.size());
+    commitment_masks.reserve(input_proposals.size());
 
     for (const SpInputProposalV1 &input_proposal : input_proposals)
     {

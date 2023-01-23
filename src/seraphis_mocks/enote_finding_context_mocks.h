@@ -30,7 +30,6 @@
 
 // Dependency injectors for the find-received step of enote scanning (mock-ups).
 
-
 #pragma once
 
 //local headers
@@ -88,12 +87,12 @@ public:
     EnoteFindingContextLedgerMockLegacy& operator=(EnoteFindingContextLedgerMockLegacy&&) = delete;
 
 //member functions
+    /// get an unconfirmed chunk (no-op for legacy scanning)
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override {} //noop
     /// get an onchain chunk (or empty chunk representing top of current chain)
     void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const override;
-    /// get an unconfirmed chunk (no-op for legacy scanning)
-    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override {} //noop
 
 //member variables
 private:
@@ -105,14 +104,14 @@ private:
 };
 
 ////
-// EnoteFindingContextLedgerMock
+// EnoteFindingContextLedgerMockSp
 // - wraps a mock ledger context, produces chunks of potentially owned enotes (from find-received scanning)
 ///
-class EnoteFindingContextLedgerMock final : public EnoteFindingContextLedger
+class EnoteFindingContextLedgerMockSp final : public EnoteFindingContextLedger
 {
 public:
 //constructors
-    EnoteFindingContextLedgerMock(const MockLedgerContext &mock_ledger_context,
+    EnoteFindingContextLedgerMockSp(const MockLedgerContext &mock_ledger_context,
         const crypto::x25519_secret_key &xk_find_received) :
             m_mock_ledger_context{mock_ledger_context},
             m_xk_find_received{xk_find_received}
@@ -120,15 +119,15 @@ public:
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteFindingContextLedgerMock& operator=(EnoteFindingContextLedgerMock&&) = delete;
+    EnoteFindingContextLedgerMockSp& operator=(EnoteFindingContextLedgerMockSp&&) = delete;
 
 //member functions
+    /// get an unconfirmed chunk
+    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
     /// get an onchain chunk (or empty chunk representing top of current chain)
     void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const override;
-    /// get an unconfirmed chunk
-    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
 
 //member variables
 private:
@@ -137,14 +136,14 @@ private:
 };
 
 ////
-// EnoteFindingContextOffchain
+// EnoteFindingContextOffchainMockSp
 // - wraps a mock offchain context, produces chunks of potentially owned enotes (from find-received scanning)
 ///
-class EnoteFindingContextOffchainMock final : public EnoteFindingContextOffchain
+class EnoteFindingContextOffchainMockSp final : public EnoteFindingContextOffchain
 {
 public:
 //constructors
-    EnoteFindingContextOffchainMock(const MockOffchainContext &mock_offchain_context,
+    EnoteFindingContextOffchainMockSp(const MockOffchainContext &mock_offchain_context,
         const crypto::x25519_secret_key &xk_find_received) :
             m_mock_offchain_context{mock_offchain_context},
             m_xk_find_received{xk_find_received}
@@ -152,7 +151,7 @@ public:
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteFindingContextOffchainMock& operator=(EnoteFindingContextOffchainMock&&) = delete;
+    EnoteFindingContextOffchainMockSp& operator=(EnoteFindingContextOffchainMockSp&&) = delete;
 
 //member functions
     /// get a fresh offchain chunk

@@ -58,20 +58,47 @@ namespace sp
 namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermediateEnoteRecordV1 &new_record)
+boost::multiprecision::uint128_t SpEnoteStoreMockPaymentValidatorV1::get_received_sum(
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
 {
-    const rct::key record_onetime_address{onetime_address_ref(new_record)};
+    boost::multiprecision::uint128_t received_sum{0};
 
-    // add the record or update an existing record's origin context
-    if (m_mapped_sp_contextual_enote_records.find(record_onetime_address) == m_mapped_sp_contextual_enote_records.end())
+    for (const auto &mapped_contextual_record : m_sp_contextual_enote_records)
     {
-        m_mapped_sp_contextual_enote_records[record_onetime_address] = new_record;
+        const SpContextualIntermediateEnoteRecordV1 &contextual_record{mapped_contextual_record.second};
+
+        // ignore enotes with unrequested origins
+        if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+            continue;
+
+        // ignore onchain enotes that are locked
+        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+            contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            onchain_sp_enote_is_locked(
+                    contextual_record.m_origin_context.m_block_height,
+                    this->top_block_height(),
+                    m_default_spendable_age
+                ))
+            continue;
+
+        // update received sum
+        received_sum += contextual_record.m_record.m_amount;
     }
-    else
-    {
-        try_update_enote_origin_context_v1(new_record.m_origin_context,
-            m_mapped_sp_contextual_enote_records[record_onetime_address].m_origin_context);
-    }
+
+    return received_sum;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockPaymentValidatorV1::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
+{
+    if (block_height < m_refresh_height ||
+        block_height > m_refresh_height + m_block_ids.size() - 1 ||
+        m_block_ids.size() == 0)
+        return false;
+
+    block_id_out = m_block_ids[block_height - m_refresh_height];
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
@@ -83,7 +110,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
         "enote store mock v1 (clean maps for sp nonledger update): invalid origin status.");
 
     // 1. remove records that will be replaced
-    tools::for_all_in_map_erase_if(m_mapped_sp_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // remove all offchain enotes
@@ -119,7 +146,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
     m_block_ids.insert(m_block_ids.end(), new_block_ids.begin(), new_block_ids.end());
 
     // 2. remove records that will be replaced
-    tools::for_all_in_map_erase_if(m_mapped_sp_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
             [first_new_block](const auto &mapped_contextual_enote_record) -> bool
             {
                 // a. remove onchain enotes in range [first_new_block, end of chain]
@@ -144,47 +171,22 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
         this->add_record(found_enote_record.second);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockPaymentValidatorV1::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
-{
-    if (block_height < m_refresh_height ||
-        block_height > m_refresh_height + m_block_ids.size() - 1 ||
-        m_block_ids.size() == 0)
-        return false;
-
-    block_id_out = m_block_ids[block_height - m_refresh_height];
-
-    return true;
-}
+// MOCK PV ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockPaymentValidatorV1::get_received_sum(
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
+void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermediateEnoteRecordV1 &new_record)
 {
-    boost::multiprecision::uint128_t received_sum{0};
+    const rct::key record_onetime_address{onetime_address_ref(new_record)};
 
-    for (const auto &mapped_contextual_record : m_mapped_sp_contextual_enote_records)
+    // add the record or update an existing record's origin context
+    if (m_sp_contextual_enote_records.find(record_onetime_address) == m_sp_contextual_enote_records.end())
     {
-        const SpContextualIntermediateEnoteRecordV1 &contextual_record{mapped_contextual_record.second};
-
-        // ignore enotes with unrequested origins
-        if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
-            continue;
-
-        // ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_sp_enote_is_locked(
-                    contextual_record.m_origin_context.m_block_height,
-                    this->top_block_height(),
-                    m_default_spendable_age
-                ))
-            continue;
-
-        // update received sum
-        received_sum += contextual_record.m_record.m_amount;
+        m_sp_contextual_enote_records[record_onetime_address] = new_record;
     }
-
-    return received_sum;
+    else
+    {
+        try_update_enote_origin_context_v1(new_record.m_origin_context,
+            m_sp_contextual_enote_records[record_onetime_address].m_origin_context);
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

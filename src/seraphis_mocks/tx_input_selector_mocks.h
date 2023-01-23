@@ -30,7 +30,6 @@
 
 // Utilities for selecting tx inputs from an enote storage (mock-ups for unit testing).
 
-
 #pragma once
 
 //local headers

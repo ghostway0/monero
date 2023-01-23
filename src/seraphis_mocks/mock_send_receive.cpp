@@ -81,10 +81,10 @@ void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
     jamtis::JamtisPaymentProposalV1 &payment_proposal_out)
 {
     payment_proposal_out = jamtis::JamtisPaymentProposalV1{
-            .m_destination = destination,
-            .m_amount = outlay_amount,
+            .m_destination             = destination,
+            .m_amount                  = outlay_amount,
             .m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
-            .m_partial_memo = partial_memo_for_destination
+            .m_partial_memo            = partial_memo_for_destination
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &co
     const rct::key &destination_subaddr_view_pubkey,
     MockLedgerContext &ledger_context_inout)
 {
-    // prepare mock coinbase enotes
+    // 1. prepare mock coinbase enotes
     std::vector<LegacyEnoteVariant> coinbase_enotes;
     std::vector<rct::key> collected_enote_ephemeral_pubkeys;
     TxExtra tx_extra;
@@ -104,13 +104,13 @@ void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &co
 
     for (std::size_t amount_index{0}; amount_index < coinbase_amounts.size(); ++amount_index)
     {
-        // legacy enote ephemeral pubkey
+        // a. legacy enote ephemeral pubkey
         const crypto::secret_key enote_ephemeral_privkey{rct::rct2sk(rct::skGen())};
         collected_enote_ephemeral_pubkeys.emplace_back(
                 rct::scalarmultKey(destination_subaddr_spend_pubkey, rct::sk2rct(enote_ephemeral_privkey))
             );
 
-        // make legacy coinbase enote
+        // b. make legacy coinbase enote
         make_legacy_enote_v5(destination_subaddr_spend_pubkey,
             destination_subaddr_view_pubkey,
             coinbase_amounts[amount_index],
@@ -121,12 +121,12 @@ void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &co
         coinbase_enotes.emplace_back(enote_temp);
     }
 
-    // set tx extra
+    // 2. set tx extra
     CHECK_AND_ASSERT_THROW_MES(try_append_legacy_enote_ephemeral_pubkeys_to_tx_extra(collected_enote_ephemeral_pubkeys,
             tx_extra),
         "send legacy coinbase amounts to user: appending enote ephemeral pubkeys to tx extra failed.");
 
-    // commit coinbase enotes as new block
+    // 3. commit coinbase enotes as new block
     ledger_context_inout.add_legacy_coinbase(rct::pkGen(), 0, std::move(tx_extra), {}, std::move(coinbase_enotes));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -134,24 +134,24 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
     const jamtis::JamtisDestinationV1 &user_address,
     MockLedgerContext &ledger_context_inout)
 {
-    // prepare payment proposals
+    // 1. prepare payment proposals
     std::vector<jamtis::JamtisPaymentProposalV1> payment_proposals;
     payment_proposals.reserve(coinbase_amounts.size());
     rct::xmr_amount block_reward{0};
 
     for (const rct::xmr_amount coinbase_amount : coinbase_amounts)
     {
-        // make payment proposal
+        // a. make payment proposal
         convert_outlay_to_payment_proposal(coinbase_amount,
         user_address,
         TxExtra{},
         tools::add_element(payment_proposals));
 
-        // accumulate the block reward
+        // b. accumulate the block reward
         block_reward += coinbase_amount;
     }
 
-    // make a coinbase tx
+    // 2. make a coinbase tx
     SpTxCoinbaseV1 coinbase_tx;
     make_seraphis_tx_coinbase_v1(SpTxCoinbaseV1::SemanticRulesVersion::MOCK,
         ledger_context_inout.chain_height() + 1,
@@ -160,12 +160,12 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
         {},
         coinbase_tx);
 
-    // validate the coinbase tx
+    // 3. validate the coinbase tx
     const TxValidationContextMock tx_validation_context{ledger_context_inout};
     CHECK_AND_ASSERT_THROW_MES(validate_tx(coinbase_tx, tx_validation_context),
         "send sp coinbase amounts to user (mock): failed to validate coinbase tx.");
 
-    // commit coinbase tx as new block
+    // 4. commit coinbase tx as new block
     ledger_context_inout.commit_unconfirmed_txs_v1(coinbase_tx);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
     CHECK_AND_ASSERT_THROW_MES(coinbase_amounts_per_user.size() == user_addresses.size(),
         "send sp coinbase amounts to users (mock): amount : address mismatch.");
 
-    // prepare payment proposals
+    // 1. prepare payment proposals
     std::vector<jamtis::JamtisPaymentProposalV1> payment_proposals;
     payment_proposals.reserve(coinbase_amounts_per_user.size());
     rct::xmr_amount block_reward{0};
@@ -185,18 +185,18 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
     {
         for (const rct::xmr_amount user_amount : coinbase_amounts_per_user[user_index])
         {
-            // make payment proposal
+            // a .make payment proposal
             convert_outlay_to_payment_proposal(user_amount,
                 user_addresses[user_index],
                 TxExtra{},
                 tools::add_element(payment_proposals));
 
-            // accumulate the block reward
+            // b. accumulate the block reward
             block_reward += user_amount;
         }
     }
 
-    // make a coinbase tx
+    // 2. make a coinbase tx
     SpTxCoinbaseV1 coinbase_tx;
     make_seraphis_tx_coinbase_v1(SpTxCoinbaseV1::SemanticRulesVersion::MOCK,
         ledger_context_inout.chain_height() + 1,
@@ -205,12 +205,12 @@ void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_am
         {},
         coinbase_tx);
 
-    // validate the coinbase tx
+    // 3. validate the coinbase tx
     const TxValidationContextMock tx_validation_context{ledger_context_inout};
     CHECK_AND_ASSERT_THROW_MES(validate_tx(coinbase_tx, tx_validation_context),
         "send sp coinbase amounts to user (mock): failed to validate coinbase tx.");
 
-    // commit coinbase tx as new block
+    // 4. commit coinbase tx as new block
     ledger_context_inout.commit_unconfirmed_txs_v1(coinbase_tx);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -225,7 +225,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const SpBinnedReferenceSetConfigV1 &bin_config,
-    MockLedgerContext &ledger_context_inout,
+    const MockLedgerContext &ledger_context,
     SpTxSquashedV1 &tx_out)
 {
     /// build transaction
@@ -298,7 +298,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
         legacy_input_ledger_mappings,
         tx_proposal.m_legacy_input_proposals,
         legacy_ring_size,
-        ledger_context_inout,
+        ledger_context,
         legacy_ring_signature_preps);
 
     // 8. prepare for membership proofs
@@ -308,7 +308,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
         ref_set_decomp_n,
         ref_set_decomp_m,
         bin_config,
-        ledger_context_inout,
+        ledger_context,
         sp_membership_proof_preps);
 
     // 9. complete tx
@@ -334,9 +334,9 @@ void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::mocks::jamt
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout)
 {
-    // make one tx
+    // 1. make one tx
     SpTxSquashedV1 single_tx;
-    construct_tx_for_mock_ledger_v1(legacy_mock_keys{},
+    construct_tx_for_mock_ledger_v1(legacy_mock_keys{},  //no legacy inputs
         local_user_sp_keys,
         local_user_input_selector,
         tx_fee_calculator,
@@ -350,7 +350,7 @@ void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::mocks::jamt
         ledger_context_inout,
         single_tx);
 
-    // validate and submit to the mock ledger
+    // 2. validate and submit to the mock ledger
     const TxValidationContextMock tx_validation_context{ledger_context_inout};
     CHECK_AND_ASSERT_THROW_MES(validate_tx(single_tx, tx_validation_context),
         "transfer funds single mock unconfirmed: validating tx failed.");
@@ -371,7 +371,7 @@ void transfer_funds_single_mock_v1_unconfirmed(const legacy_mock_keys &local_use
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout)
 {
-    // make one tx
+    // 1. make one tx
     SpTxSquashedV1 single_tx;
     construct_tx_for_mock_ledger_v1(local_user_legacy_keys,
         local_user_sp_keys,
@@ -387,7 +387,7 @@ void transfer_funds_single_mock_v1_unconfirmed(const legacy_mock_keys &local_use
         ledger_context_inout,
         single_tx);
 
-    // validate and submit to the mock ledger
+    // 2. validate and submit to the mock ledger
     const TxValidationContextMock tx_validation_context{ledger_context_inout};
     CHECK_AND_ASSERT_THROW_MES(validate_tx(single_tx, tx_validation_context),
         "transfer funds single mock unconfirmed sp only: validating tx failed.");
@@ -408,7 +408,7 @@ void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_key
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout)
 {
-    // make one tx
+    // 1. make one tx
     SpTxSquashedV1 single_tx;
     construct_tx_for_mock_ledger_v1(local_user_legacy_keys,
         local_user_sp_keys,
@@ -424,7 +424,7 @@ void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_key
         ledger_context_inout,
         single_tx);
 
-    // validate and submit to the mock ledger
+    // 2, validate and submit to the mock ledger
     const TxValidationContextMock tx_validation_context{ledger_context_inout};
     CHECK_AND_ASSERT_THROW_MES(validate_tx(single_tx, tx_validation_context),
         "transfer funds single mock: validating tx failed.");
@@ -432,30 +432,26 @@ void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_key
         "transfer funds single mock: adding tx to mock ledger failed.");
 }
 //-------------------------------------------------------------------------------------------------------------------
-void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
+void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    const LegacyScanMode legacy_scan_mode,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout)
 {
-    const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
+    const EnoteFindingContextLedgerMockLegacy enote_finding_context{
+            ledger_context,
+            legacy_base_spend_pubkey,
+            legacy_subaddress_map,
+            legacy_view_privkey,
+            legacy_scan_mode
+        };
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
-
-    refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater);
-}
-//-------------------------------------------------------------------------------------------------------------------
-void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
-    const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout)
-{
-    const EnoteFindingContextLedgerMock enote_finding_context{ledger_context, user_keys.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterMockSpIntermediate enote_store_updater{
-            user_keys.K_1_base,
-            user_keys.xk_ua,
-            user_keys.xk_fr,
-            user_keys.s_ga,
+    EnoteStoreUpdaterMockLegacyIntermediate enote_store_updater{
+            legacy_base_spend_pubkey,
+            legacy_view_privkey,
+            legacy_scan_mode,
             user_enote_store_inout
         };
 
@@ -488,28 +484,32 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
     refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_spend_pubkey,
-    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const crypto::secret_key &legacy_view_privkey,
-    const LegacyScanMode legacy_scan_mode,
+void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
+    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const MockLedgerContext &ledger_context,
+    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout)
+{
+    const EnoteFindingContextLedgerMockSp enote_finding_context{ledger_context, user_keys.xk_fr};
+    EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
+    EnoteStoreUpdaterMockSpIntermediate enote_store_updater{
+            user_keys.K_1_base,
+            user_keys.xk_ua,
+            user_keys.xk_fr,
+            user_keys.s_ga,
+            user_enote_store_inout
+        };
+
+    refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout)
 {
-    const EnoteFindingContextLedgerMockLegacy enote_finding_context{
-            ledger_context,
-            legacy_base_spend_pubkey,
-            legacy_subaddress_map,
-            legacy_view_privkey,
-            legacy_scan_mode
-        };
+    const EnoteFindingContextLedgerMockSp enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
-    EnoteStoreUpdaterMockLegacyIntermediate enote_store_updater{
-            legacy_base_spend_pubkey,
-            legacy_view_privkey,
-            legacy_scan_mode,
-            user_enote_store_inout
-        };
+    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
 
     refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater);
 }

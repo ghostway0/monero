@@ -203,7 +203,7 @@ bool MockOffchainContext::try_add_tx_v1_impl(const SpTxSquashedV1 &tx)
 //-------------------------------------------------------------------------------------------------------------------
 void MockOffchainContext::remove_tx_from_cache_impl(const rct::key &input_context)
 {
-    // clear key images
+    // 1. clear key images
     if (m_tx_key_images.find(input_context) != m_tx_key_images.end())
     {
         for (const crypto::key_image &key_image : std::get<0>(m_tx_key_images[input_context]))
@@ -214,18 +214,18 @@ void MockOffchainContext::remove_tx_from_cache_impl(const rct::key &input_contex
         m_tx_key_images.erase(input_context);
     }
 
-    // clear output contents
+    // 2. clear output contents
     m_output_contents.erase(input_context);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockOffchainContext::remove_tx_with_key_image_from_cache_impl(const crypto::key_image &key_image)
 {
-    // early return if key image isn't cached
+    // 1. early return if key image isn't cached
     if (m_sp_key_images.find(key_image) == m_sp_key_images.end() &&
         m_legacy_key_images.find(key_image) == m_legacy_key_images.end())
         return;
 
-    // remove the tx that has this key image (there should only be one)
+    // 2. remove the tx that has this key image (there should only be one)
     auto tx_key_images_search_it = std::find_if(m_tx_key_images.begin(), m_tx_key_images.end(), 
             [&key_image](const auto &tx_key_images) -> bool
             {
@@ -265,11 +265,11 @@ void MockOffchainContext::get_offchain_chunk_sp_impl(const crypto::x25519_secret
     chunk_out.m_basic_records_per_tx.clear();
     chunk_out.m_contextual_key_images.clear();
 
-    // no chunk if no txs to scan
+    // 1. no chunk if no txs to scan
     if (m_output_contents.size() == 0)
         return;
 
-    // find-received scan each tx in the unconfirmed chache
+    // 2. find-received scan each tx in the unconfirmed chache
     for (const auto &tx_with_output_contents : m_output_contents)
     {
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk

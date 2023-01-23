@@ -61,7 +61,7 @@ namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void update_with_new_block_ids(const std::uint64_t first_allowed_height,
+static void update_block_ids_with_new_block_ids(const std::uint64_t first_allowed_height,
     const std::uint64_t first_new_block_height,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
@@ -96,153 +96,243 @@ SpEnoteStoreMockV1::SpEnoteStoreMockV1(const std::uint64_t refresh_height,
         m_default_spendable_age{default_spendable_age}
 {}
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecordV1 &new_record)
+boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance(
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
+    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
 {
-    // 1. if key image is known, promote to a full enote record
-    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address_ref(new_record.m_record.m_enote)) !=
-        m_tracked_legacy_onetime_address_duplicates.end())
+    boost::multiprecision::uint128_t balance{0};
+
+    // 1. intermediate legacy enotes (it is unknown if these enotes are spent)
+    balance += this->get_balance_intermediate_legacy(origin_statuses, spent_statuses, exclusions);
+
+    // 2. full legacy enotes
+    balance += this->get_balance_full_legacy(origin_statuses, spent_statuses, exclusions);
+
+    // 3. seraphis enotes
+    balance += this->get_balance_seraphis(origin_statuses, spent_statuses, exclusions);
+
+    return balance;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t SpEnoteStoreMockV1::top_block_height() const
+{
+    // 1. no blocks
+    if (m_legacy_block_ids.size() == 0 &&
+        m_sp_block_ids.size() == 0)
+        return m_refresh_height - 1;
+
+    // 2. only legacy blocks
+    if (m_sp_block_ids.size() == 0)
+        return m_refresh_height + m_legacy_block_ids.size() - 1;
+
+    // 3. only seraphis blocks
+    if (m_legacy_block_ids.size() == 0)
+        return this->sp_refresh_height() + m_sp_block_ids.size() - 1;
+
+    // 4. multi-type blocks
+    return std::max(
+            m_refresh_height + m_legacy_block_ids.size() - 1,
+            this->sp_refresh_height() + m_sp_block_ids.size() - 1
+        );
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_height,
+    rct::key &block_id_out) const
+{
+    // 1. check error states
+    if (block_height < m_refresh_height ||
+        block_height > m_refresh_height + m_legacy_block_ids.size() - 1 ||
+        m_legacy_block_ids.size() == 0)
+        return false;
+
+    // 2. assume a block id is 'unknown' if its height is above the last legacy partial-scanned block height
+    if (block_height + 1 > m_legacy_partialscan_height + 1)
+        return false;
+
+    // 3. get the block id
+    block_id_out = m_legacy_block_ids[block_height - m_refresh_height];
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_height,
+    rct::key &block_id_out) const
+{
+    // 1. check error states
+    if (block_height < m_refresh_height ||
+        block_height > m_refresh_height + m_legacy_block_ids.size() - 1 ||
+        m_legacy_block_ids.size() == 0)
+        return false;
+
+    // 2. assume a block id is 'unknown' if its height is above the last legacy full-scanned block height
+    if (block_height + 1 > m_legacy_fullscan_height + 1)
+        return false;
+
+    // 3. get the block id
+    block_id_out = m_legacy_block_ids[block_height - m_refresh_height];
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_block_id_for_sp(const std::uint64_t block_height, rct::key &block_id_out) const
+{
+    // 1. check error states
+    if (block_height < this->sp_refresh_height() ||
+        block_height > this->sp_refresh_height() + m_sp_block_ids.size() - 1 ||
+        m_sp_block_ids.size() == 0)
+        return false;
+
+    // 2. assume a block id is 'unknown' if its height is above the last seraphis scanned block height
+    if (block_height + 1 > m_sp_scanned_height + 1)
+        return false;
+
+    // 3. get the block id
+    block_id_out = m_sp_block_ids[block_height - this->sp_refresh_height()];
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
+{
+    // try to get the block id from each of the scan types
+    return try_get_block_id_for_legacy_partialscan(block_height, block_id_out) ||
+        try_get_block_id_for_legacy_fullscan(block_height, block_id_out) ||
+        try_get_block_id_for_sp(block_height, block_id_out);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::has_enote_with_key_image(const crypto::key_image &key_image) const
+{
+    return m_sp_contextual_enote_records.find(key_image) != m_sp_contextual_enote_records.end() ||
+        m_legacy_key_images.find(key_image) != m_legacy_key_images.end();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStoreMockV1::try_get_legacy_enote_record(const crypto::key_image &key_image,
+    LegacyContextualEnoteRecordV1 &contextual_record_out) const
+{
+    // drill into the legacy maps searching for at least one matching legacy enote record
+    if (m_legacy_key_images.find(key_image) == m_legacy_key_images.end())
+        return false;
+
+    const rct::key &onetime_address{m_legacy_key_images.at(key_image)};
+
+    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address) ==
+            m_tracked_legacy_onetime_address_duplicates.end())
+        return false;
+
+    const std::unordered_set<rct::key> &identifiers_of_duplicates{
+            m_tracked_legacy_onetime_address_duplicates.at(onetime_address)
+        };
+
+    if (identifiers_of_duplicates.size() == 0)
+        return false;
+
+    // search for the highest-amount enote amoung the duplicates
+    rct::key best_identifier{rct::zero()};
+    rct::xmr_amount best_amount{0};
+    rct::xmr_amount temp_record_amount;
+
+    for (const rct::key &identifier : identifiers_of_duplicates)
     {
-        const auto &identifiers_of_known_enotes =
-            m_tracked_legacy_onetime_address_duplicates.at(onetime_address_ref(new_record.m_record.m_enote));
-
-        CHECK_AND_ASSERT_THROW_MES(identifiers_of_known_enotes.size() > 0,
-            "add intermediate record (mock enote store): record's onetime address is known, but there are no "
-            "identifiers (bug).");
-
-        for (const rct::key &identifier : identifiers_of_known_enotes)
+        if (m_legacy_intermediate_contextual_enote_records.find(identifier) !=
+            m_legacy_intermediate_contextual_enote_records.end())
         {
-            // key image is known if there is a full record associated with this intermediate record's onetime address
-            if (m_mapped_legacy_contextual_enote_records.find(identifier) ==
-                m_mapped_legacy_contextual_enote_records.end())
-                continue;
+            temp_record_amount = m_legacy_intermediate_contextual_enote_records.at(identifier).m_record.m_amount;
+        }
+        else if (m_legacy_contextual_enote_records.find(identifier) !=
+            m_legacy_contextual_enote_records.end())
+        {
+            temp_record_amount = m_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
+        }
+        else
+            continue;
 
-            CHECK_AND_ASSERT_THROW_MES(identifier == *(identifiers_of_known_enotes.begin()),
-                "add intermediate record (mock enote store): key image is known but there are intermediate "
-                "records with this onetime address (a given onetime address should have only intermediate or only "
-                "full legacy records).");
-
-            LegacyContextualEnoteRecordV1 temp_full_record{};
-
-            get_legacy_enote_record(new_record.m_record,
-                m_mapped_legacy_contextual_enote_records.at(identifier).m_record.m_key_image,
-                temp_full_record.m_record);
-            temp_full_record.m_origin_context = new_record.m_origin_context;
-
-            this->add_record(temp_full_record);
-            return;
+        if (best_amount < temp_record_amount)
+        {
+            best_identifier = identifier;
+            best_amount = temp_record_amount;
         }
     }
 
-    // 2. else add the intermediate record or update an existing record's origin context
-    rct::key new_record_identifier;
-    get_legacy_enote_identifier(onetime_address_ref(new_record.m_record.m_enote),
-        new_record.m_record.m_amount,
-        new_record_identifier);
+    // if the highest-amount enote is not amoung the full enote records, then we failed
+    if (m_legacy_contextual_enote_records.find(best_identifier) == m_legacy_contextual_enote_records.end())
+        return false;
 
-    if (m_mapped_legacy_intermediate_contextual_enote_records.find(new_record_identifier) ==
-        m_mapped_legacy_intermediate_contextual_enote_records.end())
-    {
-        // add new intermediate record
-        m_mapped_legacy_intermediate_contextual_enote_records[new_record_identifier] = new_record;
-    }
-    else
-    {
-        // update intermediate record's origin context
-        try_update_enote_origin_context_v1(new_record.m_origin_context,
-            m_mapped_legacy_intermediate_contextual_enote_records[new_record_identifier].m_origin_context);
-    }
-
-    // 3. save to the legacy duplicate tracker
-    m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)]
-        .insert(new_record_identifier);
+    contextual_record_out = m_legacy_contextual_enote_records.at(best_identifier);
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const LegacyContextualEnoteRecordV1 &new_record)
+bool SpEnoteStoreMockV1::try_get_sp_enote_record(const crypto::key_image &key_image,
+    SpContextualEnoteRecordV1 &contextual_record_out) const
 {
-    rct::key new_record_identifier;
-    get_legacy_enote_identifier(onetime_address_ref(new_record.m_record.m_enote),
-        new_record.m_record.m_amount,
-        new_record_identifier);
+    if (m_sp_contextual_enote_records.find(key_image) == m_sp_contextual_enote_records.end())
+        return false;
 
-    // 1. add the record or update an existing record's contexts
-    if (m_mapped_legacy_contextual_enote_records.find(new_record_identifier) ==
-        m_mapped_legacy_contextual_enote_records.end())
-    {
-        m_mapped_legacy_contextual_enote_records[new_record_identifier] = new_record;
-    }
-    else
-    {
-        update_contextual_enote_record_contexts_v1(new_record.m_origin_context,
-                new_record.m_spent_context,
-                m_mapped_legacy_contextual_enote_records[new_record_identifier].m_origin_context,
-                m_mapped_legacy_contextual_enote_records[new_record_identifier].m_spent_context
-            );
-    }
+    contextual_record_out = m_sp_contextual_enote_records.at(key_image);
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void SpEnoteStoreMockV1::import_legacy_key_image(const crypto::key_image &legacy_key_image,
+    const rct::key &onetime_address)
+{
+    // 1. we are done if there are no enote records for this onetime address
+    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address) ==
+        m_tracked_legacy_onetime_address_duplicates.end())
+        return;
 
-    // 2. if this enote is located in the legacy key image tracker for seraphis txs, update with the tracker's spent
-    //    context
-    if (m_legacy_key_images_in_sp_selfsends.find(new_record.m_record.m_key_image) !=
-        m_legacy_key_images_in_sp_selfsends.end())
-    {
-        // update the record's spent context
-        try_update_enote_spent_context_v1(m_legacy_key_images_in_sp_selfsends.at(new_record.m_record.m_key_image),
-            m_mapped_legacy_contextual_enote_records[new_record_identifier].m_spent_context);
+    // 2. if this key image appeared in a seraphis tx, get the spent context
+    SpEnoteSpentContextV1 spent_context{};
 
-        // note: do not reset the tracker's spent context here, because the tracker is tied to seraphis scanning, so
-        //       any updates to it should be handled by the seraphis scanning process
-    }
+    if (m_legacy_key_images_in_sp_selfsends.find(legacy_key_image) != m_legacy_key_images_in_sp_selfsends.end())
+        spent_context = m_legacy_key_images_in_sp_selfsends.at(legacy_key_image);
 
-    // 3. if this enote is located in the intermediate enote record map, update the full record with the intermediate
-    //    record's origin context
-    if (m_mapped_legacy_intermediate_contextual_enote_records.find(new_record_identifier) !=
-        m_mapped_legacy_intermediate_contextual_enote_records.end())
-    {
-        // update the record's origin context
-        try_update_enote_origin_context_v1(
-                m_mapped_legacy_intermediate_contextual_enote_records.at(new_record_identifier).m_origin_context,
-                m_mapped_legacy_contextual_enote_records[new_record_identifier].m_origin_context
-            );
-    }
-
-    // 4. there may be other full legacy enote records with this record's key image, use them to update the spent context
-    for (const rct::key &legacy_enote_identifier :
-            m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)])
+    // 3. there may be full legacy enote records with this key image, use them to update the spent context
+    for (const rct::key &legacy_enote_identifier : m_tracked_legacy_onetime_address_duplicates[onetime_address])
     {
         // a. skip identifiers not in the full legacy records map
-        if (m_mapped_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
-            m_mapped_legacy_contextual_enote_records.end())
+        if (m_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
+            m_legacy_contextual_enote_records.end())
             continue;
 
         // b. update the spent context
         try_update_enote_spent_context_v1(
-            m_mapped_legacy_contextual_enote_records.at(legacy_enote_identifier).m_spent_context,
-            m_mapped_legacy_contextual_enote_records[new_record_identifier].m_spent_context);
+            m_legacy_contextual_enote_records.at(legacy_enote_identifier).m_spent_context,
+            spent_context);
     }
 
-    // 5. remove the intermediate record with this identifier (must do this before importing the key image, since
-    //    the key image importer assumes the intermediate and full legacy maps don't have any overlap)
-    m_mapped_legacy_intermediate_contextual_enote_records.erase(new_record_identifier);
+    // 4. promote intermediate enote records with this onetime address to full enote records
+    for (const rct::key &legacy_enote_identifier : m_tracked_legacy_onetime_address_duplicates[onetime_address])
+    {
+        // a. skip identifiers not in the intermediate records map
+        if (m_legacy_intermediate_contextual_enote_records.find(legacy_enote_identifier) ==
+            m_legacy_intermediate_contextual_enote_records.end())
+            continue;
 
-    // 6. save to the legacy duplicate tracker
-    m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)]
-        .insert(new_record_identifier);
+        // b. if this identifier has an intermediate record, it should not have a full record
+        CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
+                m_legacy_contextual_enote_records.end(),
+            "import legacy key image (enote store mock): intermediate and full legacy maps inconsistent (bug).");
 
-    // 7. save to the legacy key image set
-    m_legacy_key_images[new_record.m_record.m_key_image] = onetime_address_ref(new_record.m_record.m_enote);
+        // c. set the full record
+        get_legacy_enote_record(
+            m_legacy_intermediate_contextual_enote_records[legacy_enote_identifier].m_record,
+            legacy_key_image,
+            m_legacy_contextual_enote_records[legacy_enote_identifier].m_record);
 
-    // 8. import this key image to force-promote all intermediate records with different identifiers to full records
-    this->import_legacy_key_image(new_record.m_record.m_key_image, onetime_address_ref(new_record.m_record.m_enote));
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const SpContextualEnoteRecordV1 &new_record)
-{
-    const crypto::key_image &record_key_image{key_image_ref(new_record)};
+        // d. set the full record's contexts
+        update_contextual_enote_record_contexts_v1(
+                m_legacy_intermediate_contextual_enote_records[legacy_enote_identifier].m_origin_context,
+                spent_context,
+                m_legacy_contextual_enote_records[legacy_enote_identifier].m_origin_context,
+                m_legacy_contextual_enote_records[legacy_enote_identifier].m_spent_context
+            );
 
-    // add the record or update an existing record's contexts
-    if (m_mapped_sp_contextual_enote_records.find(record_key_image) == m_mapped_sp_contextual_enote_records.end())
-        m_mapped_sp_contextual_enote_records[record_key_image] = new_record;
-    else
-        update_contextual_enote_record_contexts_v1(new_record, m_mapped_sp_contextual_enote_records[record_key_image]);
+        // e. remove the intermediate record
+        m_legacy_intermediate_contextual_enote_records.erase(legacy_enote_identifier);
+
+        // f. save to the legacy key image set
+        m_legacy_key_images[legacy_key_image] = onetime_address;
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::set_last_legacy_fullscan_height(const std::uint64_t new_height)
@@ -289,96 +379,6 @@ void SpEnoteStoreMockV1::set_last_sp_scanned_height(const std::uint64_t new_heig
         "mock enote store (set seraphis scan height): new height is above known block range.");
 
     m_sp_scanned_height = new_height;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::import_legacy_key_image(const crypto::key_image &legacy_key_image,
-    const rct::key &onetime_address)
-{
-    // 1. we are done if there are no enote records for this onetime address
-    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address) ==
-        m_tracked_legacy_onetime_address_duplicates.end())
-        return;
-
-    // 2. if this key image appeared in a seraphis tx, get the spent context
-    SpEnoteSpentContextV1 spent_context{};
-
-    if (m_legacy_key_images_in_sp_selfsends.find(legacy_key_image) != m_legacy_key_images_in_sp_selfsends.end())
-    {
-        spent_context = m_legacy_key_images_in_sp_selfsends.at(legacy_key_image);
-    }
-
-    // 3. there may be full legacy enote records with this key image, use them to update the spent context
-    for (const rct::key &legacy_enote_identifier : m_tracked_legacy_onetime_address_duplicates[onetime_address])
-    {
-        // a. skip identifiers not in the full legacy records map
-        if (m_mapped_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
-            m_mapped_legacy_contextual_enote_records.end())
-            continue;
-
-        // b. update the spent context
-        try_update_enote_spent_context_v1(
-            m_mapped_legacy_contextual_enote_records.at(legacy_enote_identifier).m_spent_context,
-            spent_context);
-    }
-
-    // 4. promote intermediate enote records with this onetime address to full enote records
-    for (const rct::key &legacy_enote_identifier : m_tracked_legacy_onetime_address_duplicates[onetime_address])
-    {
-        // a. skip identifiers not in the intermediate records map
-        if (m_mapped_legacy_intermediate_contextual_enote_records.find(legacy_enote_identifier) ==
-            m_mapped_legacy_intermediate_contextual_enote_records.end())
-            continue;
-
-        // b. if this identifier has an intermediate record, it should not have a full record
-        CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
-                m_mapped_legacy_contextual_enote_records.end(),
-            "import legacy key image (enote store mock): intermediate and full legacy maps inconsistent (bug).");
-
-        // c. set the full record
-        get_legacy_enote_record(
-            m_mapped_legacy_intermediate_contextual_enote_records[legacy_enote_identifier].m_record,
-            legacy_key_image,
-            m_mapped_legacy_contextual_enote_records[legacy_enote_identifier].m_record);
-
-        // d. set the full record's contexts
-        update_contextual_enote_record_contexts_v1(
-                m_mapped_legacy_intermediate_contextual_enote_records[legacy_enote_identifier].m_origin_context,
-                spent_context,
-                m_mapped_legacy_contextual_enote_records[legacy_enote_identifier].m_origin_context,
-                m_mapped_legacy_contextual_enote_records[legacy_enote_identifier].m_spent_context
-            );
-
-        // e. remove the intermediate record
-        m_mapped_legacy_intermediate_contextual_enote_records.erase(legacy_enote_identifier);
-
-        // f. save to the legacy key image set
-        m_legacy_key_images[legacy_key_image] = onetime_address;
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::handle_legacy_key_images_from_sp_selfsends(
-    const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends)
-{
-    // handle each key image
-    for (const auto &legacy_key_image_with_spent_context : legacy_key_images_in_sp_selfsends)
-    {
-        // 1. try to update the spent contexts of legacy enotes that have this key image
-        for (auto &mapped_contextual_enote_record : m_mapped_legacy_contextual_enote_records)
-        {
-            // a. skip legacy enotes with different key images
-            if (mapped_contextual_enote_record.second.m_record.m_key_image != legacy_key_image_with_spent_context.first)
-                continue;
-
-            // b. update the spent context of this legacy enote
-            try_update_enote_spent_context_v1(legacy_key_image_with_spent_context.second,
-                mapped_contextual_enote_record.second.m_spent_context);
-        }
-
-        // 2. save the key image's spent context in the tracker (or update an existing context)
-        // note: these are always saved to help with reorg handling
-        try_update_enote_spent_context_v1(legacy_key_image_with_spent_context.second,
-            m_legacy_key_images_in_sp_selfsends[legacy_key_image_with_spent_context.first]);
-    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_with_intermediate_legacy_records_from_nonledger(
@@ -505,188 +505,214 @@ void SpEnoteStoreMockV1::update_with_sp_records_from_ledger(const std::uint64_t 
     this->handle_legacy_key_images_from_sp_selfsends(legacy_key_images_in_sp_selfsends);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::has_enote_with_key_image(const crypto::key_image &key_image) const
-{
-    return m_mapped_sp_contextual_enote_records.find(key_image) != m_mapped_sp_contextual_enote_records.end() ||
-        m_legacy_key_images.find(key_image) != m_legacy_key_images.end();
-}
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_height,
-    rct::key &block_id_out) const
-{
-    // 1. check error states
-    if (block_height < m_refresh_height ||
-        block_height > m_refresh_height + m_legacy_block_ids.size() - 1 ||
-        m_legacy_block_ids.size() == 0)
-        return false;
-
-    // 2. assume a block id is 'unknown' if its height is above the last legacy partial-scanned block height
-    if (block_height + 1 > m_legacy_partialscan_height + 1)
-        return false;
-
-    // 3. get the block id
-    block_id_out = m_legacy_block_ids[block_height - m_refresh_height];
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_height,
-    rct::key &block_id_out) const
-{
-    // 1. check error states
-    if (block_height < m_refresh_height ||
-        block_height > m_refresh_height + m_legacy_block_ids.size() - 1 ||
-        m_legacy_block_ids.size() == 0)
-        return false;
-
-    // 2. assume a block id is 'unknown' if its height is above the last legacy full-scanned block height
-    if (block_height + 1 > m_legacy_fullscan_height + 1)
-        return false;
-
-    // 3. get the block id
-    block_id_out = m_legacy_block_ids[block_height - m_refresh_height];
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_sp(const std::uint64_t block_height, rct::key &block_id_out) const
-{
-    // 1. check error states
-    if (block_height < this->sp_refresh_height() ||
-        block_height > this->sp_refresh_height() + m_sp_block_ids.size() - 1 ||
-        m_sp_block_ids.size() == 0)
-        return false;
-
-    // 2. assume a block id is 'unknown' if its height is above the last seraphis scanned block height
-    if (block_height + 1 > m_sp_scanned_height + 1)
-        return false;
-
-    // 3. get the block id
-    block_id_out = m_sp_block_ids[block_height - this->sp_refresh_height()];
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
-{
-    // try to get the block id from each of the scan types
-    return try_get_block_id_for_legacy_partialscan(block_height, block_id_out) ||
-        try_get_block_id_for_legacy_fullscan(block_height, block_id_out) ||
-        try_get_block_id_for_sp(block_height, block_id_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_legacy_enote_record(const crypto::key_image &key_image,
-    LegacyContextualEnoteRecordV1 &contextual_record_out) const
-{
-    // drill into the legacy maps searching for at least one matching legacy enote record
-    if (m_legacy_key_images.find(key_image) == m_legacy_key_images.end())
-        return false;
-
-    const rct::key &onetime_address{m_legacy_key_images.at(key_image)};
-
-    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address) ==
-            m_tracked_legacy_onetime_address_duplicates.end())
-        return false;
-
-    const std::unordered_set<rct::key> &identifiers_of_duplicates{
-            m_tracked_legacy_onetime_address_duplicates.at(onetime_address)
-        };
-
-    if (identifiers_of_duplicates.size() == 0)
-        return false;
-
-    // search for the highest-amount enote amoung the duplicates
-    rct::key best_identifier{rct::zero()};
-    rct::xmr_amount best_amount{0};
-    rct::xmr_amount temp_record_amount;
-
-    for (const rct::key &identifier : identifiers_of_duplicates)
-    {
-        if (m_mapped_legacy_intermediate_contextual_enote_records.find(identifier) !=
-            m_mapped_legacy_intermediate_contextual_enote_records.end())
-        {
-            temp_record_amount = m_mapped_legacy_intermediate_contextual_enote_records.at(identifier).m_record.m_amount;
-        }
-        else if (m_mapped_legacy_contextual_enote_records.find(identifier) !=
-            m_mapped_legacy_contextual_enote_records.end())
-        {
-            temp_record_amount = m_mapped_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
-        }
-        else
-            continue;
-
-        if (best_amount < temp_record_amount)
-        {
-            best_identifier = identifier;
-            best_amount = temp_record_amount;
-        }
-    }
-
-    // if the highest-amount enote is not amoung the full enote records, then we failed
-    if (m_mapped_legacy_contextual_enote_records.find(best_identifier) == m_mapped_legacy_contextual_enote_records.end())
-        return false;
-
-    contextual_record_out = m_mapped_legacy_contextual_enote_records.at(best_identifier);
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_sp_enote_record(const crypto::key_image &key_image,
-    SpContextualEnoteRecordV1 &contextual_record_out) const
-{
-    if (m_mapped_sp_contextual_enote_records.find(key_image) == m_mapped_sp_contextual_enote_records.end())
-        return false;
-
-    contextual_record_out = m_mapped_sp_contextual_enote_records.at(key_image);
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-std::uint64_t SpEnoteStoreMockV1::top_block_height() const
-{
-    // 1. no blocks
-    if (m_legacy_block_ids.size() == 0 &&
-        m_sp_block_ids.size() == 0)
-        return m_refresh_height - 1;
-
-    // 2. only legacy blocks
-    if (m_sp_block_ids.size() == 0)
-        return m_refresh_height + m_legacy_block_ids.size() - 1;
-
-    // 3. only seraphis blocks
-    if (m_legacy_block_ids.size() == 0)
-        return this->sp_refresh_height() + m_sp_block_ids.size() - 1;
-
-    // 4. multi-type blocks
-    return std::max(
-            m_refresh_height + m_legacy_block_ids.size() - 1,
-            this->sp_refresh_height() + m_sp_block_ids.size() - 1
-        );
-}
-//-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance(
+boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_intermediate_legacy(
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
     const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
 {
     boost::multiprecision::uint128_t balance{0};
 
-    // 1. intermediate legacy enotes (it is unknown if these enotes are spent)
-    balance += this->get_balance_intermediate_legacy(origin_statuses, spent_statuses, exclusions);
+    // 1. ignore if requested
+    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE) != exclusions.end())
+        return 0;
 
-    // 2. full legacy enotes
-    balance += this->get_balance_full_legacy(origin_statuses, spent_statuses, exclusions);
+    // 2. accumulate balance
+    // note: it is unknown if enotes in intermediate records are spent
+    for (const auto &mapped_contextual_record : m_legacy_intermediate_contextual_enote_records)
+    {
+        const LegacyContextualIntermediateEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
 
-    // 3. seraphis enotes
-    balance += this->get_balance_seraphis(origin_statuses, spent_statuses, exclusions);
+        // a. only include this enote if its origin status is requested
+        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+            continue;
+
+        // b. ignore onchain enotes that are locked
+        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            onchain_legacy_enote_is_locked(
+                    current_contextual_record.m_origin_context.m_block_height,
+                    current_contextual_record.m_record.m_unlock_time,
+                    this->top_block_height(),
+                    m_default_spendable_age,
+                    static_cast<std::uint64_t>(std::time(nullptr)))
+                )
+            continue;
+
+        // c. ignore enotes that share onetime addresses with other enotes but don't have the highest amount among them
+        CHECK_AND_ASSERT_THROW_MES(m_tracked_legacy_onetime_address_duplicates
+                    .find(onetime_address_ref(current_contextual_record.m_record.m_enote)) !=
+                m_tracked_legacy_onetime_address_duplicates.end(),
+            "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
+
+        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
+                current_contextual_record.m_record.m_amount,
+                origin_statuses,
+                m_tracked_legacy_onetime_address_duplicates.at(
+                    onetime_address_ref(current_contextual_record.m_record.m_enote)
+                ),
+                [this](const rct::key &identifier) -> const SpEnoteOriginStatus&
+                {
+                    CHECK_AND_ASSERT_THROW_MES(m_legacy_intermediate_contextual_enote_records.find(
+                            identifier) != m_legacy_intermediate_contextual_enote_records.end(),
+                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
+                        "1:1 with the legacy intermediate map even though it should (bug).");
+
+                    return m_legacy_intermediate_contextual_enote_records
+                        .at(identifier)
+                        .m_origin_context
+                        .m_origin_status;
+                },
+                [this](const rct::key &identifier) -> rct::xmr_amount
+                {
+                    CHECK_AND_ASSERT_THROW_MES(m_legacy_intermediate_contextual_enote_records.find(
+                            identifier) != m_legacy_intermediate_contextual_enote_records.end(),
+                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
+                        "1:1 with the legacy intermediate map even though it should (bug).");
+
+                    return m_legacy_intermediate_contextual_enote_records.at(identifier).m_record.m_amount;
+                }))
+            continue;
+
+        // d. update balance
+        balance += current_contextual_record.m_record.m_amount;
+    }
 
     return balance;
 }
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_full_legacy(
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
+    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
+{
+    boost::multiprecision::uint128_t balance{0};
+
+    // 1. ignore if requested
+    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::LEGACY_FULL) != exclusions.end())
+        return 0;
+
+    // 2. accumulate balance
+    for (const auto &mapped_contextual_record : m_legacy_contextual_enote_records)
+    {
+        const LegacyContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
+
+        // a. only include this enote if its origin status is requested
+        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+            continue;
+
+        // b. if the enote's spent status is requested, then DON'T include this enote
+        if (spent_statuses.find(current_contextual_record.m_spent_context.m_spent_status) != spent_statuses.end())
+            continue;
+
+        // c. ignore onchain enotes that are locked
+        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            onchain_legacy_enote_is_locked(
+                    current_contextual_record.m_origin_context.m_block_height,
+                    current_contextual_record.m_record.m_unlock_time,
+                    this->top_block_height(),
+                    m_default_spendable_age,
+                    static_cast<std::uint64_t>(std::time(nullptr)))
+                )
+            continue;
+
+        // d. ignore enotes that share onetime addresses with other enotes but don't have the highest amount among them
+        CHECK_AND_ASSERT_THROW_MES(m_tracked_legacy_onetime_address_duplicates
+                    .find(onetime_address_ref(current_contextual_record.m_record.m_enote)) !=
+                m_tracked_legacy_onetime_address_duplicates.end(),
+            "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
+
+        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
+                current_contextual_record.m_record.m_amount,
+                origin_statuses,
+                m_tracked_legacy_onetime_address_duplicates.at(
+                    onetime_address_ref(current_contextual_record.m_record.m_enote)
+                ),
+                [this](const rct::key &identifier) -> const SpEnoteOriginStatus&
+                {
+                    CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(identifier) !=
+                            m_legacy_contextual_enote_records.end(),
+                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
+                        "1:1 with the legacy map even though it should (bug).");
+
+                    return m_legacy_contextual_enote_records
+                        .at(identifier)
+                        .m_origin_context
+                        .m_origin_status;
+                },
+                [this](const rct::key &identifier) -> rct::xmr_amount
+                {
+                    CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(identifier) != 
+                            m_legacy_contextual_enote_records.end(),
+                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
+                        "1:1 with the legacy map even though it should (bug).");
+
+                    return m_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
+                }))
+            continue;
+
+        // e. update balance
+        balance += current_contextual_record.m_record.m_amount;
+    }
+
+    return balance;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_seraphis(
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
+    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
+{
+    boost::multiprecision::uint128_t balance{0};
+
+    // 1. ignore if requested
+    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::SERAPHIS) != exclusions.end())
+        return 0;
+
+    // 2. accumulate balance
+    for (const auto &mapped_contextual_record : m_sp_contextual_enote_records)
+    {
+        const SpContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
+
+        // a. only include this enote if its origin status is requested
+        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+            continue;
+
+        // b. if the enote's spent status is requested, then DON'T include this enote
+        if (spent_statuses.find(current_contextual_record.m_spent_context.m_spent_status) != spent_statuses.end())
+            continue;
+
+        // c. ignore onchain enotes that are locked
+        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            onchain_sp_enote_is_locked(
+                    current_contextual_record.m_origin_context.m_block_height,
+                    this->top_block_height(),
+                    m_default_spendable_age
+                ))
+            continue;
+
+        // d. update balance
+        balance += current_contextual_record.m_record.m_amount;
+    }
+
+    return balance;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
-    update_with_new_block_ids(m_refresh_height,
+    update_block_ids_with_new_block_ids(m_refresh_height,
         first_new_block,
         alignment_block_id,
         new_block_ids,
@@ -696,12 +722,14 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_intermediate(
     this->set_last_legacy_partialscan_height(first_new_block + new_block_ids.size() - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
-    update_with_new_block_ids(m_refresh_height,
+    update_block_ids_with_new_block_ids(m_refresh_height,
         first_new_block,
         alignment_block_id,
         new_block_ids,
@@ -711,12 +739,14 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_full(const st
     this->set_last_legacy_fullscan_height(first_new_block + new_block_ids.size() - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
-    update_with_new_block_ids(this->sp_refresh_height(),
+    update_block_ids_with_new_block_ids(this->sp_refresh_height(),
         first_new_block,
         alignment_block_id,
         new_block_ids,
@@ -725,6 +755,8 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_sp(const std::uint64
     // 2. update scanning height for this scan mode (assumed to be SERAPHIS)
     this->set_last_sp_scanned_height(first_new_block + new_block_ids.size() - 1);
 }
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_found_spent_legacy_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images)
@@ -747,7 +779,7 @@ void SpEnoteStoreMockV1::clean_maps_for_found_spent_legacy_key_images(
     }
 
     // 2. clear spent contexts referencing legacy key images removed from the seraphis legacy key image tracker
-    for (auto &mapped_contextual_enote_record : m_mapped_legacy_contextual_enote_records)
+    for (auto &mapped_contextual_enote_record : m_legacy_contextual_enote_records)
     {
         // ignore legacy key images found in seraphis txs that still exist
         if (m_legacy_key_images_in_sp_selfsends.find(mapped_contextual_enote_record.second.m_record.m_key_image) !=
@@ -765,6 +797,8 @@ void SpEnoteStoreMockV1::clean_maps_for_found_spent_legacy_key_images(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_removed_legacy_enotes(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     const std::unordered_map<rct::key, std::unordered_set<rct::key>> &mapped_identifiers_of_removed_enotes,
@@ -776,7 +810,7 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_legacy_enotes(
 
     // 2. clear spent contexts referencing removed blocks or the unconfirmed cache if the corresponding legacy key image
     //    is not in the seraphis legacy key image tracker
-    for (auto &mapped_contextual_enote_record : m_mapped_legacy_contextual_enote_records)
+    for (auto &mapped_contextual_enote_record : m_legacy_contextual_enote_records)
     {
         // ignore legacy key images found in seraphis txs that still exist
         if (m_legacy_key_images_in_sp_selfsends.find(mapped_contextual_enote_record.second.m_record.m_key_image) !=
@@ -817,6 +851,8 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_legacy_enotes(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images)
 {
@@ -846,7 +882,7 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOri
     // a. legacy full records
     std::unordered_map<rct::key, crypto::key_image> mapped_key_images_of_removed_enotes;  //mapped to onetime address
 
-    tools::for_all_in_map_erase_if(m_mapped_legacy_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_legacy_contextual_enote_records,
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // a. check if the record is removable
@@ -864,7 +900,7 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOri
         );
 
     // b. legacy intermediate records
-    tools::for_all_in_map_erase_if(m_mapped_legacy_intermediate_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_legacy_intermediate_contextual_enote_records,
         legacy_contextual_record_is_removable_func);
 
     // 2. clean maps for removed enotes
@@ -888,6 +924,8 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOri
             return false;
         });
 }
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t first_new_block,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images)
@@ -916,7 +954,7 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t
     // a. legacy full records
     std::unordered_map<rct::key, crypto::key_image> mapped_key_images_of_removed_enotes;  //mapped to onetime address
 
-    tools::for_all_in_map_erase_if(m_mapped_legacy_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_legacy_contextual_enote_records,
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // a. check if the record is removable
@@ -934,7 +972,7 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t
         );
 
     // b. legacy intermediate records
-    tools::for_all_in_map_erase_if(m_mapped_legacy_intermediate_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_legacy_intermediate_contextual_enote_records,
         legacy_contextual_record_is_removable_func);
 
     // 2. clean maps for removed enotes
@@ -949,12 +987,14 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t
         });
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_removed_sp_enotes(const std::unordered_set<rct::key> &tx_ids_of_removed_enotes)
 {
     // clear spent contexts referencing the txs of removed enotes (key images appear at the same time as selfsends)
 
     // 1. seraphis enotes
-    for (auto &mapped_contextual_enote_record : m_mapped_sp_contextual_enote_records)
+    for (auto &mapped_contextual_enote_record : m_sp_contextual_enote_records)
     {
         if (tx_ids_of_removed_enotes.find(mapped_contextual_enote_record.second.m_spent_context.m_transaction_id) ==
                 tx_ids_of_removed_enotes.end())
@@ -964,7 +1004,7 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_sp_enotes(const std::unordered_s
     }
 
     // 2. legacy enotes
-    for (auto &mapped_contextual_enote_record : m_mapped_legacy_contextual_enote_records)
+    for (auto &mapped_contextual_enote_record : m_legacy_contextual_enote_records)
     {
         if (tx_ids_of_removed_enotes.find(mapped_contextual_enote_record.second.m_spent_context.m_transaction_id) ==
                 tx_ids_of_removed_enotes.end())
@@ -983,6 +1023,8 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_sp_enotes(const std::unordered_s
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_sp_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status)
 {
     CHECK_AND_ASSERT_THROW_MES(nonledger_origin_status == SpEnoteOriginStatus::OFFCHAIN ||
@@ -992,7 +1034,7 @@ void SpEnoteStoreMockV1::clean_maps_for_sp_nonledger_update(const SpEnoteOriginS
     // 1. remove records
     std::unordered_set<rct::key> tx_ids_of_removed_enotes;  //note: only txs with selfsends are needed in practice
 
-    tools::for_all_in_map_erase_if(m_mapped_sp_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // remove all enotes with the specified origin status
@@ -1012,12 +1054,14 @@ void SpEnoteStoreMockV1::clean_maps_for_sp_nonledger_update(const SpEnoteOriginS
     this->clean_maps_for_removed_sp_enotes(tx_ids_of_removed_enotes);
 }
 //-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::clean_maps_for_sp_ledger_update(const std::uint64_t first_new_block)
 {
     // 1. remove records
     std::unordered_set<rct::key> tx_ids_of_removed_enotes;  //note: only txs with selfsends are needed in practice
 
-    tools::for_all_in_map_erase_if(m_mapped_sp_contextual_enote_records,
+    tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // remove onchain enotes in range [first_new_block, end of chain]
@@ -1038,6 +1082,158 @@ void SpEnoteStoreMockV1::clean_maps_for_sp_ledger_update(const std::uint64_t fir
     // 2. clean maps for removed enotes
     this->clean_maps_for_removed_sp_enotes(tx_ids_of_removed_enotes);
 }
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecordV1 &new_record)
+{
+    // 1. if key image is known, promote to a full enote record
+    if (m_tracked_legacy_onetime_address_duplicates.find(onetime_address_ref(new_record.m_record.m_enote)) !=
+        m_tracked_legacy_onetime_address_duplicates.end())
+    {
+        const auto &identifiers_of_known_enotes =
+            m_tracked_legacy_onetime_address_duplicates.at(onetime_address_ref(new_record.m_record.m_enote));
+
+        CHECK_AND_ASSERT_THROW_MES(identifiers_of_known_enotes.size() > 0,
+            "add intermediate record (mock enote store): record's onetime address is known, but there are no "
+            "identifiers (bug).");
+
+        for (const rct::key &identifier : identifiers_of_known_enotes)
+        {
+            // key image is known if there is a full record associated with this intermediate record's onetime address
+            if (m_legacy_contextual_enote_records.find(identifier) == m_legacy_contextual_enote_records.end())
+                continue;
+
+            CHECK_AND_ASSERT_THROW_MES(identifier == *(identifiers_of_known_enotes.begin()),
+                "add intermediate record (mock enote store): key image is known but there are intermediate "
+                "records with this onetime address (a given onetime address should have only intermediate or only "
+                "full legacy records).");
+
+            LegacyContextualEnoteRecordV1 temp_full_record{};
+
+            get_legacy_enote_record(new_record.m_record,
+                m_legacy_contextual_enote_records.at(identifier).m_record.m_key_image,
+                temp_full_record.m_record);
+            temp_full_record.m_origin_context = new_record.m_origin_context;
+
+            this->add_record(temp_full_record);
+            return;
+        }
+    }
+
+    // 2. else add the intermediate record or update an existing record's origin context
+    rct::key new_record_identifier;
+    get_legacy_enote_identifier(onetime_address_ref(new_record.m_record.m_enote),
+        new_record.m_record.m_amount,
+        new_record_identifier);
+
+    if (m_legacy_intermediate_contextual_enote_records.find(new_record_identifier) ==
+        m_legacy_intermediate_contextual_enote_records.end())
+    {
+        // add new intermediate record
+        m_legacy_intermediate_contextual_enote_records[new_record_identifier] = new_record;
+    }
+    else
+    {
+        // update intermediate record's origin context
+        try_update_enote_origin_context_v1(new_record.m_origin_context,
+            m_legacy_intermediate_contextual_enote_records[new_record_identifier].m_origin_context);
+    }
+
+    // 3. save to the legacy duplicate tracker
+    m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)]
+        .insert(new_record_identifier);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+void SpEnoteStoreMockV1::add_record(const LegacyContextualEnoteRecordV1 &new_record)
+{
+    rct::key new_record_identifier;
+    get_legacy_enote_identifier(onetime_address_ref(new_record.m_record.m_enote),
+        new_record.m_record.m_amount,
+        new_record_identifier);
+
+    // 1. add the record or update an existing record's contexts
+    if (m_legacy_contextual_enote_records.find(new_record_identifier) == m_legacy_contextual_enote_records.end())
+        m_legacy_contextual_enote_records[new_record_identifier] = new_record;
+    else
+    {
+        update_contextual_enote_record_contexts_v1(new_record.m_origin_context,
+                new_record.m_spent_context,
+                m_legacy_contextual_enote_records[new_record_identifier].m_origin_context,
+                m_legacy_contextual_enote_records[new_record_identifier].m_spent_context
+            );
+    }
+
+    // 2. if this enote is located in the legacy key image tracker for seraphis txs, update with the tracker's spent
+    //    context
+    if (m_legacy_key_images_in_sp_selfsends.find(new_record.m_record.m_key_image) !=
+        m_legacy_key_images_in_sp_selfsends.end())
+    {
+        // update the record's spent context
+        try_update_enote_spent_context_v1(m_legacy_key_images_in_sp_selfsends.at(new_record.m_record.m_key_image),
+            m_legacy_contextual_enote_records[new_record_identifier].m_spent_context);
+
+        // note: do not reset the tracker's spent context here, the tracker is a helper cache for the scanning process
+        //       and should only be mutated by that code
+    }
+
+    // 3. if this enote is located in the intermediate enote record map, update the full record with the intermediate
+    //    record's origin context
+    if (m_legacy_intermediate_contextual_enote_records.find(new_record_identifier) !=
+        m_legacy_intermediate_contextual_enote_records.end())
+    {
+        // update the record's origin context
+        try_update_enote_origin_context_v1(
+                m_legacy_intermediate_contextual_enote_records.at(new_record_identifier).m_origin_context,
+                m_legacy_contextual_enote_records[new_record_identifier].m_origin_context
+            );
+    }
+
+    // 4. there may be other full legacy enote records with this record's key image, use them to update the spent context
+    for (const rct::key &legacy_enote_identifier :
+            m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)])
+    {
+        // a. skip identifiers not in the full legacy records map
+        if (m_legacy_contextual_enote_records.find(legacy_enote_identifier) == m_legacy_contextual_enote_records.end())
+            continue;
+
+        // b. update the spent context
+        try_update_enote_spent_context_v1(
+            m_legacy_contextual_enote_records.at(legacy_enote_identifier).m_spent_context,
+            m_legacy_contextual_enote_records[new_record_identifier].m_spent_context);
+    }
+
+    // 5. remove the intermediate record with this identifier (must do this before importing the key image, since
+    //    the key image importer assumes the intermediate and full legacy maps don't have any overlap)
+    m_legacy_intermediate_contextual_enote_records.erase(new_record_identifier);
+
+    // 6. save to the legacy duplicate tracker
+    m_tracked_legacy_onetime_address_duplicates[onetime_address_ref(new_record.m_record.m_enote)]
+        .insert(new_record_identifier);
+
+    // 7. save to the legacy key image set
+    m_legacy_key_images[new_record.m_record.m_key_image] = onetime_address_ref(new_record.m_record.m_enote);
+
+    // 8. import this key image to force-promote all intermediate records with different identifiers to full records
+    this->import_legacy_key_image(new_record.m_record.m_key_image, onetime_address_ref(new_record.m_record.m_enote));
+}
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+void SpEnoteStoreMockV1::add_record(const SpContextualEnoteRecordV1 &new_record)
+{
+    const crypto::key_image &record_key_image{key_image_ref(new_record)};
+
+    // add the record or update an existing record's contexts
+    if (m_sp_contextual_enote_records.find(record_key_image) == m_sp_contextual_enote_records.end())
+        m_sp_contextual_enote_records[record_key_image] = new_record;
+    else
+        update_contextual_enote_record_contexts_v1(new_record, m_sp_contextual_enote_records[record_key_image]);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images)
@@ -1061,22 +1257,24 @@ void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
 
         for (const rct::key &identifier_of_enote_to_update : identifiers_of_enotes_to_update)
         {
-            CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_contextual_enote_records.find(identifier_of_enote_to_update) !=
-                    m_mapped_legacy_contextual_enote_records.end(),
+            CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(identifier_of_enote_to_update) !=
+                    m_legacy_contextual_enote_records.end(),
                 "enote store update with legacy enote records (mock): full record map is missing identifier (bug).");
             CHECK_AND_ASSERT_THROW_MES(
-                    m_mapped_legacy_contextual_enote_records[identifier_of_enote_to_update].m_record.m_key_image ==
+                    m_legacy_contextual_enote_records[identifier_of_enote_to_update].m_record.m_key_image ==
                     found_spent_key_image.first,
                 "enote store update with legacy enote records (mock): full record map is inconsistent (bug).");
 
             update_contextual_enote_record_contexts_v1(
-                m_mapped_legacy_contextual_enote_records[identifier_of_enote_to_update].m_origin_context,
+                m_legacy_contextual_enote_records[identifier_of_enote_to_update].m_origin_context,
                 found_spent_key_image.second,
-                m_mapped_legacy_contextual_enote_records[identifier_of_enote_to_update].m_origin_context,
-                m_mapped_legacy_contextual_enote_records[identifier_of_enote_to_update].m_spent_context);
+                m_legacy_contextual_enote_records[identifier_of_enote_to_update].m_origin_context,
+                m_legacy_contextual_enote_records[identifier_of_enote_to_update].m_spent_context);
         }
     }
 }
+//-------------------------------------------------------------------------------------------------------------------
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockV1::update_sp_with_fresh_found_spent_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images)
@@ -1084,211 +1282,43 @@ void SpEnoteStoreMockV1::update_sp_with_fresh_found_spent_key_images(
     for (const auto &found_spent_key_image : found_spent_key_images)
     {
         // a. ignore enotes with unknown key images
-        if (m_mapped_sp_contextual_enote_records.find(found_spent_key_image.first) ==
-            m_mapped_sp_contextual_enote_records.end())
+        if (m_sp_contextual_enote_records.find(found_spent_key_image.first) == m_sp_contextual_enote_records.end())
             continue;
 
         // b. update this enote's spent context
         update_contextual_enote_record_contexts_v1(
-            m_mapped_sp_contextual_enote_records[found_spent_key_image.first].m_origin_context,
+            m_sp_contextual_enote_records[found_spent_key_image.first].m_origin_context,
             found_spent_key_image.second,
-            m_mapped_sp_contextual_enote_records[found_spent_key_image.first].m_origin_context,
-            m_mapped_sp_contextual_enote_records[found_spent_key_image.first].m_spent_context);
+            m_sp_contextual_enote_records[found_spent_key_image.first].m_origin_context,
+            m_sp_contextual_enote_records[found_spent_key_image.first].m_spent_context);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_intermediate_legacy(
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
-{
-    boost::multiprecision::uint128_t balance{0};
-
-    // 1. ignore if requested
-    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE) != exclusions.end())
-        return 0;
-
-    // 2. accumulate balance
-    // note: it is unknown if enotes in intermediate records are spent
-    for (const auto &mapped_contextual_record : m_mapped_legacy_intermediate_contextual_enote_records)
-    {
-        const LegacyContextualIntermediateEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
-
-        // a. only include this enote if its origin status is requested
-        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
-            continue;
-
-        // b. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_legacy_enote_is_locked(
-                    current_contextual_record.m_origin_context.m_block_height,
-                    current_contextual_record.m_record.m_unlock_time,
-                    this->top_block_height(),
-                    m_default_spendable_age,
-                    static_cast<std::uint64_t>(std::time(nullptr)))
-                )
-            continue;
-
-        // c. ignore enotes that share onetime addresses with other enotes but don't have the highest amount among them
-        CHECK_AND_ASSERT_THROW_MES(m_tracked_legacy_onetime_address_duplicates
-                    .find(onetime_address_ref(current_contextual_record.m_record.m_enote)) !=
-                m_tracked_legacy_onetime_address_duplicates.end(),
-            "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
-
-        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
-                current_contextual_record.m_record.m_amount,
-                origin_statuses,
-                m_tracked_legacy_onetime_address_duplicates.at(
-                    onetime_address_ref(current_contextual_record.m_record.m_enote)
-                ),
-                [this](const rct::key &identifier) -> const SpEnoteOriginStatus&
-                {
-                    CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_intermediate_contextual_enote_records.find(
-                            identifier) != m_mapped_legacy_intermediate_contextual_enote_records.end(),
-                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
-                        "1:1 with the legacy intermediate map even though it should (bug).");
-
-                    return m_mapped_legacy_intermediate_contextual_enote_records
-                        .at(identifier)
-                        .m_origin_context
-                        .m_origin_status;
-                },
-                [this](const rct::key &identifier) -> rct::xmr_amount
-                {
-                    CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_intermediate_contextual_enote_records.find(
-                            identifier) != m_mapped_legacy_intermediate_contextual_enote_records.end(),
-                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
-                        "1:1 with the legacy intermediate map even though it should (bug).");
-
-                    return m_mapped_legacy_intermediate_contextual_enote_records.at(identifier).m_record.m_amount;
-                }))
-            continue;
-
-        // d. update balance
-        balance += current_contextual_record.m_record.m_amount;
-    }
-
-    return balance;
-}
+// MOCK ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_full_legacy(
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
+void SpEnoteStoreMockV1::handle_legacy_key_images_from_sp_selfsends(
+    const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends)
 {
-    boost::multiprecision::uint128_t balance{0};
-
-    // 1. ignore if requested
-    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::LEGACY_FULL) != exclusions.end())
-        return 0;
-
-    // 2. accumulate balance
-    for (const auto &mapped_contextual_record : m_mapped_legacy_contextual_enote_records)
+    // handle each key image
+    for (const auto &legacy_key_image_with_spent_context : legacy_key_images_in_sp_selfsends)
     {
-        const LegacyContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
+        // 1. try to update the spent contexts of legacy enotes that have this key image
+        for (auto &mapped_contextual_enote_record : m_legacy_contextual_enote_records)
+        {
+            // a. skip legacy enotes with different key images
+            if (mapped_contextual_enote_record.second.m_record.m_key_image != legacy_key_image_with_spent_context.first)
+                continue;
 
-        // a. only include this enote if its origin status is requested
-        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
-            continue;
+            // b. update the spent context of this legacy enote
+            try_update_enote_spent_context_v1(legacy_key_image_with_spent_context.second,
+                mapped_contextual_enote_record.second.m_spent_context);
+        }
 
-        // b. if the enote's spent status is requested, then DON'T include this enote
-        if (spent_statuses.find(current_contextual_record.m_spent_context.m_spent_status) != spent_statuses.end())
-            continue;
-
-        // c. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_legacy_enote_is_locked(
-                    current_contextual_record.m_origin_context.m_block_height,
-                    current_contextual_record.m_record.m_unlock_time,
-                    this->top_block_height(),
-                    m_default_spendable_age,
-                    static_cast<std::uint64_t>(std::time(nullptr)))
-                )
-            continue;
-
-        // d. ignore enotes that share onetime addresses with other enotes but don't have the highest amount among them
-        CHECK_AND_ASSERT_THROW_MES(m_tracked_legacy_onetime_address_duplicates
-                    .find(onetime_address_ref(current_contextual_record.m_record.m_enote)) !=
-                m_tracked_legacy_onetime_address_duplicates.end(),
-            "enote store balance check (mock): tracked legacy duplicates is missing a onetime address (bug).");
-
-        if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
-                current_contextual_record.m_record.m_amount,
-                origin_statuses,
-                m_tracked_legacy_onetime_address_duplicates.at(
-                    onetime_address_ref(current_contextual_record.m_record.m_enote)
-                ),
-                [this](const rct::key &identifier) -> const SpEnoteOriginStatus&
-                {
-                    CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_contextual_enote_records.find(identifier) !=
-                            m_mapped_legacy_contextual_enote_records.end(),
-                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
-                        "1:1 with the legacy map even though it should (bug).");
-
-                    return m_mapped_legacy_contextual_enote_records
-                        .at(identifier)
-                        .m_origin_context
-                        .m_origin_status;
-                },
-                [this](const rct::key &identifier) -> rct::xmr_amount
-                {
-                    CHECK_AND_ASSERT_THROW_MES(m_mapped_legacy_contextual_enote_records.find(identifier) != 
-                            m_mapped_legacy_contextual_enote_records.end(),
-                        "enote store balance check (mock): tracked legacy duplicates has an entry that doesn't line up "
-                        "1:1 with the legacy map even though it should (bug).");
-
-                    return m_mapped_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
-                }))
-            continue;
-
-        // e. update balance
-        balance += current_contextual_record.m_record.m_amount;
+        // 2. save the key image's spent context in the tracker (or update an existing context)
+        // note: these are always saved to help with reorg handling
+        try_update_enote_spent_context_v1(legacy_key_image_with_spent_context.second,
+            m_legacy_key_images_in_sp_selfsends[legacy_key_image_with_spent_context.first]);
     }
-
-    return balance;
-}
-//-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockV1::get_balance_seraphis(
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
-{
-    boost::multiprecision::uint128_t balance{0};
-
-    // 1. ignore if requested
-    if (exclusions.find(EnoteStoreBalanceUpdateExclusions::SERAPHIS) != exclusions.end())
-        return 0;
-
-    // 2. accumulate balance
-    for (const auto &mapped_contextual_record : m_mapped_sp_contextual_enote_records)
-    {
-        const SpContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
-
-        // a. only include this enote if its origin status is requested
-        if (origin_statuses.find(current_contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
-            continue;
-
-        // b. if the enote's spent status is requested, then DON'T include this enote
-        if (spent_statuses.find(current_contextual_record.m_spent_context.m_spent_status) != spent_statuses.end())
-            continue;
-
-        // c. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            current_contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_sp_enote_is_locked(
-                    current_contextual_record.m_origin_context.m_block_height,
-                    this->top_block_height(),
-                    m_default_spendable_age
-                ))
-            continue;
-
-        // d. update balance
-        balance += current_contextual_record.m_record.m_amount;
-    }
-
-    return balance;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

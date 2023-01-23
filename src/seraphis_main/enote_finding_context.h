@@ -58,12 +58,12 @@ public:
     EnoteFindingContextLedger& operator=(EnoteFindingContextLedger&&) = delete;
 
 //member functions
+    /// get an unconfirmed chunk (this is expected to contain all enotes in the 'pending txs' pool)
+    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
     /// get an onchain chunk (or empty chunk representing top of current chain)
     virtual void get_onchain_chunk(const std::uint64_t chunk_start_height,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const = 0;
-    /// get an unconfirmed chunk (this is expected to contain all enotes in the 'pending txs' pool)
-    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
 };
 
 ////

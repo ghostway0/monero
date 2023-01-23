@@ -46,7 +46,6 @@
 
 //standard headers
 #include <list>
-#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -72,15 +71,6 @@ EnoteStoreUpdaterMockLegacyIntermediate::EnoteStoreUpdaterMockLegacyIntermediate
         m_enote_store{enote_store}
 {}
 //-------------------------------------------------------------------------------------------------------------------
-bool EnoteStoreUpdaterMockLegacyIntermediate::try_get_block_id(const std::uint64_t block_height,
-    rct::key &block_id_out) const
-{
-    if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
-        return m_enote_store.try_get_block_id_for_legacy_fullscan(block_height, block_id_out);
-    else
-        return m_enote_store.try_get_block_id_for_legacy_partialscan(block_height, block_id_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t EnoteStoreUpdaterMockLegacyIntermediate::refresh_height() const
 {
     return m_enote_store.legacy_refresh_height();
@@ -92,6 +82,15 @@ std::uint64_t EnoteStoreUpdaterMockLegacyIntermediate::desired_first_block() con
         return m_enote_store.top_legacy_fullscanned_block_height() + 1;
     else
         return m_enote_store.top_legacy_partialscanned_block_height() + 1;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool EnoteStoreUpdaterMockLegacyIntermediate::try_get_block_id(const std::uint64_t block_height,
+    rct::key &block_id_out) const
+{
+    if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
+        return m_enote_store.try_get_block_id_for_legacy_fullscan(block_height, block_id_out);
+    else
+        return m_enote_store.try_get_block_id_for_legacy_partialscan(block_height, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockLegacyIntermediate::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -173,11 +172,6 @@ EnoteStoreUpdaterMockLegacy::EnoteStoreUpdaterMockLegacy(const rct::key &legacy_
         m_enote_store{enote_store}
 {}
 //-------------------------------------------------------------------------------------------------------------------
-bool EnoteStoreUpdaterMockLegacy::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
-{
-    return m_enote_store.try_get_block_id_for_legacy_fullscan(block_height, block_id_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t EnoteStoreUpdaterMockLegacy::refresh_height() const
 {
     return m_enote_store.legacy_refresh_height();
@@ -186,6 +180,11 @@ std::uint64_t EnoteStoreUpdaterMockLegacy::refresh_height() const
 std::uint64_t EnoteStoreUpdaterMockLegacy::desired_first_block() const
 {
     return m_enote_store.top_legacy_fullscanned_block_height() + 1;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool EnoteStoreUpdaterMockLegacy::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
+{
+    return m_enote_store.try_get_block_id_for_legacy_fullscan(block_height, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockLegacy::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -265,12 +264,6 @@ EnoteStoreUpdaterMockSpIntermediate::EnoteStoreUpdaterMockSpIntermediate(const r
     m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool EnoteStoreUpdaterMockSpIntermediate::try_get_block_id(const std::uint64_t block_height,
-    rct::key &block_id_out) const
-{
-    return m_enote_store.try_get_block_id(block_height, block_id_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t EnoteStoreUpdaterMockSpIntermediate::refresh_height() const
 {
     return m_enote_store.refresh_height();
@@ -279,6 +272,12 @@ std::uint64_t EnoteStoreUpdaterMockSpIntermediate::refresh_height() const
 std::uint64_t EnoteStoreUpdaterMockSpIntermediate::desired_first_block() const
 {
     return m_enote_store.top_block_height() + 1;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool EnoteStoreUpdaterMockSpIntermediate::try_get_block_id(const std::uint64_t block_height,
+    rct::key &block_id_out) const
+{
+    return m_enote_store.try_get_block_id(block_height, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockSpIntermediate::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -342,11 +341,6 @@ EnoteStoreUpdaterMockSp::EnoteStoreUpdaterMockSp(const rct::key &jamtis_spend_pu
     m_cipher_context = std::make_unique<jamtis::jamtis_address_tag_cipher_context>(m_s_cipher_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool EnoteStoreUpdaterMockSp::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
-{
-    return m_enote_store.try_get_block_id_for_sp(block_height, block_id_out);
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t EnoteStoreUpdaterMockSp::refresh_height() const
 {
     return m_enote_store.sp_refresh_height();
@@ -355,6 +349,11 @@ std::uint64_t EnoteStoreUpdaterMockSp::refresh_height() const
 std::uint64_t EnoteStoreUpdaterMockSp::desired_first_block() const
 {
     return m_enote_store.top_sp_scanned_block_height() + 1;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool EnoteStoreUpdaterMockSp::try_get_block_id(const std::uint64_t block_height, rct::key &block_id_out) const
+{
+    return m_enote_store.try_get_block_id_for_sp(block_height, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockSp::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,

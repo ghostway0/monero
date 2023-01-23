@@ -28,9 +28,8 @@
 
 // NOT FOR PRODUCTION
 
-// Mock offchain context: for testing
+// Mock offchain context.
 // note: the input context is used as a proxy for tx id in the maps, because the tx id is not known for partial txs
-
 
 #pragma once
 
@@ -144,7 +143,7 @@ private:
     std::unordered_map<
         rct::key,     // input context
         std::tuple<       // tx output contents
-            SpTxSupplementV1,        // tx supplement
+            SpTxSupplementV1,             // tx supplement
             std::vector<SpEnoteVariant>   // output enotes
         >
     > m_output_contents;

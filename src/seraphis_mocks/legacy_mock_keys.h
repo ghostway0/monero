@@ -30,7 +30,6 @@
 
 // Legacy mock keys.
 
-
 #pragma once
 
 //local headers
@@ -61,17 +60,14 @@ struct legacy_mock_keys final
     rct::key Kv;             //main view pubkey:  Kv = k_v G
 };
 
-//todo
+/// make a set of mock legacy keys (for mock-ups/unit testing)
+void make_legacy_mock_keys(legacy_mock_keys &keys_out);
+/// generate a legacy subaddress for the given keys
 void gen_legacy_subaddress(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
     rct::key &subaddr_spendkey_out,
     rct::key &subaddr_viewkey_out,
     cryptonote::subaddress_index &subaddr_index_out);
-/**
-* brief: make_legacy_mock_keys - make a set of mock legacy keys (for mock-ups/unit testing)
-* outparam: legacy_mock_keys -
-*/
-void make_legacy_mock_keys(legacy_mock_keys &keys_out);
 
 } //namespace mocks
 } //namespace sp

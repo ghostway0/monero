@@ -30,7 +30,6 @@
 
 // Seraphis tx-builder/component-builder mockups (legacy tx inputs).
 
-
 #pragma once
 
 //local headers
@@ -54,9 +53,10 @@ namespace sp
 namespace mocks
 {
 
-//todo
+/// create random mock inputs
 std::vector<LegacyInputProposalV1> gen_mock_legacy_input_proposals_v1(const crypto::secret_key &legacy_spend_privkey,
     const std::vector<rct::xmr_amount> &input_amounts);
+/// make mock legacy ring signature preps
 void gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(const std::uint64_t real_reference_index_in_ledger,
     const std::uint64_t ring_size,
     const MockLedgerContext &ledger_context,
@@ -88,13 +88,13 @@ std::vector<LegacyRingSignaturePrepV1> gen_mock_legacy_ring_signature_preps_v1(c
     const std::vector<LegacyInputProposalV1> &input_proposals,
     const std::uint64_t ring_size,
     MockLedgerContext &ledger_context_inout);
+/// prepare membership proofs for enotes in a mock ledger
 void make_mock_legacy_ring_signature_preps_for_inputs_v1(const rct::key &tx_proposal_prefix,
     const std::unordered_map<crypto::key_image, std::uint64_t> &input_ledger_mappings,
     const std::vector<LegacyInputProposalV1> &input_proposals,
     const std::uint64_t ring_size,
     const MockLedgerContext &ledger_context,
     std::vector<LegacyRingSignaturePrepV1> &ring_signature_preps_out);
-//todo
 bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::vector<LegacyContextualEnoteRecordV1> &contextual_records,
     const std::uint64_t legacy_ring_size,
     const MockLedgerContext &ledger_context,

@@ -30,7 +30,6 @@
 
 // Seraphis tx-builder/component-builder mockups (tx inputs).
 
-
 #pragma once
 
 //local headers
@@ -68,11 +67,12 @@ namespace sp
 namespace mocks
 {
 
-//todo
+/// make a payment proposal
 void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
     const jamtis::JamtisDestinationV1 &destination,
     const TxExtra &partial_memo_for_destination,
     jamtis::JamtisPaymentProposalV1 &payment_proposal_out);
+/// send funds as coinbase enotes
 void send_legacy_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinbase_amounts,
     const rct::key &destination_subaddr_spend_pubkey,
     const rct::key &destination_subaddr_view_pubkey,
@@ -83,7 +83,7 @@ void send_sp_coinbase_amounts_to_user(const std::vector<rct::xmr_amount> &coinba
 void send_sp_coinbase_amounts_to_users(const std::vector<std::vector<rct::xmr_amount>> &coinbase_amounts_per_user,
     const std::vector<jamtis::JamtisDestinationV1> &user_addresses,
     MockLedgerContext &ledger_context_inout);
-//todo
+/// create a seraphis transaction
 void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_keys,
     const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
@@ -95,8 +95,9 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const SpBinnedReferenceSetConfigV1 &bin_config,
-    MockLedgerContext &ledger_context_inout,
+    const MockLedgerContext &ledger_context,
     SpTxSquashedV1 &tx_out);
+/// create transactions and submit them to a mock ledger
 void transfer_funds_single_mock_v1_unconfirmed_sp_only(const jamtis::mocks::jamtis_mock_keys &local_user_sp_keys,
     const InputSelectorV1 &local_user_input_selector,
     const FeeCalculator &tx_fee_calculator,
@@ -131,15 +132,14 @@ void transfer_funds_single_mock_v1(const legacy_mock_keys &local_user_legacy_key
     const std::size_t ref_set_decomp_m,
     const SpBinnedReferenceSetConfigV1 &bin_config,
     MockLedgerContext &ledger_context_inout);
-//todo
-void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
+/// refresh an enote store
+void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_spend_pubkey,
+    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
+    const crypto::secret_key &legacy_view_privkey,
+    const LegacyScanMode legacy_scan_mode,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout);
-void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
-    const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout);
 void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_spend_privkey,
@@ -147,10 +147,11 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout);
-void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_spend_pubkey,
-    const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const crypto::secret_key &legacy_view_privkey,
-    const LegacyScanMode legacy_scan_mode,
+void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
+    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const MockLedgerContext &ledger_context,
+    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout);
+void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const RefreshLedgerEnoteStoreConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout);
