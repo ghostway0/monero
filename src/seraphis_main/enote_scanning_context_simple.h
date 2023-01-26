@@ -83,6 +83,8 @@ public:
     }
     /// stop the current scanning process (should be no-throw no-fail)
     void terminate_scanning() override { /* no-op */ }
+    /// test if scanning has been aborted
+    bool is_aborted() const override { return false; }
 
 //member variables
 private:

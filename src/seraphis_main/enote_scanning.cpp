@@ -91,6 +91,11 @@ public:
     {
         m_enote_scan_context.get_unconfirmed_chunk(chunk_out);
     }
+    /// test if the scan process has been aborted
+    bool is_aborted() const
+    {
+        return m_enote_scan_context.is_aborted();
+    }
 
 //member variables
 private:
@@ -107,7 +112,8 @@ enum class ScanStatus
     NEED_FULLSCAN,
     NEED_PARTIALSCAN,
     SUCCESS,
-    FAIL
+    FAIL,
+    ABORTED
 };
 
 ////
@@ -225,6 +231,13 @@ static bool chunk_is_empty(const EnoteScanningChunkLedgerV1 &chunk)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static bool chunk_is_empty(const EnoteScanningChunkNonLedgerV1 &chunk)
+{
+    return chunk.m_basic_records_per_tx.size() == 0 &&
+        chunk.m_contextual_key_images.size() == 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 static bool contiguity_check(const ChainContiguityMarker &marker_A, const ChainContiguityMarker &marker_B)
 {
     // 1. a marker with unspecified block id is contiguous with all markers below and equal to its height (but not
@@ -321,7 +334,7 @@ static void align_block_ids(const EnoteStoreUpdater &enote_store_updater,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64_t first_contiguity_height,
+static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contiguity_height,
     EnoteScanProcessLedger &scan_process_inout,
     EnoteStoreUpdater &enote_store_updater_inout,
     ChainContiguityMarker &contiguity_marker_inout)
@@ -383,7 +396,15 @@ static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64
     CHECK_AND_ASSERT_THROW_MES(new_onchain_chunk.m_block_ids.size() == 0,
         "process ledger for onchain pass: final chunk does not have zero block ids as expected.");
 
-    // 3. verify that our termination chunk is contiguous with the chunks received so far
+    // 3. check if the scan process is aborted
+    // - when a scan process is aborted, the empty chunk returned may not represent the end of the chain, so we don't
+    //   want to consume that chunk
+    // - note: we don't check if aborted during the non-empty chunk loop because the process could be aborted after
+    //   the chunk was acquired
+    if (scan_process_inout.is_aborted())
+        return ScanStatus::ABORTED;
+
+    // 4. verify that our termination chunk is contiguous with the chunks received so far
     // - this can fail if a reorg dropped below our contiguity marker without replacing the dropped blocks, so the first
     //   chunk obtained after the reorg is this empty termination chunk
     // note: this test won't fail if the chain height is below our contiguity marker when our contiguity marker has
@@ -399,7 +420,7 @@ static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64
     if (scan_status != ScanStatus::SUCCESS)
         return scan_status;
 
-    // 4. final update for our enote store
+    // 5. final update for our enote store
     // - we need to update with the termination chunk in case a reorg popped blocks, so the enote store can roll back
     //   its state
     enote_store_updater_inout.consume_onchain_chunk({},
@@ -407,6 +428,28 @@ static ScanStatus process_ledger_for_full_refresh_onchain_pass(const std::uint64
         contiguity_marker_inout.m_block_height + 1,
         contiguity_marker_inout.m_block_id ? *(contiguity_marker_inout.m_block_id) : rct::zero(),
         {});
+
+    return ScanStatus::SUCCESS;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static ScanStatus process_ledger_unconfirmed_pass(EnoteScanProcessLedger &scan_process_inout,
+    EnoteStoreUpdater &enote_store_updater_inout)
+{
+    // 1. get unconfirmed chunk
+    EnoteScanningChunkNonLedgerV1 unconfirmed_chunk;
+    scan_process_inout.get_unconfirmed_chunk(unconfirmed_chunk);
+
+    // 2. check if the scan process was aborted
+    // - always consume non-empty chunks (it's possible for a scan process to be aborted after acquiring a chunk)
+    // - don't consume empty chunks when aborted because they may not represent the real state of the unconfirmed cache
+    if (chunk_is_empty(unconfirmed_chunk) && scan_process_inout.is_aborted())
+        return ScanStatus::ABORTED;
+
+    // 3. consume the chunk
+    enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::UNCONFIRMED,
+        unconfirmed_chunk.m_basic_records_per_tx,
+        unconfirmed_chunk.m_contextual_key_images);
 
     return ScanStatus::SUCCESS;
 }
@@ -427,30 +470,30 @@ static ScanStatus process_ledger_for_full_refresh(const std::uint64_t max_chunk_
 
     // 3. on-chain initial scanning pass
     const ScanStatus scan_status_first_onchain_pass{
-        process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
+        process_ledger_onchain_pass(first_contiguity_height,
             scan_process,
             enote_store_updater_inout,
             contiguity_marker)
         };
 
-    // 4. early return if the initial onchain pass didn't succeed
     if (scan_status_first_onchain_pass != ScanStatus::SUCCESS)
         return scan_status_first_onchain_pass;
 
-    // 5. unconfirmed scanning pass
-    EnoteScanningChunkNonLedgerV1 unconfirmed_chunk;
-    scan_process.get_unconfirmed_chunk(unconfirmed_chunk);
-    enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::UNCONFIRMED,
-        unconfirmed_chunk.m_basic_records_per_tx,
-        unconfirmed_chunk.m_contextual_key_images);
+    // 4. unconfirmed scanning pass
+    const ScanStatus scan_status_unconfirmed_pass{
+            process_ledger_unconfirmed_pass(scan_process, enote_store_updater_inout)
+        };
 
-    // 6. on-chain follow-up pass
+    if (scan_status_unconfirmed_pass != ScanStatus::SUCCESS)
+        return scan_status_unconfirmed_pass;
+
+    // 5. on-chain follow-up pass
     // rationale:
     // - blocks may have been added between the initial on-chain pass and the unconfirmed pass, and those blocks may
     //   contain txs not seen by the unconfirmed pass (i.e. sneaky txs)
     // - we want scan results to be chronologically contiguous (it is better for the unconfirmed scan results to be stale
     //   than the on-chain scan results)
-    return process_ledger_for_full_refresh_onchain_pass(first_contiguity_height,
+    return process_ledger_onchain_pass(first_contiguity_height,
         scan_process,
         enote_store_updater_inout,
         contiguity_marker);
@@ -517,11 +560,11 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
         expected_spent_status);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
+bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     EnoteScanningContextLedger &scanning_context_inout,
     EnoteStoreUpdater &enote_store_updater_inout)
 {
-    // make scan attempts until succeeding or throwing an error
+    // make scan attempts until succeeding or encountering an error
     ScanStatus scan_status{ScanStatus::NEED_FULLSCAN};
     std::size_t partialscan_attempts{0};
     std::size_t fullscan_attempts{0};
@@ -576,13 +619,24 @@ void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         }
 
         // 7. process the ledger
-        scan_status = process_ledger_for_full_refresh(config.m_max_chunk_size,
-            contiguity_marker,
-            scanning_context_inout,
-            enote_store_updater_inout);
+        try
+        {
+            scan_status = process_ledger_for_full_refresh(config.m_max_chunk_size,
+                contiguity_marker,
+                scanning_context_inout,
+                enote_store_updater_inout);
+        }
+        catch (...) { scan_status = ScanStatus::FAIL; }
     }
 
-    CHECK_AND_ASSERT_THROW_MES(scan_status == ScanStatus::SUCCESS, "refresh ledger for enote store: refreshing failed!");
+    if (scan_status == ScanStatus::FAIL)
+        LOG_ERROR("refresh ledger for enote store: refreshing failed!");
+    else if (scan_status == ScanStatus::ABORTED)
+        LOG_ERROR("refresh ledger for enote store: refreshing aborted!");
+    else if (scan_status != ScanStatus::SUCCESS)
+        LOG_ERROR("refresh ledger for enote store: refreshing failed (unknown failure)!");
+
+    return scan_status == ScanStatus::SUCCESS;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_enote_store_offchain(const EnoteFindingContextOffchain &enote_finding_context,

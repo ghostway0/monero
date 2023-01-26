@@ -139,7 +139,8 @@ struct SpMembershipProofPrepV1 final
 ////
 // SpAlignableMembershipProofV1
 // - the masked address can be used to match this membership proof with the corresponding input image
-//   - note: matching can fail if a masked address is reused in a tx, but that is almost definitely an implementation error!
+//   - note: matching can fail if a masked address is reused in a tx, but that is almost definitely an implementation
+//     error!
 ///
 struct SpAlignableMembershipProofV1 final
 {

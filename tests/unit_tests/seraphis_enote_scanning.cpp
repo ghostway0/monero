@@ -145,6 +145,8 @@ public:
         m_invocable_terminate.invoke();
         m_core_scanning_context.terminate_scanning();
     }
+    /// check if aborted
+    bool is_aborted() const override { return false; }
 
 private:
     /// enote scanning context that this test context wraps
@@ -2007,9 +2009,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
         dummy_invocable,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
-    ASSERT_ANY_THROW(refresh_enote_store_ledger(refresh_config,
-        test_scanning_context_B,
-        enote_store_updater));
+    ASSERT_FALSE(refresh_enote_store_ledger(refresh_config, test_scanning_context_B, enote_store_updater));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_5)

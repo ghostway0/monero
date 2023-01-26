@@ -69,6 +69,9 @@ public:
     virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
     /// tell the scanning context to stop its scanning process (should be no-throw no-fail)
     virtual void terminate_scanning() = 0;
+    /// test if scanning has been aborted
+    /// EXPECTATION: if this returns true then all subsequent calls to 'get chunk' should return an empty chunk
+    virtual bool is_aborted() const = 0;
 };
 
 } //namespace sp

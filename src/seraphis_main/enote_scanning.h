@@ -29,7 +29,7 @@
 // Interface for robust balance recovery framework (works for both legacy and seraphis backends).
 // PRECONDITIONS:
 // 1. chunks must be built from an atomic view of the source cache (ledger, unconfirmed cache, offchain cache)
-// 2. in chunks, m_contextual_key_images must reference a tx recorded in m_basic_records_per_tx (even if you
+// 2. per chunk: m_contextual_key_images must reference a tx recorded in m_basic_records_per_tx (even if you
 //    need to add empty map entries to achieve that)
 // 3. any call to get a chunk from an enote scanning context should produce a chunk that is at least as fresh as any
 //    other chunk obtained from that context (atomic ordering)
@@ -136,8 +136,10 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
 * param: config -
 * inoutparam: scanning_context_inout -
 * inoutparam: enote_store_updater_inout -
+* return: false if the refresh was not completely successful (a non-exceptional error was encountered, such as too many
+*         partial-scan attempts or an exception being thrown deep in the scanning code that was caught and ignored)
 */
-void refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
+bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     EnoteScanningContextLedger &scanning_context_inout,
     EnoteStoreUpdater &enote_store_updater_inout);
 /**

@@ -40,81 +40,81 @@ namespace sp { struct MatrixProof; }
 
 namespace multisig
 {
-  ////
-  // multisig account era conversion msg
-  // - This message contains a proof that one set of keys correspond 1:1 with another set across two generators, which
-  //   are defined by account_generator_eras.
-  //     e.x. {a G, b G, c G} -> {a U, b U, c U}
-  // - In an M-of-N multisig, if M players send each other account conversion messages, that set of messages can be used
-  //   to trustlessly convert an old account to one with a new account_generator_era.
-  //   See the multisig::get_multisig_account_with_new_generator_era() method for more information.
-  // - INVARIANT: keyshares stored here are canonical prime-order subgroup points.
-  //
-  // matrix_proof_msg = versioning-domain-sep || signing_pubkey || old_era || new_era
-  //
-  // msg = versioning-domain-sep ||
-  //       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || matrix_proof_challenge ||
-  //           matrix_proof_response || crypto_sig[signing_privkey](matrix_proof_challenge || matrix_proof_response))
-  ///
-  class multisig_account_era_conversion_msg final
-  {
-  //constructors
-  public:
-    // default constructor
-    multisig_account_era_conversion_msg() = default;
+////
+// multisig account era conversion msg
+// - This message contains a proof that one set of keys correspond 1:1 with another set across two generators, which
+//   are defined by account_generator_eras.
+//     e.x. {a G, b G, c G} -> {a U, b U, c U}
+// - In an M-of-N multisig, if M players send each other account conversion messages, that set of messages can be used
+//   to trustlessly convert an old account to one with a new account_generator_era.
+//   See the multisig::get_multisig_account_with_new_generator_era() method for more information.
+// - INVARIANT: keyshares stored here are canonical prime-order subgroup points.
+//
+// matrix_proof_msg = versioning-domain-sep || signing_pubkey || old_era || new_era
+//
+// msg = versioning-domain-sep ||
+//       b58(signing_pubkey || old_era || new_era || {old_keyshares} || {new_keyshares} || matrix_proof_challenge ||
+//           matrix_proof_response || crypto_sig[signing_privkey](matrix_proof_challenge || matrix_proof_response))
+///
+class multisig_account_era_conversion_msg final
+{
+//constructors
+public:
+  // default constructor
+  multisig_account_era_conversion_msg() = default;
 
-    // construct from info
-    multisig_account_era_conversion_msg(const crypto::secret_key &signing_privkey,
-      const cryptonote::account_generator_era old_account_era,
-      const cryptonote::account_generator_era new_account_era,
-      const std::vector<crypto::secret_key> &keyshare_privkeys);
+  // construct from info
+  multisig_account_era_conversion_msg(const crypto::secret_key &signing_privkey,
+    const cryptonote::account_generator_era old_account_era,
+    const cryptonote::account_generator_era new_account_era,
+    const std::vector<crypto::secret_key> &keyshare_privkeys);
 
-    // construct from string
-    multisig_account_era_conversion_msg(std::string msg);
+  // construct from string
+  multisig_account_era_conversion_msg(std::string msg);
 
-    // copy constructor: default
+  // copy constructor: default
 
-  //destructor: default
-    ~multisig_account_era_conversion_msg() = default;
+//destructor: default
+  ~multisig_account_era_conversion_msg() = default;
 
-  //overloaded operators: none
+//overloaded operators: none
 
-  //member functions
-    // get msg string
-    const std::string& get_msg() const { return m_msg; }
-    // get generator era of old account
-    cryptonote::account_generator_era get_old_era() const { return m_old_era; }
-    // get generator era of new account
-    cryptonote::account_generator_era get_new_era() const { return m_new_era; }
-    // get the msg signer's old keyshares
-    const std::vector<crypto::public_key>& get_old_keyshares() const { return m_old_keyshares; }
-    // get the msg signer's new keyshares
-    const std::vector<crypto::public_key>& get_new_keyshares() const { return m_new_keyshares; }
-    // get msg signing pubkey
-    const crypto::public_key& get_signing_pubkey() const { return m_signing_pubkey; }
+//member functions
+  // get msg string
+  const std::string& get_msg() const { return m_msg; }
+  // get generator era of old account
+  cryptonote::account_generator_era get_old_era() const { return m_old_era; }
+  // get generator era of new account
+  cryptonote::account_generator_era get_new_era() const { return m_new_era; }
+  // get the msg signer's old keyshares
+  const std::vector<crypto::public_key>& get_old_keyshares() const { return m_old_keyshares; }
+  // get the msg signer's new keyshares
+  const std::vector<crypto::public_key>& get_new_keyshares() const { return m_new_keyshares; }
+  // get msg signing pubkey
+  const crypto::public_key& get_signing_pubkey() const { return m_signing_pubkey; }
 
-  private:
-    // set: msg string based on msg contents, with signing pubkey defined from input privkey
-    void construct_msg(const crypto::secret_key &signing_privkey, const sp::MatrixProof &matrix_proof);
-    // parse msg string into parts, validate contents and signature
-    void parse_and_validate_msg();
+private:
+  // set: msg string based on msg contents, with signing pubkey defined from input privkey
+  void construct_msg(const crypto::secret_key &signing_privkey, const sp::MatrixProof &matrix_proof);
+  // parse msg string into parts, validate contents and signature
+  void parse_and_validate_msg();
 
-  //member variables
-  private:
-    // message as string
-    std::string m_msg;
+//member variables
+private:
+  // message as string
+  std::string m_msg;
 
-    // generator era of old account
-    cryptonote::account_generator_era m_old_era;
-    // generator era of new account (being converted to)
-    cryptonote::account_generator_era m_new_era;
-    // the msg signer's old keyshares
-    std::vector<crypto::public_key> m_old_keyshares;
-    // the msg signer's new keyshares (1:1 with old keyshares)
-    std::vector<crypto::public_key> m_new_keyshares;
+  // generator era of old account
+  cryptonote::account_generator_era m_old_era;
+  // generator era of new account (being converted to)
+  cryptonote::account_generator_era m_new_era;
+  // the msg signer's old keyshares
+  std::vector<crypto::public_key> m_old_keyshares;
+  // the msg signer's new keyshares (1:1 with old keyshares)
+  std::vector<crypto::public_key> m_new_keyshares;
 
-    // pubkey used to sign this msg
-    crypto::public_key m_signing_pubkey;
-  };
+  // pubkey used to sign this msg
+  crypto::public_key m_signing_pubkey;
+};
 
 } //namespace multisig
