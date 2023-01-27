@@ -61,20 +61,20 @@ class write_lock;
 template <typename>
 class read_lockable;
 template <typename>
-class rw_lockable;
+class write_lockable;
 
 /// READ LOCK
 template <typename value_t>
 class read_lock final : public enable_if_nonconst<value_t>
 {
     friend class read_lockable<value_t>;
-    friend class rw_lockable<value_t>;
+    friend class write_lockable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     read_lock() = delete;
-    /// normal constructor: only callable by read_lockable and rw_lockable
+    /// normal constructor: only callable by read_lockable and write_lockable
     read_lock(boost::shared_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
         m_lock{std::move(lock)},
         m_value{std::move(value)}
@@ -102,13 +102,13 @@ private:
 template <typename value_t>
 class write_lock final  : public enable_if_nonconst<value_t>
 {
-    friend class rw_lockable<value_t>;
+    friend class write_lockable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     write_lock() = delete;
-    /// normal constructor: only callable by rw_lockable
+    /// normal constructor: only callable by write_lockable
     write_lock(boost::unique_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
         m_lock{std::move(lock)},
         m_value{std::move(value)}
@@ -132,17 +132,17 @@ private:
     std::shared_ptr<value_t> m_value;
 };
 
-/// READ LOCKABLE
+/// READ LOCKABLE (can be copied)
 template <typename value_t>
 class read_lockable final  : public enable_if_nonconst<value_t>
 {
-    friend class rw_lockable<value_t>;
+    friend class write_lockable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     read_lockable() = delete;
-    /// normal constructor: only callable by rw_lockable
+    /// normal constructor: only callable by write_lockable
     read_lockable(std::shared_ptr<boost::shared_mutex> mutex, std::shared_ptr<value_t> value) :
         m_mutex{std::move(mutex)},
         m_value{std::move(value)}
@@ -172,30 +172,30 @@ private:
     std::shared_ptr<value_t> m_value;
 };
 
-/// READ/WRITE LOCKABLE
+/// WRITE LOCKABLE (can spawn read-lockables)
 template <typename value_t>
-class rw_lockable final  : public enable_if_nonconst<value_t>
+class write_lockable final  : public enable_if_nonconst<value_t>
 {
 public:
 //constructors
     /// default constructor: disabled
-    rw_lockable() = delete;
+    write_lockable() = delete;
     /// normal constructor: from value
-    rw_lockable(const value_t &raw_value) :
+    write_lockable(const value_t &raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(raw_value)}
     {}
-    rw_lockable(value_t &&raw_value) :
+    write_lockable(value_t &&raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(std::move(raw_value))}
     {}
 
     /// copies: disabled
-    rw_lockable(const rw_lockable<value_t>&) = delete;
-    rw_lockable& operator=(const rw_lockable<value_t>&) = delete;
+    write_lockable(const write_lockable<value_t>&) = delete;
+    write_lockable& operator=(const write_lockable<value_t>&) = delete;
     /// moves: default
-    rw_lockable(rw_lockable<value_t>&&) = default;
-    rw_lockable& operator=(rw_lockable<value_t>&&) = default;
+    write_lockable(write_lockable<value_t>&&) = default;
+    write_lockable& operator=(write_lockable<value_t>&&) = default;
 
 //member functions
     /// get a read lockable

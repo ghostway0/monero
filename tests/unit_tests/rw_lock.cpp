@@ -35,8 +35,8 @@
 TEST(rw_lock, int_mutable)
 {
     // manage an int (mutable)
-    tools::rw_lockable<int> rwl{5};
-    tools::read_lockable<int> read_lockable{rwl.get_read_lockable()};
+    tools::write_lockable<int> write_lockable{5};
+    tools::read_lockable<int> read_lockable{write_lockable.get_read_lockable()};
 
     // read the value
     {
@@ -46,7 +46,7 @@ TEST(rw_lock, int_mutable)
 
     // update the value
     {
-        tools::write_lock<int> write_lock{rwl.lock()};
+        tools::write_lock<int> write_lock{write_lockable.lock()};
         write_lock.value() = 10;
     }
 
