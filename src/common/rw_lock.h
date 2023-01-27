@@ -27,16 +27,18 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /// Single-writer/multi-reader value containers.
-/// - Accessing a moved-from container is UB.
+/// - Accessing a moved-from container will throw.
 /// - The containers use shared_ptrs internally, so misuse WILL cause reference cycles.
 
 //local headers
 
 //third-party headers
+#include <boost/optional/optional.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
 //standard headers
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 
 //forward declarations
@@ -44,8 +46,10 @@
 
 namespace tools
 {
+namespace detail
+{
 
-/// disable const value types
+/// enable if nonconst
 template <typename, typename = void>
 struct enable_if_nonconst;
 template <typename T>
@@ -53,28 +57,34 @@ struct enable_if_nonconst<T, std::enable_if_t<!std::is_const<T>::value>> {};
 template <typename T>
 struct enable_if_nonconst<T, std::enable_if_t<std::is_const<T>::value>> final { enable_if_nonconst() = delete; };
 
+/// test a rw_lock pointer
+[[noreturn]] inline void rw_lock_ptr_access_error() { throw std::runtime_error{"rw_lock invalid ptr access."}; }
+inline void test_rw_ptr(const void *ptr) { if (ptr == nullptr) rw_lock_ptr_access_error(); }
+
+} //namespace detail
+
+
 /// declarations
 template <typename>
 class read_lock;
 template <typename>
 class write_lock;
 template <typename>
-class read_lockable;
+class readable;
 template <typename>
-class write_lockable;
+class writable;
 
-/// READ LOCK
+/// READ LOCK (can read the locked value concurrently with other read_locks)
 template <typename value_t>
-class read_lock final : public enable_if_nonconst<value_t>
+class read_lock final : public detail::enable_if_nonconst<value_t>
 {
-    friend class read_lockable<value_t>;
-    friend class write_lockable<value_t>;
+    friend class readable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     read_lock() = delete;
-    /// normal constructor: only callable by read_lockable and write_lockable
+    /// normal constructor: only callable by readable and writable
     read_lock(boost::shared_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
         m_lock{std::move(lock)},
         m_value{std::move(value)}
@@ -90,7 +100,7 @@ public:
 
 //member functions
     /// access the value
-    const value_t& value() const { return *m_value; }
+    const value_t& value() const { detail::test_rw_ptr(m_value.get()); return *m_value; }
 
 private:
 //member variables
@@ -98,17 +108,17 @@ private:
     std::shared_ptr<value_t> m_value;
 };
 
-/// WRITE LOCK
+/// WRITE LOCK (can mutate the locked value)
 template <typename value_t>
-class write_lock final  : public enable_if_nonconst<value_t>
+class write_lock final  : public detail::enable_if_nonconst<value_t>
 {
-    friend class write_lockable<value_t>;
+    friend class writable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     write_lock() = delete;
-    /// normal constructor: only callable by write_lockable
+    /// normal constructor: only callable by writable
     write_lock(boost::unique_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
         m_lock{std::move(lock)},
         m_value{std::move(value)}
@@ -124,7 +134,7 @@ public:
 
 //member functions
     /// access the value
-    value_t& value() { return *m_value; }
+    value_t& value() { detail::test_rw_ptr(m_value.get()); return *m_value; }
 
 private:
 //member variables
@@ -132,39 +142,55 @@ private:
     std::shared_ptr<value_t> m_value;
 };
 
-/// READ LOCKABLE (can be copied)
+/// READ LOCKABLE (can be copied and spawn read_locks)
 template <typename value_t>
-class read_lockable final  : public enable_if_nonconst<value_t>
+class readable final  : public detail::enable_if_nonconst<value_t>
 {
-    friend class write_lockable<value_t>;
+    friend class writable<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
-    read_lockable() = delete;
-    /// normal constructor: only callable by write_lockable
-    read_lockable(std::shared_ptr<boost::shared_mutex> mutex, std::shared_ptr<value_t> value) :
+    readable() = delete;
+    /// normal constructor: only callable by writable
+    readable(std::shared_ptr<boost::shared_mutex> mutex, std::shared_ptr<value_t> value) :
         m_mutex{std::move(mutex)},
         m_value{std::move(value)}
     {}
 
 public:
     /// normal constructor: from value
-    read_lockable(const value_t &raw_value) :
+    readable(const value_t &raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(raw_value)}
     {}
-    read_lockable(value_t &&raw_value) :
+    readable(value_t &&raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(std::move(raw_value))}
     {}
 
-    /// moves: default and copies: default
+    /// moves and copies: default
 
 //member functions
+    /// try to get a write lock
+    /// FAILS IF THERE IS A CONCURRENT WRITE LOCK
+    boost::optional<read_lock<value_t>> try_lock()
+    {
+        detail::test_rw_ptr(m_mutex.get());
+        detail::test_rw_ptr(m_value.get());
+        boost::shared_lock<boost::shared_mutex> lock{*m_mutex, boost::try_to_lock};
+        if (!lock.owns_lock()) return boost::none;
+        else                   return read_lock<value_t>{std::move(lock), m_value};
+    }
+
     /// get a read lock
-    /// BLOCKS ON LOCKING THE MUTEX IF THERE IS A CONCURRENT WRITER
-    read_lock<value_t> lock() { return read_lock<value_t>{boost::shared_lock<boost::shared_mutex>{*m_mutex}, m_value}; }
+    /// BLOCKS IF THERE IS A CONCURRENT WRITE LOCK
+    read_lock<value_t> lock()
+    {
+        detail::test_rw_ptr(m_mutex.get());
+        detail::test_rw_ptr(m_value.get());
+        return read_lock<value_t>{boost::shared_lock<boost::shared_mutex>{*m_mutex}, m_value};
+    }
 
 private:
 //member variables
@@ -172,38 +198,59 @@ private:
     std::shared_ptr<value_t> m_value;
 };
 
-/// WRITE LOCKABLE (can spawn read-lockables)
+/// WRITE LOCKABLE (can spawn readables and write_locks)
 template <typename value_t>
-class write_lockable final  : public enable_if_nonconst<value_t>
+class writable final  : public detail::enable_if_nonconst<value_t>
 {
 public:
 //constructors
     /// default constructor: disabled
-    write_lockable() = delete;
+    writable() = delete;
     /// normal constructor: from value
-    write_lockable(const value_t &raw_value) :
+    writable(const value_t &raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(raw_value)}
     {}
-    write_lockable(value_t &&raw_value) :
+    writable(value_t &&raw_value) :
         m_mutex{std::make_shared<boost::shared_mutex>()},
         m_value{std::make_shared<value_t>(std::move(raw_value))}
     {}
 
     /// copies: disabled
-    write_lockable(const write_lockable<value_t>&) = delete;
-    write_lockable& operator=(const write_lockable<value_t>&) = delete;
+    writable(const writable<value_t>&) = delete;
+    writable& operator=(const writable<value_t>&) = delete;
     /// moves: default
-    write_lockable(write_lockable<value_t>&&) = default;
-    write_lockable& operator=(write_lockable<value_t>&&) = default;
+    writable(writable<value_t>&&) = default;
+    writable& operator=(writable<value_t>&&) = default;
 
 //member functions
-    /// get a read lockable
-    read_lockable<value_t> get_read_lockable() { return read_lockable<value_t>{m_mutex, m_value}; }
+    /// get a readable
+    readable<value_t> get_readable()
+    {
+        detail::test_rw_ptr(m_mutex.get());
+        detail::test_rw_ptr(m_value.get());
+        return readable<value_t>{m_mutex, m_value};
+    }
+
+    /// try to get a write lock
+    /// FAILS IF THERE ARE ANY CONCURRENT WRITE OR READ LOCKS
+    boost::optional<write_lock<value_t>> try_lock()
+    {
+        detail::test_rw_ptr(m_mutex.get());
+        detail::test_rw_ptr(m_value.get());
+        boost::unique_lock<boost::shared_mutex> lock{*m_mutex, boost::try_to_lock};
+        if (!lock.owns_lock()) return boost::none;
+        else                   return write_lock<value_t>{std::move(lock), m_value};
+    }
 
     /// get a write lock
-    /// BLOCKS ON LOCKING THE MUTEX IF THERE IS A CONCURRENT WRITER OR READERS
-    write_lock<value_t> lock() { return write_lock<value_t>{boost::unique_lock<boost::shared_mutex>{*m_mutex}, m_value}; }
+    /// BLOCKS IF THERE ARE ANY CONCURRENT WRITE OR READ LOCKS
+    write_lock<value_t> lock()
+    {
+        detail::test_rw_ptr(m_mutex.get());
+        detail::test_rw_ptr(m_value.get());
+        return write_lock<value_t>{boost::unique_lock<boost::shared_mutex>{*m_mutex}, m_value};
+    }
 
 private:
 //member variables
