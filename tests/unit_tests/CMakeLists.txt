@@ -80,6 +80,7 @@ set(unit_tests_sources
   pruning.cpp
   random.cpp
   rolling_median.cpp
+  rw_lock.cpp
   scaling_2021.cpp
   serialization.cpp
   seraphis_basic.cpp
