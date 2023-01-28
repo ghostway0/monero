@@ -168,6 +168,36 @@ static void check_is_owned(const SpEnoteVariant &enote,
     EXPECT_TRUE(enote_record.m_amount == amount_expected);
     EXPECT_TRUE(enote_record.m_address_index == j_expected);
 
+    // check onetime address can be recomputed from the enote record
+    rct::key recipient_address_spend_key;
+    make_jamtis_address_spend_key(keys.K_1_base, keys.s_ga, j_expected, recipient_address_spend_key);
+
+    rct::key sender_receiver_secret;
+    if (enote_record.m_type == JamtisEnoteType::PLAIN)
+    {
+        make_jamtis_sender_receiver_secret_plain(keys.xk_fr,
+            enote_record.m_enote_ephemeral_pubkey,
+            enote_record.m_enote_ephemeral_pubkey,
+            enote_record.m_input_context,
+            sender_receiver_secret);
+    }
+    else
+    {
+        JamtisSelfSendType selfsend_type;
+        EXPECT_TRUE(try_get_jamtis_self_send_type(enote_record.m_type, selfsend_type));
+
+        make_jamtis_sender_receiver_secret_selfsend(keys.k_vb,
+            enote_record.m_enote_ephemeral_pubkey,
+            enote_record.m_input_context,
+            selfsend_type,
+            sender_receiver_secret);
+    }
+
+    EXPECT_TRUE(test_jamtis_onetime_address(recipient_address_spend_key,
+        sender_receiver_secret,
+        amount_commitment_ref(enote),
+        onetime_address_ref(enote)));
+
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
     reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
@@ -507,7 +537,7 @@ static bool test_info_recovery_addressindex(const address_index_t &j)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_keyimage)
+TEST(seraphis_basic, information_recovery_keyimage)
 {
     // different methods for making key images all have same results
     crypto::secret_key y, z, k_a_sender_x, k_a_recipient_x;
@@ -543,7 +573,7 @@ TEST(seraphis, information_recovery_keyimage)
     EXPECT_TRUE(key_image1 == key_image_jamtis);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_amountencoding)
+TEST(seraphis_basic, information_recovery_amountencoding)
 {
     // encoding/decoding amounts
     crypto::secret_key sender_receiver_secret;
@@ -563,7 +593,7 @@ TEST(seraphis, information_recovery_amountencoding)
     EXPECT_TRUE(decoded_amount == amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_jamtisaddresstaghint)
+TEST(seraphis_basic, information_recovery_jamtisaddresstaghint)
 {
     // cipher an index
     const address_index_t j{gen_address_index()};
@@ -589,7 +619,7 @@ TEST(seraphis, information_recovery_jamtisaddresstaghint)
     ASSERT_TRUE(memcmp(hint.bytes, reconstructed_hint.bytes, sizeof(address_tag_hint_t)) == 0);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_addressindex)
+TEST(seraphis_basic, information_recovery_addressindex)
 {
     // test address indices
     EXPECT_TRUE(test_info_recovery_addressindex(address_index_t{}));
@@ -603,7 +633,7 @@ TEST(seraphis, information_recovery_addressindex)
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_jamtisdestination)
+TEST(seraphis_basic, information_recovery_jamtisdestination)
 {
     // user wallet keys
     jamtis_mock_keys keys;
@@ -634,7 +664,7 @@ TEST(seraphis, information_recovery_jamtisdestination)
         j_nominal));
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
+TEST(seraphis_basic, information_recovery_coinbase_enote_v1_plain)
 {
     // user wallet keys
     jamtis_mock_keys keys;
@@ -664,7 +694,7 @@ TEST(seraphis, information_recovery_coinbase_enote_v1_plain)
     check_is_owned(output_proposal, block_height, keys, j, amount, JamtisEnoteType::PLAIN);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_enote_v1_plain)
+TEST(seraphis_basic, information_recovery_enote_v1_plain)
 {
     // user wallet keys
     jamtis_mock_keys keys;
@@ -693,7 +723,7 @@ TEST(seraphis, information_recovery_enote_v1_plain)
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::PLAIN);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, information_recovery_enote_v1_selfsend)
+TEST(seraphis_basic, information_recovery_enote_v1_selfsend)
 {
     // user wallet keys
     jamtis_mock_keys keys;
@@ -738,7 +768,7 @@ TEST(seraphis, information_recovery_enote_v1_selfsend)
     check_is_owned(output_proposal, keys, j, amount, JamtisEnoteType::CHANGE);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, finalize_v1_output_proposal_set_v1)
+TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
 {
     /// setup
 
@@ -1039,7 +1069,7 @@ TEST(seraphis, finalize_v1_output_proposal_set_v1)
     check_is_owned(selfsend_proposals[2], keys, j_change, 1, JamtisEnoteType::CHANGE);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, tx_extra)
+TEST(seraphis_basic, tx_extra)
 {
     /// make elements
     std::vector<ExtraFieldElement> extra_field_elements;
@@ -1125,7 +1155,7 @@ TEST(seraphis, tx_extra)
     EXPECT_FALSE(try_get_extra_field_elements(tx_extra, extra_field_elements));
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, binned_reference_set)
+TEST(seraphis_basic, binned_reference_set)
 {
     EXPECT_ANY_THROW(test_binned_reference_set(0, 0, 0, 0, 0, 0));  //invalid reference set size and bin num members
     EXPECT_ANY_THROW(test_binned_reference_set(1, 0, 0, 1, 1, 0));  //invalid range
@@ -1160,7 +1190,7 @@ TEST(seraphis, binned_reference_set)
     EXPECT_NO_THROW(EXPECT_TRUE(test_binned_reference_set(0, 100, 40, 4, 100, 0)));
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, discretized_fees)
+TEST(seraphis_basic, discretized_fees)
 {
     // test the fee discretizer
     std::uint64_t test_fee_value, fee_value;
@@ -1204,7 +1234,7 @@ TEST(seraphis, discretized_fees)
     EXPECT_FALSE(try_get_fee_value(discretized_fee, fee_value));
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis, txtype_squashed_v1)
+TEST(seraphis_basic, txtype_squashed_v1)
 {
     // demo making SpTxTypeSquasedV1 with raw tx builder API
     const std::size_t num_txs{3};
