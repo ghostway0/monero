@@ -42,6 +42,7 @@ set(unit_tests_sources
   chacha.cpp
   checkpoints.cpp
   command_line.cpp
+  continuation_demo.cpp
   crypto.cpp
   decompose_amount_into_digits.cpp
   device.cpp
