@@ -198,18 +198,18 @@ static bool try_get_amount_commitment_information(const SpEnoteVariant &enote,
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    if (enote.is_type<SpCoinbaseEnoteV1>())
+    if (const SpCoinbaseEnoteV1 *enote_ptr = enote.try_unwrap<SpCoinbaseEnoteV1>())
     {
-        return try_get_amount_commitment_information_plaintext(enote.unwrap<SpCoinbaseEnoteV1>().m_core.m_amount,
+        return try_get_amount_commitment_information_plaintext(enote_ptr->m_core.m_amount,
             amount_out,
             amount_blinding_factor_out);
     }
-    else if (enote.is_type<SpEnoteV1>())
+    else if (const SpEnoteV1 *enote_ptr = enote.try_unwrap<SpEnoteV1>())
     {
         return jamtis::try_get_jamtis_amount(sender_receiver_secret,
             amount_baked_key,
-            enote.unwrap<SpEnoteV1>().m_core.m_amount_commitment,
-            enote.unwrap<SpEnoteV1>().m_encoded_amount,
+            enote_ptr->m_core.m_amount_commitment,
+            enote_ptr->m_encoded_amount,
             amount_out,
             amount_blinding_factor_out);
     }

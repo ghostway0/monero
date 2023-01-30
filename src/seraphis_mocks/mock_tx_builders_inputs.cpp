@@ -160,10 +160,10 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_v1(
     {
         if (enote_to_add == add_real_at_pos)
         {
-            if (real_reference_enote.is_type<SpCoinbaseEnoteCore>())
-                mock_enotes.emplace_back(SpCoinbaseEnoteV1{.m_core = real_reference_enote.unwrap<SpCoinbaseEnoteCore>()});
-            else if (real_reference_enote.is_type<SpEnoteCore>())
-                mock_enotes.emplace_back(SpEnoteV1{.m_core = real_reference_enote.unwrap<SpEnoteCore>()});
+            if (const SpCoinbaseEnoteCore *enote_ptr = real_reference_enote.try_unwrap<SpCoinbaseEnoteCore>())
+                mock_enotes.emplace_back(SpCoinbaseEnoteV1{.m_core = *enote_ptr});
+            else if (const SpEnoteCore *enote_ptr = real_reference_enote.try_unwrap<SpEnoteCore>())
+                mock_enotes.emplace_back(SpEnoteV1{.m_core = *enote_ptr});
             else
                 CHECK_AND_ASSERT_THROW_MES(false, "gen mock sp membership proof prep: invalid real reference enote type.");
         }

@@ -222,43 +222,43 @@ static bool try_get_amount_commitment_information(const LegacyEnoteVariant &enot
     rct::xmr_amount &amount_out,
     crypto::secret_key &amount_blinding_factor_out)
 {
-    if (enote.is_type<LegacyEnoteV1>())
+    if (const LegacyEnoteV1 *enote_ptr = enote.try_unwrap<LegacyEnoteV1>())
     {
-        return try_get_amount_commitment_information_v1(enote.unwrap<LegacyEnoteV1>().m_amount,
+        return try_get_amount_commitment_information_v1(enote_ptr->m_amount,
             amount_out,
             amount_blinding_factor_out);
     }
-    else if (enote.is_type<LegacyEnoteV2>())
+    else if (const LegacyEnoteV2 *enote_ptr = enote.try_unwrap<LegacyEnoteV2>())
     {
-        return try_get_amount_commitment_information_v2(enote.unwrap<LegacyEnoteV2>().m_amount_commitment,
-            enote.unwrap<LegacyEnoteV2>().m_encoded_amount_blinding_factor,
-            enote.unwrap<LegacyEnoteV2>().m_encoded_amount,
+        return try_get_amount_commitment_information_v2(enote_ptr->m_amount_commitment,
+            enote_ptr->m_encoded_amount_blinding_factor,
+            enote_ptr->m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
             hwdev,
             amount_out,
             amount_blinding_factor_out);
     }
-    else if (enote.is_type<LegacyEnoteV3>())
+    else if (const LegacyEnoteV3 *enote_ptr = enote.try_unwrap<LegacyEnoteV3>())
     {
-        return try_get_amount_commitment_information_v3(enote.unwrap<LegacyEnoteV3>().m_amount_commitment,
-            enote.unwrap<LegacyEnoteV3>().m_encoded_amount,
+        return try_get_amount_commitment_information_v3(enote_ptr->m_amount_commitment,
+            enote_ptr->m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
             hwdev,
             amount_out,
             amount_blinding_factor_out);
     }
-    else if (enote.is_type<LegacyEnoteV4>())
+    else if (const LegacyEnoteV4 *enote_ptr = enote.try_unwrap<LegacyEnoteV4>())
     {
-        return try_get_amount_commitment_information_v1(enote.unwrap<LegacyEnoteV4>().m_amount,
+        return try_get_amount_commitment_information_v1(enote_ptr->m_amount,
             amount_out,
             amount_blinding_factor_out);
     }
-    else if (enote.is_type<LegacyEnoteV5>())
+    else if (const LegacyEnoteV5 *enote_ptr = enote.try_unwrap<LegacyEnoteV5>())
     {
-        return try_get_amount_commitment_information_v3(enote.unwrap<LegacyEnoteV5>().m_amount_commitment,
-            enote.unwrap<LegacyEnoteV5>().m_encoded_amount,
+        return try_get_amount_commitment_information_v3(enote_ptr->m_amount_commitment,
+            enote_ptr->m_encoded_amount,
             tx_output_index,
             sender_receiver_DH_derivation,
             hwdev,

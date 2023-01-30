@@ -107,11 +107,18 @@ public:
     template <typename T>
     bool is_type() const noexcept { return this->index() == this->type_index_of<T>(); }
 
+    /// try to get a read-only handle to the embedded value (return nullptr on failure)
+    template <typename T>
+    const T* try_unwrap() const
+    {
+        return boost::strict_get<T>(&m_value);
+    }
+
     /// get a read-only handle to the embedded value
     template <typename T>
     const T& unwrap() const
     {
-        const T *value_ptr{boost::strict_get<T>(&m_value)};
+        const T *value_ptr{this->try_unwrap<T>()};
         if (!value_ptr) variant_unwrap_err();
         return *value_ptr;
     }
@@ -121,7 +128,7 @@ public:
 
     /// get the type index of a requested type (compile error for invalid types) (boost::mp11 is boost 1.66.0)
     template <typename T>
-    static int type_index_of() noexcept
+    static constexpr int type_index_of() noexcept
     {
         using types = boost::mpl::vector<boost::blank, Types...>;
         using elem = typename boost::mpl::find<types, T>::type;
