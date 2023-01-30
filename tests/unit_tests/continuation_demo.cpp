@@ -107,162 +107,132 @@ static void add_int(const int x, int &i_inout)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-template <typename I, typename T>
-static auto initialize_future_task(I&& initial_value, T&& task)
+static void mul_int(const int x, int &i_inout)
 {
-    return std::packaged_task<decltype(task(std::declval<I>()))()>{
-            [
-                l_val  = std::forward<I>(initial_value),
-                l_task = std::forward<T>(task)
-            ] ()
+    i_inout *= x;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename I, typename T, typename R>
+static auto initialize_future_task(I &&initial_value, T &&task, std::promise<R> promise)
+{
+    return
+        [
+            l_val     = std::forward<I>(initial_value),
+            l_task    = std::forward<T>(task),
+            l_promise = std::move(promise)
+        ] () mutable -> void
+        {
+            l_task(std::move(l_val), std::move(l_promise));
+        };
+}
+//-------------------------------------------------------------------------------------------------------------------
+// unary case: set the promise from the task result
+//-------------------------------------------------------------------------------------------------------------------
+template <typename R, typename S, typename A>
+static auto build_task_chain(S, A &&this_task)
+{
+    return
+        [
+            l_task = std::forward<A>(this_task)
+        ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
+        {
+            try { promise.set_value(l_task(std::move(this_task_val))); }
+            catch (...)
             {
-                return l_task(std::move(l_val));
+                try { promise.set_exception(std::current_exception()); } catch (...) { /*can't do anything*/ }
             }
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// unary case
-//-------------------------------------------------------------------------------------------------------------------
-template <typename S, typename A>
-static auto build_task_chain(S, A&& this_task)
-{
-    return std::forward<A>(this_task);
-}
-//-------------------------------------------------------------------------------------------------------------------
 // fold into task 'a' its continuation 'the rest of the task chain'
 //-------------------------------------------------------------------------------------------------------------------
-template <typename S, typename A, typename... Types>
-static auto build_task_chain(S scheduler, A&& this_task, Types&&... continuation_tasks)
+template <typename R, typename S, typename A, typename... Ts>
+static auto build_task_chain(S scheduler, A &&this_task, Ts &&...continuation_tasks)
 {
     return
         [
             l_scheduler = scheduler,
             l_this_task = std::forward<A>(this_task),
-            l_next_task = build_task_chain(scheduler, std::forward<Types>(continuation_tasks)...)
-        ] (auto&& val)
+            l_next_task = build_task_chain<R>(scheduler, std::forward<Ts>(continuation_tasks)...)
+        ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
         {
             // this task's job
-            auto this_task_result = l_this_task(std::forward<decltype(val)>(val));
+            auto this_task_result =
+                [&]() -> expect<decltype(l_this_task(std::declval<decltype(this_task_val)>()))>
+                {
+                    try { return l_this_task(std::forward<decltype(this_task_val)>(this_task_val)); }
+                    catch (...)
+                    {
+                        try { promise.set_exception(std::current_exception()); } catch (...) { /*can't do anything*/ }
+                        return std::error_code{};
+                    }
+                }();
 
-            // connect the next task to this task
+            // give up if this task failed
+            if (!this_task_result)
+                return;
+
+            // pass the result of this task to the continuation
             auto continuation = initialize_future_task(
-                    std::forward<decltype(this_task_result)>(this_task_result),
-                    std::move(l_next_task)
+                    std::forward<typename decltype(this_task_result)::value_type>(this_task_result.value()),
+                    std::move(l_next_task),
+                    std::move(promise)
                 );
 
-            // save continuatin's result
-            auto continuation_future = continuation.get_future();
-
-            // submit the continuation task to the threadpool
+            // submit the continuation task to the scheduler
             l_scheduler(std::move(continuation));
-
-            // return the continuation's future
-            return continuation_future;
         };
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename R, typename S, typename I, typename... Ts>
+static std::future<R> schedule_task_chain(S scheduler, I &&initial_value, Ts &&...tasks)
+{
+    // prepare result channel
+    std::promise<R> result_promise;
+    std::future<R> result_future{result_promise.get_future()};
+
+    // build task chain
+    auto task_chain_head = initialize_future_task(
+            std::forward<I>(initial_value),
+            build_task_chain<R>(scheduler, std::forward<Ts>(tasks)...),
+            std::move(result_promise)
+        );
+
+    // schedule task chain
+    scheduler(std::move(task_chain_head));
+
+    // return future
+    return result_future;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R>
-static R unwrap_futures_chain(R&& future_result)
+expect<R> unwrap_future(std::future<R> future)
 {
-    return std::forward<R>(future_result);
+    if (!future.valid())      { return std::error_code{};       }
+    try                       { return std::move(future.get()); }
+    catch (std::error_code e) { return e;                       }
+    catch (...)               { return std::error_code{};       }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-template <typename R, typename T>
-static expect<R> unwrap_futures_chain(std::future<T>&& future)
-{
-    try { return unwrap_futures_chain<R>(future.get());   }
-    catch (std::error_code e) { return e;                 }
-    catch (...)               { return std::error_code{}; }
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-TEST(continuation_demo, basic)
+template <typename S>
+static auto basic_continuation_demo_test(S scheduler)
 {
     // set up the basic task sequence in reverse order
-    int val{10};
-    int addor{5};
+    int initial_val{10};
+    int add_five{5};
+    int mul_three{3};
+    int mul_ten{10};
     // task 1: print
     // task 2: add 5
     // task 3: print
-    auto task3 =
-        [](const int val)
-        {
-            print_int(val);
-        };
-    auto task2 =
-        [
-            addor     = std::move(addor),
-            next_task = std::move(task3)
-        ] (int val)
-        {
-            // this task's job
-            add_int(addor, val);
-
-            // connect the next task to this task
-            auto continuation =
-                [
-                    val  = std::move(val),
-                    task = std::move(next_task)
-                ] ()
-                {
-                    task(val);
-                };
-
-            // submit the next task
-            add_task_to_demo_threadpool(std::move(continuation));
-        };
-    auto task1 =
-        [
-            val       = std::move(val),
-            next_task = std::move(task2)
-        ] ()
-        {
-            // this task's job
-            print_int(val);
-
-            // connect the next task to this task
-            auto continuation =
-                [
-                    val  = std::move(val),
-                    task = std::move(next_task)
-                ] ()
-                {
-                    task(val);
-                };
-
-            // submit the next task
-            add_task_to_demo_threadpool(std::move(continuation));
-        };
-
-    // submit the head of the sequence to the threadpool
-    add_task_to_demo_threadpool(std::move(task1));
-
-    // run tasks to completion
-    int num_tasks_completed{0};
-    while (try_run_next_task_demo_threadpool())
-    {
-        ++num_tasks_completed;
-        std::cerr << "completed task #" << num_tasks_completed << '\n';
-    }
-}
-//-------------------------------------------------------------------------------------------------------------------
-TEST(continuation_demo, basic_ergonomic_autorun)
-{
-    // prepare scheduler
-    auto scheduler =
-        [](auto&& task)
-        {
-            task();
-        };
-
-    // set up the basic task sequence in reverse order
-    int val{10};
-    int addor{5};
-    // task 1: print
-    // task 2: add 5
-    // task 3: print
+    // task 4: mul3 and SPLIT in half
+    //   task 5a-1: print    task 5b-1: print
+    //   task 5a-2: mul10
+    // task 6: JOIN and print
     auto job1 =
         [](int val) -> int
         {
@@ -271,7 +241,7 @@ TEST(continuation_demo, basic_ergonomic_autorun)
         };
     auto job2 =
         [
-            addor = std::move(addor)
+            addor = std::move(add_five)
         ] (int val) -> int
         {
             add_int(addor, val);
@@ -283,84 +253,86 @@ TEST(continuation_demo, basic_ergonomic_autorun)
             print_int(val);
             return val;
         };
+    auto job4 =
+        [
+            multiplier = std::move(mul_three)
+        ] (int val) -> int
+        {
+            mul_int(multiplier, val);
+            return val;
+        };
+    auto job5a_1 =
+        [] (int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+    auto job5a_2 =
+        [
+            multiplier = std::move(mul_ten)
+        ] (int val) -> int
+        {
+            mul_int(multiplier, val);
+            return val;
+        };
+    auto job5b_1 =
+        [] (int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+    auto job6 =
+        [](int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
 
-    // build task chain
-    auto task_chain = initialize_future_task(
-            std::move(val),
-            build_task_chain(
-                    scheduler,
-                    std::move(job1),
-                    std::move(job2),
-                    std::move(job3)
-                )
+    // build task chain and schedule it
+    return schedule_task_chain<int>(
+            scheduler,
+            std::move(initial_val),
+            std::move(job1),
+            std::move(job2),
+            std::move(job3) /*,
+            task_chain_openclose(
+                std::move(job4),
+                as_tuple(std::move(job5a_1), std::move(job5a_2)),
+                as_tuple(std::move(job5b_1)),
+                std::move(job6)
+            )*/
+        );
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+TEST(continuation_demo, basic_autorun)
+{
+    // run the test with a scheduler that immediately invokes tasks
+    auto task_chain_future = basic_continuation_demo_test(
+            [](auto&& task)
+            {
+                task();
+            }
         );
 
-    // save the chain future result
-    auto task_chain_future = task_chain.get_future();
-
-    // submit the task chain
-    scheduler(std::move(task_chain));
-
     // extract final result
-    const expect<int> final_result = unwrap_futures_chain<int>(std::move(task_chain_future));
+    EXPECT_TRUE(task_chain_future.valid());
+    const expect<int> final_result{unwrap_future<int>(std::move(task_chain_future))};
     EXPECT_TRUE(final_result);
     std::cerr << "final result: " << final_result.value() << '\n';
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(continuation_demo, basic_ergonomic_threadpool)
+TEST(continuation_demo, basic_threadpool)
 {
-    // prepare scheduler
-    auto scheduler =
-        [](auto&& task)
-        {
-            add_task_to_demo_threadpool(std::forward<decltype(task)>(task));
-        };
-
-    // set up the basic task sequence in reverse order
-    int val{10};
-    int addor{5};
-    // task 1: print
-    // task 2: add 5
-    // task 3: print
-    auto job1 =
-        [](int val) -> int
-        {
-            print_int(val);
-            return val;
-        };
-    auto job2 =
-        [
-            addor = std::move(addor)
-        ] (int val) -> int
-        {
-            add_int(addor, val);
-            return val;
-        };
-    auto job3 =
-        [](int val) -> int
-        {
-            print_int(val);
-            return val;
-        };
-
-    // build task chain
-    auto task_chain = initialize_future_task(
-            std::move(val),
-            build_task_chain(
-                    scheduler,
-                    std::move(job1),
-                    std::move(job2),
-                    std::move(job3)
-                )
+    // run the test with a scheduler that sends tasks into the demo threadpool
+    auto task_chain_future = basic_continuation_demo_test(
+            [](auto&& task)
+            {
+                add_task_to_demo_threadpool(std::forward<decltype(task)>(task));
+            }
         );
 
-    // save the chain future result
-    auto task_chain_future = task_chain.get_future();
-
-    // submit the task chain
-    scheduler(std::move(task_chain));
-
-    // run tasks to completion
+    // run tasks in the threadpool to completion
     int num_tasks_completed{0};
     while (try_run_next_task_demo_threadpool())
     {
@@ -369,7 +341,8 @@ TEST(continuation_demo, basic_ergonomic_threadpool)
     }
 
     // extract final result
-    const expect<int> final_result = unwrap_futures_chain<int>(std::move(task_chain_future));
+    EXPECT_TRUE(task_chain_future.valid());
+    const expect<int> final_result{unwrap_future<int>(std::move(task_chain_future))};
     EXPECT_TRUE(final_result);
     std::cerr << "final result: " << final_result.value() << '\n';
 }
