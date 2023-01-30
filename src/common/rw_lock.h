@@ -32,9 +32,8 @@
 /// - The containers use a shared_ptr internally, so misuse WILL cause reference cycles.
 /// 
 /// Implementation notes:
-/// - We use a shared_mutex for the context mutex as a hacky way to make threads sleep when
-///   obtaining a lock fails. The wait condition has its own critical zone on locking the value mutex,
-///   so it's fine if multiple threads check their waits concurrently.
+/// - We use a shared_mutex for the context mutex since after a write_lock is released multiple waiting readers may
+///   concurrently acquire a shared lock on the value.
 
 //local headers
 
@@ -119,11 +118,16 @@ public:
 //destructor
     ~read_lock()
     {
-        if (m_lock.mutex() != nullptr && m_lock.owns_lock())
-            m_lock.unlock();
-
-        if (m_context)
+        if (m_context &&
+            m_lock.mutex() != nullptr &&
+            m_lock.owns_lock())
+        {
+            {
+                boost::unique_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+                m_lock.unlock();
+            }
             m_context->ctx_condvar.notify_one();  //notify one waiting writer
+        }
     }
 
 //member functions
@@ -164,11 +168,16 @@ public:
 //destructor
     ~write_lock()
     {
-        if (m_lock.mutex() != nullptr && m_lock.owns_lock())
-            m_lock.unlock();
-
-        if (m_context)
+        if (m_context &&
+            m_lock.mutex() != nullptr &&
+            m_lock.owns_lock())
+        {
+            {
+                boost::unique_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+                m_lock.unlock();
+            }
             m_context->ctx_condvar.notify_all();  //notify all waiting
+        }
     }
 
 //member functions

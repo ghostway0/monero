@@ -200,7 +200,7 @@ static auto initialize_task(I initial_value, T task)
             task = std::move(task)
         ] ()
         {
-            return task(std::move(initial_value));
+            task(std::move(initial_value));
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
