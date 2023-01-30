@@ -153,6 +153,57 @@ static void add_int(const int x, int &i_inout)
     i_inout += x;
 }
 //-------------------------------------------------------------------------------------------------------------------
+// unary case
+//-------------------------------------------------------------------------------------------------------------------
+template <typename A>
+static auto build_task_chain(A a)
+{
+    return std::move(a);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// fold into task 'a' its continuation 'the rest of the task chain'
+//-------------------------------------------------------------------------------------------------------------------
+template <typename A, typename... Types>
+static auto build_task_chain(A a, Types... args)
+{
+    return
+        [
+            this_task = std::move(a),
+            next_task = build_task_chain(std::move(args)...)
+        ] (auto val)
+        {
+            // this task's job
+            auto this_task_result = this_task(std::move(val));
+
+            // connect the next task to this task
+            auto continuation =
+                [
+                    val  = std::move(this_task_result),
+                    task = std::move(next_task)
+                ] ()
+                {
+                    task(std::move(val));
+                };
+
+            // submit the continuation task to the threadpool
+            add_task_to_demo_threadpool(std::move(continuation));
+        };
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename I, typename T>
+static auto initialize_task(I initial_value, T task)
+{
+    return
+        [
+            initial_value = std::move(initial_value),
+            task = std::move(task)
+        ] ()
+        {
+            return task(std::move(initial_value));
+        };
+}
+//-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 TEST(continuation_demo, basic)
 {
@@ -214,6 +265,56 @@ TEST(continuation_demo, basic)
 
     // submit the head of the sequence to the threadpool
     add_task_to_demo_threadpool(std::move(task1));
+
+    // run tasks to completion
+    int num_tasks_completed{0};
+    while (try_run_next_task_demo_threadpool())
+    {
+        ++num_tasks_completed;
+        std::cerr << "completed task #" << num_tasks_completed << '\n';
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+TEST(continuation_demo, basic_ergonomic)
+{
+    // set up the basic task sequence in reverse order
+    int val{10};
+    int addor{5};
+    // task 1: print
+    // task 2: add 5
+    // task 3: print
+    auto job1 =
+        [](int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+    auto job2 =
+        [
+            addor = std::move(addor)
+        ] (int val) -> int
+        {
+            add_int(addor, val);
+            return val;
+        };
+    auto job3 =
+        [](int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+
+    // build and submit the task chain
+    add_task_to_demo_threadpool(
+            initialize_task(
+                    std::move(val),
+                    build_task_chain(
+                            std::move(job1),
+                            std::move(job2),
+                            std::move(job3)
+                        )
+                )
+        );
 
     // run tasks to completion
     int num_tasks_completed{0};

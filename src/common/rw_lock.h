@@ -112,6 +112,10 @@ protected:
     read_lock& operator=(const read_lock<value_t>&) = delete;
 
 public:
+    /// moves: default
+    read_lock(read_lock<value_t>&&) = default;
+    read_lock& operator=(read_lock<value_t>&&) = default;
+
 //destructor
     ~read_lock()
     {
@@ -121,10 +125,6 @@ public:
         if (m_context)
             m_context->ctx_condvar.notify_one();  //notify one waiting writer
     }
-
-    /// moves: default
-    read_lock(read_lock<value_t>&&) = default;
-    read_lock& operator=(read_lock<value_t>&&) = default;
 
 //member functions
     /// access the value
