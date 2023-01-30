@@ -27,75 +27,21 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "common/expect.h"
+
 #include <gtest/gtest.h>
 
+#include <future>
 #include <iostream>
 #include <memory>
 #include <queue>
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-class Task
-{
-//member types
-    class TaskConcept
-    {
-    public:
-        TaskConcept&& operator=(TaskConcept&&) = delete;  //disable copies/moves (this is a virtual base class)
-        virtual ~TaskConcept() = default;
-        virtual void run() = 0;
-    };
-
-    //todo: test if T is invokable?
-    template <typename T>
-    class TaskModel final : public TaskConcept
-    {
-    public:
-    //constructors
-        /// default constructor: disabled
-        TaskModel() = delete;
-        /// normal constructor
-        TaskModel(T task) : m_task{std::move(task)}
-        {}
-        /// disable copies/moves
-        TaskModel&& operator=(TaskModel&&) = delete;
-    //member functions
-        /// run the task
-        void run() override
-        {
-            m_task();
-        }
-    private:
-    //member variables
-        /// the task
-        T m_task;
-    };
-
-public:
-//constructors
-    /// default constructor: disabled
-    Task() = delete;
-    /// construct from actual task
-    template <typename T>
-    Task(T task) : m_task{std::make_unique<TaskModel<T>>(std::move(task))}
-    {}
-
-//member functions
-    void run()
-    {
-        m_task->run();
-    }
-
-private:
-//member variables
-    std::unique_ptr<TaskConcept> m_task;
-};
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 class ThreadPool
 {
 public:
-    void add_task(Task new_task)
+    void add_task(std::packaged_task<void()> new_task)
     {
         m_pending_tasks.push(std::move(new_task));
     }
@@ -107,15 +53,15 @@ public:
             return false;
 
         // run the oldest task
-        Task task_to_run{std::move(m_pending_tasks.front())};
+        auto task_to_run{std::move(m_pending_tasks.front())};
         m_pending_tasks.pop();
-        task_to_run.run();
+        task_to_run();
 
         return true;
     }
 
 private:
-    std::queue<Task> m_pending_tasks;
+    std::queue<std::packaged_task<void()>> m_pending_tasks;
 };
 //-------------------------------------------------------------------------------------------------------------------
 // the thread pool itself should not be exposed, otherwise someone could move the pool and cause issues
@@ -130,9 +76,16 @@ static ThreadPool& get_demo_threadpool()
 } //namespace detail
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void add_task_to_demo_threadpool(Task new_task)
+static void add_task_to_demo_threadpool(std::packaged_task<void()> new_task)
 {
     detail::get_demo_threadpool().add_task(std::move(new_task));
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename T>
+static void add_task_to_demo_threadpool(T&& new_task)
+{
+    add_task_to_demo_threadpool(static_cast<std::packaged_task<void()>>(std::forward<T>(new_task)));
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -153,55 +106,75 @@ static void add_int(const int x, int &i_inout)
     i_inout += x;
 }
 //-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename I, typename T>
+static auto initialize_future_task(I&& initial_value, T&& task)
+{
+    return std::packaged_task<decltype(task(std::declval<I>()))()>{
+            [
+                l_val  = std::forward<I>(initial_value),
+                l_task = std::forward<T>(task)
+            ] ()
+            {
+                return l_task(std::move(l_val));
+            }
+        };
+}
+//-------------------------------------------------------------------------------------------------------------------
 // unary case
 //-------------------------------------------------------------------------------------------------------------------
-template <typename A>
-static auto build_task_chain(A a)
+template <typename S, typename A>
+static auto build_task_chain(S, A&& this_task)
 {
-    return std::move(a);
+    return std::forward<A>(this_task);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // fold into task 'a' its continuation 'the rest of the task chain'
 //-------------------------------------------------------------------------------------------------------------------
-template <typename A, typename... Types>
-static auto build_task_chain(A a, Types... args)
+template <typename S, typename A, typename... Types>
+static auto build_task_chain(S scheduler, A&& this_task, Types&&... continuation_tasks)
 {
     return
         [
-            this_task = std::move(a),
-            next_task = build_task_chain(std::move(args)...)
-        ] (auto val)
+            l_scheduler = scheduler,
+            l_this_task = std::forward<A>(this_task),
+            l_next_task = build_task_chain(scheduler, std::forward<Types>(continuation_tasks)...)
+        ] (auto&& val)
         {
             // this task's job
-            auto this_task_result = this_task(std::move(val));
+            auto this_task_result = l_this_task(std::forward<decltype(val)>(val));
 
             // connect the next task to this task
-            auto continuation =
-                [
-                    val  = std::move(this_task_result),
-                    task = std::move(next_task)
-                ] ()
-                {
-                    task(std::move(val));
-                };
+            auto continuation = initialize_future_task(
+                    std::forward<decltype(this_task_result)>(this_task_result),
+                    std::move(l_next_task)
+                );
+
+            // save continuatin's result
+            auto continuation_future = continuation.get_future();
 
             // submit the continuation task to the threadpool
-            add_task_to_demo_threadpool(std::move(continuation));
+            l_scheduler(std::move(continuation));
+
+            // return the continuation's future
+            return continuation_future;
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-template <typename I, typename T>
-static auto initialize_task(I initial_value, T task)
+template <typename R>
+static R unwrap_futures_chain(R&& future_result)
 {
-    return
-        [
-            initial_value = std::move(initial_value),
-            task = std::move(task)
-        ] ()
-        {
-            task(std::move(initial_value));
-        };
+    return std::forward<R>(future_result);
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <typename R, typename T>
+static expect<R> unwrap_futures_chain(std::future<T>&& future)
+{
+    try { return unwrap_futures_chain<R>(future.get());   }
+    catch (std::error_code e) { return e;                 }
+    catch (...)               { return std::error_code{}; }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -275,8 +248,15 @@ TEST(continuation_demo, basic)
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(continuation_demo, basic_ergonomic)
+TEST(continuation_demo, basic_ergonomic_autorun)
 {
+    // prepare scheduler
+    auto scheduler =
+        [](auto&& task)
+        {
+            task();
+        };
+
     // set up the basic task sequence in reverse order
     int val{10};
     int addor{5};
@@ -304,17 +284,81 @@ TEST(continuation_demo, basic_ergonomic)
             return val;
         };
 
-    // build and submit the task chain
-    add_task_to_demo_threadpool(
-            initialize_task(
-                    std::move(val),
-                    build_task_chain(
-                            std::move(job1),
-                            std::move(job2),
-                            std::move(job3)
-                        )
+    // build task chain
+    auto task_chain = initialize_future_task(
+            std::move(val),
+            build_task_chain(
+                    scheduler,
+                    std::move(job1),
+                    std::move(job2),
+                    std::move(job3)
                 )
         );
+
+    // save the chain future result
+    auto task_chain_future = task_chain.get_future();
+
+    // submit the task chain
+    scheduler(std::move(task_chain));
+
+    // extract final result
+    const expect<int> final_result = unwrap_futures_chain<int>(std::move(task_chain_future));
+    EXPECT_TRUE(final_result);
+    std::cerr << "final result: " << final_result.value() << '\n';
+}
+//-------------------------------------------------------------------------------------------------------------------
+TEST(continuation_demo, basic_ergonomic_threadpool)
+{
+    // prepare scheduler
+    auto scheduler =
+        [](auto&& task)
+        {
+            add_task_to_demo_threadpool(std::forward<decltype(task)>(task));
+        };
+
+    // set up the basic task sequence in reverse order
+    int val{10};
+    int addor{5};
+    // task 1: print
+    // task 2: add 5
+    // task 3: print
+    auto job1 =
+        [](int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+    auto job2 =
+        [
+            addor = std::move(addor)
+        ] (int val) -> int
+        {
+            add_int(addor, val);
+            return val;
+        };
+    auto job3 =
+        [](int val) -> int
+        {
+            print_int(val);
+            return val;
+        };
+
+    // build task chain
+    auto task_chain = initialize_future_task(
+            std::move(val),
+            build_task_chain(
+                    scheduler,
+                    std::move(job1),
+                    std::move(job2),
+                    std::move(job3)
+                )
+        );
+
+    // save the chain future result
+    auto task_chain_future = task_chain.get_future();
+
+    // submit the task chain
+    scheduler(std::move(task_chain));
 
     // run tasks to completion
     int num_tasks_completed{0};
@@ -323,5 +367,10 @@ TEST(continuation_demo, basic_ergonomic)
         ++num_tasks_completed;
         std::cerr << "completed task #" << num_tasks_completed << '\n';
     }
+
+    // extract final result
+    const expect<int> final_result = unwrap_futures_chain<int>(std::move(task_chain_future));
+    EXPECT_TRUE(final_result);
+    std::cerr << "final result: " << final_result.value() << '\n';
 }
 //-------------------------------------------------------------------------------------------------------------------

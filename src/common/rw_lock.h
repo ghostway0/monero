@@ -142,7 +142,7 @@ private:
 
 /// WRITE LOCK (can mutate the locked value)
 template <typename value_t>
-class write_lock final  : public detail::enable_if_nonconst<value_t>
+class write_lock final : public detail::enable_if_nonconst<value_t>
 {
     friend class writable<value_t>;
     using ctx_t = detail::rw_context<value_t>;
@@ -192,7 +192,7 @@ private:
 
 /// READ LOCKABLE (can be copied and spawn read_locks)
 template <typename value_t>
-class readable final  : public detail::enable_if_nonconst<value_t>
+class readable final : public detail::enable_if_nonconst<value_t>
 {
     friend class writable<value_t>;
     using ctx_t = detail::rw_context<value_t>;
@@ -261,7 +261,7 @@ private:
 
 /// WRITE LOCKABLE (can spawn readables and write_locks)
 template <typename value_t>
-class writable final  : public detail::enable_if_nonconst<value_t>
+class writable final : public detail::enable_if_nonconst<value_t>
 {
     using ctx_t = detail::rw_context<value_t>;
 
