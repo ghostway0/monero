@@ -28,7 +28,13 @@
 
 /// Single-writer/multi-reader value containers.
 /// - Accessing a moved-from container will throw.
-/// - The containers use shared_ptrs internally, so misuse WILL cause reference cycles.
+/// - We do not guarantee that accessing the same container from multiple threads is not UB.
+/// - The containers use a shared_ptr internally, so misuse WILL cause reference cycles.
+/// 
+/// Implementation notes:
+/// - We use a shared_mutex for the context mutex as a hacky way to make threads sleep when
+///   obtaining a lock fails. The wait condition has its own critical zone on locking the value mutex,
+///   so it's fine if multiple threads check their waits concurrently.
 
 //local headers
 
@@ -37,6 +43,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 //standard headers
+#include <condition_variable>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
@@ -61,6 +68,16 @@ struct enable_if_nonconst<T, std::enable_if_t<std::is_const<T>::value>> final { 
 [[noreturn]] inline void rw_lock_ptr_access_error() { throw std::runtime_error{"rw_lock invalid ptr access."}; }
 inline void test_rw_ptr(const void *ptr) { if (ptr == nullptr) rw_lock_ptr_access_error(); }
 
+/// value context
+template <typename value_t>
+struct rw_context final
+{
+    value_t value;
+    boost::shared_mutex value_mutex;
+    boost::shared_mutex ctx_mutex;
+    std::condition_variable_any ctx_condvar;
+};
+
 } //namespace detail
 
 
@@ -79,33 +96,44 @@ template <typename value_t>
 class read_lock final : public detail::enable_if_nonconst<value_t>
 {
     friend class readable<value_t>;
+    using ctx_t = detail::rw_context<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     read_lock() = delete;
     /// normal constructor: only callable by readable and writable
-    read_lock(boost::shared_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
+    read_lock(boost::shared_lock<boost::shared_mutex> lock, std::shared_ptr<ctx_t> context) :
         m_lock{std::move(lock)},
-        m_value{std::move(value)}
+        m_context{std::move(context)}
     {}
     /// copies: disabled
     read_lock(const read_lock<value_t>&) = delete;
     read_lock& operator=(const read_lock<value_t>&) = delete;
 
 public:
+//destructor
+    ~read_lock()
+    {
+        if (m_lock.mutex() != nullptr && m_lock.owns_lock())
+            m_lock.unlock();
+
+        if (m_context)
+            m_context->ctx_condvar.notify_one();  //notify one waiting writer
+    }
+
     /// moves: default
     read_lock(read_lock<value_t>&&) = default;
     read_lock& operator=(read_lock<value_t>&&) = default;
 
 //member functions
     /// access the value
-    const value_t& value() const { detail::test_rw_ptr(m_value.get()); return *m_value; }
+    const value_t& value() const { detail::test_rw_ptr(m_context.get()); return m_context->value; }
 
 private:
 //member variables
     boost::shared_lock<boost::shared_mutex> m_lock;
-    std::shared_ptr<value_t> m_value;
+    std::shared_ptr<ctx_t> m_context;
 };
 
 /// WRITE LOCK (can mutate the locked value)
@@ -113,15 +141,16 @@ template <typename value_t>
 class write_lock final  : public detail::enable_if_nonconst<value_t>
 {
     friend class writable<value_t>;
+    using ctx_t = detail::rw_context<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     write_lock() = delete;
     /// normal constructor: only callable by writable
-    write_lock(boost::unique_lock<boost::shared_mutex> lock, std::shared_ptr<value_t> value) :
+    write_lock(boost::unique_lock<boost::shared_mutex> lock, std::shared_ptr<ctx_t> context) :
         m_lock{std::move(lock)},
-        m_value{std::move(value)}
+        m_context{std::move(context)}
     {}
     /// copies: disabled
     write_lock(const write_lock<value_t>&) = delete;
@@ -132,14 +161,24 @@ public:
     write_lock(write_lock<value_t>&&) = default;
     write_lock& operator=(write_lock<value_t>&&) = default;
 
+//destructor
+    ~write_lock()
+    {
+        if (m_lock.mutex() != nullptr && m_lock.owns_lock())
+            m_lock.unlock();
+
+        if (m_context)
+            m_context->ctx_condvar.notify_all();  //notify all waiting
+    }
+
 //member functions
     /// access the value
-    value_t& value() { detail::test_rw_ptr(m_value.get()); return *m_value; }
+    value_t& value() { detail::test_rw_ptr(m_context.get()); return m_context->value; }
 
 private:
 //member variables
     boost::unique_lock<boost::shared_mutex> m_lock;
-    std::shared_ptr<value_t> m_value;
+    std::shared_ptr<ctx_t> m_context;
 };
 
 /// READ LOCKABLE (can be copied and spawn read_locks)
@@ -147,27 +186,29 @@ template <typename value_t>
 class readable final  : public detail::enable_if_nonconst<value_t>
 {
     friend class writable<value_t>;
+    using ctx_t = detail::rw_context<value_t>;
 
 protected:
 //constructors
     /// default constructor: disabled
     readable() = delete;
     /// normal constructor: only callable by writable
-    readable(std::shared_ptr<boost::shared_mutex> mutex, std::shared_ptr<value_t> value) :
-        m_mutex{std::move(mutex)},
-        m_value{std::move(value)}
+    readable(std::shared_ptr<ctx_t> context) :
+        m_context{std::move(context)}
     {}
 
 public:
     /// normal constructor: from value
     readable(const value_t &raw_value) :
-        m_mutex{std::make_shared<boost::shared_mutex>()},
-        m_value{std::make_shared<value_t>(raw_value)}
-    {}
+        m_context{std::make_shared<ctx_t>()}
+    {
+        m_context->value = raw_value;
+    }
     readable(value_t &&raw_value) :
-        m_mutex{std::make_shared<boost::shared_mutex>()},
-        m_value{std::make_shared<value_t>(std::move(raw_value))}
-    {}
+        m_context{std::make_shared<ctx_t>()}
+    {
+        m_context->value = std::move(raw_value);
+    }
 
     /// moves and copies: default
 
@@ -176,45 +217,60 @@ public:
     /// FAILS IF THERE IS A CONCURRENT WRITE LOCK
     boost::optional<read_lock<value_t>> try_lock()
     {
-        detail::test_rw_ptr(m_mutex.get());
-        detail::test_rw_ptr(m_value.get());
-        boost::shared_lock<boost::shared_mutex> lock{*m_mutex, boost::try_to_lock};
+        detail::test_rw_ptr(m_context.get());
+        boost::shared_lock<boost::shared_mutex> lock{m_context->value_mutex, boost::try_to_lock};
         if (!lock.owns_lock()) return boost::none;
-        else                   return read_lock<value_t>{std::move(lock), m_value};
+        else                   return read_lock<value_t>{std::move(lock), m_context};
     }
 
     /// get a read lock
     /// BLOCKS IF THERE IS A CONCURRENT WRITE LOCK
     read_lock<value_t> lock()
     {
-        detail::test_rw_ptr(m_mutex.get());
-        detail::test_rw_ptr(m_value.get());
-        return read_lock<value_t>{boost::shared_lock<boost::shared_mutex>{*m_mutex}, m_value};
+        // cheap attempt
+        boost::optional<read_lock<value_t>> lock;
+        if ((lock = this->try_lock()))
+            return std::move(*lock);
+
+        // blocking attempt
+        detail::test_rw_ptr(m_context.get());
+        boost::shared_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+        m_context->ctx_condvar.wait(ctx_lock,
+                [&]() -> bool
+                {
+                    return (lock = this->try_lock()) != boost::none;
+                }
+            );
+
+        return std::move(*lock);
     }
 
 private:
 //member variables
-    std::shared_ptr<boost::shared_mutex> m_mutex;
-    std::shared_ptr<value_t> m_value;
+    std::shared_ptr<ctx_t> m_context;
 };
 
 /// WRITE LOCKABLE (can spawn readables and write_locks)
 template <typename value_t>
 class writable final  : public detail::enable_if_nonconst<value_t>
 {
+    using ctx_t = detail::rw_context<value_t>;
+
 public:
 //constructors
     /// default constructor: disabled
     writable() = delete;
     /// normal constructor: from value
     writable(const value_t &raw_value) :
-        m_mutex{std::make_shared<boost::shared_mutex>()},
-        m_value{std::make_shared<value_t>(raw_value)}
-    {}
+        m_context{std::make_shared<ctx_t>()}
+    {
+        m_context->value = raw_value;
+    }
     writable(value_t &&raw_value) :
-        m_mutex{std::make_shared<boost::shared_mutex>()},
-        m_value{std::make_shared<value_t>(std::move(raw_value))}
-    {}
+        m_context{std::make_shared<ctx_t>()}
+    {
+        m_context->value = std::move(raw_value);
+    }
 
     /// copies: disabled
     writable(const writable<value_t>&) = delete;
@@ -227,35 +283,45 @@ public:
     /// get a readable
     readable<value_t> get_readable()
     {
-        detail::test_rw_ptr(m_mutex.get());
-        detail::test_rw_ptr(m_value.get());
-        return readable<value_t>{m_mutex, m_value};
+        detail::test_rw_ptr(m_context.get());
+        return readable<value_t>{m_context};
     }
 
     /// try to get a write lock
     /// FAILS IF THERE ARE ANY CONCURRENT WRITE OR READ LOCKS
     boost::optional<write_lock<value_t>> try_lock()
     {
-        detail::test_rw_ptr(m_mutex.get());
-        detail::test_rw_ptr(m_value.get());
-        boost::unique_lock<boost::shared_mutex> lock{*m_mutex, boost::try_to_lock};
+        detail::test_rw_ptr(m_context.get());
+        boost::unique_lock<boost::shared_mutex> lock{m_context->value_mutex, boost::try_to_lock};
         if (!lock.owns_lock()) return boost::none;
-        else                   return write_lock<value_t>{std::move(lock), m_value};
+        else                   return write_lock<value_t>{std::move(lock), m_context};
     }
 
     /// get a write lock
     /// BLOCKS IF THERE ARE ANY CONCURRENT WRITE OR READ LOCKS
     write_lock<value_t> lock()
     {
-        detail::test_rw_ptr(m_mutex.get());
-        detail::test_rw_ptr(m_value.get());
-        return write_lock<value_t>{boost::unique_lock<boost::shared_mutex>{*m_mutex}, m_value};
+        // cheap attempt
+        boost::optional<write_lock<value_t>> lock;
+        if ((lock = this->try_lock()))
+            return std::move(*lock);
+
+        // blocking attempt
+        detail::test_rw_ptr(m_context.get());
+        boost::shared_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+        m_context->ctx_condvar.wait(ctx_lock,
+                [&]() -> bool
+                {
+                    return (lock = this->try_lock()) != boost::none;
+                }
+            );
+
+        return std::move(*lock);
     }
 
 private:
 //member variables
-    std::shared_ptr<boost::shared_mutex> m_mutex;
-    std::shared_ptr<value_t> m_value;
+    std::shared_ptr<ctx_t> m_context;
 };
 
 } //namespace tools
