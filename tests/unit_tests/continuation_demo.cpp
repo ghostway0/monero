@@ -224,8 +224,8 @@ static auto basic_continuation_demo_test(S scheduler)
     // set up the basic task sequence in reverse order
     int initial_val{10};
     int add_five{5};
-    int mul_three{3};
-    int mul_ten{10};
+    int mul_three{3}; (void)mul_three;
+    int mul_ten{10}; (void)mul_ten; (void)mul_int;
     // task 1: print
     // task 2: add 5
     // task 3: print
@@ -253,7 +253,7 @@ static auto basic_continuation_demo_test(S scheduler)
         {
             print_int(val);
             return val;
-        };
+        };/*
     auto job4 =
         [
             multiplier = std::move(mul_three)
@@ -297,7 +297,7 @@ static auto basic_continuation_demo_test(S scheduler)
         {
             print_int(val);
             return val;
-        };
+        };*/
 
     // build task tree and schedule it
     return schedule_task_tree<int>(
@@ -305,14 +305,14 @@ static auto basic_continuation_demo_test(S scheduler)
             std::move(initial_val),
             std::move(job1),
             std::move(job2),
-            std::move(job3),/*
+            std::move(job3)/*,
             task_tree_openclose(
                 std::move(job4_split),
                 std::make_tuple(std::move(job4a_1), std::move(job4a_2)),
                 std::make_tuple(std::move(job4b_1)),
                 std::move(job4_join)
-            ),*/
-            std::move(job5)
+            ),
+            std::move(job5)*/
         );
 
     // problems with a full task graph

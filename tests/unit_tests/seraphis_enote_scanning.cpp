@@ -4773,11 +4773,53 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     ASSERT_TRUE(enote_store_inout.get_balance({SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == expected_balance_after_intermediate_scan);
 
+
+    /// ATOMIC READ-LOCK
+    // 3. get enote store current state
+    // a. last block partialscanned
     const std::uint64_t intermediate_height_pre_import_cycle{
             enote_store_inout.top_legacy_partialscanned_block_height()
         };
 
-    // 3. export intermediate onetime addresses that need key images (just check they match expected)
+    // b. last block fullscanned
+    const std::uint64_t full_height_pre_import_cycle{
+            enote_store_inout.top_legacy_fullscanned_block_height()
+        };
+    ASSERT_TRUE(full_height_pre_import_cycle + 1 <= intermediate_height_pre_import_cycle + 1);
+
+    // c. first block that might have a fullscanned block ID
+    const std::uint64_t legacy_refresh_height{enote_store_inout.legacy_refresh_height()};
+    const std::uint64_t first_potential_fullscaned_height{
+            std::max(full_height_pre_import_cycle + 1, legacy_refresh_height + 1) - 1
+        };
+
+    // d. block id checkpoints within range of partialscanned blocks we are trying to update
+    // - use an exponential back-off to save space; the highest 20 block ids are saved explicitly since that's
+    //   where reorgs are most likely
+    std::map<std::uint64_t, rct::key> block_id_checkpoints;
+
+    for (std::uint64_t block_height{first_potential_fullscaned_height};
+        block_height + 21 < intermediate_height_pre_import_cycle + 1;
+        block_height += (block_height - intermediate_height_pre_import_cycle)/2)
+    {
+        ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_height,
+            block_id_checkpoints[block_height]));
+    }
+
+    for (std::uint64_t block_height{
+                std::max(
+                        first_potential_fullscaned_height + 21,
+                        intermediate_height_pre_import_cycle + 1
+                    ) - 21
+            };
+        block_height + 21 <= intermediate_height_pre_import_cycle + 21;
+        ++block_height)
+    {
+        ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_height,
+            block_id_checkpoints[block_height]));
+    }
+
+    // e. export intermediate onetime addresses that need key images
     const auto &legacy_intermediate_records = enote_store_inout.legacy_intermediate_records();
 
     for (const auto &legacy_intermediate_record : legacy_intermediate_records)
@@ -4787,6 +4829,8 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
                 onetime_address_ref(legacy_intermediate_record.second))
             != legacy_onetime_addresses_expected.end());
     }
+    /// end ATOMIC READ-LOCK
+
 
     // 4. import expected key images (will fail if the onetime addresses and key images don't line up)
     for (std::size_t i{0}; i < legacy_onetime_addresses_expected.size(); ++i)
@@ -4814,11 +4858,32 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == expected_balance_after_key_image_refresh);
     ASSERT_TRUE(enote_store_inout.legacy_intermediate_records().size() == 0);
 
+
+    /// ATOMIC READ-LOCK
     // 8. update the legacy fullscan height to account for a complete view-only scan cycle with key image recovery
-    ASSERT_NO_THROW(enote_store_inout.set_last_legacy_fullscan_height(intermediate_height_pre_import_cycle));
+    // - only update up to the highest aligned checkpoint from when intermediate records were exported, so that
+    //   any reorg that replaced blocks below the partial scan height recorded at the beginning of the cycle won't
+    //   be ignored by the next partial scan
+    std::uint64_t highest_aligned_height_post_import_cycle{enote_store_inout.top_legacy_fullscanned_block_height()};
+    rct::key temp_block_id;
+
+    for (auto checkpoints_it = block_id_checkpoints.begin();
+        checkpoints_it != block_id_checkpoints.end();
+        ++checkpoints_it)
+    {
+        if (enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoints_it->first, temp_block_id) &&
+            temp_block_id == checkpoints_it->second)
+        {
+            highest_aligned_height_post_import_cycle = checkpoints_it->first;
+        }
+        else break;
+    }
+
+    ASSERT_NO_THROW(enote_store_inout.set_last_legacy_fullscan_height(highest_aligned_height_post_import_cycle));
 
     // 9. check the legacy fullscan height is at the expected value
     ASSERT_TRUE(enote_store_inout.top_legacy_fullscanned_block_height() == expected_final_legacy_fullscan_height);
+    /// end ATOMIC READ-LOCK
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
