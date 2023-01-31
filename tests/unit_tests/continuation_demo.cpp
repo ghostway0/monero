@@ -127,10 +127,10 @@ static auto initialize_future_task(I &&initial_value, T &&task, std::promise<R> 
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// unary case: set the promise from the task result
+// end case: set the promise from the task result
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename A>
-static auto build_task_chain(S, A &&this_task)
+static auto build_task_tree(S, A &&this_task)
 {
     return
         [
@@ -145,16 +145,16 @@ static auto build_task_chain(S, A &&this_task)
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// fold into task 'a' its continuation 'the rest of the task chain'
+// fold into task 'a' its continuation 'the rest of the task tree'
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename A, typename... Ts>
-static auto build_task_chain(S scheduler, A &&this_task, Ts &&...continuation_tasks)
+static auto build_task_tree(S scheduler, A &&this_task, Ts &&...continuation_tasks)
 {
     return
         [
             l_scheduler = scheduler,
             l_this_task = std::forward<A>(this_task),
-            l_next_task = build_task_chain<R>(scheduler, std::forward<Ts>(continuation_tasks)...)
+            l_next_task = build_task_tree<R>(scheduler, std::forward<Ts>(continuation_tasks)...)
         ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
         {
             // this task's job
@@ -175,7 +175,7 @@ static auto build_task_chain(S scheduler, A &&this_task, Ts &&...continuation_ta
 
             // pass the result of this task to the continuation
             auto continuation = initialize_future_task(
-                    std::forward<typename decltype(this_task_result)::value_type>(this_task_result.value()),
+                    std::forward<typename decltype(this_task_result)::value_type>(std::move(this_task_result).value()),
                     std::move(l_next_task),
                     std::move(promise)
                 );
@@ -187,21 +187,21 @@ static auto build_task_chain(S scheduler, A &&this_task, Ts &&...continuation_ta
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename I, typename... Ts>
-static std::future<R> schedule_task_chain(S scheduler, I &&initial_value, Ts &&...tasks)
+static std::future<R> schedule_task_tree(S scheduler, I &&initial_value, Ts &&...tasks)
 {
     // prepare result channel
     std::promise<R> result_promise;
     std::future<R> result_future{result_promise.get_future()};
 
-    // build task chain
-    auto task_chain_head = initialize_future_task(
+    // build task tree
+    auto task_tree_head = initialize_future_task(
             std::forward<I>(initial_value),
-            build_task_chain<R>(scheduler, std::forward<Ts>(tasks)...),
+            build_task_tree<R>(scheduler, std::forward<Ts>(tasks)...),
             std::move(result_promise)
         );
 
-    // schedule task chain
-    scheduler(std::move(task_chain_head));
+    // schedule task tree
+    scheduler(std::move(task_tree_head));
 
     // return future
     return result_future;
@@ -229,10 +229,11 @@ static auto basic_continuation_demo_test(S scheduler)
     // task 1: print
     // task 2: add 5
     // task 3: print
-    // task 4: mul3 and SPLIT in half
-    //   task 5a-1: print    task 5b-1: print
-    //   task 5a-2: mul10
-    // task 6: JOIN and print
+    // task 4 SPLIT: divide in half for each branch
+    //   task 4a-1: print    task 4b-1: print
+    //   task 4a-2: mul10
+    // task 4 JOIN: add together each branch
+    // task 5 print
     auto job1 =
         [](int val) -> int
         {
@@ -261,13 +262,18 @@ static auto basic_continuation_demo_test(S scheduler)
             mul_int(multiplier, val);
             return val;
         };
-    auto job5a_1 =
+    auto job4_split =
+        [] (int val) -> std::tuple<int, int>
+        {
+            return {val/2, val/2};
+        };
+    auto job4a_1 =
         [] (int val) -> int
         {
             print_int(val);
             return val;
         };
-    auto job5a_2 =
+    auto job4a_2 =
         [
             multiplier = std::move(mul_ten)
         ] (int val) -> int
@@ -275,40 +281,53 @@ static auto basic_continuation_demo_test(S scheduler)
             mul_int(multiplier, val);
             return val;
         };
-    auto job5b_1 =
+    auto job4b_1 =
         [] (int val) -> int
         {
             print_int(val);
             return val;
         };
-    auto job6 =
+    auto job4_join =
+        [] (std::tuple<int, int> val) -> int
+        {
+            return std::get<0>(val) + std::get<1>(val);
+        };
+    auto job5 =
         [](int val) -> int
         {
             print_int(val);
             return val;
         };
 
-    // build task chain and schedule it
-    return schedule_task_chain<int>(
+    // build task tree and schedule it
+    return schedule_task_tree<int>(
             scheduler,
             std::move(initial_val),
             std::move(job1),
             std::move(job2),
-            std::move(job3) /*,
-            task_chain_openclose(
-                std::move(job4),
-                as_tuple(std::move(job5a_1), std::move(job5a_2)),
-                as_tuple(std::move(job5b_1)),
-                std::move(job6)
-            )*/
+            std::move(job3),/*
+            task_tree_openclose(
+                std::move(job4_split),
+                std::make_tuple(std::move(job4a_1), std::move(job4a_2)),
+                std::make_tuple(std::move(job4b_1)),
+                std::move(job4_join)
+            ),*/
+            std::move(job5)
         );
+
+    // problems with a full task graph
+    // - when joining, the last joiner should schedule the continuation (can use an atomic int with fetch_add() to
+    //   test when all joiners are done)
+    // - if an exception cancels a branch, that cancellation needs to immediately propagate to all dependents
+    //   - a split should only be canceled if A) at least one parent is canceled, or B) if all children are canceled
+    // - want to be able to manually cancel a task? maybe collect cancellation tokens while building a tree...
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 TEST(continuation_demo, basic_autorun)
 {
     // run the test with a scheduler that immediately invokes tasks
-    auto task_chain_future = basic_continuation_demo_test(
+    auto task_tree_future = basic_continuation_demo_test(
             [](auto&& task)
             {
                 task();
@@ -316,16 +335,17 @@ TEST(continuation_demo, basic_autorun)
         );
 
     // extract final result
-    EXPECT_TRUE(task_chain_future.valid());
-    const expect<int> final_result{unwrap_future<int>(std::move(task_chain_future))};
+    EXPECT_TRUE(task_tree_future.valid());
+    const expect<int> final_result{unwrap_future<int>(std::move(task_tree_future))};
     EXPECT_TRUE(final_result);
+    EXPECT_NO_THROW(final_result.value());
     std::cerr << "final result: " << final_result.value() << '\n';
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(continuation_demo, basic_threadpool)
 {
     // run the test with a scheduler that sends tasks into the demo threadpool
-    auto task_chain_future = basic_continuation_demo_test(
+    auto task_tree_future = basic_continuation_demo_test(
             [](auto&& task)
             {
                 add_task_to_demo_threadpool(std::forward<decltype(task)>(task));
@@ -341,9 +361,10 @@ TEST(continuation_demo, basic_threadpool)
     }
 
     // extract final result
-    EXPECT_TRUE(task_chain_future.valid());
-    const expect<int> final_result{unwrap_future<int>(std::move(task_chain_future))};
+    EXPECT_TRUE(task_tree_future.valid());
+    const expect<int> final_result{unwrap_future<int>(std::move(task_tree_future))};
     EXPECT_TRUE(final_result);
+    EXPECT_NO_THROW(final_result.value());
     std::cerr << "final result: " << final_result.value() << '\n';
 }
 //-------------------------------------------------------------------------------------------------------------------
