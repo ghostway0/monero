@@ -402,7 +402,8 @@ std::uint64_t MockLedgerContext::add_legacy_coinbase_impl(const rct::key &tx_id,
 
     // a. can only add blocks with a mock legacy coinbase tx prior to first seraphis-enabled block
     CHECK_AND_ASSERT_THROW_MES(this->chain_height() + 1 < m_first_seraphis_only_block,
-        "mock tx ledger (adding legacy coinbase tx): chain height is above last block that can have a legacy coinbase tx.");
+        "mock tx ledger (adding legacy coinbase tx): chain height is above last block that can have a legacy coinbase "
+        "tx.");
 
     // b. accumulated output count is consistent
     const std::uint64_t accumulated_output_count =
@@ -885,6 +886,9 @@ void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_
                     chunk_out.m_basic_records_per_tx[sortable2rct(tx_with_output_contents.first)];
 
                     // collect key images from the tx (always do this for legacy txs)
+                    // - optimization not implemented here: only key images of rings which include a received
+                    //   enote MUST be collected; filtering to get those key images is not possible here so we
+                    //   include all key images
                     CHECK_AND_ASSERT_THROW_MES(
                         m_blocks_of_tx_key_images
                             .at(block_of_tx_output_contents.first).find(tx_with_output_contents.first) !=
@@ -1046,7 +1050,8 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
                                 .at(block_of_tx_output_contents.first).find(tx_with_output_contents.first) !=
                             m_blocks_of_tx_key_images
                                 .at(block_of_tx_output_contents.first).end(),
-                            "onchain chunk find-received scanning (mock ledger context): key image map missing tx (bug).");
+                            "onchain chunk find-received scanning (mock ledger context): key image map missing tx "
+                            "(bug).");
 
                         collect_key_images_from_tx(block_of_tx_output_contents.first,
                             std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),

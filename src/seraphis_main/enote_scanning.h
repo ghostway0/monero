@@ -69,7 +69,9 @@ namespace sp
 // - contextual basic enote records for owned enote candidates in the chunk of blocks
 // - key images from each of the txs recorded in the basic records map
 //   - add empty entries to that map if you want to include the key images of txs without owned enote candidates, e.g.
-//     for legacy scanning where key images can appear in a tx even if none of the tx outputs were sent to you)
+//     for legacy scanning where key images can appear in a tx even if none of the tx outputs were sent to you
+//   - LEGACY OPTIMIZATION (optional): only key images of rings which include a received enote MUST be collected
+//     - if filtering to get those key images is not possible then including all key images works too
 ///
 struct EnoteScanningChunkLedgerV1 final
 {

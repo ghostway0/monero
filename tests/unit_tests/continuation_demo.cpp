@@ -118,10 +118,13 @@ static void mul_int(const int x, int &i_inout)
 template <typename T>
 bool future_is_ready(const std::future<T> &future)
 {
-    if (!future.valid())
-        return false;
-    if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
-        return false;
+    try
+    {
+        if (!future.valid())
+            return false;
+        if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+            return false;
+    } catch (...) { return false; }
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -129,10 +132,13 @@ bool future_is_ready(const std::future<T> &future)
 template <typename T>
 bool future_is_ready(const std::shared_future<T> &future)
 {
-    if (!future.valid())
-        return false;
-    if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
-        return false;
+    try
+    {
+        if (!future.valid())
+            return false;
+        if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+            return false;
+    } catch (...) { return false; }
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -250,9 +256,9 @@ private:
     TaskGraphMonitor<R> m_monitor;
 };
 //-------------------------------------------------------------------------------------------------------------------
-// type flags for overload resolution in the task graph builder
+// type tokens for overload resolution in the task graph builder
 //-------------------------------------------------------------------------------------------------------------------
-struct DetachableGraphTerminator final { };
+struct DetachableGraphTerminatorToken final {};
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void force_set_cancellation_flag_noexcept(std::weak_ptr<std::promise<void>> &weak_cancellation_handle)
@@ -270,10 +276,10 @@ static void force_set_cancellation_flag_noexcept(std::shared_ptr<std::promise<vo
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 template <bool>
-struct get_cancellation_handle_t {};
+struct get_cancellation_handle_t final {};
 
 template <>
-struct get_cancellation_handle_t<false>
+struct get_cancellation_handle_t<false> final
 {
     std::weak_ptr<std::promise<void>> operator()(std::weak_ptr<std::promise<void>> cancellation_handle) const
     {
@@ -282,7 +288,7 @@ struct get_cancellation_handle_t<false>
 };
 
 template <>
-struct get_cancellation_handle_t<true>
+struct get_cancellation_handle_t<true> final
 {
     std::shared_ptr<std::promise<void>> operator()(std::weak_ptr<std::promise<void>> cancellation_handle) const
     {
@@ -307,6 +313,8 @@ static auto initialize_future_task(I &&initial_value, T &&task, std::promise<R> 
 }
 //-------------------------------------------------------------------------------------------------------------------
 // end case: set the promise from the final task's result
+// - detachable graphs: the last task shares ownership of its graph's cancellation handle so if the graph monitor
+//   is destroyed the graph can continue to run
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename T, bool detachable = false>
 static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_inout, S, Task<T> &&final_task)
@@ -347,13 +355,13 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// detachedable graph: set the final task to be detachable
+// detachedable graph: build the final task in detachable mode
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename T>
 static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_inout,
     S scheduler,
     Task<T> &&final_task,
-    DetachableGraphTerminator)
+    DetachableGraphTerminatorToken)
 {
     return build_task_graph<R, S, T, true>(graph_monitor_builder_inout, scheduler, std::forward<Task<T>>(final_task));
 }
@@ -684,7 +692,7 @@ static auto basic_detached_continuation_demo_test(S scheduler)
                 std::move(job4_join)
             ),
             std::move(job5)*/,
-            DetachableGraphTerminator{}  //add terminator
+            DetachableGraphTerminatorToken{}  //add terminator
         );
 
     // problems with a full task graph
