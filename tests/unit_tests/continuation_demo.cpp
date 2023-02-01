@@ -252,7 +252,7 @@ private:
 //-------------------------------------------------------------------------------------------------------------------
 // type flags for overload resolution in the task graph builder
 //-------------------------------------------------------------------------------------------------------------------
-struct DetachedGraphTerminator final { };
+struct DetachableGraphTerminator final { };
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void force_set_cancellation_flag_noexcept(std::weak_ptr<std::promise<void>> &weak_cancellation_handle)
@@ -260,6 +260,35 @@ static void force_set_cancellation_flag_noexcept(std::weak_ptr<std::promise<void
     try         { if (auto cancellation_handle{weak_cancellation_handle.lock()}) cancellation_handle->set_value(); }
     catch (...) { /* failure to set the flag means it's already set */ }
 }
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static void force_set_cancellation_flag_noexcept(std::shared_ptr<std::promise<void>> &strong_cancellation_handle)
+{
+    try         { if (strong_cancellation_handle) strong_cancellation_handle->set_value(); }
+    catch (...) { /* failure to set the flag means it's already set */ }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+template <bool>
+struct get_cancellation_handle_t {};
+
+template <>
+struct get_cancellation_handle_t<false>
+{
+    std::weak_ptr<std::promise<void>> operator()(std::weak_ptr<std::promise<void>> cancellation_handle) const
+    {
+        return cancellation_handle;
+    }
+};
+
+template <>
+struct get_cancellation_handle_t<true>
+{
+    std::shared_ptr<std::promise<void>> operator()(std::weak_ptr<std::promise<void>> cancellation_handle) const
+    {
+        return cancellation_handle.lock();
+    }
+};
 //-------------------------------------------------------------------------------------------------------------------
 // note: do not use a try-catch in this function because we want to let the caller handle exceptions as needed
 //-------------------------------------------------------------------------------------------------------------------
@@ -277,21 +306,22 @@ static auto initialize_future_task(I &&initial_value, T &&task, std::promise<R> 
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// end case (normal): set the promise from the final task's result
+// end case: set the promise from the final task's result
 //-------------------------------------------------------------------------------------------------------------------
-template <typename R, typename S, typename T>
+template <typename R, typename S, typename T, bool detachable = false>
 static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_inout, S, Task<T> &&final_task)
 {
     std::promise<void> completion_handle{};
     graph_monitor_builder_inout.add_task(final_task.id, completion_handle.get_future());
-    std::weak_ptr<std::promise<void>> cancellation_handle{graph_monitor_builder_inout.get_weak_cancellation_handle()};
     std::shared_future<void> cancellation_flag{graph_monitor_builder_inout.get_cancellation_flag()};
 
     return
         [
             l_final_task          = std::forward<Task<T>>(final_task).task,
             l_completion_handle   = std::move(completion_handle),
-            l_cancellation_handle = std::move(cancellation_handle),
+            l_cancellation_handle = get_cancellation_handle_t<detachable>{}(
+                                            graph_monitor_builder_inout.get_weak_cancellation_handle()
+                                        ),
             l_cancellation_flag   = std::move(cancellation_flag)
         ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
         {
@@ -317,40 +347,15 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-// end case (detached graph): run the final task
-// WARNING: the graph monitor builder will be unusable after calling this
+// detachedable graph: set the final task to be detachable
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename T>
-static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_in,
+static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_inout,
     S scheduler,
     Task<T> &&final_task,
-    DetachedGraphTerminator)
+    DetachableGraphTerminator)
 {
-    static_assert(std::is_same<R, void>::value, "detached task graphs should have a void final result since the return "
-        "value of the graph cannot be used.");
-
-    std::shared_future<void> cancellation_flag{graph_monitor_builder_in.get_cancellation_flag()};
-
-    // wrap the final task in a lambda that will destroy the graph monitor when done
-    // - graph monitors own the cancellation handle for their graphs, so a detached graph needs to own its own
-    //   monitor otherwise it will be auto-cancelled when the monitor goes out of scope
-    return
-        [
-            l_final_task        = std::forward<Task<T>>(final_task).task,
-            l_cancellation_flag = std::move(cancellation_flag),
-            l_graph_monitor     = graph_monitor_builder_in.get_monitor()
-        ] (auto&& this_task_val, std::promise<void>) mutable -> void
-        {
-            try
-            {
-                // check for cancellation
-                if (future_is_ready(l_cancellation_flag))
-                    return;
-
-                // run the final task
-                l_final_task(std::forward<decltype(this_task_val)>(this_task_val));
-            } catch (...) { /* there is nothing useful to do here */ }
-        };
+    return build_task_graph<R, S, T, true>(graph_monitor_builder_inout, scheduler, std::forward<Task<T>>(final_task));
 }
 //-------------------------------------------------------------------------------------------------------------------
 // fold into task 'a' its continuation 'the rest of the task graph'
@@ -435,7 +440,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 template <typename R, typename S, typename I, typename... Ts>
-static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, Task<Ts> &&...tasks)
+static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, Ts &&...tasks)
 {
     // prepare result channel
     std::promise<R> result_promise;
@@ -448,7 +453,7 @@ static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, T
     {
         auto task_graph_head = initialize_future_task(
                 std::forward<I>(initial_value),
-                build_task_graph<R>(monitor_builder, scheduler, std::forward<Task<Ts>>(tasks)...),
+                build_task_graph<R>(monitor_builder, scheduler, std::forward<Ts>(tasks)...),
                 std::move(result_promise)
             );
 
@@ -464,35 +469,6 @@ static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, T
 
     // return future
     return monitor_builder.get_monitor();
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-template <typename S, typename I, typename... Ts>
-static void schedule_detached_task_graph(S scheduler, I &&initial_value, Task<Ts> &&...tasks)
-{
-    // prepare result channel
-    std::promise<void> result_promise;
-    std::future<void> result_future{result_promise.get_future()};
-
-    // build task graph
-    TaskGraphMonitorBuilder<void> monitor_builder{std::move(result_future)};
-
-    try
-    {
-        auto task_graph_head = initialize_future_task(
-                std::forward<I>(initial_value),
-                build_task_graph<void>(
-                        monitor_builder,
-                        scheduler,
-                        std::forward<Task<Ts>>(tasks)...,
-                        DetachedGraphTerminator{}  //add terminator
-                    ),
-                std::move(result_promise)
-            );
-
-        // schedule task graph
-        scheduler(std::move(task_graph_head));
-    } catch (...) { LOG_ERROR("scheduling a detached task graph failed."); }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -638,7 +614,7 @@ static auto basic_detached_continuation_demo_test(S scheduler)
                 addor = std::move(add_five)
             ] (int val) -> int
             {
-                add_int(addor, val);
+                add_int(addor, val);  //throw std::runtime_error{"abort"};  //test that the graph gets cancelled
                 return val;
             }
         );
@@ -693,10 +669,9 @@ static auto basic_detached_continuation_demo_test(S scheduler)
             print_int(val);
             return val;
         };*/
-    auto endjob = make_task(-1, [](int){});
 
     // build task graph and schedule it
-    schedule_detached_task_graph(
+    schedule_task_graph<int>(
             scheduler,
             std::move(initial_val),
             std::move(job1),
@@ -709,7 +684,7 @@ static auto basic_detached_continuation_demo_test(S scheduler)
                 std::move(job4_join)
             ),
             std::move(job5)*/,
-            std::move(endjob)
+            DetachableGraphTerminator{}  //add terminator
         );
 
     // problems with a full task graph
@@ -773,6 +748,7 @@ TEST(continuation_demo, basic_threadpool)
 TEST(continuation_demo, basic_threadpool_detached)
 {
     // run the test with a scheduler that sends tasks into the demo threadpool
+    // - do not save the graph monitor (i.e. detach the graph immediately)
     basic_detached_continuation_demo_test(
             [](auto&& task)
             {
