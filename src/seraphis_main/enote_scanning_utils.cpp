@@ -365,8 +365,10 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
     const std::vector<LegacyEnoteVariant> &enotes_in_tx,
     const SpEnoteOriginStatus origin_status,
     hw::device &hwdev,
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout)
+    std::list<ContextualBasicRecordVariant> &basic_records_in_tx_out)
 {
+    basic_records_in_tx_out.clear();
+
     // 1. extract enote ephemeral pubkeys from the memo
     crypto::public_key legacy_main_enote_ephemeral_pubkey;
     std::vector<crypto::public_key> legacy_additional_enote_ephemeral_pubkeys;
@@ -414,7 +416,7 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
         // c. save the contextual basic record
         // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
         //       upstream caller will be able to handle those without problems
-        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
+        basic_records_in_tx_out.emplace_back(temp_contextual_record);
 
         // d. record that an owned enote has been found
         found_an_enote = true;
@@ -451,7 +453,7 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
         // b. save the contextual basic record
         // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
         //       upstream caller will be able to handle those without problems
-        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
+        basic_records_in_tx_out.emplace_back(temp_contextual_record);
 
         // c. record that an owned enote has been found
         found_an_enote = true;
@@ -469,8 +471,10 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     const SpTxSupplementV1 &tx_supplement,
     const std::vector<SpEnoteVariant> &enotes_in_tx,
     const SpEnoteOriginStatus origin_status,
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout)
+    std::list<ContextualBasicRecordVariant> &basic_records_in_tx_out)
 {
+    basic_records_in_tx_out.clear();
+
     // 1. check if any enotes can be scanned
     if (tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 0 ||
         enotes_in_tx.size() == 0)
@@ -520,7 +524,7 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
         // d. save the contextual basic record
         // note: it is possible for enotes with duplicate onetime addresses to be added here; it is assumed the
         //       upstream caller will be able to handle those without problems
-        basic_records_per_tx_inout[transaction_id].emplace_back(temp_contextual_record);
+        basic_records_in_tx_out.emplace_back(temp_contextual_record);
 
         // e. record that an enote was found
         found_an_enote = true;
@@ -529,33 +533,33 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     return found_an_enote;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void collect_key_images_from_tx(const std::uint64_t block_height,
+bool try_collect_key_images_from_tx(const std::uint64_t block_height,
     const std::uint64_t block_timestamp,
     const rct::key &transaction_id,
-    const std::vector<crypto::key_image> &legacy_key_images_in_tx,
-    const std::vector<crypto::key_image> &sp_key_images_in_tx,
+    std::vector<crypto::key_image> legacy_key_images_in_tx,
+    std::vector<crypto::key_image> sp_key_images_in_tx,
     const SpEnoteSpentStatus spent_status,
-    std::list<SpContextualKeyImageSetV1> &contextual_key_images_inout)
+    SpContextualKeyImageSetV1 &contextual_key_images_out)
 {
-    // 1. don't add a set if there are no key images
+    // 1. don't make the set if there are no key images
     if (legacy_key_images_in_tx.size() == 0 &&
         sp_key_images_in_tx.size() == 0)
-        return;
+        return false;
 
-    // 2. add a set
-    contextual_key_images_inout.emplace_back(
-            SpContextualKeyImageSetV1{
-                .m_legacy_key_images = legacy_key_images_in_tx,
-                .m_sp_key_images     = sp_key_images_in_tx,
-                .m_spent_context     =
-                    SpEnoteSpentContextV1{
-                        .m_block_height    = block_height,
-                        .m_block_timestamp = block_timestamp,
-                        .m_transaction_id  = transaction_id,
-                        .m_spent_status    = spent_status
-                    }
-            }
-        );
+    // 2. make the set
+    contextual_key_images_out = SpContextualKeyImageSetV1{
+            .m_legacy_key_images = std::move(legacy_key_images_in_tx),
+            .m_sp_key_images     = std::move(sp_key_images_in_tx),
+            .m_spent_context     =
+                SpEnoteSpentContextV1{
+                    .m_block_height    = block_height,
+                    .m_block_timestamp = block_timestamp,
+                    .m_transaction_id  = transaction_id,
+                    .m_spent_status    = spent_status
+                }
+        };
+
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void process_chunk_intermediate_legacy(const rct::key &legacy_base_spend_pubkey,

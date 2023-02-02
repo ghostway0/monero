@@ -71,7 +71,7 @@ namespace sp
 * param: enotes_in_tx -
 * param: origin_status -
 * inoutparam: hwdev -
-* inoutparam: basic_records_per_tx_inout - [ tx id : contextual basic record ]
+* inoutparam: basic_records_in_tx_out -
 */
 bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
@@ -85,7 +85,7 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
     const std::vector<LegacyEnoteVariant> &enotes_in_tx,
     const SpEnoteOriginStatus origin_status,
     hw::device &hwdev,
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout);
+    std::list<ContextualBasicRecordVariant> &basic_records_in_tx_out);
 /**
 * brief: try_find_sp_enotes_in_tx - obtain contextual basic records from a seraphis tx's contents
 * param: xk_find_received -
@@ -97,7 +97,7 @@ bool try_find_legacy_enotes_in_tx(const rct::key &legacy_base_spend_pubkey,
 * param: tx_supplement -
 * param: enotes_in_tx -
 * param: origin_status -
-* inoutparam: basic_records_per_tx_inout - [ tx id : contextual basic record ]
+* inoutparam: basic_records_in_tx_out -
 */
 bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     const std::uint64_t block_height,
@@ -108,24 +108,25 @@ bool try_find_sp_enotes_in_tx(const crypto::x25519_secret_key &xk_find_received,
     const SpTxSupplementV1 &tx_supplement,
     const std::vector<SpEnoteVariant> &enotes_in_tx,
     const SpEnoteOriginStatus origin_status,
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &basic_records_per_tx_inout);
+    std::list<ContextualBasicRecordVariant> &basic_records_in_tx_out);
 /**
-* brief: collect_key_images_from_tx - if a tx has key images, collect them into a contextual key image set
+* brief: try_collect_key_images_from_tx - if a tx has key images, collect them into a contextual key image set
 * param: block_height -
 * param: block_timestamp -
 * param: transaction_id -
 * param: legacy_key_images_in_tx -
 * param: sp_key_images_in_tx -
 * param: spent_status -
-* inoutparam: contextual_key_images_inout -
+* outparam: contextual_key_images_out -
+* return: true if a set was made (there was at least one key image available)
 */
-void collect_key_images_from_tx(const std::uint64_t block_height,
+bool try_collect_key_images_from_tx(const std::uint64_t block_height,
     const std::uint64_t block_timestamp,
     const rct::key &transaction_id,
-    const std::vector<crypto::key_image> &legacy_key_images_in_tx,
-    const std::vector<crypto::key_image> &sp_key_images_in_tx,
+    std::vector<crypto::key_image> legacy_key_images_in_tx,
+    std::vector<crypto::key_image> sp_key_images_in_tx,
     const SpEnoteSpentStatus spent_status,
-    std::list<SpContextualKeyImageSetV1> &contextual_key_images_inout);
+    SpContextualKeyImageSetV1 &contextual_key_images_out);
 /**
 * brief: process_chunk_intermediate_legacy - process a chunk of contextual basic records with a legacy view privkey
 * param: legacy_base_spend_pubkey -

@@ -722,31 +722,41 @@ void MockLedgerContext::get_unconfirmed_chunk_sp_impl(const crypto::x25519_secre
         return;
 
     // find-received scan each tx in the unconfirmed chache
+    std::list<ContextualBasicRecordVariant> collected_records;
+    SpContextualKeyImageSetV1 collected_key_images;
+
     for (const auto &tx_with_output_contents : m_unconfirmed_tx_output_contents)
     {
+        const rct::key &tx_id{sortable2rct(tx_with_output_contents.first)};
+
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
         if (try_find_sp_enotes_in_tx(xk_find_received,
             -1,
             -1,
-            sortable2rct(tx_with_output_contents.first),
+            tx_id,
             0,
             std::get<rct::key>(tx_with_output_contents.second),
             std::get<SpTxSupplementV1>(tx_with_output_contents.second),
             std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
             SpEnoteOriginStatus::UNCONFIRMED,
-            chunk_out.m_basic_records_per_tx))
+            collected_records))
         {
+            // splice juuust in case a tx id is duplicated as part of a mockup
+            chunk_out.m_basic_records_per_tx[tx_id]
+                .splice(chunk_out.m_basic_records_per_tx[tx_id].end(), collected_records);
+
             CHECK_AND_ASSERT_THROW_MES(m_unconfirmed_tx_key_images.find(tx_with_output_contents.first) !=
                     m_unconfirmed_tx_key_images.end(),
                 "unconfirmed chunk find-received scanning (mock ledger context): key image map missing tx (bug).");
 
-            collect_key_images_from_tx(-1,
-                -1,
-                sortable2rct(tx_with_output_contents.first),
-                std::get<0>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
-                std::get<1>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
-                SpEnoteSpentStatus::SPENT_UNCONFIRMED,
-                chunk_out.m_contextual_key_images);
+            if (try_collect_key_images_from_tx(-1,
+                    -1,
+                    tx_id,
+                    std::get<0>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
+                    std::get<1>(m_unconfirmed_tx_key_images.at(tx_with_output_contents.first)),
+                    SpEnoteSpentStatus::SPENT_UNCONFIRMED,
+                    collected_key_images))
+                chunk_out.m_contextual_key_images.emplace_back(std::move(collected_key_images));
         }
     }
 }
@@ -854,6 +864,9 @@ void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_
     }
 
     // b. legacy-view scan each block in the range
+    std::list<ContextualBasicRecordVariant> collected_records;
+    SpContextualKeyImageSetV1 collected_key_images;
+
     std::for_each(
             m_blocks_of_legacy_tx_output_contents.find(chunk_out.m_start_height),
             m_blocks_of_legacy_tx_output_contents.find(chunk_out.m_end_height),
@@ -864,22 +877,29 @@ void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_
 
                 for (const auto &tx_with_output_contents : block_of_tx_output_contents.second)
                 {
+                    const rct::key &tx_id{sortable2rct(tx_with_output_contents.first)};
+
                     // legacy view-scan the tx if in scan mode
                     if (legacy_scan_mode == LegacyScanMode::SCAN)
                     {
-                        try_find_legacy_enotes_in_tx(legacy_base_spend_pubkey,
+                        if (try_find_legacy_enotes_in_tx(legacy_base_spend_pubkey,
                             legacy_subaddress_map,
                             legacy_view_privkey,
                             block_of_tx_output_contents.first,
                             std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
-                            sortable2rct(tx_with_output_contents.first),
+                            tx_id,
                             total_output_count_before_tx,
                             std::get<std::uint64_t>(tx_with_output_contents.second),
                             std::get<TxExtra>(tx_with_output_contents.second),
                             std::get<std::vector<LegacyEnoteVariant>>(tx_with_output_contents.second),
                             SpEnoteOriginStatus::ONCHAIN,
                             hw::get_device("default"),
-                            chunk_out.m_basic_records_per_tx);
+                            collected_records))
+                        {
+                            // splice juuust in case a tx id is duplicated as part of a mockup
+                            chunk_out.m_basic_records_per_tx[tx_id]
+                                .splice(chunk_out.m_basic_records_per_tx[tx_id].end(), collected_records);
+                        }
                     }
 
                     // always add an entry for this tx in the basic records map (since we save key images for every tx)
@@ -896,17 +916,18 @@ void MockLedgerContext::get_onchain_chunk_legacy_impl(const std::uint64_t chunk_
                             .at(block_of_tx_output_contents.first).end(),
                         "onchain chunk legacy-view scanning (mock ledger context): key image map missing tx (bug).");
 
-                    collect_key_images_from_tx(block_of_tx_output_contents.first,
-                        std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
-                        sortable2rct(tx_with_output_contents.first),
-                        std::get<0>(m_blocks_of_tx_key_images
-                            .at(block_of_tx_output_contents.first)
-                            .at(tx_with_output_contents.first)),
-                        std::get<1>(m_blocks_of_tx_key_images
-                            .at(block_of_tx_output_contents.first)
-                            .at(tx_with_output_contents.first)),
-                        SpEnoteSpentStatus::SPENT_ONCHAIN,
-                        chunk_out.m_contextual_key_images);
+                    if (try_collect_key_images_from_tx(block_of_tx_output_contents.first,
+                            std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
+                            sortable2rct(tx_with_output_contents.first),
+                            std::get<0>(m_blocks_of_tx_key_images
+                                .at(block_of_tx_output_contents.first)
+                                .at(tx_with_output_contents.first)),
+                            std::get<1>(m_blocks_of_tx_key_images
+                                .at(block_of_tx_output_contents.first)
+                                .at(tx_with_output_contents.first)),
+                            SpEnoteSpentStatus::SPENT_ONCHAIN,
+                            collected_key_images))
+                        chunk_out.m_contextual_key_images.emplace_back(std::move(collected_key_images));
 
                     // add this tx's number of outputs to the total output count
                     total_output_count_before_tx +=
@@ -1023,6 +1044,9 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
     }
 
     // d. find-received scan each block in the range
+    std::list<ContextualBasicRecordVariant> collected_records;
+    SpContextualKeyImageSetV1 collected_key_images;
+
     std::for_each(
             m_blocks_of_sp_tx_output_contents.find(chunk_start_adjusted),
             m_blocks_of_sp_tx_output_contents.find(chunk_out.m_end_height),
@@ -1033,18 +1057,24 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
 
                 for (const auto &tx_with_output_contents : block_of_tx_output_contents.second)
                 {
+                    const rct::key &tx_id{sortable2rct(tx_with_output_contents.first)};
+
                     // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
                     if (try_find_sp_enotes_in_tx(xk_find_received,
                         block_of_tx_output_contents.first,
                         std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
-                        sortable2rct(tx_with_output_contents.first),
+                        tx_id,
                         total_output_count_before_tx,
                         std::get<rct::key>(tx_with_output_contents.second),
                         std::get<SpTxSupplementV1>(tx_with_output_contents.second),
                         std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
                         SpEnoteOriginStatus::ONCHAIN,
-                        chunk_out.m_basic_records_per_tx))
+                        collected_records))
                     {
+                        // splice juuust in case a tx id is duplicated as part of a mockup
+                        chunk_out.m_basic_records_per_tx[tx_id]
+                            .splice(chunk_out.m_basic_records_per_tx[tx_id].end(), collected_records);
+
                         CHECK_AND_ASSERT_THROW_MES(
                             m_blocks_of_tx_key_images
                                 .at(block_of_tx_output_contents.first).find(tx_with_output_contents.first) !=
@@ -1053,17 +1083,18 @@ void MockLedgerContext::get_onchain_chunk_sp_impl(const std::uint64_t chunk_star
                             "onchain chunk find-received scanning (mock ledger context): key image map missing tx "
                             "(bug).");
 
-                        collect_key_images_from_tx(block_of_tx_output_contents.first,
-                            std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
-                            sortable2rct(tx_with_output_contents.first),
-                            std::get<0>(m_blocks_of_tx_key_images
-                                .at(block_of_tx_output_contents.first)
-                                .at(tx_with_output_contents.first)),
-                            std::get<1>(m_blocks_of_tx_key_images
-                                .at(block_of_tx_output_contents.first)
-                                .at(tx_with_output_contents.first)),
-                            SpEnoteSpentStatus::SPENT_ONCHAIN,
-                            chunk_out.m_contextual_key_images);
+                        if (try_collect_key_images_from_tx(block_of_tx_output_contents.first,
+                                std::get<std::uint64_t>(m_block_infos.at(block_of_tx_output_contents.first)),
+                                tx_id,
+                                std::get<0>(m_blocks_of_tx_key_images
+                                    .at(block_of_tx_output_contents.first)
+                                    .at(tx_with_output_contents.first)),
+                                std::get<1>(m_blocks_of_tx_key_images
+                                    .at(block_of_tx_output_contents.first)
+                                    .at(tx_with_output_contents.first)),
+                                SpEnoteSpentStatus::SPENT_ONCHAIN,
+                                collected_key_images))
+                            chunk_out.m_contextual_key_images.emplace_back(std::move(collected_key_images));
                     }
 
                     // add this tx's number of outputs to the total output count

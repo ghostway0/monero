@@ -270,30 +270,39 @@ void MockOffchainContext::get_offchain_chunk_sp_impl(const crypto::x25519_secret
         return;
 
     // 2. find-received scan each tx in the unconfirmed chache
+    std::list<ContextualBasicRecordVariant> collected_records;
+    SpContextualKeyImageSetV1 collected_key_images;
+
     for (const auto &tx_with_output_contents : m_output_contents)
     {
+        const rct::key &tx_id{tx_with_output_contents.first};  //use input context as proxy for tx id
+
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
         if (try_find_sp_enotes_in_tx(xk_find_received,
             -1,
             -1,
-            tx_with_output_contents.first,  //use input context as proxy for tx id
+            tx_id,
             0,
             tx_with_output_contents.first,
             std::get<SpTxSupplementV1>(tx_with_output_contents.second),
             std::get<std::vector<SpEnoteVariant>>(tx_with_output_contents.second),
             SpEnoteOriginStatus::OFFCHAIN,
-            chunk_out.m_basic_records_per_tx))
+            collected_records))
         {
+            chunk_out.m_basic_records_per_tx[tx_id]
+                .splice(chunk_out.m_basic_records_per_tx[tx_id].end(), collected_records);
+
             CHECK_AND_ASSERT_THROW_MES(m_tx_key_images.find(tx_with_output_contents.first) != m_tx_key_images.end(),
                 "offchain find-received scanning (mock offchain context): key image map missing input context (bug).");
 
-            collect_key_images_from_tx(-1,
-                -1,
-                sortable2rct(tx_with_output_contents.first),
-                std::get<0>(m_tx_key_images.at(tx_with_output_contents.first)),
-                std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
-                SpEnoteSpentStatus::SPENT_OFFCHAIN,
-                chunk_out.m_contextual_key_images);
+            if (try_collect_key_images_from_tx(-1,
+                    -1,
+                    tx_id,
+                    std::get<0>(m_tx_key_images.at(tx_with_output_contents.first)),
+                    std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
+                    SpEnoteSpentStatus::SPENT_OFFCHAIN,
+                    collected_key_images))
+                chunk_out.m_contextual_key_images.emplace_back(std::move(collected_key_images));
         }
     }
 }
