@@ -210,11 +210,11 @@ class TaskGraphMonitorBuilder final
     }
 public:
     /// construct from the future result
-    TaskGraphMonitorBuilder(std::future<R> future_result)
+    TaskGraphMonitorBuilder()
     {
         m_monitor.m_cancellation_handle = std::make_shared<std::promise<void>>();
         m_monitor.m_cancellation_flag   = m_monitor.m_cancellation_handle->get_future().share();
-        m_monitor.m_final_result        = std::move(future_result);
+        m_monitor.m_final_result        = m_final_result_promise.get_future();
     }
 
     /// add a task
@@ -245,14 +245,26 @@ public:
         m_monitor.cancel();
     }
 
+    /// extract the result promise
+    std::promise<R> extract_result_promise()
+    {
+        if (m_promise_extracted_flag)
+            throw std::runtime_error{"task graph monitor builder: already extracted result promise."};
+        m_promise_extracted_flag = true;
+
+        return std::move(m_final_result_promise);
+    }
+
     /// extract the monitor
-    TaskGraphMonitor<R> get_monitor()
+    TaskGraphMonitor<R> extract_monitor()
     {
         this->check_state();
         return std::move(m_monitor);
     }
 
 private:
+    std::promise<R> m_final_result_promise{};
+    bool m_promise_extracted_flag{false};
     TaskGraphMonitor<R> m_monitor;
 };
 //-------------------------------------------------------------------------------------------------------------------
@@ -298,17 +310,18 @@ struct get_cancellation_handle_t<true> final
 //-------------------------------------------------------------------------------------------------------------------
 // note: do not use a try-catch in this function because we want to let the caller handle exceptions as needed
 //-------------------------------------------------------------------------------------------------------------------
-template <typename I, typename T, typename R>
-static auto initialize_future_task(I &&initial_value, T &&task, std::promise<R> promise)
+template <typename I, typename T>
+static auto initialize_future_task(I &&initial_value, T &&task)
 {
+    static_assert(std::is_same<decltype(task(std::declval<I>())), void>::value, "");
+
     return
         [
             l_val     = std::forward<I>(initial_value),
-            l_task    = std::forward<T>(task),
-            l_promise = std::move(promise)
+            l_task    = std::forward<T>(task)
         ] () mutable -> void
         {
-            l_task(std::move(l_val), std::move(l_promise));
+            l_task(std::move(l_val));
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -326,12 +339,13 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
     return
         [
             l_final_task          = std::forward<Task<T>>(final_task).task,
+            l_result_promise      = graph_monitor_builder_inout.extract_result_promise(),
             l_completion_handle   = std::move(completion_handle),
             l_cancellation_handle = get_cancellation_handle_t<detachable>{}(
                                             graph_monitor_builder_inout.get_weak_cancellation_handle()
                                         ),
             l_cancellation_flag   = std::move(cancellation_flag)
-        ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
+        ] (auto&& this_task_val) mutable -> void
         {
             try
             {
@@ -340,14 +354,14 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
                     return;
 
                 // execute the final task
-                promise.set_value(l_final_task(std::forward<decltype(this_task_val)>(this_task_val)));
+                l_result_promise.set_value(l_final_task(std::forward<decltype(this_task_val)>(this_task_val)));
                 l_completion_handle.set_value();
             }
             catch (...)
             {
                 try
                 {
-                    promise.set_exception(std::current_exception());
+                    l_result_promise.set_exception(std::current_exception());
                     l_completion_handle.set_exception(std::current_exception());
                 } catch (...) { /*can't do anything*/ }
                 force_set_cancellation_flag_noexcept(l_cancellation_handle);  //set cancellation flag for consistency
@@ -391,7 +405,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
                                     ),
             l_cancellation_handle = std::move(cancellation_handle),
             l_cancellation_flag   = std::move(cancellation_flag)
-        ] (auto&& this_task_val, std::promise<R> promise) mutable -> void
+        ] (auto&& this_task_val) mutable -> void
         {
             try
             {
@@ -406,11 +420,8 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
                         try { return l_this_task(std::forward<decltype(this_task_val)>(this_task_val)); }
                         catch (...)
                         {
-                            try
-                            {
-                                promise.set_exception(std::current_exception());
-                                l_completion_handle.set_exception(std::current_exception());
-                            } catch (...) { /*can't do anything*/ }
+                            try { l_completion_handle.set_exception(std::current_exception()); }
+                            catch (...) { /*can't do anything*/ }
                             return std::error_code{};
                         }
                     }();
@@ -432,8 +443,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
                         std::forward<typename decltype(this_task_result)::value_type>(
                                 std::move(this_task_result).value()
                             ),
-                        std::move(l_next_task),
-                        std::move(promise)
+                        std::move(l_next_task)
                     );
 
                 // mark success
@@ -450,19 +460,14 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
 template <typename R, typename S, typename I, typename... Ts>
 static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, Ts &&...tasks)
 {
-    // prepare result channel
-    std::promise<R> result_promise;
-    std::future<R> result_future{result_promise.get_future()};
-
     // build task graph
-    TaskGraphMonitorBuilder<R> monitor_builder{std::move(result_future)};
+    TaskGraphMonitorBuilder<R> monitor_builder{};
 
     try
     {
         auto task_graph_head = initialize_future_task(
                 std::forward<I>(initial_value),
-                build_task_graph<R>(monitor_builder, scheduler, std::forward<Ts>(tasks)...),
-                std::move(result_promise)
+                build_task_graph<R>(monitor_builder, scheduler, std::forward<Ts>(tasks)...)
             );
 
         // schedule task graph
@@ -475,8 +480,8 @@ static TaskGraphMonitor<R> schedule_task_graph(S scheduler, I &&initial_value, T
         LOG_ERROR("scheduling a task graph failed.");
     }
 
-    // return future
-    return monitor_builder.get_monitor();
+    // return monitor
+    return monitor_builder.extract_monitor();
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

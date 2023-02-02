@@ -67,7 +67,7 @@ public:
     void begin_scanning_from_height(const std::uint64_t initial_start_height, const std::uint64_t max_chunk_size) override
     {
         m_next_start_height = initial_start_height;
-        m_max_chunk_size = max_chunk_size;
+        m_max_chunk_size    = max_chunk_size;
     }
     /// get the next available onchain chunk (or empty chunk representing top of current chain)
     /// - start past the end of the last chunk acquired since starting to scan
