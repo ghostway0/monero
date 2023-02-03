@@ -66,25 +66,34 @@ inline const rct::key& sortable2rct(const sortable_key &k) { return reinterpret_
 * 
 * note: use this instead of std::pow() for better control over error states
 */
-constexpr std::uint64_t uint_pow(const std::size_t n, const std::size_t m) noexcept
+constexpr std::uint64_t uint_pow(std::uint64_t n, unsigned char m) noexcept
 {
     // 1. special case: 0^m = 0
-    if (n == 0)
-        return 0;
+    if (n == 0) return 0;
 
     // 2. special case: n^0 = 1
-    if (m == 0)
-        return 1;
+    if (m == 0) return 1;
 
     // 3. normal case: n^m
-    std::uint64_t result{n};
+    // - use square and multiply
+    std::uint64_t result{1};
+    std::uint64_t temp{};
 
-    for (std::size_t mul{1}; mul < m; ++mul)
+    while (m != 0)
     {
-        if (result*n < result)  //overflow
-            return -1;
+        // multiply
+        if (m & 1) result *= n;
 
-        result *= n;
+        // test end condition
+        if (m == 1) break;
+
+        // square with overflow check
+        temp = n*n;
+        if (temp < n) return -1;
+        n = temp;
+
+        // next level
+        m >>= 1;
     }
 
     return result;
@@ -138,7 +147,8 @@ rct::keyV convolve(const rct::keyV &x, const rct::keyV &y, const std::size_t m);
 */
 rct::keyV powers_of_scalar(const rct::key &scalar, const std::size_t num_pows, const bool negate_all = false);
 /**
-* brief: generate_proof_nonce - generate a random scalar and corresponding pubkey for use in a Schnorr-like signature opening
+* brief: generate_proof_nonce - generate a random scalar and corresponding pubkey for use in a Schnorr-like signature
+*   opening
 * param: base - base EC pubkey for the nonce term
 * outparam: nonce_out - private key 'nonce'
 * outparam: nonce_pub_out - public key 'nonce * base'
