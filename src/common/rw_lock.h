@@ -42,6 +42,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 //standard headers
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <stdexcept>
@@ -75,6 +76,7 @@ struct rw_context final
     boost::shared_mutex value_mutex;
     boost::shared_mutex ctx_mutex;
     std::condition_variable_any ctx_condvar;
+    std::atomic<int> num_readers{0};
 };
 
 } //namespace detail
@@ -123,10 +125,18 @@ public:
             m_lock.owns_lock())
         {
             {
-                boost::unique_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+                boost::shared_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
                 m_lock.unlock();
             }
-            m_context->ctx_condvar.notify_one();  //notify one waiting writer
+
+            // if there seem to be no existing readers, notify one waiting writer
+            // NOTE: this is only an optimization
+            // - there is a race condition where a new reader is being added/gets added concurrently and the notified
+            //   writer ends up failing to get a lock
+            // - there is also a race conditon where a writer is added after our .unlock() call above, then a reader gets
+            //   stuck on ctx_condvar, then our notify_one() call here causes that reader to needlessly try to get a lock
+            if (m_context->num_readers.fetch_sub(1, std::memory_order_relaxed) <= 0)
+                m_context->ctx_condvar.notify_one();  //notify one waiting writer
         }
     }
 
@@ -229,7 +239,11 @@ public:
         detail::test_rw_ptr(m_context.get());
         boost::shared_lock<boost::shared_mutex> lock{m_context->value_mutex, boost::try_to_lock};
         if (!lock.owns_lock()) return boost::none;
-        else                   return read_lock<value_t>{std::move(lock), m_context};
+        else
+        {
+            m_context->num_readers.fetch_add(1, std::memory_order_relaxed);
+            return read_lock<value_t>{std::move(lock), m_context};
+        }
     }
 
     /// get a read lock
@@ -317,7 +331,7 @@ public:
 
         // blocking attempt
         detail::test_rw_ptr(m_context.get());
-        boost::shared_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
+        boost::unique_lock<boost::shared_mutex> ctx_lock{m_context->ctx_mutex};
         m_context->ctx_condvar.wait(ctx_lock,
                 [&]() -> bool
                 {
