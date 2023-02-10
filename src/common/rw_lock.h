@@ -109,12 +109,12 @@ protected:
         m_context{std::move(context)}
     {}
     /// copies: disabled
-    read_lock(const read_lock<value_t>&) = delete;
+    read_lock(const read_lock<value_t>&)            = delete;
     read_lock& operator=(const read_lock<value_t>&) = delete;
 
 public:
     /// moves: default
-    read_lock(read_lock<value_t>&&) = default;
+    read_lock(read_lock<value_t>&&)            = default;
     read_lock& operator=(read_lock<value_t>&&) = default;
 
 //destructor
@@ -167,12 +167,12 @@ protected:
         m_context{std::move(context)}
     {}
     /// copies: disabled
-    write_lock(const write_lock<value_t>&) = delete;
+    write_lock(const write_lock<value_t>&)            = delete;
     write_lock& operator=(const write_lock<value_t>&) = delete;
 
 public:
     /// moves: default
-    write_lock(write_lock<value_t>&&) = default;
+    write_lock(write_lock<value_t>&&)            = default;
     write_lock& operator=(write_lock<value_t>&&) = default;
 
 //destructor
@@ -296,10 +296,10 @@ public:
     }
 
     /// copies: disabled
-    writable(const writable<value_t>&) = delete;
+    writable(const writable<value_t>&)            = delete;
     writable& operator=(const writable<value_t>&) = delete;
     /// moves: default
-    writable(writable<value_t>&&) = default;
+    writable(writable<value_t>&&)            = default;
     writable& operator=(writable<value_t>&&) = default;
 
 //member functions
