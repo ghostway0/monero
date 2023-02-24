@@ -72,6 +72,7 @@
 #include "message_store.h"
 #include "wallet_light_rpc.h"
 #include "wallet_rpc_helpers.h"
+#include "local_data.h"
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "wallet.wallet2"
@@ -285,6 +286,9 @@ private:
 
     wallet2(cryptonote::network_type nettype = cryptonote::MAINNET, uint64_t kdf_rounds = 1, bool unattended = false, std::unique_ptr<epee::net_utils::http::http_client_factory> http_client_factory = std::unique_ptr<epee::net_utils::http::http_client_factory>(new net::http::client_factory()));
     ~wallet2();
+
+    bool write_local_data(std::string wallet_name, std::string path, const crypto::secret_key &secret);
+    bool read_local_data(std::string path, const crypto::secret_key &secret);
 
     struct multisig_info
     {

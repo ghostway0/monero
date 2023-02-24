@@ -3,6 +3,8 @@
 //
 
 #include "wallet_tools.h"
+#include "crypto/crypto.h"
+#include "wallet/encrypted_file.h"
 #include <random>
 
 using namespace std;

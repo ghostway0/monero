@@ -90,6 +90,8 @@ using namespace epee;
 #include "common/perf_timer.h"
 #include "ringct/rctSigs.h"
 #include "ringdb.h"
+#include "local_data.h"
+#include "encrypted_file.h"
 #include "device/device_cold.hpp"
 #include "device_trezor/device_trezor.hpp"
 #include "net/socks_connect.h"
@@ -1239,6 +1241,29 @@ wallet2::~wallet2()
 bool wallet2::has_testnet_option(const boost::program_options::variables_map& vm)
 {
   return command_line::get_arg(vm, options().testnet);
+}
+
+bool wallet2::write_local_data(std::string wallet_name, std::string path, const crypto::secret_key &secret)
+{
+  struct local_data ld;
+  ld = {
+    .wallet_name = wallet_name,
+    .accounts = {},
+    .transactions = {},
+  };
+
+  return write_encrypted_file<local_data>(path, secret, ld);
+}
+
+bool wallet2::read_local_data(std::string path, const crypto::secret_key &secret)
+{
+  struct local_data ld;
+  if (!read_encrypted_file<local_data>(path, secret, ld))
+      return false;
+
+  // set some stuff
+
+  return true;
 }
 
 bool wallet2::has_stagenet_option(const boost::program_options::variables_map& vm)
