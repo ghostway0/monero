@@ -26,14 +26,16 @@ uint64_t Cache::get_nearest_block_height_clampdown(const uint64_t test_height)
 
 void Cache::insert_new_block_ids(const uint64_t first_block_height, const std::vector<crypto::hash> &block_ids)
 {
+    assert(first_block_height >= m_refresh_height);
+
     auto erase_begin = m_checkpoints.lower_bound(first_block_height);
     if (erase_begin != m_checkpoints.end())
     {
         m_checkpoints.erase(erase_begin, m_checkpoints.end());
     }
 
-    for (size_t i = 0; i < block_ids.size(); i++)
-    {
+for (size_t i = 0; i < block_ids.size(); i++)
+{
         uint64_t current_height = first_block_height + i;
         m_checkpoints[current_height] = block_ids[i];
     }
@@ -58,12 +60,19 @@ void Cache::clean_prunable_checkpoints()
     {
         window.push_back(checkpoint->first);
 
-        if (should_prune(window, latest_height))
+        if (window.size() >= m_window_size)
         {
-            auto middle = m_checkpoints.lower_bound(window[window.size() / 2]);
-            checkpoint = --m_checkpoints.erase(middle);
-            window.erase(window.begin() + window.size() / 2);
-        } else {
+            if (should_prune(window, latest_height))
+            {
+                auto middle = m_checkpoints.lower_bound(window[window.size() / 2]);
+                checkpoint = --m_checkpoints.erase(middle);
+                window.erase(window.begin() + window.size() / 2);
+            } else {
+                --checkpoint;
+                window.erase(window.begin());
+            }
+        } else
+        {
             --checkpoint;
         }
     }
@@ -96,17 +105,17 @@ TEST(seraphis_cache, exceed_max_checkpoints)
 {
     uint64_t max_checkpoints = 1;
 
-    Cache cache(max_checkpoints, 0, 0, 10); // max_separation=0, make sure to change this if `should_prune` changes
+    Cache cache(max_checkpoints, 0, 0, 0, 3); // max_separation=0, make sure to change this if `should_prune` changes
     auto dummy = create_dummy_blocks(20);
     cache.insert_new_block_ids(0, dummy);
 
     ASSERT_TRUE(cache.stored_checkpoints() == 1);
 }
 
-TEST(seraphis_cache, check_erases)
+TEST(seraphis_cache, usage)
 {
     // erasing and decrementing, dangerous stuff.
-    Cache cache(30, 0, 100, 10);
+    Cache cache(30, 0, 100, 10, 3);
     auto dummy = create_dummy_blocks(20);
     cache.insert_new_block_ids(0, dummy);
 }
@@ -114,4 +123,13 @@ TEST(seraphis_cache, check_erases)
 TEST(seraphis_cache, greater_refresh)
 {
     // refresh height > latest_height - num_unprunable?
+}
+
+TEST(seraphis_cache, window_bigger_than_unprunable)
+{
+    // window > num_unprunable
+    Cache cache(30, 0, 1000, 5, 10);
+    auto dummy = create_dummy_blocks(20);
+    cache.insert_new_block_ids(0, dummy);
+    ASSERT_TRUE(cache.stored_checkpoints() == 0);
 }
