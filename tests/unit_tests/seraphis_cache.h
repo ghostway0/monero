@@ -16,7 +16,8 @@ class Cache
         : m_checkpoints{}, m_max_cached_checkpoints(max_cached_checkpoints), m_refresh_height(refresh_height),
           m_max_separation(max_separation), m_num_unprunable(num_unprunable), m_window_size(window_size)
     {
-        assert(max_cached_checkpoints > num_unprunable);
+        assert(max_cached_checkpoints > num_unprunable && num_unprunable >= 2 && "The first 2 blocks are not pruned anyway.");
+        assert(window_size > 3 && "window_size has to be greater than 3.");
     }
 
     uint64_t get_nearest_block_height_clampdown(const uint64_t test_height);
