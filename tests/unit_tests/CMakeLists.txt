@@ -31,6 +31,7 @@ set(unit_tests_sources
   apply_permutation.cpp
   address_from_url.cpp
   async.cpp
+  base32.cpp
   base58.cpp
   blockchain_db.cpp
   block_queue.cpp
@@ -62,7 +63,6 @@ set(unit_tests_sources
   hmac_keccak.cpp
   http.cpp
   keccak.cpp
-  key_container.cpp
   levin.cpp
   logging.cpp
   long_term_block_weight.cpp
@@ -98,6 +98,7 @@ set(unit_tests_sources
   seraphis_tx.cpp
   sha256.cpp
   slow_memmem.cpp
+  spw_key_container.cpp
   subaddress.cpp
   tasking_system_demo.cpp
   test_tx_utils.cpp
@@ -114,6 +115,7 @@ set(unit_tests_sources
   output_selection.cpp
   vercmp.cpp
   ringdb.cpp
+  wallet_storage.cpp
   wipeable_string.cpp
   is_hdd.cpp
   aligned.cpp
@@ -136,6 +138,7 @@ target_link_libraries(unit_tests
     cryptonote_core
     daemon_messages
     daemon_rpc_server
+    device_trezor
     blockchain_db
     lmdb_lib
     mx25519_static
@@ -149,6 +152,7 @@ target_link_libraries(unit_tests
     seraphis_mocks
     seraphis_wallet
     wallet
+    wallet2_basic
     p2p
     version
     ${Boost_CHRONO_LIBRARY}
