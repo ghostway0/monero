@@ -31,7 +31,10 @@
 // local headers
 #include "crypto/chacha.h"
 #include "crypto/crypto.h"
-#include "jamtis_keys.h"
+#include "cryptonote_basic/account.h"
+#include "seraphis_core/jamtis_destination.h"
+#include "seraphis_wallet/address_utils.h"
+#include "seraphis_wallet/jamtis_keys.h"
 #include "serialization/serialization.h"
 
 // third party headers
@@ -46,6 +49,8 @@ using namespace sp::jamtis;
 // NOTE: I don't think this is a good idea.
 struct ser_JamtisKeys
 {
+    crypto::secret_key k_s_legacy;    //legacy spend-key
+    crypto::secret_key k_v_legacy;    //legacy view-key
     crypto::secret_key k_m;          // master
     crypto::secret_key k_vb;         // view-balance
     crypto::x25519_secret_key xk_ua; // unlock-amounts
@@ -57,6 +62,8 @@ struct ser_JamtisKeys
     crypto::x25519_pubkey xK_fr;     // find-received pubkey  = xk_fr xk_ua xG
 
     BEGIN_SERIALIZE()
+    FIELD(k_s_legacy)
+    FIELD(k_v_legacy)
     FIELD(k_m)
     FIELD(k_vb)
     FIELD(xk_ua)
@@ -90,9 +97,11 @@ namespace seraphis_wallet
 
 enum class WalletType
 {
-    ViewOnly,
-    ViewBalance,
     Master,
+    ViewAll,
+    ViewReceived,
+    FindReceived,
+    AddrGen,
 };
 
 /// KeyContainer
@@ -101,45 +110,61 @@ enum class WalletType
 class KeyContainer
 {
 public:
-    KeyContainer(JamtisKeys &&keys, const crypto::chacha_key &key);
+    KeyContainer(JamtisKeys &&sp_keys, LegacyKeys &&legacy_keys, const crypto::chacha_key &key);
 
-    KeyContainer() : m_keys{}, m_encryption_iv{}, m_encrypted{false} {}
+    KeyContainer() : m_sp_keys{}, m_legacy_keys{}, m_encryption_iv{}, m_encrypted{false} {}
 
-    KeyContainer(JamtisKeys &&keys,
+    KeyContainer(JamtisKeys &&sp_keys,
+        LegacyKeys &&legacy_keys,
         bool encrypted,
         const crypto::chacha_iv encryption_iv);
 
     // member functions
 
     /// verify if is encrypted
-    bool is_encrypted() { return m_encrypted; }
+    bool is_encrypted() const {return m_encrypted; }
 
     /// load keys from a file and ensure their validity
-    bool load_from_keys_file(const std::string &path, const crypto::chacha_key &chacha_key);
+    bool load_from_keys_file(const std::string &path, const crypto::chacha_key &chacha_key, bool check);
+
+    /// verify if password is valid
+    bool verify_password(const crypto::chacha_key &chacha_key);
 
     /// check if keys are valid 
     bool jamtis_keys_valid(const JamtisKeys &keys, const crypto::chacha_key &chacha_key);
 
-    /// encrypt the keys in-memory
+    /// encrypt keys in-memory
     bool encrypt(const crypto::chacha_key &chacha_key);
 
-    /// decrypt the keys in-memory
+    /// decrypt keys in-memory
     bool decrypt(const crypto::chacha_key &chacha_key);
 
+    /// convert legacy keys format into new legacy keys struct
+    void convert_legacy_keys(const cryptonote::account_base &legacy_keys);
+
+    /// derive seraphis_keys from legacy
+    void derive_seraphis_keys_from_legacy();
+
     /// generate new keys
-    void generate_keys(const crypto::chacha_key &chacha_key);
+    void generate_keys();
 
-    /// write all private keys to file
-    bool write_all(const std::string &path, crypto::chacha_key const &chacha_key);
-
-    /// write view-only keys to file
-    bool write_view_only(const std::string &path, const crypto::chacha_key &chacha_key);
-
-    /// write view-balance keys to file
-    bool write_view_balance(const std::string &path, const crypto::chacha_key &chacha_key);
+    /// write wallet tiers
+    bool write_master(const std::string &path, crypto::chacha_key const &chacha_key);
+    bool write_view_all(const std::string &path, const crypto::chacha_key &chacha_key);
+    bool write_view_received(const std::string &path, const crypto::chacha_key &chacha_key);
+    bool write_find_received(const std::string &path, const crypto::chacha_key &chacha_key);
+    bool write_address_generator(const std::string &path, const crypto::chacha_key &chacha_key);
 
     /// get the wallet type of the loaded keys
     WalletType get_wallet_type();
+    WalletType get_wallet_type(const JamtisKeys sp_keys);
+
+    /// get a random address for loaded wallet
+    std::string get_address_random(const JamtisAddressVersion address_version, const JamtisAddressNetwork address_network);
+    void get_random_destination(JamtisDestinationV1 &dest_out);
+
+    /// get the zero address for loaded wallet
+    std::string get_address_zero(const JamtisAddressVersion address_version, const JamtisAddressNetwork address_network);
 
     /// make jamtis_keys serializable
     void make_serializable_jamtis_keys(ser_JamtisKeys &serializable_keys);
@@ -150,12 +175,20 @@ public:
     /// compare the keys of two containers that have the same chacha_key
     bool compare_keys(KeyContainer &other, const crypto::chacha_key &chacha_key);
 
+    /// return keys
+    const JamtisKeys& get_sp_keys() const {return m_sp_keys;}
+    const LegacyKeys& get_legacy_keys() const {return m_legacy_keys;}
+
+
 private:
     /// initialization vector
     crypto::chacha_iv m_encryption_iv;
 
-    /// struct that contains the private keys 
-    epee::mlocked<JamtisKeys> m_keys;
+    /// struct that contains the seraphis private keys 
+    epee::mlocked<JamtisKeys> m_sp_keys;
+
+    /// struct that contains the legacy private keys 
+    epee::mlocked<LegacyKeys> m_legacy_keys;
 
     /// true if keys are encrypted in memory
     bool m_encrypted;
